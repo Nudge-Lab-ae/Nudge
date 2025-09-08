@@ -1,9 +1,9 @@
 // register_screen.dart (updated)
 import 'package:flutter/material.dart';
 import 'package:nudge/screens/dashboard/dashboard_screen.dart';
-import 'package:provider/provider.dart';
+// import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
-import '../../services/api_service.dart';
+// import '../../services/api_service.dart';
 import 'complete_profile_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -23,7 +23,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _registerUser(BuildContext context) async {
     if (_formKey.currentState!.validate()) {
       try {
-        final apiService = Provider.of<ApiService>(context, listen: false);
+        // final apiService = Provider.of<ApiService>(context, listen: false);
         
         // Check if email already exists
         try {

@@ -54,7 +54,7 @@ class SocialGroup {
 
   factory SocialGroup.fromMap(Map<String, dynamic> data) {
     return SocialGroup(
-      id: data['id'],
+      id: data['id'] ?? data['name'],
       name: data['name'] ?? '',
       description: data['description'] ?? '',
       period: data['period'] ?? 'Monthly',

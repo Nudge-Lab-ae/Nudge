@@ -157,6 +157,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
+                runSpacing: 5,
                 children: [
                   ConnectionTypeChip(
                     label: 'Family',
@@ -204,39 +205,39 @@ class _AddContactScreenState extends State<AddContactScreen> {
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: [
-                  ConnectionTypeChip(
-                    label: 'Weekly',
-                    isSelected: _frequency == 'Weekly',
-                    onSelected: (selected) {
-                      if (selected) setState(() => _frequency = 'Weekly');
-                    },
-                  ),
-                  ConnectionTypeChip(
-                    label: 'Monthly',
-                    isSelected: _frequency == 'Monthly',
-                    onSelected: (selected) {
-                      if (selected) setState(() => _frequency = 'Monthly');
-                    },
-                  ),
-                  ConnectionTypeChip(
-                    label: 'Quarterly',
-                    isSelected: _frequency == 'Quarterly',
-                    onSelected: (selected) {
-                      if (selected) setState(() => _frequency = 'Quarterly');
-                    },
-                  ),
-                  ConnectionTypeChip(
-                    label: 'Annually',
-                    isSelected: _frequency == 'Annually',
-                    onSelected: (selected) {
-                      if (selected) setState(() => _frequency = 'Annually');
-                    },
-                  ),
-                ],
-              ),
+              // Wrap(
+              //   spacing: 8,
+              //   children: [
+              //     ConnectionTypeChip(
+              //       label: 'Weekly',
+              //       isSelected: _frequency == 'Weekly',
+              //       onSelected: (selected) {
+              //         if (selected) setState(() => _frequency = 'Weekly');
+              //       },
+              //     ),
+              //     ConnectionTypeChip(
+              //       label: 'Monthly',
+              //       isSelected: _frequency == 'Monthly',
+              //       onSelected: (selected) {
+              //         if (selected) setState(() => _frequency = 'Monthly');
+              //       },
+              //     ),
+              //     ConnectionTypeChip(
+              //       label: 'Quarterly',
+              //       isSelected: _frequency == 'Quarterly',
+              //       onSelected: (selected) {
+              //         if (selected) setState(() => _frequency = 'Quarterly');
+              //       },
+              //     ),
+              //     ConnectionTypeChip(
+              //       label: 'Annually',
+              //       isSelected: _frequency == 'Annually',
+              //       onSelected: (selected) {
+              //         if (selected) setState(() => _frequency = 'Annually');
+              //       },
+              //     ),
+              //   ],
+              // ),
               
               const SizedBox(height: 20),
               

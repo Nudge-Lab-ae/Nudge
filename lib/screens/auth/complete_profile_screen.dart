@@ -65,9 +65,9 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
           ));
           
           Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const SetGoalsScreen()),
-          );
+              context, MaterialPageRoute
+              (builder: (context) => const SetGoalsScreen(isFromSettings: false)),
+            );
         }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(

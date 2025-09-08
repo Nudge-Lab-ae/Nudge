@@ -235,7 +235,7 @@ Future<void> _updateUserData() async {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const SetGoalsScreen(),
+                      builder: (context) => const SetGoalsScreen(isFromSettings: true)
                     ),
                   );
                 },

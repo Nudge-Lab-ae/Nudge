@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nudge/services/api_service.dart';
+import 'package:nudge/theme/text_styles.dart';
 import 'package:provider/provider.dart';
-// import '../../services/database_service.dart';
 import '../../services/auth_service.dart';
 import '../../models/social_group.dart';
 import '../../models/contact.dart';
@@ -16,11 +16,34 @@ class GroupsListScreen extends StatefulWidget {
 class _GroupsListScreenState extends State<GroupsListScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  Stream<List<SocialGroup>>? _groupsStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeStreams();
+  }
+
+  void _initializeStreams() {
+    final apiService = Provider.of<ApiService>(context, listen: false);
+    _groupsStream = apiService.getGroupsStream().handleError((error) {
+      print('Error in groups stream: $error');
+      return <SocialGroup>[];
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Reinitialize streams when dependencies change
+    _initializeStreams();
+  }
 
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
     final user = authService.currentUser;
+    final apiService = Provider.of<ApiService>(context);
 
     if (user == null) {
       return const Scaffold(
@@ -28,31 +51,24 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
       );
     }
 
-    final apiService = ApiService();
-
-    return MultiProvider(
-      providers: [
-        StreamProvider<List<SocialGroup>>.value(
-          value: apiService.getGroupsStream(),
-          initialData: const [],
-        ),
-        StreamProvider<List<Contact>>.value(
-          value: apiService.getContactsStream(),
-          initialData: const [],
-        ),
-      ],
+    return StreamProvider<List<Contact>>.value(
+      value: apiService.getContactsStream().handleError((error) {
+        print('Error in contacts stream: $error');
+        return <Contact>[];
+      }),
+      initialData: const [],
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Social Groups', style: TextStyle(color: Colors.white),),
-            leading: IconButton(
-                icon: Icon(
-                  Icons.arrow_back,
-                  color: Colors.white,
-                ),
-                onPressed: () {
-                  Navigator.pop(context); 
-                },
-              ),
+          leading: IconButton(
+            icon: const Icon(
+              Icons.arrow_back,
+              color: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.pop(context); 
+            },
+          ),
           backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
           actions: [
             IconButton(
@@ -63,38 +79,32 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
             ),
           ],
         ),
-        body: Consumer2<List<SocialGroup>, List<Contact>>(
-          builder: (context, groups, contacts, child) {
-            // Filter groups based on search query
-            final filteredGroups = groups.where((group) {
-              return group.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                  group.description.toLowerCase().contains(_searchQuery.toLowerCase());
-            }).toList();
-
-            if (groups.isEmpty) {
+        body: StreamBuilder<List<SocialGroup>>(
+          stream: _groupsStream,
+          builder: (context, groupsSnapshot) {
+            if (groupsSnapshot.hasError) {
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Icon(
-                      Icons.group,
+                      Icons.error,
                       size: 64,
-                      color: Colors.grey,
+                      color: Colors.red,
                     ),
                     const SizedBox(height: 16),
                     const Text(
-                      'No groups yet',
+                      'Error loading groups',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Colors.grey,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      'Create your first group to organize your contacts',
+                    Text(
+                      groupsSnapshot.error.toString(),
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 16,
                         color: Colors.grey,
                       ),
@@ -102,48 +112,109 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                     const SizedBox(height: 24),
                     ElevatedButton(
                       onPressed: () {
-                        _showCreateGroupDialog(context, apiService);
+                        setState(() {
+                          _initializeStreams();
+                        });
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
                       ),
-                      child: const Text('Create Group', style: TextStyle(color: Colors.white),),
+                      child: const Text('Retry', style: TextStyle(color: Colors.white),),
                     ),
                   ],
                 ),
               );
             }
 
-            return Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: 'Search groups...',
-                      prefixIcon: const Icon(Icons.search),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10.0),
+            if (!groupsSnapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            final groups = groupsSnapshot.data!;
+            
+            return Consumer<List<Contact>>(
+              builder: (context, contacts, child) {
+                // Filter groups based on search query
+                final filteredGroups = groups.where((group) {
+                  return group.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                      group.description.toLowerCase().contains(_searchQuery.toLowerCase());
+                }).toList();
+
+                if (groups.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.group,
+                          size: 64,
+                          color: Colors.grey,
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'No groups yet',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Create your first group to organize your contacts',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton(
+                          onPressed: () {
+                            _showCreateGroupDialog(context, apiService);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
+                          ),
+                          child: const Text('Create Group', style: TextStyle(color: Colors.white),),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText: 'Search groups...',
+                          prefixIcon: const Icon(Icons.search),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            _searchQuery = value;
+                          });
+                        },
                       ),
                     ),
-                    onChanged: (value) {
-                      setState(() {
-                        _searchQuery = value;
-                      });
-                    },
-                  ),
-                ),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: filteredGroups.length,
-                    itemBuilder: (context, index) {
-                      final group = filteredGroups[index];
-                      return _buildGroupCard(context, group, contacts, apiService);
-                    },
-                  ),
-                ),
-              ],
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: filteredGroups.length,
+                        itemBuilder: (context, index) {
+                          final group = filteredGroups[index];
+                          return _buildGroupCard(context, group, contacts, apiService);
+                        },
+                      ),
+                    ),
+                  ],
+                );
+              },
             );
           },
         ),
@@ -151,6 +222,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
     );
   }
 
+  // Rest of the methods remain the same as in the previous implementation
   Widget _buildGroupCard(BuildContext context, SocialGroup group, List<Contact> contacts, ApiService apiService) {
     // Get group members
     final groupMembers = contacts.where((contact) => group.memberIds.contains(contact.id)).toList();
@@ -172,7 +244,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
             Text(group.description),
             const SizedBox(height: 4),
             Text(
-              '${group.memberCount} members • ${group.frequency}',
+              '${group.memberCount} members • ${group.frequency} times per ${group.period.toLowerCase()}',
               style: const TextStyle(fontSize: 12),
             ),
           ],
@@ -194,7 +266,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
     final nameController = TextEditingController();
     final descriptionController = TextEditingController();
     String period = 'Monthly';
-    int frequency = 2;
+    int frequency = 4;
 
     showDialog(
       context: context,
@@ -210,6 +282,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                   labelText: 'Group Name',
                 ),
               ),
+              const SizedBox(height: 16),
               TextField(
                 controller: descriptionController,
                 decoration: const InputDecoration(
@@ -233,6 +306,17 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                   labelText: 'Contact Period',
                 ),
               ),
+              const SizedBox(height: 16),
+              TextFormField(
+                initialValue: frequency.toString(),
+                decoration: const InputDecoration(
+                  labelText: 'Frequency (times per period)',
+                ),
+                keyboardType: TextInputType.number,
+                onChanged: (value) {
+                  frequency = int.tryParse(value) ?? 4;
+                },
+              ),
             ],
           ),
           actions: [
@@ -246,7 +330,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
               onPressed: () async {
                 if (nameController.text.isNotEmpty) {
                   final newGroup = SocialGroup(
-                    id: '',
+                    id: DateTime.now().millisecondsSinceEpoch.toString(),
                     name: nameController.text,
                     description: descriptionController.text,
                     period: period,
@@ -257,8 +341,16 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                     colorCode: '#2596BE',
                   );
                   
-                  await apiService.addGroup(newGroup);
-                  Navigator.of(context).pop();
+                  try {
+                    await apiService.addGroup(newGroup);
+                    Navigator.of(context).pop();
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error creating group: $e'),
+                      ),
+                    );
+                  }
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -276,6 +368,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
     final nameController = TextEditingController(text: group.name);
     final descriptionController = TextEditingController(text: group.description);
     String period = group.period;
+    int frequency = group.frequency;
 
     showDialog(
       context: context,
@@ -291,6 +384,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                   labelText: 'Group Name',
                 ),
               ),
+              const SizedBox(height: 16),
               TextField(
                 controller: descriptionController,
                 decoration: const InputDecoration(
@@ -311,8 +405,19 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                   );
                 }).toList(),
                 decoration: const InputDecoration(
-                  labelText: 'Contact Frequency',
+                  labelText: 'Contact Period',
                 ),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                initialValue: frequency.toString(),
+                decoration: const InputDecoration(
+                  labelText: 'Frequency (times per period)',
+                ),
+                keyboardType: TextInputType.number,
+                onChanged: (value) {
+                  frequency = int.tryParse(value) ?? group.frequency;
+                },
               ),
             ],
           ),
@@ -330,16 +435,25 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                     name: nameController.text,
                     description: descriptionController.text,
                     period: period,
+                    frequency: frequency,
                   );
                   
-                  await apiService.updateGroup(updatedGroup);
-                  Navigator.of(context).pop();
+                  try {
+                    await apiService.updateGroup(updatedGroup);
+                    Navigator.of(context).pop();
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error updating group: $e'),
+                      ),
+                    );
+                  }
                 }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
               ),
-              child: const Text('Save'),
+              child:  Text('Save', style: AppTextStyles.button.copyWith(color: Colors.white),),
             ),
           ],
         );
@@ -360,6 +474,11 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
               children: [
                 Text(group.description),
                 const SizedBox(height: 16),
+                Text(
+                  'Contact: ${group.frequency} times per ${group.period.toLowerCase()}',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
                 const Text(
                   'Group Members',
                   style: TextStyle(fontWeight: FontWeight.bold),
@@ -370,7 +489,9 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                 else
                   ...members.map((contact) => ListTile(
                     leading: CircleAvatar(
-                      backgroundImage: NetworkImage(contact.imageUrl),
+                      backgroundImage: contact.imageUrl.isNotEmpty
+                          ? NetworkImage(contact.imageUrl)
+                          : null,
                       child: contact.imageUrl.isEmpty 
                           ? const Icon(Icons.person) 
                           : null,
@@ -386,11 +507,19 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                           memberCount: updatedMemberIds.length,
                         );
                         
-                        await apiService.updateGroup(updatedGroup);
-                        Navigator.of(context).pop();
-                        _showGroupDetails(context, updatedGroup, 
-                            members.where((m) => m.id != contact.id).toList(), 
-                            apiService);
+                        try {
+                          await apiService.updateGroup(updatedGroup);
+                          Navigator.of(context).pop();
+                          _showGroupDetails(context, updatedGroup, 
+                              members.where((m) => m.id != contact.id).toList(), 
+                              apiService);
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error removing member: $e'),
+                            ),
+                          );
+                        }
                       },
                     ),
                   )).toList(),

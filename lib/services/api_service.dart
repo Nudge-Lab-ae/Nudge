@@ -35,9 +35,9 @@ class ApiService {
           username: currentUser.displayName ?? currentUser.email!.split('@')[0],
           createdAt: DateTime.now(),
          groups: [
-          {"name": "Family", "period": "Monthly", "frequency": "4"},
-          {"name": "Friend", "period": "Quarterly", "frequency": "8"},
-          {"name": "Client", "period": "Annually", "frequency": "2"},
+          {"name": "Family", "period": "Monthly", "frequency": 4},
+          {"name": "Friend", "period": "Quarterly", "frequency": 8},
+          {"name": "Client", "period": "Annually", "frequency": 2},
         ],
           goals: {},
           contacts: [],
@@ -142,31 +142,6 @@ class ApiService {
     }
   }
 
-
-   Future<void> updateGroup(SocialGroup group) async {
-    try {
-      final currentUser = _auth.currentUser;
-      if (currentUser == null) throw Exception('No user logged in');
-      
-      final userDoc = await _usersCollection.doc(currentUser.uid).get();
-      if (userDoc.exists) {
-        final userData = userDoc.data() as Map<String, dynamic>;
-        final groups = List<Map<String, dynamic>>.from(userData['groups'] ?? []);
-        
-        final index = groups.indexWhere((c) => c['id'] == group.id);
-        if (index != -1) {
-          groups[index] = group.toMap();
-          
-          await _usersCollection.doc(currentUser.uid).update({
-            'groups': groups,
-            'updatedAt': DateTime.now(),
-          });
-        }
-      }
-    } catch (e) {
-      throw Exception('Failed to update contact: $e');
-    }
-  }
   // Nudge methods
   Stream<List<Nudge>> getNudgesStream() {
     return userStream.map((user) {
@@ -201,39 +176,103 @@ class ApiService {
   }
 
   // Group methods
+  // Stream<List<SocialGroup>> getGroupsStream() {
+  //   return userStream.map((user) {  
+  //    var list =  user.groups!.map((groupData) => SocialGroup.fromMap(groupData)).toList();
+  //    print(list); print(' is the list');
+  //     return list;
+  //   });
+  // }
+
   Stream<List<SocialGroup>> getGroupsStream() {
+  try {
     return userStream.map((user) {
-
-      return user.groups!.map((groupData) => SocialGroup.fromMap(groupData)).toList();
-    });
-  }
-
-  Future<void> addGroup(SocialGroup group) async {
-    try {
-      final currentUser = _auth.currentUser;
-      if (currentUser == null) throw Exception('No user logged in');
+      // if (user == null) return <SocialGroup>[];
       
-      final userDoc = await _usersCollection.doc(currentUser.uid).get();
-      if (userDoc.exists) {
-        final userData = userDoc.data() as Map<String, dynamic>;
-        final groups = List<Map<String, dynamic>>.from(userData['socialGroups'] ?? []);
-        
-        // Generate a unique ID for the group
-        final groupData = group.toMap();
-        groupData['id'] = DateTime.now().millisecondsSinceEpoch.toString();
-        
-        groups.add(groupData);
+      // Handle cases where groups might be null or not a List
+      if (user.groups == null) return <SocialGroup>[];
+      
+      // Ensure groups is a List
+      if (user.groups is! List) return <SocialGroup>[];
+      
+      return user.groups!.map((groupData) {
+        try {
+          return SocialGroup.fromMap(groupData);
+        } catch (e) {
+          print('Error parsing group data: $e');
+          // Return a default group or handle error as needed
+          return SocialGroup(
+            id: 'error',
+            name: 'Error Group',
+            description: 'Error loading group',
+            period: 'Monthly',
+            frequency: 1,
+            memberIds: [],
+            memberCount: 0,
+            lastInteraction: DateTime.now(),
+            colorCode: '#FF0000',
+          );
+        }
+      }).toList();
+    });
+  } catch (e) {
+    print('Error in getGroupsStream: $e');
+    // Return an empty stream on error
+    return Stream.value(<SocialGroup>[]);
+  }
+}
+
+// In your ApiService class, update these methods:
+
+Future<void> addGroup(SocialGroup group) async {
+  try {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) throw Exception('No user logged in');
+    
+    final userDoc = await _usersCollection.doc(currentUser.uid).get();
+    if (userDoc.exists) {
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final groups = List<Map<String, dynamic>>.from(userData['groups'] ?? []);
+      
+      // Add the new group to the list
+      groups.add(group.toMap());
+      
+      await _usersCollection.doc(currentUser.uid).update({
+        'groups': groups,
+        'updatedAt': DateTime.now(),
+      });
+    }
+  } catch (e) {
+    throw Exception('Failed to create group: $e');
+  }
+}
+
+Future<void> updateGroup(SocialGroup group) async {
+  try {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) throw Exception('No user logged in');
+    
+    final userDoc = await _usersCollection.doc(currentUser.uid).get();
+    if (userDoc.exists) {
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final groups = List<Map<String, dynamic>>.from(userData['groups'] ?? []);
+      
+      // Find the group index by ID
+      final index = groups.indexWhere((g) => g['id'] == group.id);
+      if (index != -1) {
+        // Update the group
+        groups[index] = group.toMap();
         
         await _usersCollection.doc(currentUser.uid).update({
-          'socialGroups': groups,
+          'groups': groups,
           'updatedAt': DateTime.now(),
         });
       }
-    } catch (e) {
-      throw Exception('Failed to create group: $e');
     }
+  } catch (e) {
+    throw Exception('Failed to update group: $e');
   }
-
+}
   // Imported contacts methods
   Future<void> updateImportedContacts(List<Map<String, dynamic>> contacts) async {
     try {
@@ -323,7 +362,7 @@ class ApiService {
       throw Exception('Failed to login: $e');
     }
   }
-  
+
 Future<Map<String, dynamic>> register(String email, String password) async {
   try {
     final result = await _auth.createUserWithEmailAndPassword(
@@ -377,9 +416,9 @@ Future<Map<String, dynamic>> register(String email, String password) async {
       photoURL: '',
       createdAt: DateTime.now(),
       groups: [
-        {"name": "Family", "period": "Monthly", "frequency": "4"},
-        {"name": "Friend", "period": "Quarterly", "frequency": "8"},
-        {"name": "Client", "period": "Annually", "frequency": "2"},
+        {"name": "Family", "period": "Monthly", "frequency": 4},
+        {"name": "Friend", "period": "Quarterly", "frequency": 8},
+        {"name": "Client", "period": "Annually", "frequency": 2},
       ],
       goals: {},
       contacts: [],
