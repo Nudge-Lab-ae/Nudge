@@ -1,7 +1,9 @@
 // lib/main.dart
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:nudge/firebase_options.dart';
 import 'package:nudge/screens/analytics/analytics_screen.dart';
+import 'package:nudge/screens/auth/complete_profile_screen.dart';
 import 'package:nudge/screens/contacts/edit_contact_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/services/nudge_service.dart';
@@ -24,15 +26,7 @@ import 'services/auth_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
-    options: FirebaseOptions(
-      apiKey: "AIzaSyD7HAbN2wCPSyS7Qmui8_lV794doApQgrU",
-      authDomain: "airbnb-clone-571fc.firebaseapp.com",
-      projectId: "airbnb-clone-571fc",
-      storageBucket: "airbnb-clone-571fc.firebasestorage.app",
-      messagingSenderId: "764964903709",
-      appId: "1:764964903709:web:3a0843bf47ba3abf341ff4",
-      measurementId: "G-VPD65R6EKK"
-    ), name: "Nudge"
+    options: DefaultFirebaseOptions.currentPlatform, name: "Nudge"
   );
   final nudgeService = NudgeService();
   await nudgeService.initialize();
@@ -86,6 +80,7 @@ class NudgeApp extends StatelessWidget {
           '/welcome': (context) => const WelcomeScreen(),
           '/login': (context) => const LoginScreen(),
           '/register': (context) => const RegisterScreen(),
+          '/complete_profile': (context) => const CompleteProfileScreen(),
           '/dashboard': (context) => const DashboardScreen(),
            '/contacts': (context) {
               final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;

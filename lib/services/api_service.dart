@@ -42,6 +42,10 @@ class ApiService {
           goals: {},
           contacts: [],
           nudges: [],
+          phoneNumber: '',
+          photoURL: '',
+          description: '',
+          bio: ''
         );
         await _usersCollection.doc(currentUser.uid).set(newUser.toMap());
         return newUser;
@@ -68,6 +72,10 @@ class ApiService {
           goals: {},
           contacts: [],
           nudges: [],
+          phoneNumber: '',
+          photoURL: '',
+          description: '',
+          bio: ''
         );
       });
     });
@@ -315,40 +323,80 @@ class ApiService {
       throw Exception('Failed to login: $e');
     }
   }
-
-  Future<Map<String, dynamic>> register(String email, String password, String username) async {
-    try {
-      final result = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      
-      // Create user document
-      final newUser = app_user.User(
-        id: result.user!.uid,
-        email: email,
-        username: username,
-        createdAt: DateTime.now(),
-        groups: [
-          {"name": "Family", "period": "Monthly", "frequency": "4"},
-          {"name": "Friend", "period": "Quarterly", "frequency": "8"},
-          {"name": "Client", "period": "Annually", "frequency": "2"},
-        ],
-        goals: {},
-        contacts: [],
-        nudges: [],
-        
-      );
-      
-      await _usersCollection.doc(result.user!.uid).set(newUser.toMap());
-      
-      return {
-        'user': result.user,
-        'userData': newUser.toMap(),
-        'token': await result.user!.getIdToken(),
-      };
-    } catch (e) {
-      throw Exception('Failed to register: $e');
-    }
+  
+Future<Map<String, dynamic>> register(String email, String password) async {
+  try {
+    final result = await _auth.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+    
+    // Create user document with minimal information
+    final newUser = app_user.User(
+      id: result.user!.uid,
+      email: email,
+      username: '', // Will be set in CompleteProfileScreen
+      phoneNumber: '',
+      bio: '',
+      description: '',
+      photoURL: '',
+      createdAt: DateTime.now(),
+      groups: [], // Will be set in SetGoalsScreen
+      goals: {},
+      contacts: [],
+      nudges: [],
+    );
+    
+    await _usersCollection.doc(result.user!.uid).set(newUser.toMap());
+    
+    return {
+      'user': result.user,
+      'userData': newUser.toMap(),
+      'token': await result.user!.getIdToken(),
+    };
+  } catch (e) {
+    throw Exception('Failed to register: $e');
   }
 }
+  
+  Future<Map<String, dynamic>> registerWithEmail(String email, String password, String username) async {
+  try {
+    final result = await _auth.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+    
+    // Create user document with additional info
+    final newUser = app_user.User(
+      id: result.user!.uid,
+      email: email,
+      username: username,
+      phoneNumber: '',
+      bio: '',
+      description: '',
+      photoURL: '',
+      createdAt: DateTime.now(),
+      groups: [
+        {"name": "Family", "period": "Monthly", "frequency": "4"},
+        {"name": "Friend", "period": "Quarterly", "frequency": "8"},
+        {"name": "Client", "period": "Annually", "frequency": "2"},
+      ],
+      goals: {},
+      contacts: [],
+      nudges: [],
+    );
+    
+    await _usersCollection.doc(result.user!.uid).set(newUser.toMap());
+    
+    return {
+      'user': result.user,
+      'userData': newUser.toMap(),
+      'token': await result.user!.getIdToken(),
+    };
+  } catch (e) {
+    throw Exception('Failed to register: $e');
+  }
+}
+
+}
+

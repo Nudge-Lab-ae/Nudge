@@ -1,115 +1,41 @@
 {
   "project_info": {
-    "project_number": "764964903709",
-    "project_id": "airbnb-clone-571fc",
-    "storage_bucket": "airbnb-clone-571fc.firebasestorage.app"
+    "project_number": "345448336149",
+    "project_id": "nudge-32fe8",
+    "storage_bucket": "nudge-32fe8.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:764964903709:android:722cf430ff378133341ff4",
+        "mobilesdk_app_id": "1:345448336149:android:354938158c31eabff2f71c",
         "android_client_info": {
-          "package_name": "bmitech.airbnb_clone"
+          "package_name": "com.nudge.app"
         }
       },
       "oauth_client": [
         {
-          "client_id": "764964903709-9al9m0rdfil0pnrqm1anll0mn4h3lldu.apps.googleusercontent.com",
+          "client_id": "345448336149-tigmhisu5ou96ruvrdl02kgttdg1vfcr.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "bmitech.airbnb_clone",
-            "certificate_hash": "7e1cdabf92bf79f65b149cbb31300eb7e31a3ad8"
-          }
-        },
-        {
-          "client_id": "764964903709-ptil4qpf4mn49jfkue27oj1tp7k1stgk.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyD42NwNObuCLneLcPams1nuBP2hlWTJ9fU"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "764964903709-ptil4qpf4mn49jfkue27oj1tp7k1stgk.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:764964903709:android:a80a7eaa977e0d4a341ff4",
-        "android_client_info": {
-          "package_name": "com.anotherapp"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "764964903709-77qf1pbmigsapklmdv01unoup0r588ed.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.anotherapp",
+            "package_name": "com.nudge.app",
             "certificate_hash": "bd59686c31f69d674970179ccd724c8a4c15f595"
           }
         },
         {
-          "client_id": "764964903709-ptil4qpf4mn49jfkue27oj1tp7k1stgk.apps.googleusercontent.com",
+          "client_id": "345448336149-ejg2dinndqspv0g9dhotmo4anpdsqm8o.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyD42NwNObuCLneLcPams1nuBP2hlWTJ9fU"
+          "current_key": "AIzaSyCQf4WjsFMk-XQgGhIChS9G2I76b3HqP9o"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "764964903709-ptil4qpf4mn49jfkue27oj1tp7k1stgk.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:764964903709:android:5da64c6617162720341ff4",
-        "android_client_info": {
-          "package_name": "com.example.nudge"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "764964903709-3ohmbtvnmona7jl8kd6hv2omingargv8.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.nudge",
-            "certificate_hash": "bd59686c31f69d674970179ccd724c8a4c15f595"
-          }
-        },
-        {
-          "client_id": "764964903709-ptil4qpf4mn49jfkue27oj1tp7k1stgk.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyD42NwNObuCLneLcPams1nuBP2hlWTJ9fU"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "764964903709-ptil4qpf4mn49jfkue27oj1tp7k1stgk.apps.googleusercontent.com",
+              "client_id": "345448336149-ejg2dinndqspv0g9dhotmo4anpdsqm8o.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

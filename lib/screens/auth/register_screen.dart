@@ -1,10 +1,10 @@
-// lib/screens/auth/register_screen.dart
+// register_screen.dart (updated)
 import 'package:flutter/material.dart';
+import 'package:nudge/screens/dashboard/dashboard_screen.dart';
 import 'package:provider/provider.dart';
-import '../goals/set_goals_screen.dart';
 import '../../services/auth_service.dart';
 import '../../services/api_service.dart';
-import '../../models/user.dart' as app_user;
+import 'complete_profile_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -17,14 +17,65 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
-  final TextEditingController _usernameController = TextEditingController();
   final AuthService _authService = AuthService();
   final _formKey = GlobalKey<FormState>();
 
+  Future<void> _registerUser(BuildContext context) async {
+    if (_formKey.currentState!.validate()) {
+      try {
+        final apiService = Provider.of<ApiService>(context, listen: false);
+        
+        // Check if email already exists
+        try {
+          // Try to sign in first to see if account exists
+          final user = await _authService.signInWithEmail(
+            _emailController.text,
+            _passwordController.text,
+          );
+          
+          if (user != null) {
+            // Account exists, navigate to dashboard
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const DashboardScreen()),
+            );
+            return;
+          }
+        } catch (e) {
+          // If sign in fails, continue with registration
+        }
+
+        // Register new user
+        final user = await _authService.registerWithEmail(
+          _emailController.text,
+          _passwordController.text,
+        );
+        
+        if (user != null) {
+          // Navigate to complete profile screen
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const CompleteProfileScreen()),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Registration failed. Please try again.'),
+            ),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final apiService = Provider.of<ApiService>(context);
-    
     return Scaffold(
       appBar: AppBar(
         title: const Text('NUDGE'),
@@ -48,30 +99,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
               const SizedBox(height: 30),
-              const Text(
-                'Username',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _usernameController,
-                decoration: InputDecoration(
-                  hintText: 'Enter username',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a username';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
+              
+              // Email
               const Text(
                 'Email',
                 style: TextStyle(
@@ -99,6 +128,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 },
               ),
               const SizedBox(height: 20),
+              
+              // Password
               const Text(
                 'Password',
                 style: TextStyle(
@@ -127,6 +158,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 },
               ),
               const SizedBox(height: 20),
+              
+              // Confirm Password
               const Text(
                 'Confirm Password',
                 style: TextStyle(
@@ -155,61 +188,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 },
               ),
               const SizedBox(height: 30),
+              
+              // Register Button
               SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: () async {
-                    if (_formKey.currentState!.validate()) {
-                      try {
-                        // Register user with email and password
-                        final userCredential = await _authService.registerWithEmail(
-                          _emailController.text,
-                          _passwordController.text,
-                        );
-                        
-                        if (userCredential != null) {
-                          // Create user document in Firestore
-                          final newUser = app_user.User(
-                            id: userCredential.uid,
-                            email: _emailController.text,
-                            username: _usernameController.text,
-                            createdAt: DateTime.now(),
-                             groups: [
-                                {"name": "Family", "period": "Monthly", "frequency": "4"},
-                                {"name": "Friend", "period": "Quarterly", "frequency": "8"},
-                                {"name": "Client", "period": "Annually", "frequency": "2"},
-                              ],
-                            goals: {},
-                            contacts: [],
-                            nudges: [],
-                            
-                          );
-                          
-                          await apiService.addUser(newUser);
-                          
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const SetGoalsScreen(),
-                            ),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Registration failed. Please try again.'),
-                            ),
-                          );
-                        }
-                      } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Registration error: $e'),
-                          ),
-                        );
-                      }
-                    }
-                  },
+                  onPressed: () => _registerUser(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
                     shape: RoundedRectangleBorder(
@@ -227,6 +212,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
               const SizedBox(height: 20),
+              
               const Center(
                 child: Text(
                   'or',
@@ -237,43 +223,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
               const SizedBox(height: 20),
+              
+              // Google Sign Up
               SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: OutlinedButton.icon(
                   onPressed: () async {
-                    try {
-                      final userCredential = await _authService.signInWithGoogle();
-                      if (userCredential != null) {
-                        // Create user document in Firestore for Google sign-in
-                        final newUser = app_user.User(
-                          id: userCredential.uid,
-                          email: userCredential.email ?? '',
-                          username: userCredential.displayName ?? userCredential.email!.split('@')[0],
-                          createdAt: DateTime.now(),
-                           groups: [
-                              {"name": "Family", "period": "Monthly", "frequency": "4"},
-                              {"name": "Friend", "period": "Quarterly", "frequency": "8"},
-                              {"name": "Client", "period": "Annually", "frequency": "2"},
-                            ],
-                          goals: {},
-                          contacts: [],
-                          nudges: [],
-                        );
-                        
-                        await apiService.addUser(newUser);
-                        
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const SetGoalsScreen(),
-                          ),
-                        );
-                      }
-                    } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Google sign-in error: $e'),
+                    final user = await _authService.signInWithGoogle();
+                    if (user != null) {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CompleteProfileScreen(),
                         ),
                       );
                     }
@@ -292,43 +254,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
               const SizedBox(height: 15),
+              
+              // Apple Sign Up
               SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: OutlinedButton.icon(
                   onPressed: () async {
-                    try {
-                      final userCredential = await _authService.signInWithApple();
-                      if (userCredential != null) {
-                        // Create user document in Firestore for Apple sign-in
-                        final newUser = app_user.User(
-                          id: userCredential.uid,
-                          email: userCredential.email ?? '',
-                          username: userCredential.displayName ?? 'Apple User',
-                          createdAt: DateTime.now(),
-                          groups: [
-                              {"name": "Family", "period": "Monthly", "frequency": "4"},
-                              {"name": "Friend", "period": "Quarterly", "frequency": "8"},
-                              {"name": "Client", "period": "Annually", "frequency": "2"},
-                            ],
-                          goals: {},
-                          contacts: [],
-                          nudges: [],
-                        );
-                        
-                        await apiService.addUser(newUser);
-                        
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const SetGoalsScreen(),
-                          ),
-                        );
-                      }
-                    } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Apple sign-in error: $e'),
+                    final user = await _authService.signInWithApple();
+                    if (user != null) {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CompleteProfileScreen(),
                         ),
                       );
                     }

@@ -1,10 +1,40 @@
 import 'package:flutter/material.dart';
-import 'package:nudge/screens/notifications/notifications_screen.dart';
-import '../contacts/search_screen.dart';
-import '../../widgets/frequency_button.dart';
+import 'package:nudge/screens/dashboard/dashboard_screen.dart';
+import 'package:provider/provider.dart';
+import '../../services/api_service.dart';
 
-class SetGoalsScreen extends StatelessWidget {
+class SetGoalsScreen extends StatefulWidget {
   const SetGoalsScreen({super.key});
+
+  @override
+  State<SetGoalsScreen> createState() => _SetGoalsScreenState();
+}
+
+class _SetGoalsScreenState extends State<SetGoalsScreen> {
+  final Map<String, Map<String, dynamic>> _groupSettings = {
+    'Family': {'period': 'Monthly', 'frequency': 4.0},
+    'Friends': {'period': 'Quarterly', 'frequency': 8.0},
+    'Clients': {'period': 'Annually', 'frequency': 2.0},
+  };
+
+  final Map<String, Map<String, dynamic>> _periodRanges = {
+    'Monthly': {'min': 1, 'max': 31, 'divisions': 30},
+    'Quarterly': {'min': 1, 'max': 13, 'divisions': 12},
+    'Annually': {'min': 1, 'max': 53, 'divisions': 52},
+  };
+
+  String _getFrequencyLabel(String period, double frequency) {
+    switch (period) {
+      case 'Monthly':
+        return '${frequency.toInt()} times per month';
+      case 'Quarterly':
+        return '${frequency.toInt()} times per quarter';
+      case 'Annually':
+        return '${frequency.toInt()} times per year';
+      default:
+        return '${frequency.toInt()} times';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -12,19 +42,6 @@ class SetGoalsScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('NUDGE'),
         backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const NotificationsScreen(),
-                ),
-              );
-            },
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -40,81 +57,51 @@ class SetGoalsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             const Text(
-              'Adjust the default level of how often you want to engage with each group of contacts.',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
-              ),
-            ),
-            const Text(
-              'This can be edited later by group or person.',
+              'Adjust how often you want to engage with each group of contacts.',
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey,
               ),
             ),
             const SizedBox(height: 30),
-            const Text(
-              'Family',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 15),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                FrequencyButton(text: 'Monthly', isSelected: false),
-                FrequencyButton(text: 'Quarterly', isSelected: false),
-                FrequencyButton(text: 'Annually', isSelected: true, count: '4 times'),
-              ],
-            ),
+            
+            // Family Settings
+            _buildGroupSettings('Family'),
             const SizedBox(height: 30),
-            const Text(
-              'Friends',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 15),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                FrequencyButton(text: 'Monthly', isSelected: false),
-                FrequencyButton(text: 'Quarterly', isSelected: false),
-                FrequencyButton(text: 'Annually', isSelected: true, count: '8 times'),
-              ],
-            ),
+            
+            // Friends Settings
+            _buildGroupSettings('Friends'),
             const SizedBox(height: 30),
-            const Text(
-              'Clients',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 15),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                FrequencyButton(text: 'Monthly', isSelected: false),
-                FrequencyButton(text: 'Quarterly', isSelected: false),
-                FrequencyButton(text: 'Annually', isSelected: true, count: '2 times'),
-              ],
-            ),
+            
+            // Clients Settings
+            _buildGroupSettings('Clients'),
             const SizedBox(height: 50),
+            
+            // Continue Button
             SizedBox(
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
+                onPressed: () async {
+                  final apiService = Provider.of<ApiService>(context, listen: false);
+                  
+                  // Convert settings to the format expected by the backend
+                  final groups = _groupSettings.entries.map((entry) {
+                    return {
+                      'name': entry.key,
+                      'period': entry.value['period'],
+                      'frequency': entry.value['frequency'].toInt().toString(),
+                    };
+                  }).toList();
+                  
+                  // Save settings to backend
+                  await apiService.updateUser({
+                    'groups': groups,
+                  });
+                  
+                  Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => const SearchScreen(),
-                    ),
+                    MaterialPageRoute(builder: (context) => const DashboardScreen()),
                   );
                 },
                 style: ElevatedButton.styleFrom(
@@ -134,6 +121,115 @@ class SetGoalsScreen extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGroupSettings(String groupName) {
+    final settings = _groupSettings[groupName]!;
+    final period = settings['period'] as String;
+    final frequency = settings['frequency'] as double;
+    final range = _periodRanges[period]!;
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          groupName,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 15),
+        
+        // Period Selection
+        Text(
+          'Contact Period:',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey[700],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _buildPeriodButton('Monthly', period == 'Monthly', groupName),
+            _buildPeriodButton('Quarterly', period == 'Quarterly', groupName),
+            _buildPeriodButton('Annually', period == 'Annually', groupName),
+          ],
+        ),
+        const SizedBox(height: 20),
+        
+        // Frequency Selection with Slider
+        Text(
+          _getFrequencyLabel(period, frequency),
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 8),
+        
+        Slider(
+          value: frequency,
+          min: range['min']!.toDouble(),
+          max: range['max']!.toDouble(),
+          divisions: range['divisions'],
+          label: frequency.toInt().toString(),
+          onChanged: (value) {
+            setState(() {
+              _groupSettings[groupName]!['frequency'] = value;
+            });
+          },
+        ),
+        
+        // Min and Max labels
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              range['min'].toString(),
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            Text(
+              range['max'].toString(),
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPeriodButton(String period, bool isSelected, String groupName) {
+    return Expanded(
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        child: ElevatedButton(
+          onPressed: () {
+            setState(() {
+              _groupSettings[groupName]!['period'] = period;
+              // Reset frequency to middle value when period changes
+              final range = _periodRanges[period]!;
+              _groupSettings[groupName]!['frequency'] = 
+                  (range['min']! + range['max']!) / 2.0;
+            });
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isSelected
+                ? const Color.fromRGBO(37, 150, 190, 1)
+                : Colors.grey[200],
+            foregroundColor: isSelected ? Colors.white : Colors.black,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+          ),
+          child: Text(period),
         ),
       ),
     );

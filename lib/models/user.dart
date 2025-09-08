@@ -3,6 +3,10 @@ class User {
   String id;
   String email;
   String username;
+  String phoneNumber;
+  String photoURL;
+  String bio;
+  String description;
   DateTime createdAt;
   // Map<String, dynamic> defaultFrequencies;
   final Map<String, dynamic>? goals;
@@ -19,7 +23,11 @@ class User {
     required this.nudges,
     required this.goals,
     required this.groups,
-    required this.contacts
+    required this.contacts,
+    required this.bio,
+    required this.description,
+    required this.phoneNumber,
+    required this.photoURL,
   });
 
   Map<String, dynamic> toMap() {
@@ -33,6 +41,10 @@ class User {
       'goals': goals ?? {},
       'groups': groups,
       'contacts': contacts,
+      'bio': bio,
+      'description': description,
+      'phoneNumber': phoneNumber,
+      'photoUrl': photoURL,
     };
   }
 
@@ -47,6 +59,10 @@ class User {
       goals: Map<String, String>.from(map['goals'] ?? {}),
       groups:  List<Map<String, String>>.from(map['groups'] ?? {}),
       contacts: List<Map<String, dynamic>>.from(map['contacts'] ?? []),
+      bio: map['bio'],
+      description: map['description'],
+      phoneNumber: map['phoneNumber'],
+      photoURL: map['photoUrl']
     );
   }
 }

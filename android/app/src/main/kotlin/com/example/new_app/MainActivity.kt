@@ -1,4 +1,4 @@
-package com.example.nudge
+package com.nudge.app
 
 import io.flutter.embedding.android.FlutterActivity
 

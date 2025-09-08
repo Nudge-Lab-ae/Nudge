@@ -45,25 +45,57 @@ class AuthService {
 
 
   // Sign in with Google
-  Future<User?> signInWithGoogle() async {
-     final GoogleSignIn googleSignIn = GoogleSignIn.instance;
-     await googleSignIn.initialize(
-    serverClientId: '764964903709-3ohmbtvnmona7jl8kd6hv2omingargv8.apps.googleusercontent.com',
-  );
-     GoogleSignInAccount signInAccount =
-        await googleSignIn.authenticate();
-    GoogleSignInAuthentication signInAuthentication = signInAccount.authentication;
 
-    final  credential = GoogleAuthProvider.credential(
-      accessToken: signInAuthentication.idToken,
-      idToken: signInAuthentication.idToken,
+  // Future<User?> signInWithGoogle() async {
+  //    final GoogleSignIn googleSignIn = GoogleSignIn.instance;
+  //    await googleSignIn.initialize(
+  //   serverClientId: '764964903709-3ohmbtvnmona7jl8kd6hv2omingargv8.apps.googleusercontent.com',
+  // );
+  //    GoogleSignInAccount signInAccount =
+  //       await googleSignIn.authenticate();
+  //   GoogleSignInAuthentication signInAuthentication = signInAccount.authentication;
+
+  //   final  credential = GoogleAuthProvider.credential(
+  //     accessToken: signInAuthentication.idToken,
+  //     idToken: signInAuthentication.idToken,
+  //   );
+
+  //   UserCredential cred = await _auth.signInWithCredential(credential);
+  //   dynamic user = cred.user;
+  //   // User? theUser = user as User?;
+  //   return user;
+  // }
+
+   Future<User?> signInWithGoogle() async {
+    final FirebaseAuth _auth = FirebaseAuth.instance;
+    final GoogleSignIn googleSignIn = GoogleSignIn.instance;
+    await googleSignIn.initialize(
+    serverClientId: '345448336149-ejg2dinndqspv0g9dhotmo4anpdsqm8o.apps.googleusercontent.com',
+  );
+
+   try {
+    // Initiate the Google Sign-In process. A pop-up will appear for the user.
+    final GoogleSignInAccount googleUser = await googleSignIn.authenticate();
+
+    // If the user cancelled the sign-in flow, googleUser will be null.
+    
+     final GoogleSignInAuthentication auth =  googleUser.authentication;
+
+    // Create Firebase credential
+    final OAuthCredential credential = GoogleAuthProvider.credential(
+      idToken: auth.idToken,
     );
 
-    UserCredential cred = await _auth.signInWithCredential(credential);
-    dynamic user = cred.user;
-    // User? theUser = user as User?;
-    return user;
+    // Sign in to Firebase
+    final UserCredential userCredential = await _auth.signInWithCredential(credential);
+    return userCredential.user;
+
+  } catch (error) {
+    // Handle any exceptions that occur during the sign-in process.
+    
+    return null;
   }
+}
 
   // Sign in with Apple
   Future<User?> signInWithApple() async {
