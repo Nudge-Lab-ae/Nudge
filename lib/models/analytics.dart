@@ -1,21 +1,28 @@
+// analytics.dart
 class Analytics {
   int totalContacts;
   int vipContacts;
   int completedNudges;
-  int pendingNudges;
+  int contactsNeedingAttention;
   Map<String, int> contactsByType;
-  Map<String, int> nudgesByFrequency;
-  double successRate;
+  double relationshipHealth;
+  int weeklyConnections;
+  int monthlyCatchups;
+  int vipInteractions;
+  int newConnections;
   DateTime lastUpdated;
 
   Analytics({
     required this.totalContacts,
     required this.vipContacts,
     required this.completedNudges,
-    required this.pendingNudges,
+    required this.contactsNeedingAttention,
     required this.contactsByType,
-    required this.nudgesByFrequency,
-    required this.successRate,
+    required this.relationshipHealth,
+    required this.weeklyConnections,
+    required this.monthlyCatchups,
+    required this.vipInteractions,
+    required this.newConnections,
     required this.lastUpdated,
   });
 
@@ -24,10 +31,13 @@ class Analytics {
       'totalContacts': totalContacts,
       'vipContacts': vipContacts,
       'completedNudges': completedNudges,
-      'pendingNudges': pendingNudges,
+      'contactsNeedingAttention': contactsNeedingAttention,
       'contactsByType': contactsByType,
-      'nudgesByFrequency': nudgesByFrequency,
-      'successRate': successRate,
+      'relationshipHealth': relationshipHealth,
+      'weeklyConnections': weeklyConnections,
+      'monthlyCatchups': monthlyCatchups,
+      'vipInteractions': vipInteractions,
+      'newConnections': newConnections,
       'lastUpdated': lastUpdated.millisecondsSinceEpoch,
     };
   }
@@ -37,10 +47,13 @@ class Analytics {
       totalContacts: map['totalContacts'] ?? 0,
       vipContacts: map['vipContacts'] ?? 0,
       completedNudges: map['completedNudges'] ?? 0,
-      pendingNudges: map['pendingNudges'] ?? 0,
+      contactsNeedingAttention: map['contactsNeedingAttention'] ?? 0,
       contactsByType: Map<String, int>.from(map['contactsByType'] ?? {}),
-      nudgesByFrequency: Map<String, int>.from(map['nudgesByFrequency'] ?? {}),
-      successRate: (map['successRate'] ?? 0).toDouble(),
+      relationshipHealth: (map['relationshipHealth'] ?? 0).toDouble(),
+      weeklyConnections: map['weeklyConnections'] ?? 0,
+      monthlyCatchups: map['monthlyCatchups'] ?? 0,
+      vipInteractions: map['vipInteractions'] ?? 0,
+      newConnections: map['newConnections'] ?? 0,
       lastUpdated: DateTime.fromMillisecondsSinceEpoch(map['lastUpdated'] ?? 0),
     );
   }
@@ -49,20 +62,26 @@ class Analytics {
     int? totalContacts,
     int? vipContacts,
     int? completedNudges,
-    int? pendingNudges,
+    int? contactsNeedingAttention,
     Map<String, int>? contactsByType,
-    Map<String, int>? nudgesByFrequency,
-    double? successRate,
+    double? relationshipHealth,
+    int? weeklyConnections,
+    int? monthlyCatchups,
+    int? vipInteractions,
+    int? newConnections,
     DateTime? lastUpdated,
   }) {
     return Analytics(
       totalContacts: totalContacts ?? this.totalContacts,
       vipContacts: vipContacts ?? this.vipContacts,
       completedNudges: completedNudges ?? this.completedNudges,
-      pendingNudges: pendingNudges ?? this.pendingNudges,
+      contactsNeedingAttention: contactsNeedingAttention ?? this.contactsNeedingAttention,
       contactsByType: contactsByType ?? this.contactsByType,
-      nudgesByFrequency: nudgesByFrequency ?? this.nudgesByFrequency,
-      successRate: successRate ?? this.successRate,
+      relationshipHealth: relationshipHealth ?? this.relationshipHealth,
+      weeklyConnections: weeklyConnections ?? this.weeklyConnections,
+      monthlyCatchups: monthlyCatchups ?? this.monthlyCatchups,
+      vipInteractions: vipInteractions ?? this.vipInteractions,
+      newConnections: newConnections ?? this.newConnections,
       lastUpdated: lastUpdated ?? this.lastUpdated,
     );
   }

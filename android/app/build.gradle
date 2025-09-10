@@ -45,6 +45,7 @@ android {
         coreLibraryDesugaringEnabled true
     }
 
+
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId "com.nudge.app"
@@ -107,7 +108,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-database'
     //firebase storage
     implementation 'com.google.firebase:firebase-storage'
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
 
     implementation 'com.google.firebase:firebase-analytics'
     testImplementation 'junit:junit:4.13.2'

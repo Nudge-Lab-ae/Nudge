@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nudge/screens/contacts/contact_detail_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/theme/text_styles.dart';
 import 'package:provider/provider.dart';
@@ -227,6 +228,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  Future<List<Contact>> _getAllContacts(ApiService apiService) async {
+  try {
+    // This should be implemented based on how you fetch contacts
+    // For now, we'll return an empty list as a placeholder
+    return [];
+  } catch (e) {
+    print('Error getting contacts: $e');
+    return [];
+  }
+}
+
   Widget _buildDashboardContent(BuildContext context, List<Contact> contacts, ApiService apiService) {
     // Filter contacts that need attention (not contacted in a while)
     final needsAttention = contacts.where((contact) => 
@@ -371,19 +383,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 avatar: const Icon(Icons.notifications_active, size: 18),
                 label: const Text('Schedule Nudges', style: AppTextStyles.primary,),
                 onPressed: () async {
+                  final nudgeService = NudgeService();
                   final authService = Provider.of<AuthService>(context, listen: false);
-                  final user = authService.currentUser;
+                  final apiService = Provider.of<ApiService>(context, listen: false);
                   
-                  if (user != null) {
-                    // Schedule nudges for all contacts
-                    await nudgeService.scheduleAllNudges(contacts, user.uid);
-                    
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Nudges scheduled successfully!'),
-                      ),
-                    );
-                  }
+                  // Get all contacts
+                  final contacts = await _getAllContacts(apiService);
+                  
+                  nudgeService.showNudgeScheduleDialog(context, contacts, authService.currentUser!.uid);
                 },
               ),
             ],
@@ -468,11 +475,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   trailing: const VIPBadge(),
                   onTap: () {
-                    Navigator.pushNamed(
-                      context, 
-                      '/contact_detail',
-                      arguments: contact.id,
-                    );
+                    // Navigator.pushNamed(
+                    //   context, 
+                    //   '/contact_detail',
+                    //   arguments: contact.id,
+                    // );
+                      Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ContactDetailScreen(contact: contact)
+                    ),
+                  );
                   },
                 )
               ).toList(),
@@ -561,13 +574,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildContactCard(Contact contact, ApiService apiService) {
+    print(contact.name); print(contact.imageUrl);
     return GestureDetector(
       onTap: () {
-        Navigator.pushNamed(
-          context, 
-          '/contact_detail',
-          arguments: contact.id,
-        );
+         Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ContactDetailScreen(contact: contact)
+                    ),
+                  );
       },
       child: Container(
         width: 100,
@@ -582,10 +597,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   backgroundImage: contact.imageUrl.isNotEmpty
                       ? NetworkImage(contact.imageUrl)
                       : null,
+                  radius: 20,
                   child: contact.imageUrl.isEmpty 
                       ? const Icon(Icons.person, size: 20) 
                       : null,
-                  radius: 20,
                 ),
                 const SizedBox(height: 8),
                 Text(

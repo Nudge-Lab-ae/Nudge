@@ -1,6 +1,7 @@
 // lib/screens/contacts/import_contacts_screen.dart
 import 'package:flutter/material.dart';
 import 'package:nudge/screens/contacts/imported_contacts_screen.dart';
+import 'package:nudge/theme/text_styles.dart';
 import 'package:provider/provider.dart';
 import '../../services/contact_sync_service.dart';
 import '../../services/api_service.dart';
@@ -89,7 +90,8 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Import Contacts'),
+        title: Text('Import Contacts', style: AppTextStyles.title3.copyWith(color: Colors.white),),
+        iconTheme: IconThemeData(color: Colors.white),
         backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
       ),
       body: Padding(
@@ -99,7 +101,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
           children: [
             const Text(
               'Import Your Contacts',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
             const Text(

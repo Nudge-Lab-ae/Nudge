@@ -37,7 +37,9 @@ class ApiService {
          groups: [
           {"name": "Family", "period": "Monthly", "frequency": 4},
           {"name": "Friend", "period": "Quarterly", "frequency": 8},
-          {"name": "Client", "period": "Annually", "frequency": 2},
+          {"name": "Client", "period": "Monthly", "frequency": 2},
+          {"name": "Colleague", "period": "Annually", "frequency": 4},
+          {"name": "Mentor", "period": "Annually", "frequency": 2},
         ],
           goals: {},
           contacts: [],
@@ -417,8 +419,10 @@ Future<Map<String, dynamic>> register(String email, String password) async {
       createdAt: DateTime.now(),
       groups: [
         {"name": "Family", "period": "Monthly", "frequency": 4},
-        {"name": "Friend", "period": "Quarterly", "frequency": 8},
-        {"name": "Client", "period": "Annually", "frequency": 2},
+          {"name": "Friend", "period": "Quarterly", "frequency": 8},
+          {"name": "Client", "period": "Monthly", "frequency": 2},
+          {"name": "Colleague", "period": "Annually", "frequency": 4},
+          {"name": "Mentor", "period": "Annually", "frequency": 2},
       ],
       goals: {},
       contacts: [],

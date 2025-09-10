@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nudge/screens/dashboard/dashboard_screen.dart';
+import 'package:nudge/theme/text_styles.dart';
 import 'package:provider/provider.dart';
 import '../../services/api_service.dart';
 
@@ -37,8 +38,10 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
       if (user.groups == null || user.groups!.isEmpty) {
         _groupSettings = {
           'Family': {'period': 'Monthly', 'frequency': 4.0},
-          'Friends': {'period': 'Quarterly', 'frequency': 8.0},
-          'Clients': {'period': 'Annually', 'frequency': 2.0},
+          'Friend': {'period': 'Quarterly', 'frequency': 8.0},
+          'Client': {'period': 'Monthly', 'frequency': 2.0},
+          'Colleague': {'period': 'Annually', 'frequency': 4.0},
+          'Mentor': {'period': 'Annually', 'frequency': 2.0},
         };
       } else {
         // Convert user's groups to our settings format
@@ -59,8 +62,10 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
       // Fallback to default settings
       _groupSettings = {
         'Family': {'period': 'Monthly', 'frequency': 4.0},
-        'Friends': {'period': 'Quarterly', 'frequency': 8.0},
-        'Clients': {'period': 'Annually', 'frequency': 2.0},
+        'Friend': {'period': 'Quarterly', 'frequency': 8.0},
+        'Client': {'period': 'Monthly', 'frequency': 2.0},
+        'Colleague': {'period': 'Annually', 'frequency': 4.0},
+        'Mentor': {'period': 'Annually', 'frequency': 2.0},
       };
       setState(() {
         _isLoading = false;
@@ -137,7 +142,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('NUDGE'),
+        title: Text('Edit Goals', style: AppTextStyles.title2.copyWith(color: Colors.white),),
         backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
         leading: widget.isFromSettings
             ? IconButton(
@@ -151,14 +156,14 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              widget.isFromSettings ? 'Edit Goals' : 'Set Goals',
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 10),
+            // Text(
+            //   widget.isFromSettings ? 'Edit Goals' : 'Set Goals',
+            //   style: const TextStyle(
+            //     fontSize: 24,
+            //     fontWeight: FontWeight.bold,
+            //   ),
+            // ),
+            // const SizedBox(height: 10),
             Text(
               widget.isFromSettings 
                 ? 'Adjust how often you want to engage with each group of contacts.'
@@ -175,11 +180,17 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
             const SizedBox(height: 30),
             
             // Friends Settings
-            _buildGroupSettings('Friends'),
+            _buildGroupSettings('Friend'),
             const SizedBox(height: 30),
             
             // Clients Settings
-            _buildGroupSettings('Clients'),
+            _buildGroupSettings('Client'),
+            const SizedBox(height: 50),
+
+            _buildGroupSettings('Colleague'),
+            const SizedBox(height: 50),
+
+            _buildGroupSettings('Mentor'),
             const SizedBox(height: 50),
             
             // Continue/Save Button

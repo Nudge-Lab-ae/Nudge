@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 // import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:nudge/theme/text_styles.dart';
 import '../../services/api_service.dart';
 // import '../../services/database_service.dart';
 // import '../../services/auth_service.dart';
@@ -91,7 +92,7 @@ Future<void> _updateUserData() async {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings', style: TextStyle(color: Colors.white),),
+        title:  Text('Settings', style: AppTextStyles.title2.copyWith(color: Colors.white),),
         backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
         leading: IconButton(
                 icon: Icon(

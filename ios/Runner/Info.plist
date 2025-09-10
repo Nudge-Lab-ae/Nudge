@@ -26,6 +26,8 @@
 	<true/>
 	<key>NSContactsUsageDescription</key>
 	<string>This app needs access to your contacts to help you manage your relationships</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>This app needs access to make phone calls</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

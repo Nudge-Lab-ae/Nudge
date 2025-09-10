@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:nudge/screens/contacts/edit_contact_screen.dart';
 import 'package:nudge/theme/text_styles.dart';
+import 'package:nudge/widgets/smart_tagging_suggestions.dart';
 // import 'package:nudge/theme/text_styles.dart';
 import 'package:provider/provider.dart';
 import '../notifications/notifications_screen.dart';
@@ -162,6 +163,17 @@ Widget build(BuildContext context) {
                 )).toList(),
               ),
             ),
+
+          const SizedBox(height: 24),
+          const Text(
+            'Smart Suggestions',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          SmartTaggingSuggestions(contact: contact),
           
           // Important Dates Section
           const SizedBox(height: 20),

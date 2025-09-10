@@ -1,6 +1,7 @@
 // lib/screens/contacts/add_contact_screen.dart
 import 'package:flutter/material.dart';
 import 'package:nudge/services/api_service.dart';
+import 'package:nudge/theme/text_styles.dart';
 import 'package:provider/provider.dart';
 // import '../../services/database_service.dart';
 import '../../services/auth_service.dart';
@@ -80,7 +81,8 @@ class _AddContactScreenState extends State<AddContactScreen> {
     
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add New Contact', style: TextStyle(color: Colors.white),),
+        title: Text('Add New Contact', style: AppTextStyles.title3.copyWith(color: Colors.white),),
+        iconTheme: IconThemeData(color: Colors.white),
         backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
       ),
       body: SingleChildScrollView(
@@ -157,7 +159,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
-                runSpacing: 5,
+                runSpacing: 10,
                 children: [
                   ConnectionTypeChip(
                     label: 'Family',
@@ -199,11 +201,11 @@ class _AddContactScreenState extends State<AddContactScreen> {
               
               const SizedBox(height: 20),
               
-              // Contact Frequency
-              const Text(
-                'Contact Frequency *',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
+              // // Contact Frequency
+              // const Text(
+              //   'Contact Frequency *',
+              //   style: TextStyle(fontWeight: FontWeight.bold),
+              // ),
               const SizedBox(height: 8),
               // Wrap(
               //   spacing: 8,
