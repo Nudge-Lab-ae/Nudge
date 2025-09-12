@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Nudge {
   String id;
+  String nudgeId;
   String contactId;
   String contactName;
   String nudgeType;
@@ -13,9 +14,12 @@ class Nudge {
   DateTime? completedAt;
   DateTime? snoozedUntil;
   String userId;
+  String period;
+  int frequency;
 
   Nudge({
     required this.id,
+    required this.nudgeId,
     required this.contactId,
     required this.contactName,
     required this.nudgeType,
@@ -26,11 +30,15 @@ class Nudge {
     this.completedAt,
     this.snoozedUntil,
     required this.userId,
+    required this.period,
+    required this.frequency,
   });
 
   // Convert to Map for Firestore
   Map<String, dynamic> toMap() {
     return {
+      'id': id,
+      'nudgeId': nudgeId,
       'contactId': contactId,
       'contactName': contactName,
       'nudgeType': nudgeType,
@@ -41,6 +49,8 @@ class Nudge {
       'completedAt': completedAt?.millisecondsSinceEpoch,
       'snoozedUntil': snoozedUntil?.millisecondsSinceEpoch,
       'userId': userId,
+      'period': period,
+      'frequency': frequency,
     };
   }
 
@@ -48,6 +58,7 @@ class Nudge {
     
     return Nudge(
       id: data['id'],
+      nudgeId: data['nudgeId'],
       contactId: data['contactId'] ?? '',
       contactName: data['contactName'] ?? '',
       nudgeType: data['nudgeType'] ?? '',
@@ -62,6 +73,8 @@ class Nudge {
           ? DateTime.fromMillisecondsSinceEpoch(data['snoozedUntil'])
           : null,
       userId: data['userId'] ?? '',
+      period: 'Monthly',
+      frequency: 2,
     );
   }
 
@@ -71,6 +84,7 @@ class Nudge {
     
     return Nudge(
       id: doc.id,
+      nudgeId: data['nudgeId'] ?? doc.id,
       contactId: data['contactId'] ?? '',
       contactName: data['contactName'] ?? '',
       nudgeType: data['nudgeType'] ?? '',
@@ -85,6 +99,8 @@ class Nudge {
           ? DateTime.fromMillisecondsSinceEpoch(data['snoozedUntil'])
           : null,
       userId: data['userId'] ?? '',
+      period: 'Monthly',
+      frequency: 2
     );
   }
 }

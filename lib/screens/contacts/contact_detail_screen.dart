@@ -1,12 +1,16 @@
 // lib/screens/contacts/contact_detail_screen.dart
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:nudge/screens/contacts/edit_contact_screen.dart';
+// import 'package:nudge/screens/notifications/notifications_screen.dart';
+import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/theme/text_styles.dart';
 import 'package:nudge/widgets/smart_tagging_suggestions.dart';
 // import 'package:nudge/theme/text_styles.dart';
 import 'package:provider/provider.dart';
-import '../notifications/notifications_screen.dart';
+// import '../notifications/notifications_screen.dart';
 // import 'add_contact_screen.dart';
 import '../../models/contact.dart';
 import '../../services/database_service.dart';
@@ -27,6 +31,11 @@ Widget build(BuildContext context) {
   final authService = Provider.of<AuthService>(context);
   final user = authService.currentUser;
   var size = MediaQuery.of(context).size;
+  print('the image url is'); print(contact.imageUrl);
+
+   bool isLocalImage = contact.imageUrl.isNotEmpty && 
+        (contact.imageUrl.startsWith('/') || 
+         contact.imageUrl.startsWith('file://'));
   
   return Scaffold(
     appBar: AppBar(
@@ -45,17 +54,28 @@ Widget build(BuildContext context) {
             );
           },
         ),
+        // IconButton(
+        //   icon: const Icon(Icons.notifications),
+        //   onPressed: () {
+        //     Navigator.push(
+        //       context,
+        //       MaterialPageRoute(
+        //         builder: (context) => const NotificationsScreen(),
+        //       ),
+        //     );
+        //   },
+        // ),
+
         IconButton(
-          icon: const Icon(Icons.notifications),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const NotificationsScreen(),
-              ),
-            );
-          },
-        ),
+            icon: Icon(Icons.notifications),
+            onPressed: () {
+              NudgeService().sendTestNudge(contact, authService.currentUser!.uid);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Test nudge sent for ${contact.name}')),
+              );
+            },
+            tooltip: 'Send test nudge',
+          ),
       ],
     ),
     body: SingleChildScrollView(
@@ -67,14 +87,16 @@ Widget build(BuildContext context) {
             child: Column(
               children: [
                 CircleAvatar(
-                  radius: 50,
-                  backgroundImage: contact.imageUrl.isNotEmpty
-                      ? NetworkImage(contact.imageUrl)
-                      : null,
-                  child: contact.imageUrl.isEmpty 
-                      ? const Icon(Icons.person, size: 40) 
-                      : null,
-                ),
+                    radius: 50,
+                    backgroundImage: contact.imageUrl.isNotEmpty
+                        ? isLocalImage
+                            ? FileImage(File(contact.imageUrl.replaceFirst('file://', '')))
+                            : NetworkImage(contact.imageUrl) as ImageProvider
+                        : null,
+                    child: contact.imageUrl.isEmpty 
+                        ? const Icon(Icons.person, size: 40) 
+                        : null,
+                  ),
                 const SizedBox(height: 15),
                 Text(
                   contact.name,
@@ -137,11 +159,17 @@ Widget build(BuildContext context) {
             title: const Text('Connection Type'),
             subtitle: Text(contact.connectionType),
           ),
+
+          ListTile(
+            leading: const Icon(Icons.schedule),
+            title: const Text('Contact Period'),
+            subtitle: Text(contact.period.toString()),
+          ),
           
           ListTile(
             leading: const Icon(Icons.schedule),
             title: const Text('Contact Frequency'),
-            subtitle: Text(contact.frequency),
+            subtitle: Text(contact.frequency.toString()),
           ),
           
           if (contact.socialGroups.isNotEmpty)

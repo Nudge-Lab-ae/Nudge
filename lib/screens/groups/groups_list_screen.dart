@@ -104,6 +104,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                     ],
                   ),
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Expanded(
                         child: Container(
@@ -111,16 +112,18 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: TextField(
+                          child: Center(
+                            child: TextField(
                             controller: _searchController,
                             decoration: InputDecoration(
                               hintText: 'Search groups...',
                               prefixIcon: const Icon(Icons.search, color: Colors.blue),
                               border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                             ),
                             onChanged: (value) => setState(() => _searchQuery = value),
                           ),
+                          )
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -179,7 +182,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                               itemBuilder: (context, index) {
                                 final group = filteredGroups[index];
                                 final groupMembers = contacts.where((contact) => 
-                                  group.memberIds.contains(contact.id)).toList();
+                                  contact.connectionType == group.name).toList();
                                 
                                 return _buildGroupCard(context, group, groupMembers, apiService);
                               },

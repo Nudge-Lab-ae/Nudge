@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:nudge/models/social_group.dart';
 import 'package:nudge/screens/contacts/contact_detail_screen.dart';
+// import 'package:nudge/screens/notifications/notifications_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/theme/text_styles.dart';
 import 'package:provider/provider.dart';
@@ -22,6 +24,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   final NudgeService nudgeService = NudgeService();
   int _currentIndex = 0;
+  List<Contact> totalContacts = [];
 
   @override
   void initState() {
@@ -50,7 +53,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return StreamProvider<List<Contact>>(
       create: (context) => apiService.getContactsStream(),
       initialData: const [],
-      child: Scaffold(
+      child: StreamProvider<List<SocialGroup>>(
+        initialData: [],
+        create: (context) => apiService.getGroupsStream(),
+        child: Scaffold(
         appBar: AppBar(
           title:  Text('NUDGE Dashboard', style: AppTextStyles.title3.copyWith(color: Colors.white)),
           backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
@@ -65,7 +71,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             IconButton(
               icon: const Icon(Icons.notifications),
-              onPressed: () {
+              onPressed: () async {
                 Navigator.pushNamed(context, '/notifications');
               },
               tooltip: 'Notifications',
@@ -74,9 +80,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         drawer: _buildNavigationDrawer(context, authService),
         // drawerScrimColor: Colors.white,
-        body: Consumer<List<Contact>>(
-          builder: (context, contacts, child) {
-            return _buildDashboardContent(context, contacts, apiService);
+        body: Consumer2<List<Contact>, List<SocialGroup>>(
+          builder: (context, contacts, groups, child) {
+            totalContacts = contacts;
+            return _buildDashboardContent(context, contacts, groups, apiService);
           },
         ),
         floatingActionButton: FloatingActionButton(
@@ -125,7 +132,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ],
         ),
     ),
-    );
+    ));
   }
 
   Widget _buildNavigationDrawer(BuildContext context, AuthService authService) {
@@ -228,18 +235,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Future<List<Contact>> _getAllContacts(ApiService apiService) async {
-  try {
-    // This should be implemented based on how you fetch contacts
-    // For now, we'll return an empty list as a placeholder
-    return [];
-  } catch (e) {
-    print('Error getting contacts: $e');
-    return [];
-  }
-}
-
-  Widget _buildDashboardContent(BuildContext context, List<Contact> contacts, ApiService apiService) {
+  Widget _buildDashboardContent(BuildContext context, List<Contact> contacts, List<SocialGroup> groups, ApiService apiService) {
     // Filter contacts that need attention (not contacted in a while)
     final needsAttention = contacts.where((contact) => 
       contact.lastContacted.isBefore(
@@ -385,12 +381,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 onPressed: () async {
                   final nudgeService = NudgeService();
                   final authService = Provider.of<AuthService>(context, listen: false);
-                  final apiService = Provider.of<ApiService>(context, listen: false);
+                  // final apiService = Provider.of<ApiService>(context, listen: false);
                   
-                  // Get all contacts
-                  final contacts = await _getAllContacts(apiService);
-                  
-                  nudgeService.showNudgeScheduleDialog(context, contacts, authService.currentUser!.uid);
+                  nudgeService.showNudgeScheduleDialog(context, contacts, groups,authService.currentUser!.uid);
                 },
               ),
             ],
@@ -573,16 +566,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+    // Update the _buildContactCard method
   Widget _buildContactCard(Contact contact, ApiService apiService) {
-    print(contact.name); print(contact.imageUrl);
+    // final authService = Provider.of<AuthService>(context, listen: false);
+    // final nudgeService = NudgeService();
+    
     return GestureDetector(
       onTap: () {
-         Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ContactDetailScreen(contact: contact)
-                    ),
-                  );
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ContactDetailScreen(contact: contact)
+          ),
+        );
       },
       child: Container(
         width: 100,
@@ -614,6 +610,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     padding: EdgeInsets.only(top: 4.0),
                     child: Icon(Icons.star, size: 12, color: Colors.amber),
                   ),
+               
               ],
             ),
           ),

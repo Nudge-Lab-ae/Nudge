@@ -1,6 +1,6 @@
 // lib/screens/contacts/import_contacts_screen.dart
 import 'package:flutter/material.dart';
-import 'package:nudge/screens/contacts/imported_contacts_screen.dart';
+// import 'package:nudge/screens/contacts/imported_contacts_screen.dart';
 import 'package:nudge/theme/text_styles.dart';
 import 'package:provider/provider.dart';
 import '../../services/contact_sync_service.dart';
@@ -59,12 +59,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
         
         // Navigate after a short delay to show success message
         await Future.delayed(const Duration(seconds: 2));
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const ImportedContactsScreen(),
-          ),
-        );
+     
       } else {
         setState(() {
           _statusMessage = 'Import failed: ${result['message']}';

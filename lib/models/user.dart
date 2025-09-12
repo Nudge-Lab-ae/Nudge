@@ -12,7 +12,7 @@ class User {
   final Map<String, dynamic>? goals;
   final List<Map<String, dynamic>>? groups;
   final List<Map<String, dynamic>> nudges;
-  final List<Map<String, dynamic>> contacts; //
+  // final List<Map<String, dynamic>> contacts; //
 
   User({
     required this.id,
@@ -23,7 +23,7 @@ class User {
     required this.nudges,
     required this.goals,
     required this.groups,
-    required this.contacts,
+    // required this.contacts,
     required this.bio,
     required this.description,
     required this.phoneNumber,
@@ -40,7 +40,7 @@ class User {
       'nudges': nudges,
       'goals': goals ?? {},
       'groups': groups,
-      'contacts': contacts,
+      // 'contacts': contacts,
       'bio': bio,
       'description': description,
       'phoneNumber': phoneNumber,
@@ -58,7 +58,7 @@ class User {
       nudges: List<Map<String, dynamic>>.from(map['nudges'] ?? {}),
       goals: Map<String, dynamic>.from(map['goals'] ?? {}),
       groups:  List<Map<String, dynamic>>.from(map['groups'] ?? {}),
-      contacts: List<Map<String, dynamic>>.from(map['contacts'] ?? []),
+      // contacts: List<Map<String, dynamic>>.from(map['contacts'] ?? []),
       bio: map['bio'],
       description: map['description'],
       phoneNumber: map['phoneNumber'],

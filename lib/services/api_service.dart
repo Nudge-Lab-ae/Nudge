@@ -35,14 +35,14 @@ class ApiService {
           username: currentUser.displayName ?? currentUser.email!.split('@')[0],
           createdAt: DateTime.now(),
          groups: [
-          {"name": "Family", "period": "Monthly", "frequency": 4},
-          {"name": "Friend", "period": "Quarterly", "frequency": 8},
-          {"name": "Client", "period": "Monthly", "frequency": 2},
-          {"name": "Colleague", "period": "Annually", "frequency": 4},
-          {"name": "Mentor", "period": "Annually", "frequency": 2},
+          {"name": "Family", "period": "Monthly", "frequency": 4, "colorCode": "#4FC3F7"},
+          {"name": "Friend", "period": "Quarterly", "frequency": 8, "colorCode": "#FF6F61"},
+          {"name": "Client", "period": "Monthly", "frequency": 2, "colorCode": "#81C784"},
+          {"name": "Colleague", "period": "Annually", "frequency": 4, "colorCode": "#FFC107"},
+          {"name": "Mentor", "period": "Annually", "frequency": 2, "colorCode": "#607D8B"},
         ],
           goals: {},
-          contacts: [],
+          // contacts: [],
           nudges: [],
           phoneNumber: '',
           photoURL: '',
@@ -72,7 +72,7 @@ class ApiService {
           createdAt: DateTime.now(),
           groups: [],
           goals: {},
-          contacts: [],
+          // contacts: [],
           nudges: [],
           phoneNumber: '',
           photoURL: '',
@@ -275,6 +275,23 @@ Future<void> updateGroup(SocialGroup group) async {
     throw Exception('Failed to update group: $e');
   }
 }
+
+  Future<void> updateGroups(List<SocialGroup> groups) async {
+    try {
+      final currentUser = _auth.currentUser;
+      print(groups); print(' is the groups');
+      List<Map<String, dynamic>> groupMaps = [];
+      for (int i =0; i < groups.length; i++) {
+        groupMaps.add(groups[i].toMap());
+      }
+     await _usersCollection.doc(currentUser!.uid).update({
+            'groups': groupMaps,
+            'updatedAt': DateTime.now(),
+          });
+    } catch (e) {
+      throw Exception('Failed to update group: $e');
+    }
+}
   // Imported contacts methods
   Future<void> updateImportedContacts(List<Map<String, dynamic>> contacts) async {
     try {
@@ -321,7 +338,8 @@ Future<void> updateGroup(SocialGroup group) async {
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         name: contactData['name'] ?? '',
         connectionType: contactData['connectionType'] ?? 'Friend',
-        frequency: contactData['frequency'] ?? 'Monthly',
+        frequency: contactData['frequency'] ?? 2,
+        period: contactData['period'] ?? 'Monthly',
         socialGroups: List<String>.from(contactData['socialGroups'] ?? []),
         phoneNumber: contactData['phoneNumber'] ?? '',
         email: contactData['email'] ?? '',
@@ -384,7 +402,7 @@ Future<Map<String, dynamic>> register(String email, String password) async {
       createdAt: DateTime.now(),
       groups: [], // Will be set in SetGoalsScreen
       goals: {},
-      contacts: [],
+      // contacts: [],
       nudges: [],
     );
     
@@ -418,14 +436,14 @@ Future<Map<String, dynamic>> register(String email, String password) async {
       photoURL: '',
       createdAt: DateTime.now(),
       groups: [
-        {"name": "Family", "period": "Monthly", "frequency": 4},
-          {"name": "Friend", "period": "Quarterly", "frequency": 8},
-          {"name": "Client", "period": "Monthly", "frequency": 2},
-          {"name": "Colleague", "period": "Annually", "frequency": 4},
-          {"name": "Mentor", "period": "Annually", "frequency": 2},
+       {"name": "Family", "period": "Monthly", "frequency": 4, "colorCode": "#4FC3F7"},
+          {"name": "Friend", "period": "Quarterly", "frequency": 8, "colorCode": "#FF6F61"},
+          {"name": "Client", "period": "Monthly", "frequency": 2, "colorCode": "#81C784"},
+          {"name": "Colleague", "period": "Annually", "frequency": 4, "colorCode": "#FFC107"},
+          {"name": "Mentor", "period": "Annually", "frequency": 2, "colorCode": "#607D8B"},
       ],
       goals: {},
-      contacts: [],
+      // contacts: [],
       nudges: [],
     );
     

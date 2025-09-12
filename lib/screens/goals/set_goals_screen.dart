@@ -1,8 +1,10 @@
+// lib/screens/set_goals_screen.dart
 import 'package:flutter/material.dart';
 import 'package:nudge/screens/dashboard/dashboard_screen.dart';
 import 'package:nudge/theme/text_styles.dart';
 import 'package:provider/provider.dart';
 import '../../services/api_service.dart';
+import '../../models/social_group.dart';
 
 class SetGoalsScreen extends StatefulWidget {
   final bool isFromSettings;
@@ -14,10 +16,11 @@ class SetGoalsScreen extends StatefulWidget {
 }
 
 class _SetGoalsScreenState extends State<SetGoalsScreen> {
-  late Map<String, Map<String, dynamic>> _groupSettings;
+  late List<SocialGroup> _userGroups;
   bool _isLoading = true;
 
   final Map<String, Map<String, dynamic>> _periodRanges = {
+    'Weekly': {'min': 1, 'max': 7, 'divisions': 6},
     'Monthly': {'min': 1, 'max': 31, 'divisions': 30},
     'Quarterly': {'min': 1, 'max': 13, 'divisions': 12},
     'Annually': {'min': 1, 'max': 53, 'divisions': 52},
@@ -26,55 +29,89 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUserGoals();
+    _loadUserGroups();
   }
 
-  Future<void> _loadUserGoals() async {
+  Future<void> _loadUserGroups() async {
     try {
-      final apiService = Provider.of<ApiService>(context, listen: false);
-      final user = await apiService.getUser();
-      
-      // Initialize with default settings if user has no groups
-      if (user.groups == null || user.groups!.isEmpty) {
-        _groupSettings = {
-          'Family': {'period': 'Monthly', 'frequency': 4.0},
-          'Friend': {'period': 'Quarterly', 'frequency': 8.0},
-          'Client': {'period': 'Monthly', 'frequency': 2.0},
-          'Colleague': {'period': 'Annually', 'frequency': 4.0},
-          'Mentor': {'period': 'Annually', 'frequency': 2.0},
-        };
-      } else {
-        // Convert user's groups to our settings format
-        _groupSettings = {};
-        for (var group in user.groups!) {
-          _groupSettings[group['name']] = {
-            'period': group['period'],
-            'frequency': double.parse(group['frequency']),
-          };
-        }
+        final apiService = Provider.of<ApiService>(context, listen: false);
+        final groups = await apiService.getGroupsStream().first;
+        
+        setState(() {
+          _userGroups = groups;
+          _isLoading = false;
+        });
+      } catch (e) {
+        print('Error loading user groups: $e');
+        // Fallback to default groups
+        _userGroups = [
+          SocialGroup(
+            id: '1',
+            name: 'Family',
+            description: 'Family members',
+            period: 'Monthly',
+            frequency: 4,
+            memberIds: [],
+            memberCount: 0,
+            lastInteraction: DateTime.now(),
+            colorCode: '#2596BE',
+          ),
+          SocialGroup(
+            id: '2',
+            name: 'Friend',
+            description: 'Friends',
+            period: 'Quarterly',
+            frequency: 8,
+            memberIds: [],
+            memberCount: 0,
+            lastInteraction: DateTime.now(),
+            colorCode: '#2596BE',
+          ),
+          SocialGroup(
+            id: '3',
+            name: 'Client',
+            description: 'Clients',
+            period: 'Monthly',
+            frequency: 2,
+            memberIds: [],
+            memberCount: 0,
+            lastInteraction: DateTime.now(),
+            colorCode: '#2596BE',
+          ),
+          SocialGroup(
+            id: '4',
+            name: 'Colleague',
+            description: 'Colleagues',
+            period: 'Annually',
+            frequency: 4,
+            memberIds: [],
+            memberCount: 0,
+            lastInteraction: DateTime.now(),
+            colorCode: '#2596BE',
+          ),
+          SocialGroup(
+            id: '5',
+            name: 'Mentor',
+            description: 'Mentors',
+            period: 'Annually',
+            frequency: 2,
+            memberIds: [],
+            memberCount: 0,
+            lastInteraction: DateTime.now(),
+            colorCode: '#2596BE',
+          ),
+        ];
+        setState(() {
+          _isLoading = false;
+        });
       }
-      
-      setState(() {
-        _isLoading = false;
-      });
-    } catch (e) {
-      print('Error loading user goals: $e');
-      // Fallback to default settings
-      _groupSettings = {
-        'Family': {'period': 'Monthly', 'frequency': 4.0},
-        'Friend': {'period': 'Quarterly', 'frequency': 8.0},
-        'Client': {'period': 'Monthly', 'frequency': 2.0},
-        'Colleague': {'period': 'Annually', 'frequency': 4.0},
-        'Mentor': {'period': 'Annually', 'frequency': 2.0},
-      };
-      setState(() {
-        _isLoading = false;
-      });
-    }
+   
   }
 
   String _getFrequencyLabel(String period, double frequency) {
     switch (period) {
+      case 'Weekly':
+        return '${frequency.toInt()} times per week';
       case 'Monthly':
         return '${frequency.toInt()} times per month';
       case 'Quarterly':
@@ -90,19 +127,8 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
       
-      // Convert settings to the format expected by the backend
-      final groups = _groupSettings.entries.map((entry) {
-        return {
-          'name': entry.key,
-          'period': entry.value['period'],
-          'frequency': entry.value['frequency'].toInt(),
-        };
-      }).toList();
-      
-      // Save settings to backend
-      await apiService.updateUser({
-        'groups': groups,
-      });
+      // Update each group with new settings
+      await apiService.updateGroups(_userGroups);
       
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -143,6 +169,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Edit Goals', style: AppTextStyles.title2.copyWith(color: Colors.white),),
+        iconTheme: IconThemeData(color: Colors.white),
         backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
         leading: widget.isFromSettings
             ? IconButton(
@@ -156,14 +183,6 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Text(
-            //   widget.isFromSettings ? 'Edit Goals' : 'Set Goals',
-            //   style: const TextStyle(
-            //     fontSize: 24,
-            //     fontWeight: FontWeight.bold,
-            //   ),
-            // ),
-            // const SizedBox(height: 10),
             Text(
               widget.isFromSettings 
                 ? 'Adjust how often you want to engage with each group of contacts.'
@@ -175,23 +194,13 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
             ),
             const SizedBox(height: 30),
             
-            // Family Settings
-            _buildGroupSettings('Family'),
-            const SizedBox(height: 30),
-            
-            // Friends Settings
-            _buildGroupSettings('Friend'),
-            const SizedBox(height: 30),
-            
-            // Clients Settings
-            _buildGroupSettings('Client'),
-            const SizedBox(height: 50),
-
-            _buildGroupSettings('Colleague'),
-            const SizedBox(height: 50),
-
-            _buildGroupSettings('Mentor'),
-            const SizedBox(height: 50),
+            // Build settings for each group
+            ..._userGroups.map((group) => Column(
+              children: [
+                _buildGroupSettings(group),
+                const SizedBox(height: 30),
+              ],
+            )).toList(),
             
             // Continue/Save Button
             SizedBox(
@@ -221,17 +230,14 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
     );
   }
 
-  Widget _buildGroupSettings(String groupName) {
-    final settings = _groupSettings[groupName]!;
-    final period = settings['period'] as String;
-    final frequency = settings['frequency'] as double;
-    final range = _periodRanges[period]!;
+  Widget _buildGroupSettings(SocialGroup group) {
+    final range = _periodRanges[group.period]!;
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          groupName,
+          group.name,
           style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -252,16 +258,17 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _buildPeriodButton('Monthly', period == 'Monthly', groupName),
-            _buildPeriodButton('Quarterly', period == 'Quarterly', groupName),
-            _buildPeriodButton('Annually', period == 'Annually', groupName),
+            _buildPeriodButton('Weekly', group.period == 'Weekly', group),
+            _buildPeriodButton('Monthly', group.period == 'Monthly', group),
+            _buildPeriodButton('Quarterly', group.period == 'Quarterly', group),
+            _buildPeriodButton('Annually', group.period == 'Annually', group),
           ],
         ),
         const SizedBox(height: 20),
         
         // Frequency Selection with Slider
         Text(
-          _getFrequencyLabel(period, frequency),
+          _getFrequencyLabel(group.period, group.frequency.toDouble()),
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
@@ -270,14 +277,14 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
         const SizedBox(height: 8),
         
         Slider(
-          value: frequency,
+          value: group.frequency.toDouble(),
           min: range['min']!.toDouble(),
           max: range['max']!.toDouble(),
           divisions: range['divisions'],
-          label: frequency.toInt().toString(),
+          label: group.frequency.toString(),
           onChanged: (value) {
             setState(() {
-              _groupSettings[groupName]!['frequency'] = value;
+              group.frequency = value.toInt();
             });
           },
         ),
@@ -300,18 +307,17 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
     );
   }
 
-  Widget _buildPeriodButton(String period, bool isSelected, String groupName) {
+  Widget _buildPeriodButton(String period, bool isSelected, SocialGroup group) {
     return Expanded(
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 4),
         child: ElevatedButton(
           onPressed: () {
             setState(() {
-              _groupSettings[groupName]!['period'] = period;
+              group.period = period;
               // Reset frequency to middle value when period changes
               final range = _periodRanges[period]!;
-              _groupSettings[groupName]!['frequency'] = 
-                  (range['min']! + range['max']!) / 2.0;
+              group.frequency = ((range['min']! + range['max']!) / 2).toInt();
             });
           },
           style: ElevatedButton.styleFrom(
@@ -324,7 +330,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
             ),
             padding: const EdgeInsets.symmetric(vertical: 12),
           ),
-          child: Text(period),
+          child: Text(period, style: TextStyle(fontSize: 12)),
         ),
       ),
     );

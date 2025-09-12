@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nudge/screens/contacts/contacts_list_screen.dart';
 // import 'add_contact_screen.dart';
-import '../notifications/notifications_screen.dart';
+// import '../notifications/notifications_screen.dart';
 
 class SearchScreen extends StatelessWidget {
   const SearchScreen({super.key});
@@ -16,12 +16,12 @@ class SearchScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.notifications),
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const NotificationsScreen(),
-                ),
-              );
+              // Navigator.push(
+              //   context,
+              //   MaterialPageRoute(
+              //     builder: (context) => const NotificationsScreen(),
+              //   ),
+              // );
             },
           ),
         ],

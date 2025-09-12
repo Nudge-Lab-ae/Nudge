@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 // import '../../services/tagging_service.dart';
 import '../../models/contact.dart';
+import '../../models/social_group.dart';
 import '../../widgets/connection_type_chip.dart';
 import 'dart:io';
 // import 'package:image_picker/image_picker.dart';
@@ -32,17 +33,40 @@ class _AddContactScreenState extends State<AddContactScreen> {
   final StorageService _storageService = StorageService();
   
   String _connectionType = 'Friend';
-  String _frequency = 'Monthly';
+  // String _frequency = 'Monthly';
   bool _isVIP = false;
   int _priority = 3;
   List<String> _tags = [];
   List<String> _tagSuggestions = [];
+  List<SocialGroup> _userGroups = [];
 
   @override
   void initState() {
     super.initState();
     // Load tag suggestions based on existing contacts
     _loadTagSuggestions();
+    _loadUserGroups();
+  }
+
+  void _loadUserGroups() async {
+    try {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final user = authService.currentUser;
+      
+      if (user != null) {
+        final apiService = Provider.of<ApiService>(context, listen: false);
+        final groups = await apiService.getGroupsStream().first;
+        
+        setState(() {
+          _userGroups = groups;
+          if (_userGroups.isNotEmpty) {
+            _connectionType = _userGroups.first.name;
+          }
+        });
+      }
+    } catch (e) {
+      print('Error loading user groups: $e');
+    }
   }
 
   void _loadTagSuggestions() async {
@@ -72,6 +96,15 @@ class _AddContactScreenState extends State<AddContactScreen> {
       });
     }
   }
+
+    Future<Map<String, dynamic>> matchSchedule (String groupName) async{
+    final apiService = Provider.of<ApiService>(context, listen: false);
+    List<List<SocialGroup>> groupsStream = await apiService.getGroupsStream().toList();
+    List<SocialGroup> groups = groupsStream.expand((list) => list).toList();
+    SocialGroup myGroup = groups.firstWhere((group) => group.name == groupName);
+    Map<String, dynamic> schedule = {'period': myGroup.period, 'frequency': myGroup.frequency};
+    return schedule;
+   }
 
   @override
   Widget build(BuildContext context) {
@@ -151,95 +184,27 @@ class _AddContactScreenState extends State<AddContactScreen> {
               
               const SizedBox(height: 20),
               
-              // Connection Type
+              // Connection Type - Now dynamically loaded from user groups
               const Text(
                 'Connection Type *',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 10,
-                children: [
-                  ConnectionTypeChip(
-                    label: 'Family',
-                    isSelected: _connectionType == 'Family',
-                    onSelected: (selected) {
-                      if (selected) setState(() => _connectionType = 'Family');
-                    },
-                  ),
-                  ConnectionTypeChip(
-                    label: 'Friend',
-                    isSelected: _connectionType == 'Friend',
-                    onSelected: (selected) {
-                      if (selected) setState(() => _connectionType = 'Friend');
-                    },
-                  ),
-                  ConnectionTypeChip(
-                    label: 'Colleague',
-                    isSelected: _connectionType == 'Colleague',
-                    onSelected: (selected) {
-                      if (selected) setState(() => _connectionType = 'Colleague');
-                    },
-                  ),
-                  ConnectionTypeChip(
-                    label: 'Client',
-                    isSelected: _connectionType == 'Client',
-                    onSelected: (selected) {
-                      if (selected) setState(() => _connectionType = 'Client');
-                    },
-                  ),
-                  ConnectionTypeChip(
-                    label: 'Mentor',
-                    isSelected: _connectionType == 'Mentor',
-                    onSelected: (selected) {
-                      if (selected) setState(() => _connectionType = 'Mentor');
-                    },
-                  ),
-                ],
-              ),
-              
-              const SizedBox(height: 20),
-              
-              // // Contact Frequency
-              // const Text(
-              //   'Contact Frequency *',
-              //   style: TextStyle(fontWeight: FontWeight.bold),
-              // ),
-              const SizedBox(height: 8),
-              // Wrap(
-              //   spacing: 8,
-              //   children: [
-              //     ConnectionTypeChip(
-              //       label: 'Weekly',
-              //       isSelected: _frequency == 'Weekly',
-              //       onSelected: (selected) {
-              //         if (selected) setState(() => _frequency = 'Weekly');
-              //       },
-              //     ),
-              //     ConnectionTypeChip(
-              //       label: 'Monthly',
-              //       isSelected: _frequency == 'Monthly',
-              //       onSelected: (selected) {
-              //         if (selected) setState(() => _frequency = 'Monthly');
-              //       },
-              //     ),
-              //     ConnectionTypeChip(
-              //       label: 'Quarterly',
-              //       isSelected: _frequency == 'Quarterly',
-              //       onSelected: (selected) {
-              //         if (selected) setState(() => _frequency = 'Quarterly');
-              //       },
-              //     ),
-              //     ConnectionTypeChip(
-              //       label: 'Annually',
-              //       isSelected: _frequency == 'Annually',
-              //       onSelected: (selected) {
-              //         if (selected) setState(() => _frequency = 'Annually');
-              //       },
-              //     ),
-              //   ],
-              // ),
+              _userGroups.isEmpty
+                  ? const Text('No groups available. Create groups first.', style: TextStyle(color: Colors.grey))
+                  : Wrap(
+                      spacing: 8,
+                      runSpacing: 10,
+                      children: _userGroups.map((group) {
+                        return ConnectionTypeChip(
+                          label: group.name,
+                          isSelected: _connectionType == group.name,
+                          onSelected: (selected) {
+                            if (selected) setState(() => _connectionType = group.name);
+                          },
+                        );
+                      }).toList(),
+                    ),
               
               const SizedBox(height: 20),
               
@@ -443,12 +408,15 @@ class _AddContactScreenState extends State<AddContactScreen> {
                           return;
                         }
                       }
+
+                      Map<String, dynamic> schedule = await matchSchedule(_connectionType);
                       
                       final newContact = Contact(
                         id: '', // Will be generated by Firestore
                         name: _nameController.text,
                         connectionType: _connectionType,
-                        frequency: _frequency,
+                        frequency: schedule['frequency'],
+                        period: schedule['period'],
                         socialGroups: _socialGroupsController.text
                             .split(' ')
                             .where((group) => group.startsWith('#'))
@@ -457,34 +425,15 @@ class _AddContactScreenState extends State<AddContactScreen> {
                         phoneNumber: _phoneController.text,
                         email: _emailController.text,
                         notes: _notesController.text,
-                        imageUrl: '', // Will be handled separately
+                        imageUrl: _imageUrl,
                         lastContacted: DateTime.now(),
                         isVIP: _isVIP,
                         priority: _priority,
                         tags: _tags,
-                        // relationshipDepth: TaggingService.suggestRelationshipDepth(
-                        //   Contact(
-                        //     id: '',
-                        //     name: _nameController.text,
-                        //     connectionType: _connectionType,
-                        //     frequency: _frequency,
-                        //     socialGroups: [],
-                        //     phoneNumber: _phoneController.text,
-                        //     email: _emailController.text,
-                        //     notes: _notesController.text,
-                        //     imageUrl: '',
-                        //     lastContacted: DateTime.now(),
-                        //     isVIP: _isVIP,
-                        //     priority: _priority,
-                        //     tags: _tags,
-                        //     interactionHistory: {},
-                        //   )
-                        // ),
                         interactionHistory: {},
                       );
                       
                       // Save to Firestore
-                      // final databaseService = DatabaseService(uid: user.uid);
                       await apiService.addContact(newContact);
                       
                       // Navigate back

@@ -1,6 +1,7 @@
 // register_screen.dart (updated)
 import 'package:flutter/material.dart';
 import 'package:nudge/screens/dashboard/dashboard_screen.dart';
+import 'package:nudge/theme/text_styles.dart';
 // import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 // import '../../services/api_service.dart';
@@ -78,7 +79,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('NUDGE'),
+        title: Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Colors.white),),
+        iconTheme: IconThemeData(color: Colors.white),
         backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
       ),
       body: SingleChildScrollView(

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 // import '../../services/database_service.dart';
 import '../../services/auth_service.dart';
 import '../../models/contact.dart';
+import '../../models/social_group.dart';
 import '../../theme/text_styles.dart';
 import '../../widgets/connection_type_chip.dart';
 import 'dart:io';
@@ -16,9 +17,12 @@ class EditContactScreen extends StatefulWidget {
   final Map<String, dynamic>? importedContact;
   final bool isImported;
 
-
-  const EditContactScreen({super.key, required this.contactId, this.isImported = false,
-  this.importedContact,});
+  const EditContactScreen({
+    super.key,
+    required this.contactId,
+    this.isImported = false,
+    this.importedContact,
+  });
 
   @override
   State<EditContactScreen> createState() => _EditContactScreenState();
@@ -34,7 +38,6 @@ class _EditContactScreenState extends State<EditContactScreen> {
   late TextEditingController _professionController;
 
   String _connectionType = 'Friend';
-  String _frequency = 'Monthly';
   bool _isVIP = false;
   int _priority = 3;
   List<String> _tags = [];
@@ -46,9 +49,9 @@ class _EditContactScreenState extends State<EditContactScreen> {
   String _imageUrl = '';
   final StorageService _storageService = StorageService();
 
-
   bool _isLoading = true;
   Contact? _originalContact;
+  List<SocialGroup> _userGroups = [];
 
   @override
   void initState() {
@@ -61,99 +64,127 @@ class _EditContactScreenState extends State<EditContactScreen> {
     _professionController = TextEditingController();
 
     _loadContactData();
+    _loadUserGroups();
   }
 
-Future<void> _loadContactData() async {
-  if (widget.isImported && widget.importedContact != null) {
-    // Populate fields from imported contact
-    setState(() {
-      _nameController.text = widget.importedContact!['name'] ?? '';
-      _phoneController.text = widget.importedContact!['phoneNumber'] ?? '';
-      _emailController.text = widget.importedContact!['email'] ?? '';
-      _isLoading = false;
-    });
-  } else {
-    // Existing logic for regular contacts
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final user = authService.currentUser;
-    
-    if (user != null) {
-      final apiService = Provider.of<ApiService>(context, listen: false);
-      final contacts = await apiService.getContactsStream().first;
+  Future<void> _loadUserGroups() async {
+    try {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final user = authService.currentUser;
       
-      final contact = contacts.firstWhere(
-        (c) => c.id == widget.contactId,
-        orElse: () => Contact(
-          id: '',
-          name: '',
-          connectionType: '',
-          frequency: '',
-          socialGroups: [],
-          phoneNumber: '',
-          email: '',
-          notes: '',
-          imageUrl: '',
-          lastContacted: DateTime.now(),
-          isVIP: false,
-          priority: 3,
-          tags: [],
-          interactionHistory: {},
-        ),
-      );
-      
+      if (user != null) {
+        final apiService = Provider.of<ApiService>(context, listen: false);
+        final groups = await apiService.getGroupsStream().first;
+        
+        setState(() {
+          _userGroups = groups;
+        });
+      }
+    } catch (e) {
+      print('Error loading user groups: $e');
+    }
+  }
+
+  Future<void> _loadContactData() async {
+    if (widget.isImported && widget.importedContact != null) {
+      // Populate fields from imported contact
       setState(() {
-        _originalContact = contact;
-        _nameController.text = contact.name;
-        _phoneController.text = contact.phoneNumber;
-        _emailController.text = contact.email;
-        _notesController.text = contact.notes;
-        _professionController.text = contact.profession ?? '';
-        _socialGroupsController.text = contact.socialGroups.join(', ');
-        _connectionType = contact.connectionType;
-        _frequency = contact.frequency;
-        _isVIP = contact.isVIP;
-        _priority = contact.priority;
-        _tags = List.from(contact.tags);
-        _birthday = contact.birthday;
-        _anniversary = contact.anniversary;
-        _workAnniversary = contact.workAnniversary;
-        _imageUrl = contact.imageUrl;
+        _nameController.text = widget.importedContact!['name'] ?? '';
+        _phoneController.text = widget.importedContact!['phoneNumber'] ?? '';
+        _emailController.text = widget.importedContact!['email'] ?? '';
+        _connectionType = widget.importedContact!['connectionType'] ?? 'Friend';
         _isLoading = false;
+      });
+    } else {
+      // Existing logic for regular contacts
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final user = authService.currentUser;
+      
+      if (user != null) {
+        final apiService = Provider.of<ApiService>(context, listen: false);
+        final contacts = await apiService.getContactsStream().first;
+        
+        final contact = contacts.firstWhere(
+          (c) => c.id == widget.contactId,
+          orElse: () => Contact(
+            id: '',
+            name: '',
+            connectionType: '',
+            frequency: 2,
+            period: 'Monthly',
+            socialGroups: [],
+            phoneNumber: '',
+            email: '',
+            notes: '',
+            imageUrl: '',
+            lastContacted: DateTime.now(),
+            isVIP: false,
+            priority: 3,
+            tags: [],
+            interactionHistory: {},
+          ),
+        );
+        
+        setState(() {
+          _originalContact = contact;
+          _nameController.text = contact.name;
+          _phoneController.text = contact.phoneNumber;
+          _emailController.text = contact.email;
+          _notesController.text = contact.notes;
+          _professionController.text = contact.profession ?? '';
+          _socialGroupsController.text = contact.socialGroups.join(', ');
+          _connectionType = contact.connectionType;
+          _isVIP = contact.isVIP;
+          _priority = contact.priority;
+          _tags = List.from(contact.tags);
+          _birthday = contact.birthday;
+          _anniversary = contact.anniversary;
+          _workAnniversary = contact.workAnniversary;
+          _imageUrl = contact.imageUrl;
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final File? imageFile = await _storageService.pickImage();
+    if (imageFile != null) {
+      setState(() {
+        _selectedImage = imageFile;
       });
     }
   }
-}
-  Future<void> _pickImage() async {
-  final File? imageFile = await _storageService.pickImage();
-  if (imageFile != null) {
-    setState(() {
-      _selectedImage = imageFile;
-    });
-  }
-}
 
   @override
   Widget build(BuildContext context) {
+    final apiService = Provider.of<ApiService>(context, listen: false);
+
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(
           title: Text('Edit Contact', style: AppTextStyles.title3.copyWith(color: Colors.white)),
           backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
-          iconTheme: IconThemeData(color: Colors.white),
+          iconTheme: const IconThemeData(color: Colors.white),
         ),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
-    return Scaffold(
+    return StreamProvider<List<SocialGroup>>(
+      create: (context) => apiService.getGroupsStream(),
+      initialData: [],
+      child:  Consumer<List<SocialGroup>>(
+          builder: (context, groups, child) {
+            return Scaffold(
       appBar: AppBar(
         title: Text('Edit Contact', style: AppTextStyles.title3.copyWith(color: Colors.white)),
         backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
-         iconTheme: IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
             icon: const Icon(Icons.save),
-            onPressed: _saveContact,
+            onPressed: () => _saveContact(groups),
             tooltip: 'Save Changes',
           ),
         ],
@@ -205,89 +236,25 @@ Future<void> _loadContactData() async {
               ),
               const SizedBox(height: 20),
 
-              // Connection Type
+              // Connection Type - Now dynamically loaded from user groups
               Text('Connection Type', style: AppTextStyles.primaryBold),
               const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 10,
-                children: [
-                  ConnectionTypeChip(
-                    label: 'Family',
-                    isSelected: _connectionType == 'Family',
-                    onSelected: (selected) {
-                      if (selected) setState(() => _connectionType = 'Family');
-                    },
-                  ),
-                  ConnectionTypeChip(
-                    label: 'Friend',
-                    isSelected: _connectionType == 'Friend',
-                    onSelected: (selected) {
-                      if (selected) setState(() => _connectionType = 'Friend');
-                    },
-                  ),
-                  ConnectionTypeChip(
-                    label: 'Colleague',
-                    isSelected: _connectionType == 'Colleague',
-                    onSelected: (selected) {
-                      if (selected) setState(() => _connectionType = 'Colleague');
-                    },
-                  ),
-                  ConnectionTypeChip(
-                    label: 'Client',
-                    isSelected: _connectionType == 'Client',
-                    onSelected: (selected) {
-                      if (selected) setState(() => _connectionType = 'Client');
-                    },
-                  ),
-                  ConnectionTypeChip(
-                    label: 'Mentor',
-                    isSelected: _connectionType == 'Mentor',
-                    onSelected: (selected) {
-                      if (selected) setState(() => _connectionType = 'Mentor');
-                    },
-                  ),
-                ],
-              ),
+              _userGroups.isEmpty
+                  ? const Text('No groups available. Create groups first.', style: TextStyle(color: Colors.grey))
+                  : Wrap(
+                      spacing: 8,
+                      runSpacing: 10,
+                      children: _userGroups.map((group) {
+                        return ConnectionTypeChip(
+                          label: group.name,
+                          isSelected: _connectionType == group.name,
+                          onSelected: (selected) {
+                            if (selected) setState(() => _connectionType = group.name);
+                          },
+                        );
+                      }).toList(),
+                    ),
               const SizedBox(height: 20),
-
-              // Contact Frequency
-              // Text('Contact Frequency', style: AppTextStyles.primaryBold),
-              // const SizedBox(height: 8),
-              // Wrap(
-              //   spacing: 8,
-              //   children: [
-              //     ConnectionTypeChip(
-              //       label: 'Weekly',
-              //       isSelected: _frequency == 'Weekly',
-              //       onSelected: (selected) {
-              //         if (selected) setState(() => _frequency = 'Weekly');
-              //       },
-              //     ),
-              //     ConnectionTypeChip(
-              //       label: 'Monthly',
-              //       isSelected: _frequency == 'Monthly',
-              //       onSelected: (selected) {
-              //         if (selected) setState(() => _frequency = 'Monthly');
-              //       },
-              //     ),
-              //     ConnectionTypeChip(
-              //       label: 'Quarterly',
-              //       isSelected: _frequency == 'Quarterly',
-              //       onSelected: (selected) {
-              //         if (selected) setState(() => _frequency = 'Quarterly');
-              //       },
-              //     ),
-              //     ConnectionTypeChip(
-              //       label: 'Annually',
-              //       isSelected: _frequency == 'Annually',
-              //       onSelected: (selected) {
-              //         if (selected) setState(() => _frequency = 'Annually');
-              //       },
-              //     ),
-              //   ],
-              // ),
-              // const SizedBox(height: 20),
 
               // VIP and Priority
               Row(
@@ -458,7 +425,7 @@ Future<void> _loadContactData() async {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: _saveContact,
+                  onPressed: () => _saveContact (groups),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
                     shape: RoundedRectangleBorder(
@@ -471,26 +438,27 @@ Future<void> _loadContactData() async {
               const SizedBox(height: 20),
 
               // Delete Button
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: OutlinedButton(
-                  onPressed: _deleteContact,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.red,
-                    side: const BorderSide(color: Colors.red),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+              if (!widget.isImported) // Only show delete for existing contacts, not imported ones
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: OutlinedButton(
+                    onPressed: _deleteContact,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      side: const BorderSide(color: Colors.red),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
+                    child: Text('Delete Contact', style: AppTextStyles.buttonSecondary.copyWith(color: Colors.red)),
                   ),
-                  child: Text('Delete Contact', style: AppTextStyles.buttonSecondary.copyWith(color: Colors.red)),
                 ),
-              ),
             ],
           ),
         ),
       ),
-    );
+    );}));
   }
 
   Future<void> _selectDate(BuildContext context, {
@@ -518,101 +486,118 @@ Future<void> _loadContactData() async {
     }
   }
 
-Future<void> _saveContact() async {
-  final apiService = Provider.of<ApiService>(context, listen: false);
-  if (_formKey.currentState!.validate()) {
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final user = authService.currentUser;
-    
-    if (user != null) {
-      if (widget.isImported) {
-        // Convert imported contact to regular contact
-        final apiService = ApiService();
-        
-        // Create contact data from form
-        final contactData = {
-          'name': _nameController.text,
-          'phoneNumber': _phoneController.text,
-          'email': _emailController.text,
-          'connectionType': _connectionType,
-          'frequency': _frequency,
-          'socialGroups': _socialGroupsController.text
-              .split(',')
-              .map((group) => group.trim())
-              .where((group) => group.isNotEmpty)
-              .toList(),
-          'notes': _notesController.text,
-          'profession': _professionController.text.isEmpty ? null : _professionController.text,
-          'isVIP': _isVIP,
-          'priority': _priority,
-          'tags': _tags,
-        };
-        
-        await apiService.convertImportedToRegularContact(contactData);
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Contact converted successfully')),
-        );
-      } else if (_originalContact != null) {
-        
-        // Upload new image if selected
-        String updatedImageUrl = _imageUrl;
-        if (_selectedImage != null) {
-          try {
-            // Delete old image if it exists
-            if (_imageUrl.isNotEmpty) {
-              await _storageService.deleteImage(_imageUrl);
+  Future<Map<String, dynamic>> matchSchedule (String groupName, List<SocialGroup> groups) async{
+    SocialGroup myGroup = groups.firstWhere((group) => group.name == groupName);
+    Map<String, dynamic> schedule = {'period': myGroup.period, 'frequency': myGroup.frequency};
+    return schedule;
+   }
+
+  Future<void> _saveContact(List<SocialGroup> groups) async {
+    final apiService = Provider.of<ApiService>(context, listen: false);
+    print('phase 1');
+    if (_formKey.currentState!.validate()) {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final user = authService.currentUser;
+      Map <String, dynamic>  schedule = await matchSchedule(_connectionType, groups);
+      print('phase 2');
+
+      if (user != null) {
+        if (widget.isImported) {
+          // Convert imported contact to regular contact
+          final apiService = ApiService();
+          
+          // Create contact data from form
+          final contactData = {
+            'name': _nameController.text,
+            'phoneNumber': _phoneController.text,
+            'email': _emailController.text,
+            'connectionType': _connectionType,
+            'frequency': schedule['frequency'],
+            'period': schedule['period'],
+            'socialGroups': _socialGroupsController.text
+                .split(',')
+                .map((group) => group.trim())
+                .where((group) => group.isNotEmpty)
+                .toList(),
+            'notes': _notesController.text,
+            'profession': _professionController.text.isEmpty ? null : _professionController.text,
+            'isVIP': _isVIP,
+            'priority': _priority,
+            'tags': _tags,
+          };
+          print('phase 3');
+          
+          await apiService.convertImportedToRegularContact(contactData);
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Contact converted successfully')),
+          );
+          print('phase 4');
+        } else if (_originalContact != null) {
+          
+          // Upload new image if selected
+          String updatedImageUrl = _imageUrl;
+          if (_selectedImage != null) {
+            try {
+              // Delete old image if it exists
+              if (_imageUrl.isNotEmpty) {
+                await _storageService.deleteImage(_imageUrl);
+              }
+              
+              // Upload new image
+              updatedImageUrl = await _storageService.uploadContactImage(
+                _selectedImage!, 
+                _originalContact!.id
+              );
+            } catch (e) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Failed to upload image: $e')),
+              );
+              return;
             }
-            
-            // Upload new image
-            updatedImageUrl = await _storageService.uploadContactImage(
-              _selectedImage!, 
-              _originalContact!.id
-            );
-          } catch (e) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Failed to upload image: $e')),
-            );
-            return;
           }
+          print('phase 5');
+          
+          // Create updated contact
+          final updatedContact = _originalContact!.copyWith(
+            name: _nameController.text,
+            connectionType: _connectionType,
+            frequency: schedule['freqency'],
+            period: schedule['period'],
+            socialGroups: _socialGroupsController.text
+                .split(',')
+                .map((group) => group.trim())
+                .where((group) => group.isNotEmpty)
+                .toList(),
+            phoneNumber: _phoneController.text,
+            email: _emailController.text,
+            notes: _notesController.text,
+            profession: _professionController.text.isEmpty ? null : _professionController.text,
+            isVIP: _isVIP,
+            priority: _priority,
+            tags: _tags,
+            birthday: _birthday,
+            anniversary: _anniversary,
+            workAnniversary: _workAnniversary,
+            imageUrl: updatedImageUrl,
+          );
+          
+          // Save to database
+          await apiService.updateContact(updatedContact);
+          print('phase 6');
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Contact updated successfully')),
+          );
         }
         
-        // Create updated contact
-        final updatedContact = _originalContact!.copyWith(
-          name: _nameController.text,
-          connectionType: _connectionType,
-          frequency: _frequency,
-          socialGroups: _socialGroupsController.text
-              .split(',')
-              .map((group) => group.trim())
-              .where((group) => group.isNotEmpty)
-              .toList(),
-          phoneNumber: _phoneController.text,
-          email: _emailController.text,
-          notes: _notesController.text,
-          profession: _professionController.text.isEmpty ? null : _professionController.text,
-          isVIP: _isVIP,
-          priority: _priority,
-          tags: _tags,
-          birthday: _birthday,
-          anniversary: _anniversary,
-          workAnniversary: _workAnniversary,
-          imageUrl: updatedImageUrl,
-        );
-        
-        // Save to database
-        await apiService.updateContact(updatedContact);
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Contact updated successfully')),
-        );
+        // Navigate back
+        Navigator.pop(context);
       }
-      
-      // Navigate back
-      Navigator.pop(context);
     }
   }
-}
+
+
   Future<void> _deleteContact() async {
     final confirmed = await showDialog<bool>(
       context: context,

@@ -3,7 +3,8 @@ class Contact {
   String id;
   String name;
   String connectionType;
-  String frequency;
+  String period;
+  int frequency;
   List<String> socialGroups;
   String phoneNumber;
   String email;
@@ -24,6 +25,7 @@ class Contact {
     required this.name,
     required this.connectionType,
     required this.frequency,
+    required this.period,
     required this.socialGroups,
     required this.phoneNumber,
     required this.email,
@@ -46,6 +48,7 @@ class Contact {
       'name': name,
       'connectionType': connectionType,
       'frequency': frequency,
+      'period': period,
       'socialGroups': socialGroups,
       'phoneNumber': phoneNumber,
       'email': email,
@@ -69,6 +72,7 @@ class Contact {
       name: map['name'],
       connectionType: map['connectionType'],
       frequency: map['frequency'],
+      period: map['period'],
       socialGroups: List<String>.from(map['socialGroups'] ?? []),
       phoneNumber: map['phoneNumber'] ?? '',
       email: map['email'] ?? '',
@@ -90,7 +94,8 @@ class Contact {
     String? id,
     String? name,
     String? connectionType,
-    String? frequency,
+    int? frequency,
+    String? period,
     List<String>? socialGroups,
     String? phoneNumber,
     String? email,
@@ -111,6 +116,7 @@ class Contact {
       name: name ?? this.name,
       connectionType: connectionType ?? this.connectionType,
       frequency: frequency ?? this.frequency,
+      period: period?? this.period,
       socialGroups: socialGroups ?? this.socialGroups,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       email: email ?? this.email,

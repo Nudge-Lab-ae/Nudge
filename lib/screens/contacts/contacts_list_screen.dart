@@ -49,7 +49,9 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const NotificationsScreen(),
+                  builder: (context) => const NotificationsScreen(
+
+                  ),
                 ),
               );
             },
