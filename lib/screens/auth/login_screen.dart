@@ -103,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           if (user != null) {
                             // Check if profile is completed
                             final userData = await apiService.getUser();
-                            if (userData != null && userData.profileCompleted) {
+                            if (userData.profileCompleted) {
                               // Navigation is handled automatically by AuthWrapper
                               completeNavigation();
                             } else {
@@ -161,7 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     if (user != null) {
                       // Check if profile is completed
                       final userData = await apiService.getUser();
-                      if (userData != null && userData.profileCompleted) {
+                      if (userData.profileCompleted) {
                         // Navigation handled by AuthWrapper
                         completeNavigation();
                       } else {
@@ -205,7 +205,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     if (user != null) {
                       // Check if profile is completed
                       final userData = await apiService.getUser();
-                      if (userData != null && userData.profileCompleted) {
+                      if (userData.profileCompleted) {
                         // Navigation handled by AuthWrapper
                         completeNavigation();
                       } else {

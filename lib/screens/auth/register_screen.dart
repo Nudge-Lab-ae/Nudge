@@ -237,7 +237,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       if (user != null) {
                         // Check if user already exists
                         final userData = await apiService.getUser();
-                        if (userData == null) {
+                        if (userData.id == '') {
                           // Create initial user document
                           await apiService.addUser(User(
                             id: user.uid,
@@ -256,7 +256,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         }
                         
                         // Navigate to complete profile screen if profile is not completed
-                        if (userData == null || !userData.profileCompleted) {
+                        if (userData.id == '' || !userData.profileCompleted) {
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(builder: (context) => const CompleteProfileScreen()),
@@ -301,7 +301,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       if (user != null) {
                         // Check if user already exists
                         final userData = await apiService.getUser();
-                        if (userData == null) {
+                        if (userData.id == '') {
                           // Create initial user document
                           await apiService.addUser(User(
                             id: user.uid,
@@ -320,7 +320,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         }
                         
                         // Navigate to complete profile screen if profile is not completed
-                        if (userData == null || !userData.profileCompleted) {
+                        if (userData.id == '' || !userData.profileCompleted) {
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(builder: (context) => const CompleteProfileScreen()),

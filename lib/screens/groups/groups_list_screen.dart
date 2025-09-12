@@ -417,63 +417,64 @@ Widget _buildGroupCard(BuildContext context, SocialGroup group, List<Contact> me
   );
 }
   
-Widget _buildMemberAvatars(List<Contact> members, Color textColor) {
-  final displayMembers = members.take(3).toList();
+// Widget _buildMemberAvatars(List<Contact> members, Color textColor) {
+//   final displayMembers = members.take(3).toList();
   
-  return SizedBox(
-    width: 80, // Fixed width to prevent overflow
-    height: 32,
-    child: Stack(
-      children: [
-        for (int i = 0; i < displayMembers.length; i++)
-          Positioned(
-            left: i * 20.0,
-            child: Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(color: textColor, width: 1.5),
-                shape: BoxShape.circle,
-              ),
-              child: displayMembers[i].imageUrl.isNotEmpty
-                  ? ClipOval(
-                      child: Image.network(
-                        displayMembers[i].imageUrl,
-                        width: 28,
-                        height: 28,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Icon(Icons.person, size: 16, color: textColor);
-                        },
-                      ),
-                    )
-                  : Icon(Icons.person, size: 16, color: textColor),
-            ),
-          ),
-        if (members.length > 3)
-          Positioned(
-            left: 60.0,
-            child: Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(color: textColor, width: 1.5),
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  '+${members.length - 3}',
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: textColor),
-                ),
-              ),
-            ),
-          ),
-      ],
-    ),
-  );
-}
+//   return SizedBox(
+//     width: 80, // Fixed width to prevent overflow
+//     height: 32,
+//     child: Stack(
+//       children: [
+//         for (int i = 0; i < displayMembers.length; i++)
+//           Positioned(
+//             left: i * 20.0,
+//             child: Container(
+//               width: 28,
+//               height: 28,
+//               decoration: BoxDecoration(
+//                 color: Colors.white,
+//                 border: Border.all(color: textColor, width: 1.5),
+//                 shape: BoxShape.circle,
+//               ),
+//               child: displayMembers[i].imageUrl.isNotEmpty
+//                   ? ClipOval(
+//                       child: Image.network(
+//                         displayMembers[i].imageUrl,
+//                         width: 28,
+//                         height: 28,
+//                         fit: BoxFit.cover,
+//                         errorBuilder: (context, error, stackTrace) {
+//                           return Icon(Icons.person, size: 16, color: textColor);
+//                         },
+//                       ),
+//                     )
+//                   : Icon(Icons.person, size: 16, color: textColor),
+//             ),
+//           ),
+//         if (members.length > 3)
+//           Positioned(
+//             left: 60.0,
+//             child: Container(
+//               width: 28,
+//               height: 28,
+//               decoration: BoxDecoration(
+//                 color: Colors.white,
+//                 border: Border.all(color: textColor, width: 1.5),
+//                 shape: BoxShape.circle,
+//               ),
+//               child: Center(
+//                 child: Text(
+//                   '+${members.length - 3}',
+//                   style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: textColor),
+//                 ),
+//               ),
+//             ),
+//           ),
+//       ],
+//     ),
+//   );
+// }
+  
   Widget _buildInteractionProgress(SocialGroup group, Color textColor) {
     // This is a simplified progress indicator - you might want to calculate
     // actual interaction progress based on your app's logic
