@@ -306,110 +306,124 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
     );
   }
 
-  Widget _buildGroupCard(BuildContext context, SocialGroup group, List<Contact> members, ApiService apiService) {
-    final Color cardColor = Color(int.parse(group.colorCode.substring(1, 7), radix: 16) + 0xFF000000);
-    final Color textColor = cardColor.computeLuminance() > 0.5 ? Colors.black : Colors.white;
-    
-    return GestureDetector(
-      onTap: () => _showGroupDetails(context, group, members, apiService),
-      onLongPress: () => _showEditGroupDialog(context, group, apiService),
-      child: Container(
-        decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: cardColor.withOpacity(0.3),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            Positioned(
-              top: -20,
-              right: -20,
-              child: Icon(
-                _getGroupIcon(group.name),
-                size: 100,
-                color: Colors.white.withOpacity(0.1),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Flexible(
-                        child: Text(
-                          group.name,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: textColor,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: textColor.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          '${group.frequency}x/${group.period.substring(0, 1).toLowerCase()}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: textColor,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    group.description,
-                    style: TextStyle(color: textColor.withOpacity(0.8), fontSize: 12),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const Spacer(),
-                  // Members section
-                  Row(
-                    children: [
-                      _buildMemberAvatars(members, textColor),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${members.length} members',
-                        style: TextStyle(
-                          color: textColor,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  // Progress bar for interaction frequency
-                  _buildInteractionProgress(group, textColor),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+Widget _buildGroupCard(BuildContext context, SocialGroup group, List<Contact> members, ApiService apiService) {
+  // Add safety check for color code
+  Color cardColor;
+  try {
+    cardColor = Color(int.parse(group.colorCode.replaceFirst('#', ''), radix: 16) + 0xFF000000);
+  } catch (e) {
+    cardColor = const Color.fromRGBO(37, 150, 190, 1); // Default color
   }
-
-  Widget _buildMemberAvatars(List<Contact> members, Color textColor) {
-    final displayMembers = members.take(3).toList();
-    
-    return Stack(
+  
+  final Color textColor = cardColor.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+  
+  return GestureDetector(
+    onTap: () => _showGroupDetails(context, group, members, apiService),
+    onLongPress: () => _showEditGroupDialog(context, group, apiService),
+    child: Container(
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: cardColor.withOpacity(0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            top: -20,
+            right: -20,
+            child: Icon(
+              _getGroupIcon(group.name),
+              size: 100,
+              color: Colors.white.withOpacity(0.1),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        group.name,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: textColor,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: textColor.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${group.frequency}x/${group.period.substring(0, 1).toLowerCase()}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: textColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  group.description,
+                  style: TextStyle(color: textColor.withOpacity(0.8), fontSize: 12),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const Spacer(),
+                // Members section
+                // Row(
+                //   children: [
+                //     _buildMemberAvatars(members, textColor),
+                //     const SizedBox(width: 8),
+                   
+                //   ],
+                // ),
+                 Text(
+                      '${members.length} members',
+                      style: TextStyle(
+                        color: textColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                const SizedBox(height: 8),
+                // Progress bar for interaction frequency
+                _buildInteractionProgress(group, textColor),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+  
+Widget _buildMemberAvatars(List<Contact> members, Color textColor) {
+  final displayMembers = members.take(3).toList();
+  
+  return SizedBox(
+    width: 80, // Fixed width to prevent overflow
+    height: 32,
+    child: Stack(
       children: [
         for (int i = 0; i < displayMembers.length; i++)
           Positioned(
@@ -423,7 +437,17 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                 shape: BoxShape.circle,
               ),
               child: displayMembers[i].imageUrl.isNotEmpty
-                  ? CircleAvatar(backgroundImage: NetworkImage(displayMembers[i].imageUrl))
+                  ? ClipOval(
+                      child: Image.network(
+                        displayMembers[i].imageUrl,
+                        width: 28,
+                        height: 28,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Icon(Icons.person, size: 16, color: textColor);
+                        },
+                      ),
+                    )
                   : Icon(Icons.person, size: 16, color: textColor),
             ),
           ),
@@ -447,9 +471,9 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
             ),
           ),
       ],
-    );
-  }
-
+    ),
+  );
+}
   Widget _buildInteractionProgress(SocialGroup group, Color textColor) {
     // This is a simplified progress indicator - you might want to calculate
     // actual interaction progress based on your app's logic

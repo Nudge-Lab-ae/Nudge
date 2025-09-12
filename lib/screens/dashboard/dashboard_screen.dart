@@ -296,43 +296,84 @@ class _DashboardScreenState extends State<DashboardScreen> {
           // Summary Cards
           Row(
             children: [
-              _buildSummaryCard(
-                'Total Contacts',
-                contacts.length.toString(),
-                Icons.contacts,
-                true,
-                onTap: () => Navigator.pushNamed(context, '/contacts'),
-              ),
-              const SizedBox(width: 10),
-              _buildSummaryCard(
-                'VIP Contacts',
-                vipContacts.length.toString(),
-                Icons.star,
-                true,
-                onTap: () {
-                  // Navigate to VIP contacts filtered view
-                  Navigator.pushNamed(
-                    context, 
-                    '/contacts',
-                    arguments: {'filter': 'vip'},
-                  );
-                },
-              ),
-              const SizedBox(width: 10),
-              _buildSummaryCard(
-                'Needs Attention',
-                needsAttention.length.toString(),
-                Icons.notifications_active,
-                false,
-                onTap: () {
-                  // Navigate to contacts needing attention
-                  Navigator.pushNamed(
-                    context, 
-                    '/contacts',
-                    arguments: {'filter': 'needs_attention'},
-                  );
-                },
-              ),
+             Row(
+              children: [
+                // Expanded(
+                //   child: _buildSummaryCard(
+                //     'Total Contacts',
+                //     contacts.length.toString(),
+                //     Icons.contacts,
+                //     true,
+                //     onTap: () => Navigator.pushNamed(context, '/contacts'),
+                //   ),
+                // ),
+                _buildSummaryCard(
+                    'Total Contacts',
+                    contacts.length.toString(),
+                    Icons.contacts,
+                    true,
+                    onTap: () => Navigator.pushNamed(context, '/contacts'),
+                  ),
+                const SizedBox(width: 10),
+                // Expanded(
+                //   child: _buildSummaryCard(
+                //     'VIP Contacts',
+                //     vipContacts.length.toString(),
+                //     Icons.star,
+                //     true,
+                //     onTap: () {
+                //       Navigator.pushNamed(
+                //         context, 
+                //         '/contacts',
+                //         arguments: {'filter': 'vip'},
+                //       );
+                //     },
+                //   ),
+                // ),
+                _buildSummaryCard(
+                    'VIP Contacts',
+                    vipContacts.length.toString(),
+                    Icons.star,
+                    true,
+                    onTap: () {
+                      Navigator.pushNamed(
+                        context, 
+                        '/contacts',
+                        arguments: {'filter': 'vip'},
+                      );
+                    },
+                  ),
+                const SizedBox(width: 10),
+                // Expanded(
+                //   child: _buildSummaryCard(
+                //     'Needs Attention',
+                //     needsAttention.length.toString(),
+                //     Icons.notifications_active,
+                //     false,
+                //     onTap: () {
+                //       Navigator.pushNamed(
+                //         context, 
+                //         '/contacts',
+                //         arguments: {'filter': 'needs_attention'},
+                //       );
+                //     },
+                //   ),
+                // ),
+                _buildSummaryCard(
+                    'Needs Attention',
+                    needsAttention.length.toString(),
+                    Icons.notifications_active,
+                    false,
+                    onTap: () {
+                      Navigator.pushNamed(
+                        context, 
+                        '/contacts',
+                        arguments: {'filter': 'needs_attention'},
+                      );
+                    },
+                  ),
+              ],
+            ),
             ],
           ),
           
@@ -541,25 +582,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildSummaryCard(String title, String value, IconData icon, bool primary, {VoidCallback? onTap}) {
     return GestureDetector(
       onTap: onTap,
-      child: Expanded(
-        child: Card(
-          child: Padding(
-            padding: const EdgeInsets.all(5.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(icon, color: const Color.fromRGBO(37, 150, 190, 1)),
-                const SizedBox(height: 8),
-                Text(
-                  value,
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  title,
-                  style: TextStyle(fontSize: primary?12:10, color: Colors.grey),
-                ),
-              ],
-            ),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(5.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, color: const Color.fromRGBO(37, 150, 190, 1)),
+              const SizedBox(height: 8),
+              Text(
+                value,
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              Text(
+                title,
+                style: TextStyle(fontSize: primary?12:10, color: Colors.grey),
+              ),
+            ],
           ),
         ),
       ),

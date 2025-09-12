@@ -26,7 +26,7 @@ import 'services/auth_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform, name: "Nudge"
+    options: DefaultFirebaseOptions.currentPlatform, name: "NudgeApp"
   );
   final nudgeService = NudgeService();
   await nudgeService.initialize();

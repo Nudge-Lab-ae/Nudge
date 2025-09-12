@@ -1,4 +1,4 @@
-package com.nudge.app
+package com.nudge.shay
 
 import io.flutter.embedding.android.FlutterActivity
 

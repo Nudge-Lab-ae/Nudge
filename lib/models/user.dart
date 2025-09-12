@@ -12,6 +12,7 @@ class User {
   final Map<String, dynamic>? goals;
   final List<Map<String, dynamic>>? groups;
   final List<Map<String, dynamic>> nudges;
+  final bool profileCompleted;
   // final List<Map<String, dynamic>> contacts; //
 
   User({
@@ -28,6 +29,7 @@ class User {
     required this.description,
     required this.phoneNumber,
     required this.photoURL,
+    required this.profileCompleted,
   });
 
   Map<String, dynamic> toMap() {
@@ -45,6 +47,7 @@ class User {
       'description': description,
       'phoneNumber': phoneNumber,
       'photoUrl': photoURL,
+      'profileCompleted': profileCompleted,
     };
   }
 
@@ -62,7 +65,8 @@ class User {
       bio: map['bio'],
       description: map['description'],
       phoneNumber: map['phoneNumber'],
-      photoURL: map['photoUrl']
+      photoURL: map['photoUrl'],
+      profileCompleted: map['profileCompleted']
     );
   }
 }

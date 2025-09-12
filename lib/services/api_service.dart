@@ -47,7 +47,8 @@ class ApiService {
           phoneNumber: '',
           photoURL: '',
           description: '',
-          bio: ''
+          bio: '',
+          profileCompleted: false,
         );
         await _usersCollection.doc(currentUser.uid).set(newUser.toMap());
         return newUser;
@@ -77,7 +78,8 @@ class ApiService {
           phoneNumber: '',
           photoURL: '',
           description: '',
-          bio: ''
+          bio: '',
+          profileCompleted: false,
         );
       });
     });
@@ -404,6 +406,7 @@ Future<Map<String, dynamic>> register(String email, String password) async {
       goals: {},
       // contacts: [],
       nudges: [],
+      profileCompleted: false,
     );
     
     await _usersCollection.doc(result.user!.uid).set(newUser.toMap());
@@ -445,6 +448,7 @@ Future<Map<String, dynamic>> register(String email, String password) async {
       goals: {},
       // contacts: [],
       nudges: [],
+      profileCompleted: false,
     );
     
     await _usersCollection.doc(result.user!.uid).set(newUser.toMap());

@@ -1,10 +1,10 @@
-// register_screen.dart (updated)
+// register_screen.dart
 import 'package:flutter/material.dart';
-import 'package:nudge/screens/dashboard/dashboard_screen.dart';
+import 'package:nudge/models/user.dart';
 import 'package:nudge/theme/text_styles.dart';
-// import 'package:provider/provider.dart';
+import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
-// import '../../services/api_service.dart';
+import '../../services/api_service.dart';
 import 'complete_profile_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -18,69 +18,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
-  final AuthService _authService = AuthService();
   final _formKey = GlobalKey<FormState>();
-
-  Future<void> _registerUser(BuildContext context) async {
-    if (_formKey.currentState!.validate()) {
-      try {
-        // final apiService = Provider.of<ApiService>(context, listen: false);
-        
-        // Check if email already exists
-        try {
-          // Try to sign in first to see if account exists
-          final user = await _authService.signInWithEmail(
-            _emailController.text,
-            _passwordController.text,
-          );
-          
-          if (user != null) {
-            // Account exists, navigate to dashboard
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const DashboardScreen()),
-            );
-            return;
-          }
-        } catch (e) {
-          // If sign in fails, continue with registration
-        }
-
-        // Register new user
-        final user = await _authService.registerWithEmail(
-          _emailController.text,
-          _passwordController.text,
-        );
-        
-        if (user != null) {
-          // Navigate to complete profile screen
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const CompleteProfileScreen()),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Registration failed. Please try again.'),
-            ),
-          );
-        }
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-          ),
-        );
-      }
-    }
-  }
+  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final apiService = Provider.of<ApiService>(context, listen: false);
+
     return Scaffold(
       appBar: AppBar(
         title: Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Colors.white),),
-        iconTheme: IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: Colors.white),
         backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
       ),
       body: SingleChildScrollView(
@@ -195,23 +144,73 @@ class _RegisterScreenState extends State<RegisterScreen> {
               SizedBox(
                 width: double.infinity,
                 height: 50,
-                child: ElevatedButton(
-                  onPressed: () => _registerUser(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: const Text(
-                    'Register',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white
-                    ),
-                  ),
-                ),
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : ElevatedButton(
+                        onPressed: () async {
+                          if (_formKey.currentState!.validate()) {
+                            setState(() => _isLoading = true);
+                            try {
+                              final user = await authService.registerWithEmail(
+                                _emailController.text,
+                                _passwordController.text,
+                              );
+                              
+                              if (user != null) {
+                                // Create initial user document
+                                await apiService.addUser(User(
+                                  id: user.uid,
+                                  email: user.email!,
+                                  username: '',
+                                  phoneNumber: '',
+                                  bio: '',
+                                  description: '',
+                                  photoURL: '',
+                                  createdAt: DateTime.now(),
+                                  nudges: [],
+                                  goals: {},
+                                  groups: [],
+                                  profileCompleted: false,
+                                ));
+                                
+                                // Navigate to complete profile screen
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const CompleteProfileScreen()),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Registration failed. Please try again.'),
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Error: ${e.toString()}'),
+                                ),
+                              );
+                            } finally {
+                              setState(() => _isLoading = false);
+                            }
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Text(
+                          'Register',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white
+                          ),
+                        ),
+                      ),
               ),
               const SizedBox(height: 20),
               
@@ -232,14 +231,47 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 height: 50,
                 child: OutlinedButton.icon(
                   onPressed: () async {
-                    final user = await _authService.signInWithGoogle();
-                    if (user != null) {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const CompleteProfileScreen(),
+                    setState(() => _isLoading = true);
+                    try {
+                      final user = await authService.signInWithGoogle();
+                      if (user != null) {
+                        // Check if user already exists
+                        final userData = await apiService.getUser();
+                        if (userData == null) {
+                          // Create initial user document
+                          await apiService.addUser(User(
+                            id: user.uid,
+                            email: user.email!,
+                            username: user.displayName ?? '',
+                            phoneNumber: '',
+                            bio: '',
+                            description: '',
+                            photoURL: user.photoURL ?? '',
+                            createdAt: DateTime.now(),
+                            nudges: [],
+                            goals: {},
+                            groups: [],
+                            profileCompleted: false,
+                          ));
+                        }
+                        
+                        // Navigate to complete profile screen if profile is not completed
+                        if (userData == null || !userData.profileCompleted) {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (context) => const CompleteProfileScreen()),
+                          );
+                        }
+                        // Otherwise, AuthWrapper will handle navigation to dashboard
+                      }
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Error: ${e.toString()}'),
                         ),
                       );
+                    } finally {
+                      setState(() => _isLoading = false);
                     }
                   },
                   icon: const Icon(Icons.g_mobiledata, size: 30),
@@ -263,14 +295,47 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 height: 50,
                 child: OutlinedButton.icon(
                   onPressed: () async {
-                    final user = await _authService.signInWithApple();
-                    if (user != null) {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const CompleteProfileScreen(),
+                    setState(() => _isLoading = true);
+                    try {
+                      final user = await authService.signInWithApple();
+                      if (user != null) {
+                        // Check if user already exists
+                        final userData = await apiService.getUser();
+                        if (userData == null) {
+                          // Create initial user document
+                          await apiService.addUser(User(
+                            id: user.uid,
+                            email: user.email!,
+                            username: user.displayName ?? '',
+                            phoneNumber: '',
+                            bio: '',
+                            description: '',
+                            photoURL: user.photoURL ?? '',
+                            createdAt: DateTime.now(),
+                            nudges: [],
+                            goals: {},
+                            groups: [],
+                            profileCompleted: false,
+                          ));
+                        }
+                        
+                        // Navigate to complete profile screen if profile is not completed
+                        if (userData == null || !userData.profileCompleted) {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (context) => const CompleteProfileScreen()),
+                          );
+                        }
+                        // Otherwise, AuthWrapper will handle navigation to dashboard
+                      }
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Error: ${e.toString()}'),
                         ),
                       );
+                    } finally {
+                      setState(() => _isLoading = false);
                     }
                   },
                   icon: const Icon(Icons.apple, size: 30),

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:nudge/theme/text_styles.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
-// import '../dashboard/dashboard_screen.dart';
+import '../../services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -19,16 +19,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Now we can safely access AuthService because it's provided at the root level
     final authService = Provider.of<AuthService>(context, listen: false);
+    final apiService = Provider.of<ApiService>(context, listen: false);
 
     return Scaffold(
       appBar: AppBar(
-        title:  Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Colors.white)),
+        title: Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Colors.white)),
         backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
-        leading: IconButton(onPressed: () {
-          Navigator.pop(context);
-        } , icon: Icon(Icons.arrow_back, color: Colors.white,)),
+        leading: IconButton(
+          onPressed: () {
+            Navigator.pop(context);
+          }, 
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -91,21 +94,37 @@ class _LoginScreenState extends State<LoginScreen> {
                   : ElevatedButton(
                       onPressed: () async {
                         setState(() => _isLoading = true);
-                        final user = await authService.signInWithEmail(
-                          _emailController.text,
-                          _passwordController.text,
-                        );
-                        setState(() => _isLoading = false);
-                        
-                        if (user != null) {
-                          // Navigation is handled automatically by AuthWrapper
-                          // No need to navigate manually
-                        } else {
+                        try {
+                          final user = await authService.signInWithEmail(
+                            _emailController.text,
+                            _passwordController.text,
+                          );
+                          
+                          if (user != null) {
+                            // Check if profile is completed
+                            final userData = await apiService.getUser();
+                            if (userData != null && userData.profileCompleted) {
+                              // Navigation is handled automatically by AuthWrapper
+                              completeNavigation();
+                            } else {
+                              // Navigate to complete profile
+                              completeProfile();
+                            }
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Login failed. Please try again.'),
+                              ),
+                            );
+                          }
+                        } catch (e) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Login failed. Please try again.'),
+                            SnackBar(
+                              content: Text('Error: ${e.toString()}'),
                             ),
                           );
+                        } finally {
+                          setState(() => _isLoading = false);
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -137,11 +156,27 @@ class _LoginScreenState extends State<LoginScreen> {
               child: OutlinedButton.icon(
                 onPressed: () async {
                   setState(() => _isLoading = true);
-                  final user = await authService.signInWithGoogle();
-                  setState(() => _isLoading = false);
-                  
-                  if (user != null) {
-                    // Navigation handled by AuthWrapper
+                  try {
+                    final user = await authService.signInWithGoogle();
+                    if (user != null) {
+                      // Check if profile is completed
+                      final userData = await apiService.getUser();
+                      if (userData != null && userData.profileCompleted) {
+                        // Navigation handled by AuthWrapper
+                        completeNavigation();
+                      } else {
+                        // Navigate to complete profile
+                       completeProfile();
+                      }
+                    }
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error: ${e.toString()}'),
+                      ),
+                    );
+                  } finally {
+                    setState(() => _isLoading = false);
                   }
                 },
                 icon: const Icon(Icons.g_mobiledata, size: 30),
@@ -164,11 +199,29 @@ class _LoginScreenState extends State<LoginScreen> {
               child: OutlinedButton.icon(
                 onPressed: () async {
                   setState(() => _isLoading = true);
-                  final user = await authService.signInWithApple();
-                  setState(() => _isLoading = false);
-                  
-                  if (user != null) {
-                    // Navigation handled by AuthWrapper
+                  try {
+                    final user = await authService.signInWithApple();
+                    
+                    if (user != null) {
+                      // Check if profile is completed
+                      final userData = await apiService.getUser();
+                      if (userData != null && userData.profileCompleted) {
+                        // Navigation handled by AuthWrapper
+                        completeNavigation();
+                      } else {
+                        // Navigate to complete profile
+                        // Navigator.pushReplacementNamed(context, '/complete_profile');
+                        completeProfile();
+                      }
+                    }
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error: ${e.toString()}'),
+                      ),
+                    );
+                  } finally {
+                    setState(() => _isLoading = false);
                   }
                 },
                 icon: const Icon(Icons.apple, size: 30),
@@ -184,33 +237,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 15),
-            // SizedBox(
-            //   width: double.infinity,
-            //   height: 50,
-            //   child: OutlinedButton.icon(
-            //     onPressed: () async {
-            //       setState(() => _isLoading = true);
-            //       final user = await authService.signInWithFacebook();
-            //       setState(() => _isLoading = false);
-                  
-            //       if (user != null) {
-            //         // Navigation handled by AuthWrapper
-            //       }
-            //     },
-            //     icon: const Icon(Icons.facebook, size: 30),
-            //     label: const Text('Sign in with Facebook'),
-            //     style: OutlinedButton.styleFrom(
-            //       foregroundColor: Colors.black,
-            //       side: BorderSide(
-            //         color: Colors.grey.shade300,
-            //       ),
-            //       shape: RoundedRectangleBorder(
-            //         borderRadius: BorderRadius.circular(10),
-            //       ),
-            //     ),
-            //   ),
-            // ),
             const SizedBox(height: 20),
             Center(
               child: TextButton(
@@ -229,6 +255,14 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+
+  completeNavigation() {
+     Navigator.pop(context);
+  }
+
+  completeProfile() {
+     Navigator.pushReplacementNamed(context, '/complete_profile');
   }
 
   @override

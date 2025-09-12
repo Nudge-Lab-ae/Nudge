@@ -24,6 +24,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
+  bool _isLoading = false;
 
   Future<void> _pickImage() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
@@ -36,6 +37,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
 
   Future<void> _completeProfile(BuildContext context) async {
     if (_formKey.currentState!.validate()) {
+      setState(() => _isLoading = true);
       try {
         final authService = Provider.of<AuthService>(context, listen: false);
         final apiService = Provider.of<ApiService>(context, listen: false);
@@ -61,20 +63,21 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
             createdAt: DateTime.now(),
             nudges: [],
             goals: {},
-             groups: [
-          {"name": "Family", "period": "Monthly", "frequency": 4, "colorCode": "#4FC3F7"},
-          {"name": "Friend", "period": "Quarterly", "frequency": 8, "colorCode": "#FF6F61"},
-          {"name": "Client", "period": "Monthly", "frequency": 2, "colorCode": "#81C784"},
-          {"name": "Colleague", "period": "Annually", "frequency": 4, "colorCode": "#FFC107"},
-          {"name": "Mentor", "period": "Annually", "frequency": 2, "colorCode": "#607D8B"},
-        ],
-            // contacts: []
+            groups: [
+              {"name": "Family", "period": "Monthly", "frequency": 4, "colorCode": "#4FC3F7"},
+              {"name": "Friend", "period": "Quarterly", "frequency": 8, "colorCode": "#FF6F61"},
+              {"name": "Client", "period": "Monthly", "frequency": 2, "colorCode": "#81C784"},
+              {"name": "Colleague", "period": "Annually", "frequency": 4, "colorCode": "#FFC107"},
+              {"name": "Mentor", "period": "Annually", "frequency": 2, "colorCode": "#607D8B"},
+            ],
+            profileCompleted: true, // Mark profile as completed
           ));
           
+          // Navigate to goals screen
           Navigator.pushReplacement(
-              context, MaterialPageRoute
-              (builder: (context) => const SetGoalsScreen(isFromSettings: false)),
-            );
+            context, 
+            MaterialPageRoute(builder: (context) => const SetGoalsScreen(isFromSettings: false)),
+          );
         }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -82,6 +85,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
             content: Text('Error: ${e.toString()}'),
           ),
         );
+      } finally {
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -90,8 +95,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title:  Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Colors.white),),
-        iconTheme: IconThemeData(color: Colors.white),
+        title: Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Colors.white),),
+        iconTheme: const IconThemeData(color: Colors.white),
         backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
       ),
       body: SingleChildScrollView(
@@ -241,23 +246,25 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
               SizedBox(
                 width: double.infinity,
                 height: 50,
-                child: ElevatedButton(
-                  onPressed: () => _completeProfile(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: const Text(
-                    'Complete Profile',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white
-                    ),
-                  ),
-                ),
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : ElevatedButton(
+                        onPressed: () => _completeProfile(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Text(
+                          'Complete Profile',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white
+                          ),
+                        ),
+                      ),
               ),
             ],
           ),
