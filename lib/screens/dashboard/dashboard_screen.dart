@@ -116,17 +116,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 break;
             }
           },
-          items: const [
+          items: [
             BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard),
+              icon: Icon(Icons.dashboard, color: _currentIndex == 0?Color.fromRGBO(45, 161, 175, 1):Colors.grey,),
               label: 'Dashboard',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.contacts),
+              icon: Icon(Icons.contacts, color:_currentIndex == 1?Color.fromRGBO(45, 161, 175, 1):Colors.grey,),
               label: 'Contacts',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.group),
+              icon: Icon(Icons.group, color: _currentIndex == 2?Color.fromRGBO(45, 161, 175, 1):Colors.grey,),
               label: 'Groups',
             ),
           ],
@@ -174,7 +174,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.contacts),
+            leading: const Icon(Icons.contacts,),
             title: const Text('All Contacts'),
             onTap: () {
               Navigator.pop(context);
@@ -258,7 +258,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             padding: const EdgeInsets.all(12.0),
             child: Row(
               children: [
-                const Icon(Icons.cloud_upload, color: Colors.blue),
+                const Icon(Icons.cloud_upload, color: Color.fromRGBO(45, 161, 175, 1)),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
@@ -391,21 +391,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
             runSpacing: 10,
             children: [
               ActionChip(
-                avatar: const Icon(Icons.person_add, size: 18),
+                avatar: const Icon(Icons.person_add, size: 18, color: Color.fromRGBO(45, 161, 175, 1)),
                 label: const Text('Add Contact', style: AppTextStyles.primary,),
                 onPressed: () {
                   Navigator.pushNamed(context, '/add_contact');
                 },
               ),
               ActionChip(
-                avatar: const Icon(Icons.import_contacts, size: 18),
+                avatar: const Icon(Icons.import_contacts, size: 18, color: Color.fromRGBO(45, 161, 175, 1),),
                 label: const Text('Import Contacts', style: AppTextStyles.primary,),
                 onPressed: () {
                   Navigator.pushNamed(context, '/import_contacts');
                 },
               ),
               ActionChip(
-                avatar: const Icon(Icons.group_add, size: 18),
+                avatar: const Icon(Icons.group_add, size: 18, color: Color.fromRGBO(45, 161, 175, 1),),
                 label: const Text('Create Group', style: AppTextStyles.primary,),
                 onPressed: () {
                   // Navigate to create group screen
@@ -417,7 +417,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 },
               ),
              ActionChip(
-                avatar: const Icon(Icons.notifications_active, size: 18),
+                avatar: const Icon(Icons.notifications_active, size: 18, color: Color.fromRGBO(45, 161, 175, 1),),
                 label: const Text('Schedule Nudges', style: AppTextStyles.primary,),
                 onPressed: () async {
                   final nudgeService = NudgeService();
@@ -449,7 +449,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       arguments: {'filter': 'vip'},
                     );
                   },
-                  child: const Text('View All'),
+                  child: const Text('View All', style: TextStyle(color: Color.fromRGBO(45, 161, 175, 1)),),
                 ),
               ],
             ),
@@ -571,7 +571,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               onPressed: () {
                 Navigator.pushNamed(context, '/analytics');
               },
-              child: const Text('View Detailed Analytics'),
+              child: const Text('View Detailed Analytics', style: TextStyle(color: Color.fromRGBO(45, 161, 175, 1)),),
             ),
           ],
         ],
