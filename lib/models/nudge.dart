@@ -16,6 +16,9 @@ class Nudge {
   String userId;
   String period;
   int frequency;
+  bool isPushNotification;
+  int priority;
+  bool isVIP;
 
   Nudge({
     required this.id,
@@ -32,6 +35,9 @@ class Nudge {
     required this.userId,
     required this.period,
     required this.frequency,
+    required this.isPushNotification,
+    required this.priority,
+    required this.isVIP,
   });
 
   // Convert to Map for Firestore
@@ -51,6 +57,9 @@ class Nudge {
       'userId': userId,
       'period': period,
       'frequency': frequency,
+      'isPushNotification': isPushNotification,
+      'isVIP': isVIP,
+      'priority': priority,
     };
   }
 
@@ -75,6 +84,9 @@ class Nudge {
       userId: data['userId'] ?? '',
       period: 'Monthly',
       frequency: 2,
+      priority: data['priority'] ?? 3,
+      isVIP: data['isVIP'] ?? false,
+      isPushNotification: data['isPushNotification'] ?? false,
     );
   }
 
@@ -99,8 +111,11 @@ class Nudge {
           ? DateTime.fromMillisecondsSinceEpoch(data['snoozedUntil'])
           : null,
       userId: data['userId'] ?? '',
-      period: 'Monthly',
-      frequency: 2
+      period: data['period'] ?? 'Monthly',
+      frequency: data['frequency'] ?? 2,
+      priority: data['priority'] ?? 3,
+      isPushNotification: data['isPushNotification'] ?? false,
+      isVIP: data['isVIP'] ?? false,
     );
   }
 }

@@ -85,7 +85,7 @@
 
 //   Color _getColorForType(String type) {
 //     final colorMap = {
-//       'Family': const Color.fromRGBO(37, 150, 190, 1),
+//       'Family': const Color.fromRGBO(45, 161, 175, 1),
 //       'Friend': Colors.green,
 //       'Colleague': Colors.orange,
 //       'Client': Colors.purple,

@@ -40,7 +40,7 @@ Widget build(BuildContext context) {
   return Scaffold(
     appBar: AppBar(
       title: Text('Contact Details', style: AppTextStyles.title3.copyWith(color: Colors.white),),
-      backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
+      backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
       iconTheme: IconThemeData(color: Colors.white),
       actions: [
         IconButton(
@@ -266,7 +266,7 @@ Widget build(BuildContext context) {
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
+                  backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
@@ -277,9 +277,9 @@ Widget build(BuildContext context) {
               OutlinedButton(
                 onPressed: () {},
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color.fromRGBO(37, 150, 190, 1),
+                  foregroundColor: const Color.fromRGBO(45, 161, 175, 1),
                   side: const BorderSide(
-                    color: Color.fromRGBO(37, 150, 190, 1),
+                    color: Color.fromRGBO(45, 161, 175, 1),
                   ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),

@@ -55,11 +55,11 @@ class NudgeApp extends StatelessWidget {
       child: MaterialApp(
         title: 'NUDGE',
        theme: ThemeData(
-          primaryColor: const Color.fromRGBO(37, 150, 190, 1),
+          primaryColor: const Color.fromRGBO(45, 161, 175, 1),
           colorScheme: ColorScheme.fromSwatch(
             primarySwatch: Colors.blue,
           ).copyWith(
-            secondary: const Color.fromRGBO(37, 150, 190, 1),
+            secondary: const Color.fromRGBO(45, 161, 175, 1),
           ),
           fontFamily: 'Montserrat',
           textTheme: const TextTheme(

@@ -74,7 +74,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
           ),
-          backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
+          backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
           actions: [
             IconButton(
               icon: const Icon(Icons.add),
@@ -90,7 +90,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color.fromRGBO(37, 150, 190, 1),
+                    color: const Color.fromRGBO(45, 161, 175, 1),
                     borderRadius: const BorderRadius.only(
                       bottomLeft: Radius.circular(20),
                       bottomRight: Radius.circular(20),
@@ -215,7 +215,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
         ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () => _showCreateGroupDialog(context, apiService),
-          backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
+          backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
           icon: const Icon(Icons.group_add, color: Colors.white),
           label: const Text('New Group', style: TextStyle(color: Colors.white)),
         ),
@@ -240,7 +240,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
           ElevatedButton(
             onPressed: () => setState(() => _initializeStreams()),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
+              backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
             child: const Text('Try Again', style: TextStyle(color: Colors.white)),
@@ -296,7 +296,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
           ElevatedButton(
             onPressed: () => _showCreateGroupDialog(context, apiService),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
+              backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
             ),
             child: const Text('Create Your First Group', style: TextStyle(color: Colors.white)),
@@ -312,7 +312,7 @@ Widget _buildGroupCard(BuildContext context, SocialGroup group, List<Contact> me
   try {
     cardColor = Color(int.parse(group.colorCode.replaceFirst('#', ''), radix: 16) + 0xFF000000);
   } catch (e) {
-    cardColor = const Color.fromRGBO(37, 150, 190, 1); // Default color
+    cardColor = const Color.fromRGBO(45, 161, 175, 1); // Default color
   }
   
   final Color textColor = cardColor.computeLuminance() > 0.5 ? Colors.black : Colors.white;
@@ -684,7 +684,7 @@ Widget _buildGroupCard(BuildContext context, SocialGroup group, List<Contact> me
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
+                    backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
                   ),
                   child: const Text('Create', style: TextStyle(color: Colors.white)),
                 ),
@@ -739,13 +739,13 @@ Widget _buildGroupCard(BuildContext context, SocialGroup group, List<Contact> me
                       ],
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: () {
-                      Navigator.pop(context);
-                      _showEditGroupDialog(context, group, apiService);
-                    },
-                  ),
+                  // IconButton(
+                  //   icon: const Icon(Icons.edit),
+                  //   onPressed: () {
+                  //     Navigator.pop(context);
+                  //     _showEditGroupDialog(context, group, apiService);
+                  //   },
+                  // ),
                 ],
               ),
               const SizedBox(height: 16),

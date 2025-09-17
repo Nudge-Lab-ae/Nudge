@@ -76,9 +76,9 @@ class ContactSyncService {
           email: deviceContact.emails?.isNotEmpty == true 
               ? deviceContact.emails!.first.value ?? '' 
               : '',
-          connectionType: 'Friend', // Default
+          connectionType: 'Contact', // Default
           frequency: 2, // Default
-          period: 'Monthly',
+          period: 'Annually',
           socialGroups: [],
           notes: '',
           imageUrl: deviceContact.avatar != null && deviceContact.avatar!.isNotEmpty

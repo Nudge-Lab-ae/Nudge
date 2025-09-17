@@ -25,7 +25,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Colors.white)),
-        backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
+        backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
         leading: IconButton(
           onPressed: () {
             Navigator.pop(context);
@@ -128,7 +128,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
+                        backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -246,7 +246,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: const Text(
                   "Don't have an account? Register",
                   style: TextStyle(
-                    color: Color.fromRGBO(37, 150, 190, 1),
+                    color: Color.fromRGBO(45, 161, 175, 1),
                   ),
                 ),
               ),

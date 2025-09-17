@@ -61,6 +61,28 @@ class NotificationService {
           .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
           ?.createNotificationChannel(channel);
     }
+
+      // await notificationsPlugin
+      // .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+      // ?.requestPermission();
+  
+  // Get FCM token and save to user document
+
+      // String? fcmToken = await FirebaseMessaging.instance.getToken();
+      // if (fcmToken != null) {
+      //   await FirebaseFirestore.instance
+      //       .collection('users')
+      //       .doc(FirebaseAuth.instance.currentUser!.uid)
+      //       .update({'fcmToken': fcmToken});
+      // }
+      
+      // // Listen for token refresh
+      // FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
+      //   await FirebaseFirestore.instance
+      //       .collection('users')
+      //       .doc(FirebaseAuth.instance.currentUser!.uid)
+      //       .update({'fcmToken': newToken});
+      // });
   }
 
   Future<void> scheduleNudgeNotification(

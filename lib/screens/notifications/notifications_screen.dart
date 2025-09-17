@@ -1,5 +1,4 @@
 // lib/screens/notifications/notifications_screen.dart
-// import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:nudge/models/contact.dart';
 import 'package:nudge/models/social_group.dart';
@@ -18,9 +17,28 @@ class NotificationsScreen extends StatefulWidget {
   State<NotificationsScreen> createState() => _NotificationsScreenState();
 }
 
-class _NotificationsScreenState extends State<NotificationsScreen> {
+class _NotificationsScreenState extends State<NotificationsScreen> with SingleTickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
   String _filter = 'all'; // 'all', 'upcoming', 'completed'
+  late TabController _tabController;
+  int _currentTabIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      setState(() {
+        _currentTabIndex = _tabController.index;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,19 +69,63 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         }
         
         final nudges = snapshot.data ?? [];
+        final now = DateTime.now();
+        
+        // Filter nudges for the "Upcoming" tab (next 7 days)
+        final upcomingNudges = nudges.where((nudge) => 
+          nudge.scheduledTime.isAfter(now) && 
+          nudge.scheduledTime.isBefore(now.add(const Duration(days: 7))) &&
+          !nudge.isCompleted
+        ).toList();
+        
+        // Filter nudges for the "All" tab (based on current filter)
+        List<Nudge> filteredNudges;
+        switch (_filter) {
+          case 'upcoming':
+            filteredNudges = nudges.where((nudge) => 
+              nudge.scheduledTime.isAfter(now) && !nudge.isCompleted
+            ).toList();
+            break;
+          case 'completed':
+            filteredNudges = nudges.where((nudge) => nudge.isCompleted).toList();
+            break;
+          default:
+            filteredNudges = List.from(nudges);
+        }
         
         return Scaffold(
           appBar: AppBar(
             title: Text('Nudges & Reminders', style: AppTextStyles.title3.copyWith(color: Colors.white)),
             iconTheme: const IconThemeData(color: Colors.white),
-            backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
+            backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+            // fromRGBO(45, 161, 175, 1)
+            // (37, 150, 190, 1)
+            bottom: TabBar(
+              controller: _tabController,
+              unselectedLabelColor: Colors.grey,
+              labelColor: Colors.white,
+              tabs: [
+                Tab(
+                  // text: 'Upcoming (7 days)',
+                  child: Text('Upcoming (7 days)', style: AppTextStyles.primaryBold.copyWith(
+                    color: _tabController.index == 0?Colors.white: Colors.black
+                  ),),
+                ),
+                Tab(
+                   child: Text('All Nudges', style: AppTextStyles.primaryBold.copyWith(
+                    color: _tabController.index == 1?Colors.white: Colors.black
+                  ),),
+                ),
+              ],
+            ),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.filter_list),
-                onPressed: () {
-                  _showFilterDialog(context);
-                },
-              ),
+              if (_currentTabIndex == 1) // Only show filter on "All Nudges" tab
+                IconButton(
+                  icon: const Icon(Icons.filter_list),
+                  onPressed: () {
+                    _showFilterDialog(context);
+                  },
+                ),
               IconButton(
                 icon: const Icon(Icons.add_alarm),
                 onPressed: () {
@@ -72,18 +134,31 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ),
             ],
           ),
-          body: Column(
+          body: TabBarView(
+            controller: _tabController,
             children: [
-              _buildStatsRow(nudges),
-              Expanded(
-                child: nudges.isEmpty
-                    ? _buildEmptyState()
-                    : _buildNudgeList(nudges, context, user.uid),
-              ),
+              // Upcoming Tab (next 7 days)
+              _buildTabContent(upcomingNudges, user.uid, true),
+              
+              // All Nudges Tab
+              _buildTabContent(filteredNudges, user.uid, false),
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _buildTabContent(List<Nudge> nudges, String userId, bool isUpcomingTab) {
+    return Column(
+      children: [
+        if (!isUpcomingTab) _buildStatsRow(nudges),
+        Expanded(
+          child: nudges.isEmpty
+              ? _buildEmptyState(isUpcomingTab)
+              : _buildNudgeList(nudges, context, userId, isUpcomingTab),
+        ),
+      ],
     );
   }
 
@@ -126,32 +201,24 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Widget _buildNudgeList(List<Nudge> nudges, BuildContext context, String userId) {
-    // Filter nudges based on selected filter
-    final now = DateTime.now();
-    List<Nudge> filteredNudges;
-    
-    switch (_filter) {
-      case 'upcoming':
-        filteredNudges = nudges.where((nudge) => 
-          nudge.scheduledTime.isAfter(now) && !nudge.isCompleted
-        ).toList();
-        break;
-      case 'completed':
-        filteredNudges = nudges.where((nudge) => nudge.isCompleted).toList();
-        break;
-      default:
-        filteredNudges = List.from(nudges);
+  Widget _buildNudgeList(List<Nudge> nudges, BuildContext context, String userId, bool isUpcomingTab) {
+    // For upcoming tab, sort by scheduled time (soonest first)
+    // For all tab, sort by scheduled time but keep completed at the bottom
+    if (isUpcomingTab) {
+      nudges.sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+    } else {
+      nudges.sort((a, b) {
+        if (a.isCompleted && !b.isCompleted) return 1;
+        if (!a.isCompleted && b.isCompleted) return -1;
+        return a.scheduledTime.compareTo(b.scheduledTime);
+      });
     }
-    
-    // Sort by scheduled time (soonest first)
-    filteredNudges.sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
     
     return ListView.builder(
       controller: _scrollController,
-      itemCount: filteredNudges.length,
+      itemCount: nudges.length,
       itemBuilder: (context, index) {
-        return _buildNudgeCard(filteredNudges[index], context, userId);
+        return _buildNudgeCard(nudges[index], context, userId);
       },
     );
   }
@@ -169,7 +236,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ? Colors.orange
               : nudge.isCompleted
                   ? Colors.green
-                  : const Color.fromRGBO(37, 150, 190, 1),
+                  : const Color.fromRGBO(45, 161, 175, 1),
           child: Icon(
             isOverdue
                 ? Icons.warning
@@ -236,7 +303,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(bool isUpcomingTab) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -247,16 +314,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             color: Colors.grey,
           ),
           const SizedBox(height: 16),
-          const Text(
-            'No nudges yet',
-            style: TextStyle(
+          Text(
+            isUpcomingTab ? 'No upcoming nudges' : 'No nudges yet',
+            style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Schedule your first nudge to stay connected',
+          Text(
+            isUpcomingTab 
+              ? 'You have no nudges scheduled for the next 7 days'
+              : 'Schedule your first nudge to stay connected',
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
@@ -265,7 +334,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               _showScheduleOptions(context);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
+              backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
             ),
             child:  Text('Schedule Nudges', style: AppTextStyles.button.copyWith(color: Colors.white),),
           ),
@@ -323,83 +392,77 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-void _showScheduleOptions(BuildContext context) async{
-  final authService = Provider.of<AuthService>(context, listen: false);
-  final apiService = Provider.of<ApiService>(context, listen: false);
+  void _showScheduleOptions(BuildContext context) async {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final apiService = Provider.of<ApiService>(context, listen: false);
 
-  print('stage 1');
-
-  print('stage 2');
-
-
-  showModalBottomSheet(
-    context: context,
-    builder: (context) {
-      return StreamProvider<List<Contact>>.value(
-        initialData: [],
-        value: apiService.getContactsStream(),
-        child: StreamProvider<List<SocialGroup>>.value(
-          value: apiService.getGroupsStream(),
-         initialData: [],
-         child: Consumer2<List<Contact>, List<SocialGroup>>(
-          builder: (context, contacts, groups,child){
-            return  Container(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Schedule Nudges',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return StreamProvider<List<Contact>>.value(
+          initialData: [],
+          value: apiService.getContactsStream(),
+          child: StreamProvider<List<SocialGroup>>.value(
+            value: apiService.getGroupsStream(),
+            initialData: [],
+            child: Consumer2<List<Contact>, List<SocialGroup>>(
+              builder: (context, contacts, groups, child) {
+                return Container(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Schedule Nudges',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      ListTile(
+                        leading: const Icon(Icons.people),
+                        title: const Text('For all contacts'),
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          final nudgeService = NudgeService();
+                          nudgeService.showNudgeScheduleDialog(
+                            context, contacts, groups, authService.currentUser!.uid
+                          );
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.group),
+                        title: const Text('By group'),
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          final nudgeService = NudgeService();
+                          nudgeService.showNudgeScheduleDialog(
+                            context, contacts, groups, authService.currentUser!.uid
+                          );
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.person),
+                        title: const Text('Manual selection'),
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          final nudgeService = NudgeService();
+                          nudgeService.showNudgeScheduleDialog(
+                            context, contacts, groups, authService.currentUser!.uid
+                          );
+                        },
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 16),
-                ListTile(
-                  leading: const Icon(Icons.people),
-                  title: const Text('For all contacts'),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    final nudgeService = NudgeService();
-                    nudgeService.showNudgeScheduleDialog(
-                      context, contacts, groups, authService.currentUser!.uid
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.group),
-                  title: const Text('By group'),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    final nudgeService = NudgeService();
-                    nudgeService.showNudgeScheduleDialog(
-                      context, contacts, groups, authService.currentUser!.uid
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.person),
-                  title: const Text('Manual selection'),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    final nudgeService = NudgeService();
-                    nudgeService.showNudgeScheduleDialog(
-                      context, contacts, groups, authService.currentUser!.uid
-                    );
-                  },
-                ),
-              ],
-            ),
-          );
-         })
-         )
-      );
-    },
-  );
-}
-
-
+                );
+              }
+            )
+          )
+        );
+      },
+    );
+  }
 
   void _snoozeNudge(Nudge nudge, String userId) {
     final nudgeService = NudgeService();

@@ -41,7 +41,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
       appBar: AppBar(
         iconTheme: const IconThemeData(color: Colors.white),
         title: Text(_getTitle(widget.filter), style: AppTextStyles.button.copyWith(color: Colors.white),),
-        backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
+        backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications),
@@ -144,7 +144,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
             ),
           );
         },
-        backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
+        backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
@@ -232,7 +232,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
+                backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
               ),
               child: Text('Add Contact', style: AppTextStyles.button.copyWith(color: Colors.white),),
             ),
@@ -248,7 +248,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
             ),
           );
         },
-        backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
+        backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );

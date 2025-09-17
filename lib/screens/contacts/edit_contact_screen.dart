@@ -164,7 +164,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
       return Scaffold(
         appBar: AppBar(
           title: Text('Edit Contact', style: AppTextStyles.title3.copyWith(color: Colors.white)),
-          backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
+          backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
           iconTheme: const IconThemeData(color: Colors.white),
         ),
         body: const Center(child: CircularProgressIndicator()),
@@ -179,7 +179,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
             return Scaffold(
       appBar: AppBar(
         title: Text('Edit Contact', style: AppTextStyles.title3.copyWith(color: Colors.white)),
-        backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
+        backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
@@ -427,7 +427,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
                 child: ElevatedButton(
                   onPressed: () => _saveContact (groups),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
+                    backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),

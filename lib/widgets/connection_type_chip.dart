@@ -23,12 +23,12 @@ class ConnectionTypeChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color.fromRGBO(37, 150, 190, 1)
+              ? const Color.fromRGBO(45, 161, 175, 1)
               : Colors.grey.shade100,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected
-                ? const Color.fromRGBO(37, 150, 190, 1)
+                ? const Color.fromRGBO(45, 161, 175, 1)
                 : Colors.grey.shade300,
           ),
         ),

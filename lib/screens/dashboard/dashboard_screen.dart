@@ -59,7 +59,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Scaffold(
         appBar: AppBar(
           title:  Text('NUDGE Dashboard', style: AppTextStyles.title3.copyWith(color: Colors.white)),
-          backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
+          backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
           iconTheme: IconThemeData(color: Colors.white),
           actions: [
             IconButton(
@@ -90,7 +90,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           onPressed: () {
             Navigator.pushNamed(context, '/add_contact');
           },
-          backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
+          backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
           child: const Icon(Icons.add, color: Colors.white),
         ),
         bottomNavigationBar: BottomNavigationBar(
@@ -142,7 +142,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           DrawerHeader(
             decoration: BoxDecoration(
-              color: const Color.fromRGBO(37, 150, 190, 1),
+              color: const Color.fromRGBO(45, 161, 175, 1),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -588,7 +588,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, color: const Color.fromRGBO(37, 150, 190, 1)),
+              Icon(icon, color: const Color.fromRGBO(45, 161, 175, 1)),
               const SizedBox(height: 8),
               Text(
                 value,

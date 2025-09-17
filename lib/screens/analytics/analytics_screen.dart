@@ -64,7 +64,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Analytics', style: AppTextStyles.title3.copyWith(color: Colors.white)),
-        backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
+        backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           PopupMenuButton<String>(
@@ -187,7 +187,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   Widget _buildStatCard(String title, String value, IconData icon) {
     return Column(
       children: [
-        Icon(icon, size: 30, color: const Color.fromRGBO(37, 150, 190, 1)),
+        Icon(icon, size: 30, color: const Color.fromRGBO(45, 161, 175, 1)),
         const SizedBox(height: 8),
         Text(
           value,
@@ -228,7 +228,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     xValueMapper: (Map<String, dynamic> data, _) => data['type'],
                     yValueMapper: (Map<String, dynamic> data, _) => data['health'],
                     dataLabelSettings: const DataLabelSettings(isVisible: true),
-                    color: const Color.fromRGBO(37, 150, 190, 1),
+                    color: const Color.fromRGBO(45, 161, 175, 1),
                   )
                 ],
               ),
@@ -310,7 +310,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     yValueMapper: (Map<String, dynamic> data, _) => data['interactions'],
                     markerSettings: const MarkerSettings(isVisible: true),
                     dataLabelSettings: const DataLabelSettings(isVisible: true),
-                    color: const Color.fromRGBO(37, 150, 190, 1),
+                    color: const Color.fromRGBO(45, 161, 175, 1),
                   )
                 ],
               ),
@@ -353,7 +353,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     xValueMapper: (Map<String, dynamic> data, _) => data['name'],
                     yValueMapper: (Map<String, dynamic> data, _) => data['interactions'],
                     dataLabelSettings: const DataLabelSettings(isVisible: true),
-                    color: const Color.fromRGBO(37, 150, 190, 1),
+                    color: const Color.fromRGBO(45, 161, 175, 1),
                   )
                 ],
               ),
@@ -365,7 +365,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 const Text('VIP Contact Engagement'),
                 Chip(
                   label: Text('${vipContacts.length} VIPs', style: const TextStyle(color: Colors.white)),
-                  backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
+                  backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
                 ),
               ],
             ),
@@ -425,7 +425,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   Widget _buildNudgeStat(String title, int value, IconData icon) {
     return Column(
       children: [
-        Icon(icon, size: 30, color: const Color.fromRGBO(37, 150, 190, 1)),
+        Icon(icon, size: 30, color: const Color.fromRGBO(45, 161, 175, 1)),
         const SizedBox(height: 8),
         Text(
           value.toString(),
@@ -499,7 +499,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
   Color _getProgressColor(double percentage) {
     if (percentage >= 80) return Colors.green;
-    if (percentage >= 60) return const Color.fromRGBO(37, 150, 190, 1);
+    if (percentage >= 60) return const Color.fromRGBO(45, 161, 175, 1);
     if (percentage >= 40) return Colors.orange;
     return Colors.red;
   }

@@ -87,7 +87,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
       appBar: AppBar(
         title: Text('Import Contacts', style: AppTextStyles.title3.copyWith(color: Colors.white),),
         iconTheme: IconThemeData(color: Colors.white),
-        backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
+        backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -110,7 +110,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: [
-                    const Icon(Icons.contacts, size: 50, color: Color.fromRGBO(37, 150, 190, 1)),
+                    const Icon(Icons.contacts, size: 50, color: Color.fromRGBO(45, 161, 175, 1)),
                     const SizedBox(height: 16),
                     const Text(
                       'Device Contacts',
@@ -147,7 +147,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
                       ElevatedButton(
                         onPressed: _importDeviceContacts,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
+                          backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
                         ),
                         child: const Text('Import Now', style: TextStyle(color: Colors.white)),
                       ),

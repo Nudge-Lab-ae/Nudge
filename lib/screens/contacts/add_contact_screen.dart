@@ -116,7 +116,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
       appBar: AppBar(
         title: Text('Add New Contact', style: AppTextStyles.title3.copyWith(color: Colors.white),),
         iconTheme: IconThemeData(color: Colors.white),
-        backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
+        backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -441,7 +441,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
+                    backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),

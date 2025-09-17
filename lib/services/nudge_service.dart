@@ -46,6 +46,8 @@ class NudgeService {
       {String? period, int? frequency}) async {
     try {
       // Use group settings if not overridden
+      bool shouldSendPush = contact.isVIP || contact.priority <= 2;
+
       String effectivePeriod = period ?? contact.period;
       int effectiveFrequency = frequency ?? contact.frequency;
       
@@ -64,6 +66,9 @@ class NudgeService {
         userId: userId,
         period: effectivePeriod,
         frequency: effectiveFrequency,
+        isPushNotification: shouldSendPush,
+        priority: contact.priority,
+        isVIP: contact.isVIP,
       );
 
       nudge.nudgeId = nudge.id;
@@ -94,6 +99,15 @@ class NudgeService {
         'lastNudged': DateTime.now().millisecondsSinceEpoch,
         'nextNudge': nextNudgeTime.millisecondsSinceEpoch,
       });
+
+       if (shouldSendPush) {
+        await _notificationService.scheduleNudgeNotification(
+          nudge.id.hashCode,
+          'Time to connect with ${contact.name}!',
+          'Remember to reach out to ${contact.name}. You scheduled this reminder.',
+          nextNudgeTime,
+        );
+      }
       
       print('Nudge scheduled for ${contact.name} at $nextNudgeTime');
       return true;
@@ -116,6 +130,22 @@ class NudgeService {
       default: // days
         return now.add(Duration(days: frequency));
     }
+  }
+
+   Stream<List<Nudge>> getUpcomingNudgesStream(String userId, {int daysAhead = 7}) {
+    DateTime cutoff = DateTime.now().add(Duration(days: daysAhead));
+    
+    return _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('nudges')
+        .where('scheduledTime', isLessThanOrEqualTo: cutoff.millisecondsSinceEpoch)
+        .where('isCompleted', isEqualTo: false)
+        .orderBy('scheduledTime', descending: false)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => Nudge.fromMap(doc.data()))
+            .toList());
   }
 
   // Send a test nudge (immediate notification)

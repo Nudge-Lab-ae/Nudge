@@ -97,7 +97,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
       appBar: AppBar(
         title: Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Colors.white),),
         iconTheme: const IconThemeData(color: Colors.white),
-        backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
+        backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -216,30 +216,30 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
               const SizedBox(height: 20),
               
               // Description
-              const Text(
-                'Description',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _descriptionController,
-                decoration: InputDecoration(
-                  hintText: 'Tell us more about yourself',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                maxLines: 3,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a description';
-                  }
-                  return null;
-                },
-              ),
+              // const Text(
+              //   'Description',
+              //   style: TextStyle(
+              //     fontWeight: FontWeight.bold,
+              //     fontSize: 16,
+              //   ),
+              // ),
+              // const SizedBox(height: 8),
+              // TextFormField(
+              //   controller: _descriptionController,
+              //   decoration: InputDecoration(
+              //     hintText: 'Tell us more about yourself',
+              //     border: OutlineInputBorder(
+              //       borderRadius: BorderRadius.circular(10),
+              //     ),
+              //   ),
+              //   maxLines: 3,
+              //   validator: (value) {
+              //     if (value == null || value.isEmpty) {
+              //       return 'Please enter a description';
+              //     }
+              //     return null;
+              //   },
+              // ),
               const SizedBox(height: 30),
               
               // Complete Profile Button
@@ -251,7 +251,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                     : ElevatedButton(
                         onPressed: () => _completeProfile(context),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color.fromRGBO(37, 150, 190, 1),
+                          backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
