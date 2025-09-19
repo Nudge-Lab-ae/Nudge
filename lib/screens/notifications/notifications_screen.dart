@@ -58,7 +58,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+            body: Center(child: CircularProgressIndicator(color: Color.fromRGBO(45, 161, 175, 1),)),
           );
         }
         
@@ -103,7 +103,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
             bottom: TabBar(
               controller: _tabController,
               unselectedLabelColor: Colors.grey,
-              labelColor: Colors.white,
+              labelColor: Color.fromRGBO(45, 161, 175, 1) /* Colors.white*/,
+              indicatorColor: Color.fromRGBO(45, 161, 175, 1),
+              // dividerColor: Color.fromRGBO(45, 161, 175, 1),
               tabs: [
                 Tab(
                   // text: 'Upcoming (7 days)',
@@ -174,7 +176,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildStatItem('Upcoming', upcoming.toString(), Colors.blue),
+          _buildStatItem('Upcoming', upcoming.toString(), Color.fromRGBO(45, 161, 175, 1)),
           _buildStatItem('Completed', completed.toString(), Colors.green),
           _buildStatItem('Overdue', overdue.toString(), Colors.orange),
         ],
@@ -283,7 +285,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
                 },
               ),
             IconButton(
-              icon: const Icon(Icons.snooze, color: Colors.blue),
+              icon: const Icon(Icons.snooze, color: Color.fromRGBO(45, 161, 175, 1)),
               onPressed: () {
                 _snoozeNudge(nudge, userId);
               },

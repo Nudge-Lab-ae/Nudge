@@ -88,6 +88,7 @@ Widget build(BuildContext context) {
               children: [
                 CircleAvatar(
                     radius: 50,
+                    backgroundColor: Color.fromRGBO(45, 161, 175, 1),
                     backgroundImage: contact.imageUrl.isNotEmpty
                         ? isLocalImage
                             ? FileImage(File(contact.imageUrl.replaceFirst('file://', '')))

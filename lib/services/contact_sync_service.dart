@@ -5,6 +5,7 @@ import 'package:nudge/services/api_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:contacts_service/contacts_service.dart' as contact_service;
 import '../models/contact.dart';
+import 'package:call_log/call_log.dart'; // Add this package for call log access
 
 class ContactSyncService {
   final ApiService apiService;
@@ -13,6 +14,8 @@ class ContactSyncService {
 
   Future<Map<String, dynamic>> importDeviceContacts({
     required Function(int processed, int total) onProgress,
+    int limit = 0, // 0 means no limit
+    bool useSmartFilter = true,
   }) async {
     try {
       // Check and request permission
@@ -41,6 +44,36 @@ class ContactSyncService {
         };
       }
 
+      // Get existing contacts to avoid duplicates
+      final existingContacts = await _getExistingContacts(currentUser.uid);
+      final existingPhoneNumbers = existingContacts.map((c) => _normalizePhoneNumber(c.phoneNumber)).toSet();
+      final existingEmails = existingContacts.map((c) => c.email.toLowerCase()).toSet();
+
+      // Apply smart filtering if enabled
+      if (useSmartFilter) {
+        deviceContacts = await _applySmartFiltering(deviceContacts);
+      }
+      
+      // Filter out already imported contacts
+      deviceContacts = deviceContacts.where((deviceContact) {
+        // Check if any phone number matches
+        final hasMatchingPhone = deviceContact.phones?.any((phone) {
+          return existingPhoneNumbers.contains(_normalizePhoneNumber(phone.value ?? ''));
+        }) ?? false;
+        
+        // Check if any email matches
+        final hasMatchingEmail = deviceContact.emails?.any((email) {
+          return existingEmails.contains(email.value?.toLowerCase() ?? '');
+        }) ?? false;
+        
+        return !hasMatchingPhone && !hasMatchingEmail;
+      }).toList();
+      
+      // Apply limit if specified
+      if (limit > 0 && deviceContacts.length > limit) {
+        deviceContacts = deviceContacts.sublist(0, limit);
+      }
+      
       int importedCount = 0;
       int processedCount = 0;
       int totalContacts = deviceContacts.length;
@@ -50,6 +83,15 @@ class ContactSyncService {
           .collection('users')
           .doc(currentUser.uid)
           .collection('contacts');
+
+      // If no contacts to import after filtering
+      if (totalContacts == 0) {
+        return {
+          'success': true,
+          'message': 'No new contacts to import - all contacts already exist in Nudge',
+          'importedCount': 0
+        };
+      }
 
       // Process contacts in batches
       const batchSize = 400; // Stay under Firestore's 500 operations per batch limit
@@ -120,5 +162,82 @@ class ContactSyncService {
         'importedCount': 0
       };
     }
+  }
+
+  // Get existing contacts from Firestore
+  Future<List<Contact>> _getExistingContacts(String userId) async {
+    try {
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('contacts')
+          .get();
+      
+      return querySnapshot.docs.map((doc) {
+        return Contact.fromMap(doc.data() ..['id'] = doc.id);
+      }).toList();
+    } catch (e) {
+      print('Error fetching existing contacts: $e');
+      return [];
+    }
+  }
+
+  // Apply smart filtering based on call log frequency
+  Future<List<contact_service.Contact>> _applySmartFiltering(
+      List<contact_service.Contact> contacts) async {
+    try {
+      // Request call log permission
+      var status = await Permission.phone.status;
+      if (!status.isGranted) {
+        status = await Permission.phone.request();
+        if (!status.isGranted) {
+          return contacts; // Return original list if permission denied
+        }
+      }
+
+      // Get call log entries
+      Iterable<CallLogEntry> entries = await CallLog.get();
+      
+      // Create a map of phone numbers to call count
+      Map<String, int> callCountMap = {};
+      for (var entry in entries) {
+        if (entry.number != null) {
+          String normalizedNumber = _normalizePhoneNumber(entry.number!);
+          callCountMap[normalizedNumber] = (callCountMap[normalizedNumber] ?? 0) + 1;
+        }
+      }
+      
+      // Sort contacts by call frequency
+      contacts.sort((a, b) {
+        int aCount = 0;
+        int bCount = 0;
+        
+        if (a.phones != null && a.phones!.isNotEmpty) {
+          for (var phone in a.phones!) {
+            String normalizedNumber = _normalizePhoneNumber(phone.value ?? '');
+            aCount += callCountMap[normalizedNumber] ?? 0;
+          }
+        }
+        
+        if (b.phones != null && b.phones!.isNotEmpty) {
+          for (var phone in b.phones!) {
+            String normalizedNumber = _normalizePhoneNumber(phone.value ?? '');
+            bCount += callCountMap[normalizedNumber] ?? 0;
+          }
+        }
+        
+        return bCount.compareTo(aCount); // Sort descending by call count
+      });
+      
+      return contacts;
+    } catch (e) {
+      print('Error applying smart filter: $e');
+      return contacts; // Return original list if error occurs
+    }
+  }
+
+  // Helper method to normalize phone numbers for comparison
+  String _normalizePhoneNumber(String phoneNumber) {
+    return phoneNumber.replaceAll(RegExp(r'[^0-9]'), '');
   }
 }

@@ -5,6 +5,7 @@ import 'package:nudge/theme/text_styles.dart';
 import 'package:provider/provider.dart';
 import '../../services/api_service.dart';
 import '../../models/social_group.dart';
+import '../../services/auth_service.dart';
 
 class SetGoalsScreen extends StatefulWidget {
   final bool isFromSettings;
@@ -37,6 +38,11 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
   Future<void> _loadUserGroups() async {
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final user = authService.currentUser;
+      
+      if (user == null) return;
+      
       final groups = await apiService.getGroupsStream().first;
       
       setState(() {
@@ -48,7 +54,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
       // Fallback to default groups
       _userGroups = [
         SocialGroup(
-          id: '1',
+          id: 'family',
           name: 'Family',
           description: 'Family members',
           period: 'Monthly',
@@ -56,10 +62,10 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
           memberIds: [],
           memberCount: 0,
           lastInteraction: DateTime.now(),
-          colorCode: '#2596BE',
+          colorCode: '#4FC3F7',
         ),
         SocialGroup(
-          id: '2',
+          id: 'friend',
           name: 'Friend',
           description: 'Friends',
           period: 'Quarterly',
@@ -70,7 +76,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
           colorCode: '#FF6F61',
         ),
         SocialGroup(
-          id: '3',
+          id: 'client',
           name: 'Client',
           description: 'Clients',
           period: 'Monthly',
@@ -81,7 +87,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
           colorCode: '#81C784',
         ),
         SocialGroup(
-          id: '4',
+          id: 'colleague',
           name: 'Colleague',
           description: 'Colleagues',
           period: 'Annually',
@@ -92,7 +98,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
           colorCode: '#FFC107',
         ),
         SocialGroup(
-          id: '5',
+          id: 'mentor',
           name: 'Mentor',
           description: 'Mentors',
           period: 'Annually',
@@ -124,9 +130,13 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
     }
   }
 
-  Future<void> _saveGoals() async {
+Future<void> _saveGoals() async {
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final user = authService.currentUser;
+      
+      if (user == null) return;
       
       // Update each group with new settings
       await apiService.updateGroups(_userGroups);
@@ -163,7 +173,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
   }
 
   void _addNewGroup() {
-    final newGroup = SocialGroup(
+     final newGroup = SocialGroup(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       name: 'New Group',
       description: '',
@@ -178,6 +188,22 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
     setState(() {
       _userGroups.add(newGroup);
       _groupsBeingEdited[newGroup.id] = newGroup;
+    });
+    
+    // Auto-save when adding a new group
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        final apiService = Provider.of<ApiService>(context, listen: false);
+        await apiService.updateGroups(_userGroups);
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('New group added')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error adding group: $e')),
+        );
+      }
     });
   }
 
@@ -197,18 +223,33 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
     });
   }
 
-  void _saveGroupEdit(String groupId) {
+  void _saveGroupEdit(String groupId) async {
     final editedGroup = _groupsBeingEdited[groupId];
     if (editedGroup != null) {
       final index = _userGroups.indexWhere((g) => g.id == groupId);
       if (index != -1) {
-        setState(() {
-          _userGroups[index] = editedGroup;
-          _groupsBeingEdited.remove(groupId);
-        });
+        try {
+          setState(() {
+            _userGroups[index] = editedGroup;
+            _groupsBeingEdited.remove(groupId);
+          });
+          
+          // Save changes to Firestore immediately
+          final apiService = Provider.of<ApiService>(context, listen: false);
+          await apiService.updateGroups(_userGroups);
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Group updated successfully')),
+          );
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error updating group: $e')),
+          );
+        }
       }
     }
   }
+
 
   void _cancelGroupEdit(String groupId) {
     setState(() {
@@ -221,19 +262,36 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Group'),
-        content: const Text('Are you sure you want to delete this group?'),
+        content: const Text('Are you sure you want to delete this group? This will not delete contacts in this group.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
-              setState(() {
-                _userGroups.removeWhere((group) => group.id == groupId);
-                _groupsBeingEdited.remove(groupId);
-              });
-              Navigator.pop(context);
+            onPressed: () async {
+              try {
+                // Remove the group locally
+                setState(() {
+                  _userGroups.removeWhere((group) => group.id == groupId);
+                  _groupsBeingEdited.remove(groupId);
+                });
+                
+                // Save changes to Firestore immediately
+                final apiService = Provider.of<ApiService>(context, listen: false);
+                await apiService.updateGroups(_userGroups);
+                
+                Navigator.pop(context);
+                
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Group deleted successfully')),
+                );
+              } catch (e) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error deleting group: $e')),
+                );
+              }
             },
             child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),
@@ -318,7 +376,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: _addNewGroup,
-                  icon: const Icon(Icons.add),
+                  icon: const Icon(Icons.add, color: Colors.white,),
                   label: const Text('Add New Group'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
@@ -415,6 +473,8 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
           max: range['max']!.toDouble(),
           divisions: range['divisions'],
           label: group.frequency.toString(),
+          thumbColor: const Color.fromRGBO(45, 161, 175, 1),
+          activeColor: const Color.fromRGBO(45, 161, 175, 1),
           onChanged: (value) {
             setState(() {
               group.frequency = value.toInt();
@@ -524,11 +584,19 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
                             ),
                           ),
                         ],
+                        const SizedBox(height: 5),
+                        // Text(
+                        //   '${group.memberCount} members',
+                        //   style: const TextStyle(
+                        //     fontSize: 12,
+                        //     color: Colors.grey,
+                        //   ),
+                        // ),
                       ],
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.edit, color: Colors.blue),
+                    icon: const Icon(Icons.edit, color: Color.fromRGBO(45, 161, 175, 1)),
                     onPressed: () => _editGroup(group),
                   ),
                   IconButton(

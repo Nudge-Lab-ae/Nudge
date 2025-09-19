@@ -41,18 +41,26 @@ class NudgeService {
             .toList());
   }
 
+   List<DateTime> _calculateStaggeredTimes(DateTime baseTime, int count, Duration interval) {
+    List<DateTime> times = [];
+    for (int i = 0; i < count; i++) {
+      times.add(baseTime.add(interval * i));
+    }
+    return times;
+  }
+
   // Schedule a nudge for a single contact
   Future<bool> scheduleNudgeForContact(Contact contact, String userId, 
-      {String? period, int? frequency}) async {
+      {String? period, int? frequency, DateTime? scheduledTime}) async {
     try {
       // Use group settings if not overridden
-      bool shouldSendPush = contact.isVIP || contact.priority <= 2;
+      bool shouldSendPush = contact.isVIP;
 
       String effectivePeriod = period ?? contact.period;
       int effectiveFrequency = frequency ?? contact.frequency;
       
-      // Calculate next nudge time
-      DateTime nextNudgeTime = _calculateNextNudgeTime(effectivePeriod, effectiveFrequency);
+      // Calculate next nudge time if not provided
+      DateTime nextNudgeTime = scheduledTime ?? _calculateNextNudgeTime(effectivePeriod, effectiveFrequency);
       
       // Create nudge
       final nudge = Nudge(
@@ -82,12 +90,14 @@ class NudgeService {
           .set(nudge.toMap());
       
       // Schedule notification
-      await _notificationService.scheduleNudgeNotification(
-        nudge.id.hashCode,
-        'Time to connect with ${contact.name}!',
-        'Remember to reach out to ${contact.name}. You scheduled this reminder.',
-        nextNudgeTime,
-      );
+      if (shouldSendPush) {
+        await _notificationService.scheduleNudgeNotification(
+          nudge.id.hashCode,
+          'Time to connect with ${contact.name}!',
+          'Remember to reach out to ${contact.name}. You scheduled this reminder.',
+          nextNudgeTime,
+        );
+      }
       
       // Update contact's last nudge time
       await _firestore
@@ -100,15 +110,6 @@ class NudgeService {
         'nextNudge': nextNudgeTime.millisecondsSinceEpoch,
       });
 
-       if (shouldSendPush) {
-        await _notificationService.scheduleNudgeNotification(
-          nudge.id.hashCode,
-          'Time to connect with ${contact.name}!',
-          'Remember to reach out to ${contact.name}. You scheduled this reminder.',
-          nextNudgeTime,
-        );
-      }
-      
       print('Nudge scheduled for ${contact.name} at $nextNudgeTime');
       return true;
     } catch (e) {
@@ -116,6 +117,7 @@ class NudgeService {
       return false;
     }
   }
+
 
   DateTime _calculateNextNudgeTime(String period, int frequency) {
     DateTime now = DateTime.now();
@@ -165,16 +167,42 @@ class NudgeService {
   }
 
   // Schedule nudges for a group of contacts
-  Future<Map<String, dynamic>> scheduleNudgesForGroup(
+   Future<Map<String, dynamic>> scheduleNudgesForGroup(
     List<Contact> contacts, 
     String userId, 
+    {bool staggered = false, 
+     Duration staggerInterval = const Duration(hours: 1)}
   ) async {
     int successCount = 0;
     int failCount = 0;
     List<String> failedContacts = [];
     
-    for (var contact in contacts) {
-      final success = await scheduleNudgeForContact(contact, userId);
+   contacts.sort((a, b) {
+      if (a.isVIP && !b.isVIP) return -1;
+      if (!a.isVIP && b.isVIP) return 1;
+      return 0;
+    });
+    
+    // Calculate base time and staggered times if needed
+    DateTime baseTime = DateTime.now();
+    List<DateTime> scheduledTimes = [];
+    
+    if (staggered) {
+      scheduledTimes = _calculateStaggeredTimes(baseTime, contacts.length, staggerInterval);
+    } else {
+      // All at the same time
+      scheduledTimes = List<DateTime>.filled(contacts.length, baseTime);
+    }
+    
+    for (int i = 0; i < contacts.length; i++) {
+      final contact = contacts[i];
+      final scheduledTime = scheduledTimes[i];
+      
+      final success = await scheduleNudgeForContact(
+        contact, 
+        userId, 
+        scheduledTime: scheduledTime
+      );
       
       if (success) {
         successCount++;
@@ -192,6 +220,7 @@ class NudgeService {
       'failCount': failCount,
       'failedContacts': failedContacts,
     };
+
   }
 
   // Mark a nudge as complete
@@ -337,10 +366,13 @@ class NudgeScheduleDialog extends StatefulWidget {
 }
 
 class _NudgeScheduleDialogState extends State<NudgeScheduleDialog> {
-  final NudgeService _nudgeService = NudgeService();
-  String _selectedOption = 'all'; // 'all', 'group', 'manual'
+    final NudgeService _nudgeService = NudgeService();
+  String _selectedOption = 'all';
   String? _selectedGroupId;
   final Set<String> _selectedContactIds = {};
+  bool _staggered = true; // Add this line
+  String _staggerInterval = '1 hour'; // Add this line
+
 
   @override
   Widget build(BuildContext context) {
@@ -483,6 +515,25 @@ class _NudgeScheduleDialogState extends State<NudgeScheduleDialog> {
                     
                     Navigator.of(context).pop();
                     
+                    // Calculate stagger interval
+                    Duration interval;
+                    switch (_staggerInterval) {
+                      case '30 minutes':
+                        interval = const Duration(minutes: 30);
+                        break;
+                      case '2 hours':
+                        interval = const Duration(hours: 2);
+                        break;
+                      case '4 hours':
+                        interval = const Duration(hours: 4);
+                        break;
+                      case '1 day':
+                        interval = const Duration(days: 1);
+                        break;
+                      default: // 1 hour
+                        interval = const Duration(hours: 1);
+                    }
+                    
                     // Show progress dialog
                     showDialog(
                       context: context,
@@ -504,10 +555,12 @@ class _NudgeScheduleDialogState extends State<NudgeScheduleDialog> {
                       },
                     );
                     
-                    // Schedule nudges
+                    // Schedule nudges with staggered option
                     final result = await _nudgeService.scheduleNudgesForGroup(
                       selectedContacts,
                       widget.userId,
+                      staggered: _staggered,
+                      staggerInterval: interval,
                     );
                     
                     // Dismiss progress dialog
@@ -520,6 +573,42 @@ class _NudgeScheduleDialogState extends State<NudgeScheduleDialog> {
                 ),
               ],
             ),
+
+             const SizedBox(height: 16),
+            const Text('Scheduling Options:'),
+            Row(
+              children: [
+                const Text('Staggered Reminders'),
+                Switch(
+                  value: _staggered,
+                  onChanged: (value) {
+                    setState(() {
+                      _staggered = value;
+                    });
+                  },
+                ),
+              ],
+            ),
+            
+            if (_staggered) ...[
+              const SizedBox(height: 8),
+              const Text('Stagger Interval:'),
+              DropdownButton<String>(
+                value: _staggerInterval,
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _staggerInterval = newValue!;
+                  });
+                },
+                items: <String>['30 minutes', '1 hour', '2 hours', '4 hours', '1 day']
+                    .map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+              ),
+            ],
           ],
         ),
       ),

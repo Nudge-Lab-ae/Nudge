@@ -156,6 +156,23 @@ class _EditContactScreenState extends State<EditContactScreen> {
     }
   }
 
+  void _deleteImage() async {
+  // If there's an existing image URL, delete it from storage
+  if (_imageUrl.isNotEmpty && _imageUrl.contains('https')) {
+    try {
+      await _storageService.deleteImage(_imageUrl);
+    } catch (e) {
+      print('Error deleting image: $e');
+      // Continue with resetting the UI even if storage deletion fails
+    }
+  }
+  
+  setState(() {
+    _selectedImage = null;
+    _imageUrl = '';
+  });
+}
+
   @override
   Widget build(BuildContext context) {
     final apiService = Provider.of<ApiService>(context, listen: false);
@@ -197,19 +214,39 @@ class _EditContactScreenState extends State<EditContactScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Center(
-                child: GestureDetector(
-                  onTap: _pickImage,
-                  child: CircleAvatar(
-                    radius: 50,
-                    backgroundImage: _selectedImage != null
-                        ? FileImage(_selectedImage!)
-                        : (_imageUrl.isNotEmpty
-                            ? NetworkImage(_imageUrl)
-                            : null),
-                    child: _selectedImage == null && _imageUrl.isEmpty
-                        ? const Icon(Icons.camera_alt, size: 40)
-                        : null,
-                  ),
+                child: Stack(
+                  children: [
+                    GestureDetector(
+                      onTap: _pickImage,
+                      child: CircleAvatar(
+                        radius: 50,
+                        backgroundColor: Color.fromRGBO(45, 161, 175, 1),
+                        backgroundImage: _selectedImage != null
+                            ? FileImage(_selectedImage!)
+                            : (_imageUrl.isNotEmpty
+                                ? NetworkImage(_imageUrl)
+                                : null),
+                        child: _selectedImage == null && _imageUrl.isEmpty
+                            ? const Icon(Icons.camera_alt, size: 40)
+                            : null,
+                      ),
+                    ),
+                    if (_selectedImage != null || _imageUrl.isNotEmpty)
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          child: IconButton(
+                            icon: Icon(Icons.delete, color: Colors.white, size: 20),
+                            onPressed: _deleteImage,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
               const SizedBox(height: 20),
@@ -265,24 +302,24 @@ class _EditContactScreenState extends State<EditContactScreen> {
                       setState(() => _isVIP = value ?? false);
                     },
                   ),
-                  Text('VIP Contact', style: AppTextStyles.primary),
+                  Text('Closed Circle', style: AppTextStyles.primary),
                   
                   const SizedBox(width: 20),
                   
-                  Text('Priority:', style: AppTextStyles.primary),
-                  const SizedBox(width: 10),
-                  DropdownButton<int>(
-                    value: _priority,
-                    onChanged: (value) {
-                      setState(() => _priority = value ?? 3);
-                    },
-                    items: [1, 2, 3, 4, 5].map((priority) {
-                      return DropdownMenuItem<int>(
-                        value: priority,
-                        child: Text('$priority', style: AppTextStyles.primary),
-                      );
-                    }).toList(),
-                  ),
+                  // Text('Priority:', style: AppTextStyles.primary),
+                  // const SizedBox(width: 10),
+                  // DropdownButton<int>(
+                  //   value: _priority,
+                  //   onChanged: (value) {
+                  //     setState(() => _priority = value ?? 3);
+                  //   },
+                  //   items: [1, 2, 3, 4, 5].map((priority) {
+                  //     return DropdownMenuItem<int>(
+                  //       value: priority,
+                  //       child: Text('$priority', style: AppTextStyles.primary),
+                  //     );
+                  //   }).toList(),
+                  // ),
                 ],
               ),
               const SizedBox(height: 20),

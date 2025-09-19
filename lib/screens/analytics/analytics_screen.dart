@@ -8,7 +8,6 @@ import 'package:nudge/theme/text_styles.dart';
 import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:percent_indicator/percent_indicator.dart';
-// import 'package:intl/intl.dart';
 import '../../services/auth_service.dart';
 
 class AnalyticsScreen extends StatefulWidget {
@@ -19,35 +18,6 @@ class AnalyticsScreen extends StatefulWidget {
 }
 
 class _AnalyticsScreenState extends State<AnalyticsScreen> {
-  final List<String> _timeFilters = ['Last 7 Days', 'Last 30 Days', 'Last 90 Days', 'All Time'];
-  String _selectedFilter = 'Last 30 Days';
-  DateTime? _startDate;
-
-  @override
-  void initState() {
-    super.initState();
-    _updateDateRange();
-  }
-
-  void _updateDateRange() {
-    final now = DateTime.now();
-    switch (_selectedFilter) {
-      case 'Last 7 Days':
-        _startDate = now.subtract(const Duration(days: 7));
-        break;
-      case 'Last 90 Days':
-        _startDate = now.subtract(const Duration(days: 90));
-        break;
-      case 'All Time':
-        _startDate = null; // No filter
-        break;
-      case 'Last 30 Days':
-      default:
-        _startDate = now.subtract(const Duration(days: 30));
-        break;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
@@ -66,24 +36,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         title: Text('Analytics', style: AppTextStyles.title3.copyWith(color: Colors.white)),
         backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
         iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              setState(() {
-                _selectedFilter = value;
-                _updateDateRange();
-              });
-            },
-            itemBuilder: (BuildContext context) {
-              return _timeFilters.map((String filter) {
-                return PopupMenuItem<String>(
-                  value: filter,
-                  child: Text(filter),
-                );
-              }).toList();
-            },
-          ),
-        ],
       ),
       body: StreamProvider<List<Contact>>.value(
         value: apiService.getContactsStream(),
@@ -93,7 +45,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           initialData: const [],
           child: Consumer2<List<Contact>, List<Nudge>>(
             builder: (context, contacts, nudges, child) {
-              // Calculate analytics data based on selected time filter
+              // Calculate analytics data
               final analytics = _calculateAnalytics(contacts, nudges);
               
               return SingleChildScrollView(
@@ -101,21 +53,15 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildTimeFilterChip(),
-                    const SizedBox(height: 16),
-                    _buildSummarySection(analytics),
-                    const SizedBox(height: 24),
-                    _buildRelationshipHealthSection(analytics, contacts),
-                    const SizedBox(height: 24),
-                    _buildContactDistributionSection(analytics),
-                    const SizedBox(height: 24),
-                    _buildInteractionPatternsSection(analytics, nudges),
-                    const SizedBox(height: 24),
-                    _buildVIPContactsSection(analytics, contacts),
+                    _buildSummarySection(analytics, contacts.length),
                     const SizedBox(height: 24),
                     _buildNudgePerformanceSection(analytics, nudges),
                     const SizedBox(height: 24),
-                    _buildGoalsProgressSection(analytics),
+                    _buildRelationshipHealthSection(analytics, contacts),
+                    const SizedBox(height: 24),
+                    _buildVIPContactsSection(analytics, contacts),
+                    const SizedBox(height: 24),
+                    _buildInteractionPatternsSection(analytics, nudges),
                   ],
                 ),
               );
@@ -126,20 +72,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
-  Widget _buildTimeFilterChip() {
-    return Row(
-      children: [
-        const Icon(Icons.calendar_today, size: 16),
-        const SizedBox(width: 8),
-        Chip(
-          label: Text(_selectedFilter),
-          backgroundColor: const Color.fromRGBO(37, 150, 190, 0.2),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSummarySection(Analytics analytics) {
+  Widget _buildSummarySection(Analytics analytics, int totalContacts) {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -156,7 +89,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildStatCard('Total Contacts', analytics.totalContacts.toString(), Icons.people),
+                _buildStatCard('Total Contacts', totalContacts.toString(), Icons.people),
                 _buildStatCard('VIP Contacts', analytics.vipContacts.toString(), Icons.star),
                 _buildStatCard('Needs Attention', analytics.contactsNeedingAttention.toString(), Icons.notifications_active),
               ],
@@ -174,7 +107,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Relationship Health Score',
+              'Nudge Completion Rate',
               style: TextStyle(fontSize: 12),
               textAlign: TextAlign.center,
             ),
@@ -235,46 +168,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             ),
             const SizedBox(height: 16),
             const Text(
-              'Health score by relationship category',
+              'Health score based on timely communication',
               style: TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildContactDistributionSection(Analytics analytics) {
-    final data = analytics.contactsByType.entries.map((entry) {
-      return {'type': entry.key, 'count': entry.value};
-    }).toList();
-
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Contact Distribution',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 300,
-              child: SfCircularChart(
-                series: <CircularSeries>[
-                  PieSeries<Map<String, dynamic>, String>(
-                    dataSource: data,
-                    xValueMapper: (Map<String, dynamic> data, _) => data['type'],
-                    yValueMapper: (Map<String, dynamic> data, _) => data['count'],
-                    dataLabelSettings: const DataLabelSettings(isVisible: true),
-                    enableTooltip: true,
-                  )
-                ],
-              ),
             ),
           ],
         ),
@@ -294,7 +189,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Interaction Patterns',
+              'Weekly Nudge Activity',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
@@ -316,9 +211,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            Text(
-              'Interaction trends for $_selectedFilter',
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            const Text(
+              'Completed nudges by week',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
             ),
           ],
         ),
@@ -339,7 +234,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'VIP Contacts Overview',
+              'VIP Engagement',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
@@ -404,7 +299,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               animation: true,
               lineHeight: 20.0,
               animationDuration: 1000,
-              percent: (nudgePerformance['completionRate'] ?? 0 / 100).toDouble(),
+              percent: (nudgePerformance['completionRate'] ?? 0) / 100,
               center: Text("${(nudgePerformance['completionRate'] ?? 0).toStringAsFixed(1)}%", style: const TextStyle(color: Colors.white)),
               barRadius: const Radius.circular(10),
               progressColor: _getProgressColor(nudgePerformance['completionRate']?.toDouble() ?? 0),
@@ -439,64 +334,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
-  Widget _buildGoalsProgressSection(Analytics analytics) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Goals Progress',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            _buildGoalProgressItem('Weekly Connections', analytics.weeklyConnections, 20),
-            _buildGoalProgressItem('Monthly Catch-ups', analytics.monthlyCatchups, 40),
-            _buildGoalProgressItem('VIP Interactions', analytics.vipInteractions, 15),
-            _buildGoalProgressItem('New Connections', analytics.newConnections, 10),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGoalProgressItem(String title, int current, int target) {
-    final percentage = (current / target * 100).clamp(0, 100);
-    
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(title),
-              Text('$current/$target'),
-            ],
-          ),
-          const SizedBox(height: 4),
-          LinearProgressIndicator(
-            value: percentage / 100,
-            backgroundColor: Colors.grey[300],
-            valueColor: AlwaysStoppedAnimation<Color>(_getProgressColor(percentage.toDouble())),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '${percentage.toStringAsFixed(1)}% complete',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Color _getProgressColor(double percentage) {
     if (percentage >= 80) return Colors.green;
     if (percentage >= 60) return const Color.fromRGBO(45, 161, 175, 1);
@@ -504,48 +341,37 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     return Colors.red;
   }
 
-   Analytics _calculateAnalytics(List<Contact> contacts, List<Nudge> nudges) {
-    // Filter contacts and nudges based on selected time range
-    final filteredContacts = _startDate != null
-        ? contacts.where((contact) => contact.lastContacted.isAfter(_startDate!)).toList()
-        : contacts;
-    
-    final filteredNudges = _startDate != null
-        ? nudges.where((nudge) => nudge.scheduledTime.isAfter(_startDate!)).toList()
-        : nudges;
-
+  Analytics _calculateAnalytics(List<Contact> contacts, List<Nudge> nudges) {
     // Calculate various analytics metrics
     final vipCount = contacts.where((c) => c.isVIP).length;
+    
+    // Calculate contacts needing attention (not contacted in the last 30 days)
     final needsAttention = contacts.where((c) => 
       c.lastContacted.isBefore(DateTime.now().subtract(const Duration(days: 30)))
     ).length;
     
     // Count contacts by type
     final contactsByType = <String, int>{};
-    for (var contact in filteredContacts) {
+    for (var contact in contacts) {
       contactsByType[contact.connectionType] = 
           (contactsByType[contact.connectionType] ?? 0) + 1;
     }
     
-    // Calculate relationship health score
-    final relationshipHealth = contacts.isEmpty ? 0.0 : 
-        (contacts.length - needsAttention) / contacts.length * 100;
+    // Calculate relationship health based on nudge completion rate
+    final completedNudges = nudges.where((nudge) => nudge.isCompleted).length;
+    final totalNudges = nudges.length;
+    final relationshipHealth = totalNudges == 0 ? 100.0 : (completedNudges / totalNudges * 100);
     
     // Calculate interaction metrics
-    final completedNudges = filteredNudges.where((nudge) => nudge.isCompleted).length;
-    // final pendingNudges = filteredNudges.where((nudge) => !nudge.isCompleted).length;
-    
-    // Calculate goal progress
-    final weeklyConnections = _calculateWeeklyConnections(filteredNudges);
-    final monthlyCatchups = _calculateMonthlyCatchups(filteredNudges);
-    final vipInteractions = _calculateVIPInteractionsCount(filteredContacts);
-    final newConnections = _calculateNewConnections(filteredContacts);
+    final weeklyConnections = _calculateWeeklyConnections(nudges);
+    final monthlyCatchups = _calculateMonthlyCatchups(nudges);
+    final vipInteractions = _calculateVIPInteractionsCount(contacts);
+    final newConnections = _calculateNewConnections(contacts);
     
     return Analytics(
       totalContacts: contacts.length,
       vipContacts: vipCount,
       completedNudges: completedNudges,
-      // pendingNudges: pendingNudges,
       contactsNeedingAttention: needsAttention,
       contactsByType: contactsByType,
       relationshipHealth: relationshipHealth,
@@ -567,9 +393,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         types[contact.connectionType] = [];
       }
       
-      // Calculate health score for this contact (simplified)
+      // Calculate health score for this contact based on last contacted date
       final daysSinceLastContact = DateTime.now().difference(contact.lastContacted).inDays;
-      final healthScore = 100 - (daysSinceLastContact / 30 * 100).clamp(0, 100).toInt();
+      final daysPerFrequency = contact.frequency * _getDaysInPeriod(contact.period);
+      final healthScore = 100 - ((daysSinceLastContact / daysPerFrequency) * 100).clamp(0, 100).toInt();
       
       types[contact.connectionType]!.add(healthScore);
     }
@@ -583,11 +410,22 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     return healthData;
   }
 
+  int _getDaysInPeriod(String period) {
+    switch (period) {
+      case 'Daily': return 1;
+      case 'Weekly': return 7;
+      case 'Monthly': return 30;
+      case 'Quarterly': return 90;
+      case 'Annually': return 365;
+      default: return 30;
+    }
+  }
+
   List<Map<String, dynamic>> _calculateInteractionPatterns(List<Nudge> nudges) {
     final interactionData = <Map<String, dynamic>>[];
     final now = DateTime.now();
     
-    // Group interactions by week
+    // Group interactions by week for the last 4 weeks
     for (int i = 0; i < 4; i++) {
       final weekStart = now.subtract(Duration(days: (3 - i) * 7));
       final weekEnd = weekStart.add(const Duration(days: 6));

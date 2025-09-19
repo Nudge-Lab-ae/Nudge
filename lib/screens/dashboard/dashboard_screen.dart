@@ -120,6 +120,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             BottomNavigationBarItem(
               icon: Icon(Icons.dashboard, color: _currentIndex == 0?Color.fromRGBO(45, 161, 175, 1):Colors.grey,),
               label: 'Dashboard',
+              backgroundColor: Color.fromRGBO(45, 161, 175, 1),
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.contacts, color:_currentIndex == 1?Color.fromRGBO(45, 161, 175, 1):Colors.grey,),
@@ -130,6 +131,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               label: 'Groups',
             ),
           ],
+          selectedItemColor: Color.fromRGBO(45, 161, 175, 1),
+          selectedLabelStyle: TextStyle(color: Color.fromRGBO(45, 161, 175, 1)),
         ),
     ),
     ));
@@ -632,6 +635,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   backgroundImage: contact.imageUrl.isNotEmpty
                       ? NetworkImage(contact.imageUrl)
                       : null,
+                  backgroundColor: Color.fromRGBO(45, 161, 175, 1),
                   radius: 20,
                   child: contact.imageUrl.isEmpty 
                       ? const Icon(Icons.person, size: 20) 
