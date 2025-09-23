@@ -1,6 +1,8 @@
 // lib/services/api_service.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart' as auth;
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../models/contact.dart';
 import '../models/nudge.dart';
 import '../models/social_group.dart';
@@ -14,6 +16,67 @@ class ApiService {
   CollectionReference get _usersCollection => _firestore.collection('users');
   
   // Get user's contacts subcollection reference
+  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+
+  // Initialize FCM and get token
+  Future<String?> initializeFCM() async {
+    try {
+      // Request permission
+      NotificationSettings settings = await _firebaseMessaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      
+      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+        // Get FCM token
+        String? token = await _firebaseMessaging.getToken();
+        
+        if (token != null) {
+          // Store token in user document
+          await updateUser({'fcmToken': token});
+          print('FCM Token stored: $token');
+          return token;
+        }
+      }
+      
+      return null;
+    } catch (e) {
+      print('Error initializing FCM: $e');
+      return null;
+    }
+  }
+
+  // Call Cloud Function to trigger manual nudge
+  Future<Map<String, dynamic>> triggerManualNudge(String contactId) async {
+    try {
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) throw Exception('No user logged in');
+      
+      // You'll need to set up Firebase Functions callable
+      // First, add this import: import 'package:cloud_functions/cloud_functions.dart';
+      final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('triggerManualNudge');
+      
+      final result = await callable.call({
+        'contactId': contactId,
+      });
+      
+      return result.data;
+    } catch (e) {
+      print('Error triggering manual nudge: $e');
+      throw Exception('Failed to trigger nudge: $e');
+    }
+  }
+
+  // Update user's FCM token (if it changes)
+  Future<void> updateFCMToken(String token) async {
+    try {
+      await updateUser({'fcmToken': token});
+    } catch (e) {
+      throw Exception('Failed to update FCM token: $e');
+    }
+  }
+
   CollectionReference _getUserContactsCollection(String userId) {
     return _usersCollection.doc(userId).collection('contacts');
   }

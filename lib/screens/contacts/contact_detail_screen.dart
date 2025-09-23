@@ -4,8 +4,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:nudge/screens/contacts/edit_contact_screen.dart';
+import 'package:nudge/services/api_service.dart';
 // import 'package:nudge/screens/notifications/notifications_screen.dart';
-import 'package:nudge/services/nudge_service.dart';
+// import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/theme/text_styles.dart';
 import 'package:nudge/widgets/smart_tagging_suggestions.dart';
 // import 'package:nudge/theme/text_styles.dart';
@@ -29,6 +30,7 @@ class ContactDetailScreen extends StatelessWidget {
 @override
 Widget build(BuildContext context) {
   final authService = Provider.of<AuthService>(context);
+  final apiService = Provider.of<ApiService>(context);
   final user = authService.currentUser;
   var size = MediaQuery.of(context).size;
   print('the image url is'); print(contact.imageUrl);
@@ -69,10 +71,11 @@ Widget build(BuildContext context) {
         IconButton(
             icon: Icon(Icons.notifications),
             onPressed: () {
-              NudgeService().sendTestNudge(contact, authService.currentUser!.uid);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Test nudge sent for ${contact.name}')),
-              );
+              // NudgeService().sendTestNudge(contact, authService.currentUser!.uid);
+              // ScaffoldMessenger.of(context).showSnackBar(
+              //   SnackBar(content: Text('Test nudge sent for ${contact.name}')),
+              // );
+              apiService.triggerManualNudge(contact.id);
             },
             tooltip: 'Send test nudge',
           ),

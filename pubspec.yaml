@@ -56,6 +56,8 @@ dependencies:
   percent_indicator: ^4.2.2
   confetti: ^0.7.0
   shimmer: ^2.0.0
+  firebase_messaging: 
+  cloud_functions: 
   # device_info_plus: ^8.0.0
 
 
@@ -105,6 +107,24 @@ flutter:
         - asset: assets/fonts/Montserrat-Bold.ttf
           weight: 700
         - asset: assets/fonts/Montserrat-ExtraBold.ttf
+          weight: 900
+
+    - family: RobotoMono
+      fonts:
+        - asset: assets/fonts/RobotoMono-Regular.ttf
+          weight: 300
+        - asset: assets/fonts/RobotoMono-SemiBold.ttf
+          weight: 500
+        - asset: assets/fonts/RobotoMono-Bold.ttf
+          weight: 900
+
+    - family: Quicksand
+      fonts:
+        - asset: assets/fonts/Quicksand-Regular.ttf
+          weight: 300
+        - asset: assets/fonts/Quicksand-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Quicksand-Bold.ttf
           weight: 900
 
   # To add assets to your application, add an assets section, like this:

@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import '../../services/auth_service.dart';
+import '../../services/nudge_service.dart';
 
 class AnalyticsScreen extends StatefulWidget {
   const AnalyticsScreen({super.key});
@@ -30,6 +31,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     }
     
     final apiService = Provider.of<ApiService>(context);
+    final nudgeService = NudgeService();
     
     return Scaffold(
       appBar: AppBar(
@@ -37,14 +39,32 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: StreamProvider<List<Contact>>.value(
-        value: apiService.getContactsStream(),
-        initialData: const [],
-        child: StreamProvider<List<Nudge>>.value(
-          value: apiService.getNudgesStream(),
-          initialData: const [],
-          child: Consumer2<List<Contact>, List<Nudge>>(
-            builder: (context, contacts, nudges, child) {
+      body: StreamBuilder<List<Contact>>(
+        stream: apiService.getContactsStream(),
+        builder: (context, contactsSnapshot) {
+          if (contactsSnapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          
+          if (contactsSnapshot.hasError) {
+            return Center(child: Text('Error loading contacts: ${contactsSnapshot.error}'));
+          }
+          
+          final contacts = contactsSnapshot.data ?? [];
+          
+          return StreamBuilder<List<Nudge>>(
+            stream: nudgeService.getNudgesStream(user.uid),
+            builder: (context, nudgesSnapshot) {
+              if (nudgesSnapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              
+              if (nudgesSnapshot.hasError) {
+                return Center(child: Text('Error loading nudges: ${nudgesSnapshot.error}'));
+              }
+              
+              final nudges = nudgesSnapshot.data ?? [];
+              
               // Calculate analytics data
               final analytics = _calculateAnalytics(contacts, nudges);
               
@@ -66,8 +86,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 ),
               );
             },
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -99,10 +119,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               animation: true,
               lineHeight: 20.0,
               animationDuration: 1000,
-              percent: analytics.relationshipHealth / 100,
-              center: Text("${analytics.relationshipHealth.toStringAsFixed(1)}%", style: const TextStyle(color: Colors.white)),
+              percent: analytics.nudgeCompletionRate / 100,
+              center: Text("${analytics.nudgeCompletionRate.toStringAsFixed(1)}%", style: const TextStyle(color: Colors.white)),
               barRadius: const Radius.circular(10),
-              progressColor: _getProgressColor(analytics.relationshipHealth),
+              progressColor: _getProgressColor(analytics.nudgeCompletionRate),
               backgroundColor: Colors.grey[300],
             ),
             const SizedBox(height: 8),
@@ -135,7 +155,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   }
 
   Widget _buildRelationshipHealthSection(Analytics analytics, List<Contact> contacts) {
-    // Calculate health by relationship type
     final healthData = _calculateRelationshipHealth(contacts);
     
     return Card(
@@ -153,18 +172,20 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             const SizedBox(height: 16),
             SizedBox(
               height: 200,
-              child: SfCartesianChart(
-                primaryXAxis: CategoryAxis(),
-                series: <ChartSeries>[
-                  ColumnSeries<Map<String, dynamic>, String>(
-                    dataSource: healthData,
-                    xValueMapper: (Map<String, dynamic> data, _) => data['type'],
-                    yValueMapper: (Map<String, dynamic> data, _) => data['health'],
-                    dataLabelSettings: const DataLabelSettings(isVisible: true),
-                    color: const Color.fromRGBO(45, 161, 175, 1),
-                  )
-                ],
-              ),
+              child: healthData.isEmpty
+                  ? const Center(child: Text('No data available'))
+                  : SfCartesianChart(
+                      primaryXAxis: CategoryAxis(),
+                      series: <ChartSeries>[
+                        ColumnSeries<Map<String, dynamic>, String>(
+                          dataSource: healthData,
+                          xValueMapper: (Map<String, dynamic> data, _) => data['type'],
+                          yValueMapper: (Map<String, dynamic> data, _) => data['health'],
+                          dataLabelSettings: const DataLabelSettings(isVisible: true),
+                          color: const Color.fromRGBO(45, 161, 175, 1),
+                        )
+                      ],
+                    ),
             ),
             const SizedBox(height: 16),
             const Text(
@@ -195,20 +216,22 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             const SizedBox(height: 16),
             SizedBox(
               height: 250,
-              child: SfCartesianChart(
-                primaryXAxis: CategoryAxis(),
-                primaryYAxis: NumericAxis(minimum: 0),
-                series: <ChartSeries>[
-                  LineSeries<Map<String, dynamic>, String>(
-                    dataSource: interactionData,
-                    xValueMapper: (Map<String, dynamic> data, _) => data['period'],
-                    yValueMapper: (Map<String, dynamic> data, _) => data['interactions'],
-                    markerSettings: const MarkerSettings(isVisible: true),
-                    dataLabelSettings: const DataLabelSettings(isVisible: true),
-                    color: const Color.fromRGBO(45, 161, 175, 1),
-                  )
-                ],
-              ),
+              child: interactionData.isEmpty
+                  ? const Center(child: Text('No data available'))
+                  : SfCartesianChart(
+                      primaryXAxis: CategoryAxis(),
+                      primaryYAxis: NumericAxis(minimum: 0),
+                      series: <ChartSeries>[
+                        LineSeries<Map<String, dynamic>, String>(
+                          dataSource: interactionData,
+                          xValueMapper: (Map<String, dynamic> data, _) => data['period'],
+                          yValueMapper: (Map<String, dynamic> data, _) => data['interactions'],
+                          markerSettings: const MarkerSettings(isVisible: true),
+                          dataLabelSettings: const DataLabelSettings(isVisible: true),
+                          color: const Color.fromRGBO(45, 161, 175, 1),
+                        )
+                      ],
+                    ),
             ),
             const SizedBox(height: 16),
             const Text(
@@ -240,18 +263,20 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             const SizedBox(height: 16),
             SizedBox(
               height: 200,
-              child: SfCartesianChart(
-                primaryXAxis: CategoryAxis(),
-                series: <ChartSeries>[
-                  BarSeries<Map<String, dynamic>, String>(
-                    dataSource: vipInteractionData,
-                    xValueMapper: (Map<String, dynamic> data, _) => data['name'],
-                    yValueMapper: (Map<String, dynamic> data, _) => data['interactions'],
-                    dataLabelSettings: const DataLabelSettings(isVisible: true),
-                    color: const Color.fromRGBO(45, 161, 175, 1),
-                  )
-                ],
-              ),
+              child: vipInteractionData.isEmpty
+                  ? const Center(child: Text('No VIP contacts'))
+                  : SfCartesianChart(
+                      primaryXAxis: CategoryAxis(),
+                      series: <ChartSeries>[
+                        BarSeries<Map<String, dynamic>, String>(
+                          dataSource: vipInteractionData,
+                          xValueMapper: (Map<String, dynamic> data, _) => data['name'],
+                          yValueMapper: (Map<String, dynamic> data, _) => data['interactions'],
+                          dataLabelSettings: const DataLabelSettings(isVisible: true),
+                          color: const Color.fromRGBO(45, 161, 175, 1),
+                        )
+                      ],
+                    ),
             ),
             const SizedBox(height: 16),
             Row(
@@ -342,7 +367,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   }
 
   Analytics _calculateAnalytics(List<Contact> contacts, List<Nudge> nudges) {
-    // Calculate various analytics metrics
     final vipCount = contacts.where((c) => c.isVIP).length;
     
     // Calculate contacts needing attention (not contacted in the last 30 days)
@@ -357,10 +381,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           (contactsByType[contact.connectionType] ?? 0) + 1;
     }
     
-    // Calculate relationship health based on nudge completion rate
+    // Calculate nudge completion rate
     final completedNudges = nudges.where((nudge) => nudge.isCompleted).length;
     final totalNudges = nudges.length;
-    final relationshipHealth = totalNudges == 0 ? 100.0 : (completedNudges / totalNudges * 100);
+    final nudgeCompletionRate = totalNudges == 0 ? 100.0 : (completedNudges / totalNudges * 100);
+    
+    // Calculate relationship health based on contact engagement
+    final relationshipHealth = _calculateOverallRelationshipHealth(contacts);
     
     // Calculate interaction metrics
     final weeklyConnections = _calculateWeeklyConnections(nudges);
@@ -375,6 +402,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       contactsNeedingAttention: needsAttention,
       contactsByType: contactsByType,
       relationshipHealth: relationshipHealth,
+      nudgeCompletionRate: nudgeCompletionRate,
       weeklyConnections: weeklyConnections,
       monthlyCatchups: monthlyCatchups,
       vipInteractions: vipInteractions,
@@ -383,9 +411,32 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
+  double _calculateOverallRelationshipHealth(List<Contact> contacts) {
+    if (contacts.isEmpty) return 100.0;
+    
+    double totalHealth = 0;
+    int contactCount = 0;
+    
+    for (var contact in contacts) {
+      final daysSinceLastContact = DateTime.now().difference(contact.lastContacted).inDays;
+      final daysPerFrequency = contact.frequency * _getDaysInPeriod(contact.period);
+      
+      // Health score: 100% if contacted recently, decreasing based on how overdue
+      double healthScore = 100.0;
+      if (daysSinceLastContact > daysPerFrequency) {
+        healthScore = 100 - ((daysSinceLastContact - daysPerFrequency) / daysPerFrequency * 50).clamp(0, 100).toDouble();
+      }
+      
+      totalHealth += healthScore;
+      contactCount++;
+    }
+    
+    return contactCount == 0 ? 100.0 : totalHealth / contactCount;
+  }
+
   List<Map<String, dynamic>> _calculateRelationshipHealth(List<Contact> contacts) {
     final healthData = <Map<String, dynamic>>[];
-    final types = <String, List<int>>{};
+    final types = <String, List<double>>{};
     
     // Group contacts by type and calculate average health
     for (var contact in contacts) {
@@ -393,30 +444,33 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         types[contact.connectionType] = [];
       }
       
-      // Calculate health score for this contact based on last contacted date
       final daysSinceLastContact = DateTime.now().difference(contact.lastContacted).inDays;
       final daysPerFrequency = contact.frequency * _getDaysInPeriod(contact.period);
-      final healthScore = 100 - ((daysSinceLastContact / daysPerFrequency) * 100).clamp(0, 100).toInt();
+      
+      double healthScore = 100.0;
+      if (daysSinceLastContact > daysPerFrequency) {
+        healthScore = 100 - ((daysSinceLastContact - daysPerFrequency) / daysPerFrequency * 50).clamp(0, 100).toDouble();
+      }
       
       types[contact.connectionType]!.add(healthScore);
     }
     
     // Calculate average health for each type
     types.forEach((type, scores) {
-      final averageHealth = scores.isEmpty ? 0 : scores.reduce((a, b) => a + b) ~/ scores.length;
-      healthData.add({'type': type, 'health': averageHealth});
+      final averageHealth = scores.isEmpty ? 0 : scores.reduce((a, b) => a + b) / scores.length;
+      healthData.add({'type': type, 'health': averageHealth.roundToDouble()});
     });
     
     return healthData;
   }
 
   int _getDaysInPeriod(String period) {
-    switch (period) {
-      case 'Daily': return 1;
-      case 'Weekly': return 7;
-      case 'Monthly': return 30;
-      case 'Quarterly': return 90;
-      case 'Annually': return 365;
+    switch (period.toLowerCase()) {
+      case 'daily': return 1;
+      case 'weekly': return 7;
+      case 'monthly': return 30;
+      case 'quarterly': return 90;
+      case 'annually': return 365;
       default: return 30;
     }
   }
@@ -426,9 +480,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     final now = DateTime.now();
     
     // Group interactions by week for the last 4 weeks
-    for (int i = 0; i < 4; i++) {
-      final weekStart = now.subtract(Duration(days: (3 - i) * 7));
-      final weekEnd = weekStart.add(const Duration(days: 6));
+    for (int i = 3; i >= 0; i--) {
+      final weekStart = now.subtract(Duration(days: (i + 1) * 7));
+      final weekEnd = now.subtract(Duration(days: i * 7));
       
       final weekInteractions = nudges.where((nudge) => 
         nudge.isCompleted && 
@@ -437,7 +491,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       ).length;
       
       interactionData.add({
-        'period': 'Week ${i + 1}',
+        'period': 'Week ${4 - i}',
         'interactions': weekInteractions,
       });
     }
@@ -448,15 +502,17 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   List<Map<String, dynamic>> _calculateVIPInteractions(List<Contact> vipContacts) {
     final interactionData = <Map<String, dynamic>>[];
     
-    // Get top 5 VIP contacts by interaction frequency
+    // Get top 5 VIP contacts by last contacted date (most recent first)
     final sortedContacts = vipContacts.toList()
-      ..sort((a, b) => b.interactionHistory.length.compareTo(a.interactionHistory.length));
+      ..sort((a, b) => b.lastContacted.compareTo(a.lastContacted));
     
     for (int i = 0; i < sortedContacts.length && i < 5; i++) {
       final contact = sortedContacts[i];
+      final daysSinceContact = DateTime.now().difference(contact.lastContacted).inDays;
+      
       interactionData.add({
         'name': contact.name.split(' ')[0],
-        'interactions': contact.interactionHistory.length,
+        'interactions': daysSinceContact,
       });
     }
     

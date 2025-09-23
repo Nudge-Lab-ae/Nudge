@@ -1,5 +1,6 @@
 // lib/main.dart
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:nudge/firebase_options.dart';
 import 'package:nudge/screens/analytics/analytics_screen.dart';
@@ -10,28 +11,213 @@ import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/theme/text_styles.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'screens/welcome_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 import 'screens/contacts/contacts_list_screen.dart';
 import 'screens/contacts/add_contact_screen.dart';
-// import 'screens/contacts/contact_detail_screen.dart';
 import 'screens/contacts/import_contacts_screen.dart';
 import 'screens/notifications/notifications_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'screens/groups/groups_list_screen.dart';
 import 'services/auth_service.dart';
 
-void main() async {
+// Create a GlobalKey for navigator to handle notifications when app is in background
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+// Initialize flutter_local_notifications
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
+
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform, name: "NudgeApp"
+    options: DefaultFirebaseOptions.currentPlatform, 
+    name: "NudgeApp"
   );
+  
+  // Initialize local notifications
+  await initializeLocalNotifications();
+  
+  // Initialize FCM and set up message handlers
+  await initializeFCM();
+  
   final nudgeService = NudgeService();
   await nudgeService.initialize();
 
   runApp(const NudgeApp());
+}
+
+Future<void> initializeLocalNotifications() async {
+  const AndroidInitializationSettings initializationSettingsAndroid =
+      AndroidInitializationSettings('@mipmap/ic_launcher');
+
+  const DarwinInitializationSettings initializationSettingsIOS =
+      DarwinInitializationSettings(
+    requestAlertPermission: true,
+    requestBadgePermission: true,
+    requestSoundPermission: true,
+  );
+
+  const InitializationSettings initializationSettings = InitializationSettings(
+    android: initializationSettingsAndroid,
+    iOS: initializationSettingsIOS,
+  );
+
+  await flutterLocalNotificationsPlugin.initialize(
+    initializationSettings,
+    onDidReceiveNotificationResponse: (NotificationResponse response) {
+      // Handle notification tap
+      _handleNotificationTap(response.payload);
+    },
+  );
+
+  // Create notification channel for Android
+  const AndroidNotificationChannel channel = AndroidNotificationChannel(
+    'high_importance_channel',
+    'High Importance Notifications',
+    description: 'This channel is used for important notifications',
+    importance: Importance.high,
+    playSound: true,
+  );
+
+  await flutterLocalNotificationsPlugin
+      .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+      ?.createNotificationChannel(channel);
+}
+
+Future<void> initializeFCM() async {
+  final FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+  // Request permission
+  NotificationSettings settings = await messaging.requestPermission(
+    alert: true,
+    badge: true,
+    sound: true,
+    provisional: false,
+  );
+
+  print('Notification permission: ${settings.authorizationStatus}');
+
+  // Get FCM token - we'll store it when we have a user logged in
+  String? token = await messaging.getToken();
+  if (token != null) {
+    print('FCM Token: $token');
+    // Token will be stored in user document when user is logged in
+  }
+
+  // Handle token refresh
+  messaging.onTokenRefresh.listen((newToken) async {
+    print('FCM token refreshed: $newToken');
+    // Update token in user document when user is logged in
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final apiService = ApiService();
+      await apiService.updateUser({'fcmToken': newToken});
+    }
+  });
+
+  // Set up foreground message handler
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    print('Foreground message received: ${message.notification?.title}');
+    _showLocalNotification(message);
+  });
+
+  // Set up background message handler
+  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    print('App opened from background via notification');
+    _handleBackgroundMessage(message);
+  });
+
+  // Handle notification when app is terminated
+  RemoteMessage? initialMessage = await messaging.getInitialMessage();
+  if (initialMessage != null) {
+    print('App opened from terminated state via notification');
+    _handleTerminatedMessage(initialMessage);
+  }
+}
+
+void _showLocalNotification(RemoteMessage message) {
+  const AndroidNotificationDetails androidPlatformChannelSpecifics =
+      AndroidNotificationDetails(
+    'high_importance_channel',
+    'High Importance Notifications',
+    channelDescription: 'This channel is used for important notifications',
+    importance: Importance.high,
+    priority: Priority.high,
+    playSound: true,
+    showWhen: true,
+    autoCancel: true,
+  );
+
+  const DarwinNotificationDetails iOSPlatformChannelSpecifics =
+      DarwinNotificationDetails();
+
+  const NotificationDetails platformChannelSpecifics = NotificationDetails(
+    android: androidPlatformChannelSpecifics,
+    iOS: iOSPlatformChannelSpecifics,
+  );
+
+  flutterLocalNotificationsPlugin.show(
+    message.hashCode,
+    message.notification?.title ?? 'New Nudge',
+    message.notification?.body ?? 'Time to connect with your contact!',
+    platformChannelSpecifics,
+    payload: _buildNotificationPayload(message),
+  );
+}
+
+String _buildNotificationPayload(RemoteMessage message) {
+  // Create a payload string with relevant data
+  final payload = {
+    'type': message.data['type'] ?? 'nudge',
+    'nudgeId': message.data['nudgeId'] ?? '',
+    'contactId': message.data['contactId'] ?? '',
+    'contactName': message.data['contactName'] ?? '',
+    'screen': message.data['screen'] ?? 'notifications',
+  };
+  
+  return payload.entries
+      .map((entry) => '${entry.key}=${entry.value}')
+      .join('&');
+}
+
+void _handleNotificationTap(String? payload) {
+  print('Notification tapped with payload: $payload');
+  
+  if (payload != null) {
+    final params = Uri.splitQueryString(payload);
+    final screen = params['screen'] ?? 'notifications';
+    final nudgeId = params['nudgeId'];
+    final contactId = params['contactId'];
+    
+    // Navigate to appropriate screen based on notification data
+    if (navigatorKey.currentState != null) {
+      switch (screen) {
+        case 'notifications':
+          navigatorKey.currentState!.pushNamed('/notifications');
+          break;
+        // Add more cases for other screens as needed
+        default:
+          navigatorKey.currentState!.pushNamed('/notifications');
+      }
+    }
+  }
+}
+
+void _handleBackgroundMessage(RemoteMessage message) {
+  print('Handling background message: ${message.data}');
+  _handleNotificationTap(_buildNotificationPayload(message));
+}
+
+void _handleTerminatedMessage(RemoteMessage message) {
+  print('Handling terminated message: ${message.data}');
+  // Store this and handle it when the app fully initializes
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    _handleNotificationTap(_buildNotificationPayload(message));
+  });
 }
 
 class NudgeApp extends StatelessWidget {
@@ -44,7 +230,7 @@ class NudgeApp extends StatelessWidget {
         Provider<AuthService>(
           create: (_) => AuthService(),
         ),
-         Provider<ApiService>(
+        Provider<ApiService>(
           create: (_) => ApiService(),
         ),
         StreamProvider<User?>(
@@ -54,7 +240,8 @@ class NudgeApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: 'NUDGE',
-       theme: ThemeData(
+        navigatorKey: navigatorKey, // Important for navigation from notifications
+        theme: ThemeData(
           primaryColor: const Color.fromRGBO(45, 161, 175, 1),
           colorScheme: ColorScheme.fromSwatch(
             primarySwatch: Colors.blue,
@@ -72,8 +259,8 @@ class NudgeApp extends StatelessWidget {
             labelLarge: AppTextStyles.button,
             labelMedium: AppTextStyles.buttonSecondary,
             labelSmall: AppTextStyles.caption,
-            ),
           ),
+        ),
         initialRoute: '/',
         routes: {
           '/': (context) => const AuthWrapper(),
@@ -82,10 +269,10 @@ class NudgeApp extends StatelessWidget {
           '/register': (context) => const RegisterScreen(),
           '/complete_profile': (context) => const CompleteProfileScreen(),
           '/dashboard': (context) => const DashboardScreen(),
-           '/contacts': (context) {
-              final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-              return ContactsListScreen(filter: args?['filter'], mode: args?['action'],);
-            },
+          '/contacts': (context) {
+            final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+            return ContactsListScreen(filter: args?['filter'], mode: args?['action'],);
+          },
           '/analytics': (context) => const AnalyticsScreen(),
           '/add_contact': (context) => const AddContactScreen(),
           '/import_contacts': (context) => const ImportContactsScreen(),
@@ -93,21 +280,11 @@ class NudgeApp extends StatelessWidget {
           '/settings': (context) => const SettingsScreen(),
           '/groups': (context) => const GroupsListScreen(),
           '/edit_contact': (context) {
-              final contactId = ModalRoute.of(context)!.settings.arguments as String;
-              return EditContactScreen(contactId: contactId);
-            },
+            final contactId = ModalRoute.of(context)!.settings.arguments as String;
+            return EditContactScreen(contactId: contactId);
+          },
         },
         onGenerateRoute: (settings) {
-          // Handle routes with parameters
-
-          // if (settings.name == '/contact_detail') {
-          //   final contactId = settings.arguments as String;
-          //   return MaterialPageRoute(
-          //     builder: (context) => ContactDetailScreen(contactId: contactId),
-          //   );
-          // }
-          
-          // Handle unknown routes
           return MaterialPageRoute(
             builder: (context) => Scaffold(
               body: Center(
@@ -122,9 +299,33 @@ class NudgeApp extends StatelessWidget {
   }
 }
 
-// AuthWrapper to handle authentication state
-class AuthWrapper extends StatelessWidget {
+// AuthWrapper to handle authentication state with FCM token storage
+class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
+
+  @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  @override
+  void initState() {
+    super.initState();
+    _storeFCMTokenIfNeeded();
+  }
+
+  Future<void> _storeFCMTokenIfNeeded() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      // User is logged in, store FCM token
+      final apiService = ApiService();
+      String? token = await FirebaseMessaging.instance.getToken();
+      if (token != null) {
+        await apiService.updateUser({'fcmToken': token});
+        print('FCM token stored for user: ${user.uid}');
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -134,7 +335,6 @@ class AuthWrapper extends StatelessWidget {
       return const DashboardScreen();
     } else {
       return const WelcomeScreen();
-      // return const DashboardScreen();
     }
   }
 }

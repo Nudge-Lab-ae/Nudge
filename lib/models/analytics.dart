@@ -1,16 +1,17 @@
-// analytics.dart
+// lib/models/analytics.dart
 class Analytics {
-  int totalContacts;
-  int vipContacts;
-  int completedNudges;
-  int contactsNeedingAttention;
-  Map<String, int> contactsByType;
-  double relationshipHealth;
-  int weeklyConnections;
-  int monthlyCatchups;
-  int vipInteractions;
-  int newConnections;
-  DateTime lastUpdated;
+  final int totalContacts;
+  final int vipContacts;
+  final int completedNudges;
+  final int contactsNeedingAttention;
+  final Map<String, int> contactsByType;
+  final double relationshipHealth;
+  final double nudgeCompletionRate;
+  final int weeklyConnections;
+  final int monthlyCatchups;
+  final int vipInteractions;
+  final int newConnections;
+  final DateTime lastUpdated;
 
   Analytics({
     required this.totalContacts,
@@ -19,6 +20,7 @@ class Analytics {
     required this.contactsNeedingAttention,
     required this.contactsByType,
     required this.relationshipHealth,
+    required this.nudgeCompletionRate,
     required this.weeklyConnections,
     required this.monthlyCatchups,
     required this.vipInteractions,
@@ -55,6 +57,7 @@ class Analytics {
       vipInteractions: map['vipInteractions'] ?? 0,
       newConnections: map['newConnections'] ?? 0,
       lastUpdated: DateTime.fromMillisecondsSinceEpoch(map['lastUpdated'] ?? 0),
+      nudgeCompletionRate: map['nudgeCompletionRate'] ?? 0,
     );
   }
 
@@ -70,6 +73,7 @@ class Analytics {
     int? vipInteractions,
     int? newConnections,
     DateTime? lastUpdated,
+    double? nudgeCompletionRate,
   }) {
     return Analytics(
       totalContacts: totalContacts ?? this.totalContacts,
@@ -83,6 +87,7 @@ class Analytics {
       vipInteractions: vipInteractions ?? this.vipInteractions,
       newConnections: newConnections ?? this.newConnections,
       lastUpdated: lastUpdated ?? this.lastUpdated,
+      nudgeCompletionRate: nudgeCompletionRate ?? this.nudgeCompletionRate,
     );
   }
 }
