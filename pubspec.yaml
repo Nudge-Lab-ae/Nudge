@@ -58,6 +58,7 @@ dependencies:
   shimmer: ^2.0.0
   firebase_messaging: 
   cloud_functions: 
+  firebase_app_check:
   # device_info_plus: ^8.0.0
 
 
@@ -122,7 +123,7 @@ flutter:
       fonts:
         - asset: assets/fonts/Quicksand-Regular.ttf
           weight: 300
-        - asset: assets/fonts/Quicksand-Medium.ttf
+        - asset: assets/fonts/Quicksand-SemiBold.ttf
           weight: 500
         - asset: assets/fonts/Quicksand-Bold.ttf
           weight: 900

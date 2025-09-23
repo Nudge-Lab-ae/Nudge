@@ -1,4 +1,5 @@
 // lib/main.dart
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -35,9 +36,14 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform, 
-    name: "NudgeApp"
+    // name: "NudgeApp"
+    name: "Nudge"
   );
-  
+   await FirebaseAppCheck.instance.activate(
+    // webProvider: , // Only needed for web
+    androidProvider: AndroidProvider.debug,
+    appleProvider: AppleProvider.debug,
+  );
   // Initialize local notifications
   await initializeLocalNotifications();
   
@@ -246,7 +252,7 @@ class NudgeApp extends StatelessWidget {
           ).copyWith(
             secondary: const Color.fromRGBO(45, 161, 175, 1),
           ),
-          fontFamily: 'Montserrat',
+          fontFamily: 'Quicksand',
           textTheme: const TextTheme(
             displayLarge: AppTextStyles.title1,
             displayMedium: AppTextStyles.title2,
