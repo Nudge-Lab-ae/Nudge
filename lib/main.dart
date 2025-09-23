@@ -190,8 +190,6 @@ void _handleNotificationTap(String? payload) {
   if (payload != null) {
     final params = Uri.splitQueryString(payload);
     final screen = params['screen'] ?? 'notifications';
-    final nudgeId = params['nudgeId'];
-    final contactId = params['contactId'];
     
     // Navigate to appropriate screen based on notification data
     if (navigatorKey.currentState != null) {
