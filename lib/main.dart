@@ -1,8 +1,9 @@
 // lib/main.dart
-import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+// import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:nudge/firebase_options.dart';
 import 'package:nudge/screens/analytics/analytics_screen.dart';
 import 'package:nudge/screens/auth/complete_profile_screen.dart';
@@ -24,6 +25,7 @@ import 'screens/notifications/notifications_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'screens/groups/groups_list_screen.dart';
 import 'services/auth_service.dart';
+// import 'package:firebase_app_check/firebase_app_check.dart';
 
 // Create a GlobalKey for navigator to handle notifications when app is in background
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -34,16 +36,30 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+  ]);
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform, 
     // name: "NudgeApp"
     name: "Nudge"
   );
-   await FirebaseAppCheck.instance.activate(
-    // webProvider: , // Only needed for web
-    androidProvider: AndroidProvider.debug,
-    appleProvider: AppleProvider.debug,
-  );
+
+  //  await FirebaseAppCheck.instance.activate(
+  //   androidProvider: AndroidProvider.debug,
+  //   appleProvider: AppleProvider.debug,
+  // );
+  
+  // // Optional: Get and print debug token (for development)
+  // if (kDebugMode) {
+  //   String? token = await FirebaseAppCheck.instance.getToken(true);
+  //   print('App Check debug token: $token');
+    
+  //   // You can register this token in Firebase Console for testing
+  //   // Firebase Console → App Check → Manage debug tokens
+  // }
+  // printDebugToken();
+  
   // Initialize local notifications
   await initializeLocalNotifications();
   
@@ -55,6 +71,14 @@ Future<void> main() async {
 
   runApp(const NudgeApp());
 }
+
+// void printDebugToken() async {
+//   final token = await FirebaseAppCheck.instance.getToken(true);
+//   print('Debug App Check token: $token');
+  
+//   // You'll need to register this token in Firebase Console
+//   // under App Check → Manage debug tokens
+// }
 
 Future<void> initializeLocalNotifications() async {
   const AndroidInitializationSettings initializationSettingsAndroid =
@@ -275,14 +299,14 @@ class NudgeApp extends StatelessWidget {
           '/dashboard': (context) => const DashboardScreen(),
           '/contacts': (context) {
             final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-            return ContactsListScreen(filter: args?['filter'], mode: args?['action'],);
+            return ContactsListScreen(filter: args?['filter'], mode: args?['action'], showAppBar: true,);
           },
           '/analytics': (context) => const AnalyticsScreen(),
           '/add_contact': (context) => const AddContactScreen(),
           '/import_contacts': (context) => const ImportContactsScreen(),
           '/notifications': (context) => const NotificationsScreen(),
           '/settings': (context) => const SettingsScreen(),
-          '/groups': (context) => const GroupsListScreen(),
+          '/groups': (context) => const GroupsListScreen(showAppBar: true,),
           '/edit_contact': (context) {
             final contactId = ModalRoute.of(context)!.settings.arguments as String;
             return EditContactScreen(contactId: contactId);

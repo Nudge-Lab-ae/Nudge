@@ -197,7 +197,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
         ),
         Text(
           label,
-          style: const TextStyle(fontSize: 12),
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
         ),
       ],
     );
@@ -424,7 +424,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
                       const SizedBox(height: 16),
                       ListTile(
                         leading: const Icon(Icons.people),
-                        title: const Text('For all contacts'),
+                        title: const Text('For all contacts', style: TextStyle(fontWeight: FontWeight.w600)),
                         onTap: () {
                           Navigator.of(context).pop();
                           final nudgeService = NudgeService();
@@ -435,7 +435,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
                       ),
                       ListTile(
                         leading: const Icon(Icons.group),
-                        title: const Text('By group'),
+                        title: const Text('By group', style: TextStyle(fontWeight: FontWeight.w600)),
                         onTap: () {
                           Navigator.of(context).pop();
                           final nudgeService = NudgeService();
@@ -446,7 +446,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
                       ),
                       ListTile(
                         leading: const Icon(Icons.person),
-                        title: const Text('Manual selection'),
+                        title: const Text('Manual selection', style: TextStyle(fontWeight: FontWeight.w600),),
                         onTap: () {
                           Navigator.of(context).pop();
                           final nudgeService = NudgeService();
@@ -546,7 +546,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Delete Nudge'),
+          title: const Text('Delete Nudge', style: TextStyle(fontWeight: FontWeight.w600)),
           content: Text('Are you sure you want to delete the nudge for ${nudge.contactName}?'),
           actions: [
             TextButton(
@@ -554,15 +554,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
               child: const Text('Cancel'),
             ),
             ElevatedButton(
-              onPressed: () async {
-                await nudgeService.cancelNudge(nudge.id, userId);
+              onPressed: ()  {
+                nudgeService.cancelNudge(nudge.id, userId).then((value){
+                });
                 Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
+                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Nudge deleted')),
                 );
               },
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              child: const Text('Delete'),
+              child: const Text('Delete', style: TextStyle(color: Colors.white),),
             ),
           ],
         );

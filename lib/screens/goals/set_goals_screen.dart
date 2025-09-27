@@ -69,7 +69,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
           name: 'Friend',
           description: 'Friends',
           period: 'Quarterly',
-          frequency: 8,
+          frequency: 7,
           memberIds: [],
           memberCount: 0,
           lastInteraction: DateTime.now(),

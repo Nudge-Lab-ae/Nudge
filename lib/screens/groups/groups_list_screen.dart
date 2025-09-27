@@ -12,7 +12,8 @@ import '../../models/contact.dart';
 enum SortOption { name, memberCount, frequency }
 
 class GroupsListScreen extends StatefulWidget {
-  const GroupsListScreen({super.key});
+  final bool showAppBar;
+  const GroupsListScreen({super.key, required this.showAppBar});
 
   @override
   State<GroupsListScreen> createState() => _GroupsListScreenState();
@@ -148,7 +149,9 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
       initialData: const [],
       child: Scaffold(
         backgroundColor: Colors.grey[50],
-        appBar: AppBar(
+        appBar: !widget.showAppBar
+        ? null
+        :AppBar(
           title: Text('Social Groups', style: AppTextStyles.title3.copyWith(color: Colors.white)),
           iconTheme: const IconThemeData(color: Colors.white),
           leading: IconButton(
@@ -198,6 +201,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                             controller: _searchController,
                             decoration: InputDecoration(
                               hintText: 'Search groups...',
+                              hintStyle: TextStyle(fontWeight: FontWeight.w600),
                               prefixIcon: const Icon(Icons.search, color: Colors.blue),
                               border: InputBorder.none,
                               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -1098,7 +1102,7 @@ Widget _buildGroupCard(BuildContext context, SocialGroup group, List<Contact> me
                                   : null,
                               child: contact.imageUrl.isEmpty ? const Icon(Icons.person) : null,
                             ),
-                            title: Text(contact.name),
+                            title: Text(contact.name, style: TextStyle(fontWeight: FontWeight.w600),),
                             subtitle: Text(contact.connectionType),
                             trailing: IconButton(
                               icon: const Icon(Icons.remove_circle, color: Colors.red),
@@ -1149,7 +1153,7 @@ Widget _buildGroupCard(BuildContext context, SocialGroup group, List<Contact> me
       children: [
         Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w600)),
       ],
     );
   }

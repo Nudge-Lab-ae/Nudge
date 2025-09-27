@@ -12,8 +12,9 @@ import '../../services/auth_service.dart';
 class ContactsListScreen extends StatefulWidget {
   final String? filter;
   final String? mode;
+  final bool showAppBar;
   
-  const ContactsListScreen({super.key, this.filter, this.mode});
+  const ContactsListScreen({super.key, this.filter, this.mode, required this.showAppBar});
 
   @override
   State<ContactsListScreen> createState() => _ContactsListScreenState();
@@ -44,7 +45,9 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     }
     
     return Scaffold(
-      appBar: _isSelecting
+      appBar: !widget.showAppBar
+      ? null
+      :_isSelecting
           ? _buildSelectionAppBar(context, groupName)
           : _buildNormalAppBar(context, isAddToGroupMode, groupName),
       body: StreamProvider<List<Contact>>(

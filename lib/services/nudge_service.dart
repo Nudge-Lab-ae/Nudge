@@ -319,7 +319,7 @@ class NudgeService {
   }
 
   // Get contacts for a specific group
-  Future<List<Contact>> getContactsForGroup(String userId, String groupId, List<Contact> contacts) async {
+  List<Contact> getContactsForGroup(String userId, String groupId, List<Contact> contacts) {
     try {
       List<Contact> filteredContacts = contacts.where((contact) => contact.connectionType == groupId).toList();
       return filteredContacts;
@@ -348,6 +348,7 @@ class NudgeService {
   }
 }
 
+
 // Updated NudgeScheduleDialog for group-based scheduling
 class NudgeScheduleDialog extends StatefulWidget {
   final List<Contact> contacts;
@@ -366,13 +367,16 @@ class NudgeScheduleDialog extends StatefulWidget {
 }
 
 class _NudgeScheduleDialogState extends State<NudgeScheduleDialog> {
-    final NudgeService _nudgeService = NudgeService();
+  final NudgeService _nudgeService = NudgeService();
   String _selectedOption = 'all';
   String? _selectedGroupId;
   final Set<String> _selectedContactIds = {};
-  bool _staggered = true; // Add this line
-  String _staggerInterval = '1 hour'; // Add this line
-
+  bool _staggered = true;
+  String _staggerInterval = '1 hour';
+  
+  // New state to track the current view
+  _DialogView _currentView = _DialogView.options;
+  Map<String, dynamic>? _schedulingResult;
 
   @override
   Widget build(BuildContext context) {
@@ -381,274 +385,324 @@ class _NudgeScheduleDialogState extends State<NudgeScheduleDialog> {
     return StreamProvider<List<Contact>>(
       create: (context) => apiService.getContactsStream(),
       initialData: [],
-      child:  Consumer<List<Contact>>(
-          builder: (context, contacts, child) {
-            return Dialog(
-      insetPadding: const EdgeInsets.all(20),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Schedule Nudges',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
+      child: Consumer<List<Contact>>(
+        builder: (context, contacts, child) {
+          return Dialog(
+            insetPadding: const EdgeInsets.all(20),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: _buildCurrentView(context, contacts),
             ),
-            const SizedBox(height: 16),
-            
-            // Option selection
-            const Text('Select contacts to nudge:'),
-            const SizedBox(height: 8),
-            
-            RadioListTile(
-              title: const Text('All Contacts'),
-              value: 'all',
-              groupValue: _selectedOption,
-              onChanged: (value) {
-                setState(() {
-                  _selectedOption = value.toString();
-                });
-              },
-            ),
-            
-            RadioListTile(
-              title: const Text('By Group'),
-              value: 'group',
-              groupValue: _selectedOption,
-              onChanged: (value) {
-                setState(() {
-                  _selectedOption = value.toString();
-                });
-              },
-            ),
-            
-            if (_selectedOption == 'group') ...[
-              const SizedBox(height: 8),
-              const Text('Select Group:'),
-              DropdownButton<String>(
-                value: _selectedGroupId,
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _selectedGroupId = newValue;
-                  });
-                },
-                items: widget.groups.map<DropdownMenuItem<String>>((SocialGroup group) {
-                  return DropdownMenuItem<String>(
-                    value: group.id,
-                    child: Text(group.name),
-                  );
-                }).toList(),
-              ),
-            ],
-            
-            RadioListTile(
-              title: const Text('Manual Selection'),
-              value: 'manual',
-              groupValue: _selectedOption,
-              onChanged: (value) {
-                setState(() {
-                  _selectedOption = value.toString();
-                });
-              },
-            ),
-            
-            if (_selectedOption == 'manual') ...[
-              const SizedBox(height: 8),
-              const Text('Select Contacts:'),
-              Container(
-                constraints: const BoxConstraints(maxHeight: 200),
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: widget.contacts.length,
-                  itemBuilder: (context, index) {
-                    final contact = widget.contacts[index];
-                    return CheckboxListTile(
-                      title: Text(contact.name),
-                      value: _selectedContactIds.contains(contact.id),
-                      onChanged: (value) {
-                        setState(() {
-                          if (value == true) {
-                            _selectedContactIds.add(contact.id);
-                          } else {
-                            _selectedContactIds.remove(contact.id);
-                          }
-                        });
-                      },
-                    );
-                  },
-                ),
-              ),
-            ],
-            
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    List<Contact> selectedContacts = [];
-                    
-                    if (_selectedOption == 'all') {
-                      selectedContacts = widget.contacts;
-                    } else if (_selectedOption == 'group' && _selectedGroupId != null) {
-                      selectedContacts = await _nudgeService.getContactsForGroup(
-                        widget.userId, _selectedGroupId!, contacts
-                      );
-                    } else if (_selectedOption == 'manual') {
-                      selectedContacts = widget.contacts
-                          .where((contact) => _selectedContactIds.contains(contact.id))
-                          .toList();
-                    }
-                    
-                    if (selectedContacts.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please select at least one contact')),
-                      );
-                      return;
-                    }
-                    
-                    Navigator.of(context).pop();
-                    
-                    // Calculate stagger interval
-                    Duration interval;
-                    switch (_staggerInterval) {
-                      case '30 minutes':
-                        interval = const Duration(minutes: 30);
-                        break;
-                      case '2 hours':
-                        interval = const Duration(hours: 2);
-                        break;
-                      case '4 hours':
-                        interval = const Duration(hours: 4);
-                        break;
-                      case '1 day':
-                        interval = const Duration(days: 1);
-                        break;
-                      default: // 1 hour
-                        interval = const Duration(hours: 1);
-                    }
-                    
-                    // Show progress dialog
-                    showDialog(
-                      context: context,
-                      barrierDismissible: false,
-                      builder: (context) {
-                        return const Dialog(
-                          child: Padding(
-                            padding: EdgeInsets.all(20.0),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text('Scheduling nudges...'),
-                                SizedBox(height: 20),
-                                CircularProgressIndicator(),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    );
-                    
-                    // Schedule nudges with staggered option
-                    final result = await _nudgeService.scheduleNudgesForGroup(
-                      selectedContacts,
-                      widget.userId,
-                      staggered: _staggered,
-                      staggerInterval: interval,
-                    );
-                    
-                    // Dismiss progress dialog
-                    Navigator.pop(context);
-                    
-                    // Show result
-                    _showSchedulingResult(context, result);
-                  },
-                  child: const Text('Schedule Nudges'),
-                ),
-              ],
-            ),
+          );
+        }
+      )
+    );
+  }
 
-             const SizedBox(height: 16),
-            const Text('Scheduling Options:'),
-            Row(
-              children: [
-                const Text('Staggered Reminders'),
-                Switch(
-                  value: _staggered,
+  Widget _buildCurrentView(BuildContext context, List<Contact> contacts) {
+    switch (_currentView) {
+      case _DialogView.options:
+        return _buildOptionsView(context, contacts);
+      case _DialogView.processing:
+        return _buildProcessingView();
+      case _DialogView.result:
+        return _buildResultView(context);
+    }
+  }
+
+  Widget _buildOptionsView(BuildContext context, List<Contact> contacts) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Text(
+          'Schedule Nudges',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 16),
+        
+        // Option selection
+        const Text('Select contacts to nudge:', style: TextStyle(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 8),
+        
+        RadioListTile(
+          title: const Text('All Contacts', style: TextStyle(fontWeight: FontWeight.w600)),
+          value: 'all',
+          groupValue: _selectedOption,
+          onChanged: (value) {
+            setState(() {
+              _selectedOption = value.toString();
+            });
+          },
+        ),
+        
+        RadioListTile(
+          title: const Text('By Group', style: TextStyle(fontWeight: FontWeight.w600)),
+          value: 'group',
+          groupValue: _selectedOption,
+          onChanged: (value) {
+            setState(() {
+              _selectedOption = value.toString();
+            });
+          },
+        ),
+        
+        if (_selectedOption == 'group') ...[
+          const SizedBox(height: 8),
+          const Text('Select Group:', style: TextStyle(fontWeight: FontWeight.w600)),
+          DropdownButton<String>(
+            value: _selectedGroupId,
+            onChanged: (String? newValue) {
+              setState(() {
+                _selectedGroupId = newValue;
+              });
+            },
+            items: widget.groups.map<DropdownMenuItem<String>>((SocialGroup group) {
+              return DropdownMenuItem<String>(
+                value: group.id,
+                child: Text(group.name),
+              );
+            }).toList(),
+          ),
+        ],
+        
+        RadioListTile(
+          title: const Text('Manual Selection', style: TextStyle(fontWeight: FontWeight.w600)),
+          value: 'manual',
+          groupValue: _selectedOption,
+          onChanged: (value) {
+            setState(() {
+              _selectedOption = value.toString();
+            });
+          },
+        ),
+        
+        if (_selectedOption == 'manual') ...[
+          const SizedBox(height: 8),
+          const Text('Select Contacts:', style: TextStyle(fontWeight: FontWeight.w600)),
+          Container(
+            constraints: const BoxConstraints(maxHeight: 200),
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: widget.contacts.length,
+              itemBuilder: (context, index) {
+                final contact = widget.contacts[index];
+                return CheckboxListTile(
+                  title: Text(contact.name),
+                  value: _selectedContactIds.contains(contact.id),
                   onChanged: (value) {
                     setState(() {
-                      _staggered = value;
+                      if (value == true) {
+                        _selectedContactIds.add(contact.id);
+                      } else {
+                        _selectedContactIds.remove(contact.id);
+                      }
                     });
                   },
-                ),
-              ],
+                );
+              },
             ),
-            
-            if (_staggered) ...[
-              const SizedBox(height: 8),
-              const Text('Stagger Interval:'),
-              DropdownButton<String>(
-                value: _staggerInterval,
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _staggerInterval = newValue!;
-                  });
-                },
-                items: <String>['30 minutes', '1 hour', '2 hours', '4 hours', '1 day']
-                    .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-            ],
+          ),
+        ],
+        
+        const SizedBox(height: 16),
+        
+        // Scheduling Options
+        const Text('Scheduling Options:', style: TextStyle(fontWeight: FontWeight.w600)),
+        Row(
+          children: [
+            const Text('Staggered Reminders'),
+            Switch(
+              value: _staggered,
+              onChanged: (value) {
+                setState(() {
+                  _staggered = value;
+                });
+              },
+            ),
           ],
         ),
-      ),
-    );
-    }
-    )
+        
+        if (_staggered) ...[
+          const SizedBox(height: 8),
+          const Text('Stagger Interval:', style: TextStyle(fontWeight: FontWeight.w600)),
+          DropdownButton<String>(
+            value: _staggerInterval,
+            onChanged: (String? newValue) {
+              setState(() {
+                _staggerInterval = newValue!;
+              });
+            },
+            items: <String>['30 minutes', '1 hour', '2 hours', '4 hours', '1 day']
+                .map<DropdownMenuItem<String>>((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(value),
+              );
+            }).toList(),
+          ),
+        ],
+        
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => _startSchedulingProcess(context, contacts),
+              child: const Text('Schedule Nudges'),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
-  void _showSchedulingResult(BuildContext context, Map<String, dynamic> result) {
-    final successCount = result['successCount'] as int;
-    final failCount = result['failCount'] as int;
-    final failedContacts = result['failedContacts'] as List<String>;
-    
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Scheduling Complete'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Successfully scheduled: $successCount nudges'),
-              Text('Failed: $failCount nudges'),
-              if (failedContacts.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                const Text('Failed contacts:'),
-                ...failedContacts.map((name) => Text('• $name')).toList(),
-              ],
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
+  Widget _buildProcessingView() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text(
+          'Scheduling Nudges',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 24),
+        const CircularProgressIndicator(),
+        const SizedBox(height: 16),
+        const Text('Please wait while we schedule your nudges...'),
+        const SizedBox(height: 24),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+      ],
     );
   }
+
+  Widget _buildResultView(BuildContext context) {
+    final successCount = _schedulingResult?['successCount'] as int? ?? 0;
+    final failCount = _schedulingResult?['failCount'] as int? ?? 0;
+    final failedContacts = _schedulingResult?['failedContacts'] as List<String>? ?? [];
+    
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Scheduling Complete',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 16),
+        Text('Successfully scheduled: $successCount nudges'),
+        Text('Failed: $failCount nudges'),
+        if (failedContacts.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          const Text('Failed contacts:'),
+          ...failedContacts.map((name) => Text('• $name')).toList(),
+        ],
+        const SizedBox(height: 24),
+        Align(
+          alignment: Alignment.centerRight,
+          child: ElevatedButton(
+            onPressed: () {
+              final apiService = Provider.of<ApiService>(context, listen: false);
+              apiService.scheduleRegularNotifications();
+              Navigator.of(context).pop();
+            },
+            child: const Text('OK'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _startSchedulingProcess(BuildContext context, List<Contact> contacts) async {
+    // Get selected contacts
+    List<Contact> selectedContacts = _getSelectedContacts(contacts);
+    
+    if (selectedContacts.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select at least one contact')),
+      );
+      return;
+    }
+
+    // Calculate stagger interval
+    final interval = _calculateStaggerInterval();
+    
+    // Switch to processing view
+    setState(() {
+      _currentView = _DialogView.processing;
+    });
+
+    try {
+      // Schedule nudges
+      final result = await _nudgeService.scheduleNudgesForGroup(
+        selectedContacts,
+        widget.userId,
+        staggered: _staggered,
+        staggerInterval: interval,
+      );
+
+      // Switch to result view
+      setState(() {
+        _schedulingResult = result;
+        _currentView = _DialogView.result;
+      });
+    } catch (e) {
+      // Show error result
+      setState(() {
+        _schedulingResult = {
+          'successCount': 0,
+          'failCount': selectedContacts.length,
+          'failedContacts': selectedContacts.map((c) => c.name).toList(),
+          'error': e.toString(),
+        };
+        _currentView = _DialogView.result;
+      });
+    }
+  }
+
+  List<Contact> _getSelectedContacts(List<Contact> contacts) {
+    if (_selectedOption == 'all') {
+      return widget.contacts;
+    } else if (_selectedOption == 'group' && _selectedGroupId != null) {
+      return _nudgeService.getContactsForGroup(
+        widget.userId, _selectedGroupId!, contacts
+      );
+    } else if (_selectedOption == 'manual') {
+      return widget.contacts
+          .where((contact) => _selectedContactIds.contains(contact.id))
+          .toList();
+    }
+    return [];
+  }
+
+  Duration _calculateStaggerInterval() {
+    switch (_staggerInterval) {
+      case '30 minutes':
+        return const Duration(minutes: 30);
+      case '2 hours':
+        return const Duration(hours: 2);
+      case '4 hours':
+        return const Duration(hours: 4);
+      case '1 day':
+        return const Duration(days: 1);
+      default: // 1 hour
+        return const Duration(hours: 1);
+    }
+  }
+}
+
+// Enum to track the current dialog view
+enum _DialogView {
+  options,
+  processing,
+  result,
 }

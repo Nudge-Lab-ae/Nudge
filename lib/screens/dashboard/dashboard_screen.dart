@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:nudge/models/social_group.dart';
 import 'package:nudge/screens/contacts/contact_detail_screen.dart';
-// import 'package:nudge/screens/notifications/notifications_screen.dart';
+import 'package:nudge/screens/contacts/contacts_list_screen.dart';
+import 'package:nudge/screens/groups/groups_list_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/theme/text_styles.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-// import '../../services/database_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/nudge_service.dart';
 import '../../models/contact.dart';
-// import '../../widgets/nudge_card.dart';
 import '../../widgets/vip_badge.dart';
-// import '../../widgets/analytics_chart.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -48,8 +46,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
     }
     
-    // final databaseService = DatabaseService(uid: user.uid);
-    
     return StreamProvider<List<Contact>>(
       create: (context) => apiService.getContactsStream(),
       initialData: const [],
@@ -57,87 +53,149 @@ class _DashboardScreenState extends State<DashboardScreen> {
         initialData: [],
         create: (context) => apiService.getGroupsStream(),
         child: Scaffold(
-        appBar: AppBar(
-          title:  Text('NUDGE Dashboard', style: AppTextStyles.title3.copyWith(color: Colors.white)),
-          backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
-          iconTheme: IconThemeData(color: Colors.white),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.search),
-              onPressed: () {
-                Navigator.pushNamed(context, '/contacts');
-              },
-              tooltip: 'Search Contacts',
-            ),
-            IconButton(
-              icon: const Icon(Icons.notifications),
-              onPressed: () async {
-                Navigator.pushNamed(context, '/notifications');
-              },
-              tooltip: 'Notifications',
-            ),
-          ],
+          appBar: _buildAppBar(context),
+          drawer: _buildNavigationDrawer(context, authService),
+          body: Consumer2<List<Contact>, List<SocialGroup>>(
+            builder: (context, contacts, groups, child) {
+              totalContacts = contacts;
+              return _buildCurrentView(context, contacts, groups, apiService);
+            },
+          ),
+          floatingActionButton: _buildFloatingActionButton(context),
+          bottomNavigationBar: _buildBottomNavigationBar(),
         ),
-        drawer: _buildNavigationDrawer(context, authService),
-        // drawerScrimColor: Colors.white,
-        body: Consumer2<List<Contact>, List<SocialGroup>>(
-          builder: (context, contacts, groups, child) {
-            totalContacts = contacts;
-            return _buildDashboardContent(context, contacts, groups, apiService);
-          },
-        ),
-        floatingActionButton: FloatingActionButton(
+      ),
+    );
+  }
+
+  AppBar _buildAppBar(BuildContext context) {
+    String title;
+    List<Widget> actions = [];
+
+    switch (_currentIndex) {
+      case 0: // Dashboard
+        title = 'NUDGE Dashboard';
+        actions = [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              setState(() => _currentIndex = 1); // Switch to contacts view
+            },
+            tooltip: 'Search Contacts',
+          ),
+          IconButton(
+            icon: const Icon(Icons.notifications),
+            onPressed: () {
+              Navigator.pushNamed(context, '/notifications');
+            },
+            tooltip: 'Notifications',
+          ),
+        ];
+        break;
+      case 1: // Contacts
+        title = 'Contacts';
+        actions = [
+          IconButton(
+            icon: const Icon(Icons.notifications),
+            onPressed: () {
+              Navigator.pushNamed(context, '/notifications');
+            },
+          ),
+        ];
+        break;
+      case 2: // Groups
+        title = 'Social Groups';
+        // actions = [
+        //   IconButton(
+        //     icon: const Icon(Icons.add),
+        //     onPressed: () => _showCreateGroupDialog(context),
+        //   ),
+        // ];
+        break;
+      default:
+        title = 'NUDGE';
+    }
+
+    return AppBar(
+      title: Text(title, style: TextStyle(color: Colors.white, fontSize: 22, fontFamily: 'Quicksand', fontWeight: FontWeight.bold)),
+      backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+      iconTheme: const IconThemeData(color: Colors.white),
+      actions: actions,
+    );
+  }
+
+  Widget _buildCurrentView(BuildContext context, List<Contact> contacts, List<SocialGroup> groups, ApiService apiService) {
+    switch (_currentIndex) {
+      case 0:
+        return _buildDashboardContent(context, contacts, groups, apiService);
+      case 1:
+        return ContactsListScreen(showAppBar: false,);
+      case 2:
+        return GroupsListScreen(showAppBar: false,);
+      default:
+        return _buildDashboardContent(context, contacts, groups, apiService);
+    }
+  }
+
+  Widget _buildFloatingActionButton(BuildContext context) {
+    switch (_currentIndex) {
+      case 0: // Dashboard - Add Contact
+        return FloatingActionButton(
           onPressed: () {
             Navigator.pushNamed(context, '/add_contact');
           },
           backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
           child: const Icon(Icons.add, color: Colors.white),
-        ),
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            setState(() => _currentIndex = index);
-            // Navigate to different sections based on index
-            switch (index) {
-              case 0:
-                // Already on dashboard
-                break;
-              case 1:
-                Navigator.pushNamed(context, '/contacts').then((_) {
-                  // Reset index to Dashboard when returning
-                  setState(() => _currentIndex = 0);
-                });
-                break;
-              case 2:
-                Navigator.pushNamed(context, '/groups').then((_) {
-                  // Reset index to Dashboard when returning
-                  setState(() => _currentIndex = 0);
-                });
-                break;
-            }
+        );
+      case 1: // Contacts - Add Contact
+        return FloatingActionButton(
+          onPressed: () {
+            Navigator.pushNamed(context, '/add_contact');
           },
-          items: [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard, color: _currentIndex == 0?Color.fromRGBO(45, 161, 175, 1):Colors.grey,),
-              label: 'Dashboard',
-              backgroundColor: Color.fromRGBO(45, 161, 175, 1),
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.contacts, color:_currentIndex == 1?Color.fromRGBO(45, 161, 175, 1):Colors.grey,),
-              label: 'Contacts',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.group, color: _currentIndex == 2?Color.fromRGBO(45, 161, 175, 1):Colors.grey,),
-              label: 'Groups',
-            ),
-          ],
-          selectedItemColor: Color.fromRGBO(45, 161, 175, 1),
-          selectedLabelStyle: TextStyle(color: Color.fromRGBO(45, 161, 175, 1)),
-        ),
-    ),
-    ));
+          backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+          child: const Icon(Icons.add, color: Colors.white),
+        );
+        case 2: // Groups - Create Group
+          return Center();
+      default:
+        return FloatingActionButton(
+          onPressed: () {
+            Navigator.pushNamed(context, '/add_contact');
+          },
+          backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+          child: const Icon(Icons.add, color: Colors.white),
+        );
+    }
   }
 
+  BottomNavigationBar _buildBottomNavigationBar() {
+    return BottomNavigationBar(
+      currentIndex: _currentIndex,
+      onTap: (index) {
+        setState(() => _currentIndex = index);
+      },
+      items: [
+        BottomNavigationBarItem(
+          icon: Icon(Icons.dashboard, color: _currentIndex == 0 ? Color.fromRGBO(45, 161, 175, 1) : Colors.grey),
+          label: 'Dashboard',
+          backgroundColor: Color.fromRGBO(45, 161, 175, 1),
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.contacts, color: _currentIndex == 1 ? Color.fromRGBO(45, 161, 175, 1) : Colors.grey),
+          label: 'Contacts',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.group, color: _currentIndex == 2 ? Color.fromRGBO(45, 161, 175, 1) : Colors.grey),
+          label: 'Groups',
+        ),
+      ],
+      selectedItemColor: Color.fromRGBO(45, 161, 175, 1),
+      selectedLabelStyle: TextStyle(color: Color.fromRGBO(45, 161, 175, 1), fontWeight: FontWeight.w600),
+      unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w600),
+    );
+  }
+
+  // Rest of your existing methods remain the same...
   Widget _buildNavigationDrawer(BuildContext context, AuthService authService) {
     return Drawer(
       child: ListView(
@@ -153,14 +211,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Row(
                   children: [
                     Icon(Icons.favorite, size: 40, color: Colors.white),
-                    SizedBox(width: 20,),
-                     Text(
-                  'NUDGE',
-                  style: AppTextStyles.primaryBold.copyWith(color: Colors.white, fontSize: 23)
-                ),
-                ]),
+                    SizedBox(width: 20),
+                    Text(
+                      'NUDGE',
+                      style: TextStyle(color: Colors.white, fontSize: 23, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold)
+                    ),
+                  ]),
                 SizedBox(height: 10),
-               
                 Text(
                   'Nurture your relationships',
                   style: AppTextStyles.primarySemiBold.copyWith(color: Colors.white, fontSize: 20),
@@ -170,31 +227,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           ListTile(
             leading: const Icon(Icons.dashboard),
-            title: Text('Dashboard', style: AppTextStyles.primary),
+            title: Text('Dashboard', style: TextStyle(fontWeight: FontWeight.w600)),
             onTap: () {
               Navigator.pop(context);
               setState(() => _currentIndex = 0);
             },
           ),
           ListTile(
-            leading: const Icon(Icons.contacts,),
-            title: const Text('All Contacts'),
+            leading: const Icon(Icons.contacts),
+            title: const Text('All Contacts', style: TextStyle(fontWeight: FontWeight.w600)),
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushNamed(context, '/contacts');
+              setState(() => _currentIndex = 1);
             },
           ),
           ListTile(
             leading: const Icon(Icons.group),
-            title: const Text('Groups'),
+            title: const Text('Groups', style: TextStyle(fontWeight: FontWeight.w600)),
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushNamed(context, '/groups');
+              setState(() => _currentIndex = 2);
             },
           ),
           ListTile(
             leading: const Icon(Icons.notifications),
-            title: const Text('Nudges & Reminders'),
+            title: const Text('Nudges & Reminders', style: TextStyle(fontWeight: FontWeight.w600)),
             onTap: () {
               Navigator.pop(context);
               Navigator.pushNamed(context, '/notifications');
@@ -202,7 +259,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           ListTile(
             leading: const Icon(Icons.analytics),
-            title: const Text('Analytics'),
+            title: const Text('Analytics', style: TextStyle(fontWeight: FontWeight.w600)),
             onTap: () {
               Navigator.pop(context);
               Navigator.pushNamed(context, '/analytics');
@@ -210,7 +267,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           ListTile(
             leading: const Icon(Icons.import_contacts),
-            title: const Text('Import Contacts'),
+            title: const Text('Import Contacts', style: TextStyle(fontWeight: FontWeight.w600)),
             onTap: () {
               Navigator.pop(context);
               Navigator.pushNamed(context, '/import_contacts');
@@ -218,7 +275,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           ListTile(
             leading: const Icon(Icons.settings),
-            title: const Text('Settings'),
+            title: const Text('Settings', style: TextStyle(fontWeight: FontWeight.w600)),
             onTap: () {
               Navigator.pop(context);
               Navigator.pushNamed(context, '/settings');
@@ -227,7 +284,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const Divider(),
           ListTile(
             leading: const Icon(Icons.exit_to_app),
-            title: const Text('Logout'),
+            title: const Text('Logout', style: TextStyle(fontWeight: FontWeight.w600)),
             onTap: () async {
               Navigator.pop(context);
               await authService.signOut();
@@ -254,129 +311,79 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
-           Card(
-          color: Colors.blue[50],
-          child: Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Row(
-              children: [
-                const Icon(Icons.cloud_upload, color: Color.fromRGBO(45, 161, 175, 1)),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Contact Import Status',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+          Card(
+            color: Colors.blue[50],
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Row(
+                children: [
+                  const Icon(Icons.cloud_upload, color: Color.fromRGBO(45, 161, 175, 1)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Contact Import Status',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${contacts.length} contacts imported',
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                    ],
+                        const SizedBox(height: 4),
+                        Text(
+                          '${contacts.length} contacts imported',
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.import_contacts),
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/import_contacts');
-                  },
-                  tooltip: 'Import More Contacts',
-                ),
-              ],
+                  IconButton(
+                    icon: const Icon(Icons.import_contacts),
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/import_contacts');
+                    },
+                    tooltip: 'Import More Contacts',
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-        
-        const SizedBox(height: 20),
-        
+          
+          const SizedBox(height: 20),
+          
           // Summary Cards
           Row(
             children: [
-             Row(
-              children: [
-                // Expanded(
-                //   child: _buildSummaryCard(
-                //     'Total Contacts',
-                //     contacts.length.toString(),
-                //     Icons.contacts,
-                //     true,
-                //     onTap: () => Navigator.pushNamed(context, '/contacts'),
-                //   ),
-                // ),
-                _buildSummaryCard(
-                    'Total Contacts',
-                    contacts.length.toString(),
-                    Icons.contacts,
-                    true,
-                    onTap: () => Navigator.pushNamed(context, '/contacts'),
-                  ),
-                const SizedBox(width: 10),
-                // Expanded(
-                //   child: _buildSummaryCard(
-                //     'VIP Contacts',
-                //     vipContacts.length.toString(),
-                //     Icons.star,
-                //     true,
-                //     onTap: () {
-                //       Navigator.pushNamed(
-                //         context, 
-                //         '/contacts',
-                //         arguments: {'filter': 'vip'},
-                //       );
-                //     },
-                //   ),
-                // ),
-                _buildSummaryCard(
-                    'VIP Contacts',
-                    vipContacts.length.toString(),
-                    Icons.star,
-                    true,
-                    onTap: () {
-                      Navigator.pushNamed(
-                        context, 
-                        '/contacts',
-                        arguments: {'filter': 'vip'},
-                      );
-                    },
-                  ),
-                const SizedBox(width: 10),
-                // Expanded(
-                //   child: _buildSummaryCard(
-                //     'Needs Attention',
-                //     needsAttention.length.toString(),
-                //     Icons.notifications_active,
-                //     false,
-                //     onTap: () {
-                //       Navigator.pushNamed(
-                //         context, 
-                //         '/contacts',
-                //         arguments: {'filter': 'needs_attention'},
-                //       );
-                //     },
-                //   ),
-                // ),
-                _buildSummaryCard(
-                    'Needs Attention',
-                    needsAttention.length.toString(),
-                    Icons.notifications_active,
-                    false,
-                    onTap: () {
-                      Navigator.pushNamed(
-                        context, 
-                        '/contacts',
-                        arguments: {'filter': 'needs_attention'},
-                      );
-                    },
-                  ),
-              ],
-            ),
+              _buildSummaryCard(
+                'Total Contacts',
+                contacts.length.toString(),
+                Icons.contacts,
+                true,
+                onTap: () => setState(() => _currentIndex = 1),
+              ),
+              const SizedBox(width: 10),
+              _buildSummaryCard(
+                'VIP Contacts',
+                vipContacts.length.toString(),
+                Icons.star,
+                true,
+                onTap: () {
+                  // Could implement VIP filter in contacts view
+                  setState(() => _currentIndex = 1);
+                },
+              ),
+              const SizedBox(width: 10),
+              _buildSummaryCard(
+                'Needs Attention',
+                needsAttention.length.toString(),
+                Icons.notifications_active,
+                false,
+                onTap: () {
+                  // Could implement needs attention filter in contacts view
+                  setState(() => _currentIndex = 1);
+                },
+              ),
             ],
           ),
           
@@ -395,39 +402,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               ActionChip(
                 avatar: const Icon(Icons.person_add, size: 18, color: Color.fromRGBO(45, 161, 175, 1)),
-                label: const Text('Add Contact', style: AppTextStyles.primary,),
+                label: Text('Add Contact', style: AppTextStyles.primary.copyWith(fontWeight: FontWeight.w600)),
                 onPressed: () {
                   Navigator.pushNamed(context, '/add_contact');
                 },
               ),
               ActionChip(
-                avatar: const Icon(Icons.import_contacts, size: 18, color: Color.fromRGBO(45, 161, 175, 1),),
-                label: const Text('Import Contacts', style: AppTextStyles.primary,),
+                avatar: const Icon(Icons.import_contacts, size: 18, color: Color.fromRGBO(45, 161, 175, 1)),
+                label: Text('Import Contacts', style: AppTextStyles.primary.copyWith(fontWeight: FontWeight.w600)),
                 onPressed: () {
                   Navigator.pushNamed(context, '/import_contacts');
                 },
               ),
               ActionChip(
-                avatar: const Icon(Icons.group_add, size: 18, color: Color.fromRGBO(45, 161, 175, 1),),
-                label: const Text('Create Group', style: AppTextStyles.primary,),
-                onPressed: () {
-                  // Navigate to create group screen
-                  Navigator.pushNamed(
-                    context, 
-                    '/groups',
-                    arguments: {'action': 'create'},
-                  );
-                },
+                avatar: const Icon(Icons.group_add, size: 18, color: Color.fromRGBO(45, 161, 175, 1)),
+                label: Text('Create Group', style: AppTextStyles.primary.copyWith(fontWeight: FontWeight.w600)),
+                onPressed: () => _showCreateGroupDialog(context),
               ),
-             ActionChip(
-                avatar: const Icon(Icons.notifications_active, size: 18, color: Color.fromRGBO(45, 161, 175, 1),),
-                label: const Text('Schedule Nudges', style: AppTextStyles.primary,),
+              ActionChip(
+                avatar: const Icon(Icons.notifications_active, size: 18, color: Color.fromRGBO(45, 161, 175, 1)),
+                label: Text('Schedule Nudges', style: AppTextStyles.primary.copyWith(fontWeight: FontWeight.w600)),
                 onPressed: () async {
                   final nudgeService = NudgeService();
                   final authService = Provider.of<AuthService>(context, listen: false);
-                  // final apiService = Provider.of<ApiService>(context, listen: false);
-                  
-                  nudgeService.showNudgeScheduleDialog(context, contacts, groups,authService.currentUser!.uid);
+                  nudgeService.showNudgeScheduleDialog(context, contacts, groups, authService.currentUser!.uid);
                 },
               ),
             ],
@@ -446,13 +444,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const Spacer(),
                 TextButton(
                   onPressed: () {
-                    Navigator.pushNamed(
-                      context, 
-                      '/contacts',
-                      arguments: {'filter': 'vip'},
-                    );
+                    setState(() => _currentIndex = 1);
                   },
-                  child: const Text('View All', style: TextStyle(color: Color.fromRGBO(45, 161, 175, 1)),),
+                  child: const Text('View All', style: TextStyle(color: Color.fromRGBO(45, 161, 175, 1))),
                 ),
               ],
             ),
@@ -483,11 +477,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const Spacer(),
                 TextButton(
                   onPressed: () {
-                    Navigator.pushNamed(
-                      context, 
-                      '/contacts',
-                      arguments: {'filter': 'needs_attention'},
-                    );
+                    setState(() => _currentIndex = 1);
                   },
                   child: const Text('View All'),
                 ),
@@ -512,17 +502,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   trailing: const VIPBadge(),
                   onTap: () {
-                    // Navigator.pushNamed(
-                    //   context, 
-                    //   '/contact_detail',
-                    //   arguments: contact.id,
-                    // );
-                      Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ContactDetailScreen(contact: contact)
-                    ),
-                  );
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ContactDetailScreen(contact: contact)
+                      ),
+                    );
                   },
                 )
               ).toList(),
@@ -531,11 +516,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             if (needsAttention.length > 3)
               TextButton(
                 onPressed: () {
-                  Navigator.pushNamed(
-                    context, 
-                    '/contacts',
-                    arguments: {'filter': 'needs_attention'},
-                  );
+                  setState(() => _currentIndex = 1);
                 },
                 child: const Text('View All Contacts Needing Attention'),
               ),
@@ -574,7 +555,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               onPressed: () {
                 Navigator.pushNamed(context, '/analytics');
               },
-              child: const Text('View Detailed Analytics', style: TextStyle(color: Color.fromRGBO(45, 161, 175, 1)),),
+              child: const Text('View Detailed Analytics', style: TextStyle(color: Color.fromRGBO(45, 161, 175, 1))),
             ),
           ],
         ],
@@ -599,7 +580,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               Text(
                 title,
-                style: TextStyle(fontSize: primary?12:10, color: Colors.grey),
+                style: TextStyle(fontSize: primary?12:10, fontWeight: FontWeight.w600, color: Colors.grey),
               ),
             ],
           ),
@@ -608,11 +589,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-    // Update the _buildContactCard method
   Widget _buildContactCard(Contact contact, ApiService apiService) {
-    // final authService = Provider.of<AuthService>(context, listen: false);
-    // final nudgeService = NudgeService();
-    
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -653,7 +630,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     padding: EdgeInsets.only(top: 4.0),
                     child: Icon(Icons.star, size: 12, color: Colors.amber),
                   ),
-               
               ],
             ),
           ),
@@ -663,7 +639,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   List<Widget> _buildContactStats(List<Contact> contacts) {
-    // Count contacts by type
     final typeCounts = <String, int>{};
     for (var contact in contacts) {
       typeCounts[contact.connectionType] = (typeCounts[contact.connectionType] ?? 0) + 1;
@@ -674,7 +649,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         padding: const EdgeInsets.symmetric(vertical: 4.0),
         child: Row(
           children: [
-            Text(entry.key),
+            Text(entry.key, style: TextStyle(fontWeight: FontWeight.w700)),
             const Spacer(),
             Text('${entry.value}'),
             const SizedBox(width: 4),
@@ -683,5 +658,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       );
     }).toList();
+  }
+
+  void _showCreateGroupDialog(BuildContext context) {
+    // You'll need to implement this method using your existing group creation logic
+    // This is a placeholder - you should integrate your actual group creation dialog
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Create Group'),
+        content: Text('Group creation functionality would go here'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Create'),
+          ),
+        ],
+      ),
+    );
   }
 }

@@ -1,4 +1,6 @@
 // lib/services/api_service.dart
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart' as auth;
@@ -47,19 +49,46 @@ class ApiService {
     }
   }
 
+    // Call Cloud Function to trigger scheduled notifications
+  Future<Map<String, dynamic>> scheduleRegularNotifications() async {
+    print('sending scheduled nudges');
+    try {
+      print('phase 1');
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) throw Exception('No user logged in');
+      
+      // You'll need to set up Firebase Functions callable
+      // First, add this import: import 'package:cloud_functions/cloud_functions.dart';
+      final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('scheduleRecurringNudges');
+      print('phase 2');
+      
+      final result = await callable.call();
+      print (result.data); print(' is the result');
+      
+      return result.data;
+    } catch (e) {
+      print('Error triggering manual nudge: $e');
+      throw Exception('Failed to trigger nudge: $e');
+    }
+  }
+
   // Call Cloud Function to trigger manual nudge
   Future<Map<String, dynamic>> triggerManualNudge(String contactId) async {
+    print('sending test nudge');
     try {
+      print('phase 1');
       final currentUser = _auth.currentUser;
       if (currentUser == null) throw Exception('No user logged in');
       
       // You'll need to set up Firebase Functions callable
       // First, add this import: import 'package:cloud_functions/cloud_functions.dart';
       final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('triggerManualNudge');
+      print('phase 2');
       
       final result = await callable.call({
         'contactId': contactId,
       });
+      print (result.data); print(' is the result');
       
       return result.data;
     } catch (e) {
@@ -99,7 +128,7 @@ class ApiService {
           createdAt: DateTime.now(),
          groups: [
           {"name": "Family", "period": "Monthly", "frequency": 4, "colorCode": "#4FC3F7"},
-          {"name": "Friend", "period": "Quarterly", "frequency": 8, "colorCode": "#FF6F61"},
+          {"name": "Friend", "period": "Quarterly", "frequency": 7, "colorCode": "#FF6F61"},
           {"name": "Client", "period": "Monthly", "frequency": 2, "colorCode": "#81C784"},
           {"name": "Colleague", "period": "Annually", "frequency": 4, "colorCode": "#FFC107"},
           {"name": "Mentor", "period": "Annually", "frequency": 2, "colorCode": "#607D8B"},
@@ -503,7 +532,7 @@ Future<Map<String, dynamic>> register(String email, String password) async {
       createdAt: DateTime.now(),
       groups: [
        {"name": "Family", "period": "Monthly", "frequency": 4, "colorCode": "#4FC3F7"},
-          {"name": "Friend", "period": "Quarterly", "frequency": 8, "colorCode": "#FF6F61"},
+          {"name": "Friend", "period": "Quarterly", "frequency": 7, "colorCode": "#FF6F61"},
           {"name": "Client", "period": "Monthly", "frequency": 2, "colorCode": "#81C784"},
           {"name": "Colleague", "period": "Annually", "frequency": 4, "colorCode": "#FFC107"},
           {"name": "Mentor", "period": "Annually", "frequency": 2, "colorCode": "#607D8B"},
@@ -525,6 +554,74 @@ Future<Map<String, dynamic>> register(String email, String password) async {
     throw Exception('Failed to register: $e');
   }
 }
+
+Future<void> submitFeedback({
+    required String message,
+    String type = 'Feedback',
+    Map<String, dynamic>? additionalData,
+  }) async {
+    try {
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) throw Exception('No user logged in');
+      
+      // Get current user data
+      final userDoc = await _usersCollection.doc(currentUser.uid).get();
+      final userData = userDoc.data() as Map<String, dynamic>?;
+      
+      // Prepare feedback data
+      final feedbackData = {
+        'user': {
+          'userId': currentUser.uid,
+          'email': currentUser.email,
+          'username': userData?['username'] ?? '',
+          'photoURL': userData?['photoURL'] ?? '',
+        },
+        'message': message,
+        'type': type,
+        'timestamp': FieldValue.serverTimestamp(),
+        'appVersion': '1.0.0', // You can make this dynamic if needed
+        'platform': _getPlatform(),
+        'additionalData': additionalData ?? {},
+        'status': 'new', // new, reviewed, resolved, etc.
+      };
+      
+      // Add to feedbacks collection
+      await _firestore.collection('feedbacks').add(feedbackData);
+      
+      print('Feedback submitted successfully');
+    } catch (e) {
+      print('Error submitting feedback: $e');
+      throw Exception('Failed to submit feedback: $e');
+    }
+  }
+
+  // Get all feedbacks for admin purposes (optional)
+  Stream<List<Map<String, dynamic>>> getFeedbacksStream() {
+    return _firestore
+        .collection('feedbacks')
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) {
+              final data = doc.data();
+              return {
+                'id': doc.id,
+                ...data,
+                'timestamp': data['timestamp']?.toDate() ?? DateTime.now(),
+              };
+            })
+            .toList());
+  }
+
+  String _getPlatform() {
+    if (Platform.isAndroid) return 'Android';
+    if (Platform.isIOS) return 'iOS';
+    if (Platform.isWindows) return 'Windows';
+    if (Platform.isMacOS) return 'macOS';
+    if (Platform.isLinux) return 'Linux';
+    return 'Unknown';
+  }
+
 
 }
 

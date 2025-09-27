@@ -70,7 +70,7 @@ class AuthService {
     final FirebaseAuth _auth = FirebaseAuth.instance;
     final GoogleSignIn googleSignIn = GoogleSignIn.instance;
     await googleSignIn.initialize(
-    serverClientId: '345448336149-ejg2dinndqspv0g9dhotmo4anpdsqm8o.apps.googleusercontent.com',
+    serverClientId: '40187814474-5n0oil6qublvnso4km97sl0q6sh5im24.apps.googleusercontent.com',
   );
 
    try {

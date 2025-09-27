@@ -136,14 +136,14 @@ Widget build(BuildContext context) {
           if (contact.phoneNumber.isNotEmpty)
             ListTile(
               leading: const Icon(Icons.phone),
-              title: const Text('Phone'),
+              title: const Text('Phone', style: TextStyle(fontWeight: FontWeight.w600),),
               subtitle: Text(contact.phoneNumber),
             ),
           
           if (contact.email.isNotEmpty)
             ListTile(
               leading: const Icon(Icons.email),
-              title: const Text('Email'),
+              title: const Text('Email', style: TextStyle(fontWeight: FontWeight.w600),),
               subtitle: Text(contact.email),
             ),
           
@@ -160,33 +160,33 @@ Widget build(BuildContext context) {
           
           ListTile(
             leading: const Icon(Icons.category),
-            title: const Text('Connection Type'),
+            title: const Text('Connection Type', style: TextStyle(fontWeight: FontWeight.w600),),
             subtitle: Text(contact.connectionType),
           ),
 
           ListTile(
             leading: const Icon(Icons.schedule),
-            title: const Text('Contact Period'),
+            title: const Text('Contact Period', style: TextStyle(fontWeight: FontWeight.w600),),
             subtitle: Text(contact.period.toString()),
           ),
           
           ListTile(
             leading: const Icon(Icons.schedule),
-            title: const Text('Contact Frequency'),
+            title: const Text('Contact Frequency', style: TextStyle(fontWeight: FontWeight.w600),),
             subtitle: Text(contact.frequency.toString()),
           ),
           
           if (contact.socialGroups.isNotEmpty)
             ListTile(
               leading: const Icon(Icons.group),
-              title: const Text('Social Groups'),
+              title: const Text('Social Groups', style: TextStyle(fontWeight: FontWeight.w600),),
               subtitle: Text(contact.socialGroups.join(', ')),
             ),
           
           if (contact.tags.isNotEmpty)
             ListTile(
               leading: const Icon(Icons.tag),
-              title: const Text('Tags'),
+              title: const Text('Tags', style: TextStyle(fontWeight: FontWeight.w600),),
               subtitle: Wrap(
                 spacing: 4,
                 children: contact.tags.map((tag) => Chip(

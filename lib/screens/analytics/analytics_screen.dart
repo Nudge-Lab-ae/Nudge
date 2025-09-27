@@ -128,7 +128,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             const SizedBox(height: 8),
             const Text(
               'Nudge Completion Rate',
-              style: TextStyle(fontSize: 12),
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
               textAlign: TextAlign.center,
             ),
           ],
@@ -148,7 +148,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         ),
         Text(
           title,
-          style: const TextStyle(fontSize: 12),
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
         ),
       ],
     );
@@ -190,7 +190,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             const SizedBox(height: 16),
             const Text(
               'Health score based on timely communication',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
+              style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w700),
             ),
           ],
         ),
@@ -236,7 +236,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             const SizedBox(height: 16),
             const Text(
               'Completed nudges by week',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
+              style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w700),
             ),
           ],
         ),
@@ -282,7 +282,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('VIP Contact Engagement'),
+                const Text('VIP Contact Engagement', style: TextStyle(fontWeight: FontWeight.w700),),
                 Chip(
                   label: Text('${vipContacts.length} VIPs', style: const TextStyle(color: Colors.white)),
                   backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
@@ -333,7 +333,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             const SizedBox(height: 8),
             const Text(
               'Nudge Completion Rate',
-              style: TextStyle(fontSize: 12),
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
               textAlign: TextAlign.center,
             ),
           ],

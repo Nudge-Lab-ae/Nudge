@@ -65,7 +65,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
             goals: {},
             groups: [
               {"name": "Family", "period": "Monthly", "frequency": 4, "colorCode": "#4FC3F7"},
-              {"name": "Friend", "period": "Quarterly", "frequency": 8, "colorCode": "#FF6F61"},
+              {"name": "Friend", "period": "Quarterly", "frequency": 7, "colorCode": "#FF6F61"},
               {"name": "Client", "period": "Monthly", "frequency": 2, "colorCode": "#81C784"},
               {"name": "Colleague", "period": "Annually", "frequency": 4, "colorCode": "#FFC107"},
               {"name": "Mentor", "period": "Annually", "frequency": 2, "colorCode": "#607D8B"},
