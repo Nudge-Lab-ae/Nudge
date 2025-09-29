@@ -25,6 +25,7 @@ class SocialGroup {
 
   Map<String, dynamic> toMap() {
     return {
+      'id': id,
       'name': name,
       'description': description,
       'period': period,

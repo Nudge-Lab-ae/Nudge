@@ -22,6 +22,8 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   final NudgeService nudgeService = NudgeService();
   int _currentIndex = 0;
+  bool vipFilter = false;
+  bool attentionFilter = false;
   List<Contact> totalContacts = [];
 
   @override
@@ -129,7 +131,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case 0:
         return _buildDashboardContent(context, contacts, groups, apiService);
       case 1:
-        return ContactsListScreen(showAppBar: false,);
+        return ContactsListScreen(showAppBar: false, filter: vipFilter?'vip':attentionFilter?'needs_attention':'',);
       case 2:
         return GroupsListScreen(showAppBar: false,);
       default:
@@ -238,7 +240,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             title: const Text('All Contacts', style: TextStyle(fontWeight: FontWeight.w600)),
             onTap: () {
               Navigator.pop(context);
-              setState(() => _currentIndex = 1);
+                setState(() {
+                     _currentIndex = 1;
+                     attentionFilter = false;
+                     vipFilter = false;
+                  });
             },
           ),
           ListTile(
@@ -370,7 +376,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 true,
                 onTap: () {
                   // Could implement VIP filter in contacts view
-                  setState(() => _currentIndex = 1);
+                  setState(() {
+                     _currentIndex = 1;
+                     vipFilter = true;
+                     attentionFilter = false;
+                  });
                 },
               ),
               const SizedBox(width: 10),
@@ -381,7 +391,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 false,
                 onTap: () {
                   // Could implement needs attention filter in contacts view
-                  setState(() => _currentIndex = 1);
+                   setState(() {
+                     _currentIndex = 1;
+                     attentionFilter = true;
+                     vipFilter = false;
+                  });
                 },
               ),
             ],
@@ -444,7 +458,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const Spacer(),
                 TextButton(
                   onPressed: () {
-                    setState(() => _currentIndex = 1);
+                      setState(() {
+                     _currentIndex = 1;
+                     attentionFilter = false;
+                     vipFilter = true;
+                  });
                   },
                   child: const Text('View All', style: TextStyle(color: Color.fromRGBO(45, 161, 175, 1))),
                 ),

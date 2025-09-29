@@ -51,37 +51,36 @@ class ApiService {
 
     // Call Cloud Function to trigger scheduled notifications
   Future<Map<String, dynamic>> scheduleRegularNotifications() async {
+    var contactId = 'c4oM05jGqPzi9PPnKYOp';
     print('sending scheduled nudges');
     try {
       print('phase 1');
       final currentUser = _auth.currentUser;
       if (currentUser == null) throw Exception('No user logged in');
       
-      // You'll need to set up Firebase Functions callable
-      // First, add this import: import 'package:cloud_functions/cloud_functions.dart';
       final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('scheduleRecurringNudges');
       print('phase 2');
       
-      final result = await callable.call();
+      final result = await callable.call({
+        'contactId': contactId,
+      });
       print (result.data); print(' is the result');
       
       return result.data;
     } catch (e) {
-      print('Error triggering manual nudge: $e');
+      print('Error scheduling nudges: $e');
       throw Exception('Failed to trigger nudge: $e');
     }
   }
 
   // Call Cloud Function to trigger manual nudge
   Future<Map<String, dynamic>> triggerManualNudge(String contactId) async {
-    print('sending test nudge');
+    print('sending test nudge'); print(contactId);
     try {
       print('phase 1');
       final currentUser = _auth.currentUser;
       if (currentUser == null) throw Exception('No user logged in');
       
-      // You'll need to set up Firebase Functions callable
-      // First, add this import: import 'package:cloud_functions/cloud_functions.dart';
       final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('triggerManualNudge');
       print('phase 2');
       
@@ -127,11 +126,11 @@ class ApiService {
           username: currentUser.displayName ?? currentUser.email!.split('@')[0],
           createdAt: DateTime.now(),
          groups: [
-          {"name": "Family", "period": "Monthly", "frequency": 4, "colorCode": "#4FC3F7"},
-          {"name": "Friend", "period": "Quarterly", "frequency": 7, "colorCode": "#FF6F61"},
-          {"name": "Client", "period": "Monthly", "frequency": 2, "colorCode": "#81C784"},
-          {"name": "Colleague", "period": "Annually", "frequency": 4, "colorCode": "#FFC107"},
-          {"name": "Mentor", "period": "Annually", "frequency": 2, "colorCode": "#607D8B"},
+          {"name": "Family", "id": "Family", "period": "Monthly", "frequency": 4, "colorCode": "#4FC3F7"},
+          {"name": "Friend",  "id": "Friend", "period": "Quarterly", "frequency": 7, "colorCode": "#FF6F61"},
+          {"name": "Client",  "id": "Client", "period": "Monthly", "frequency": 2, "colorCode": "#81C784"},
+          {"name": "Colleague",  "id": "Colleague", "period": "Annually", "frequency": 4, "colorCode": "#FFC107"},
+          {"name": "Mentor",  "id": "Mentor", "period": "Annually", "frequency": 2, "colorCode": "#607D8B"},
         ],
           goals: {},
           // contacts: [],
@@ -531,11 +530,11 @@ Future<Map<String, dynamic>> register(String email, String password) async {
       photoURL: '',
       createdAt: DateTime.now(),
       groups: [
-       {"name": "Family", "period": "Monthly", "frequency": 4, "colorCode": "#4FC3F7"},
-          {"name": "Friend", "period": "Quarterly", "frequency": 7, "colorCode": "#FF6F61"},
-          {"name": "Client", "period": "Monthly", "frequency": 2, "colorCode": "#81C784"},
-          {"name": "Colleague", "period": "Annually", "frequency": 4, "colorCode": "#FFC107"},
-          {"name": "Mentor", "period": "Annually", "frequency": 2, "colorCode": "#607D8B"},
+       {"name": "Family", "id": "Family", "period": "Monthly", "frequency": 4, "colorCode": "#4FC3F7"},
+          {"name": "Friend",  "id": "Friend", "period": "Quarterly", "frequency": 7, "colorCode": "#FF6F61"},
+          {"name": "Client",  "id": "Client", "period": "Monthly", "frequency": 2, "colorCode": "#81C784"},
+          {"name": "Colleague",  "id": "Colleague", "period": "Annually", "frequency": 4, "colorCode": "#FFC107"},
+          {"name": "Mentor",  "id": "Mentor", "period": "Annually", "frequency": 2, "colorCode": "#607D8B"},
       ],
       goals: {},
       // contacts: [],

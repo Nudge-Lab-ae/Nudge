@@ -270,7 +270,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                               itemBuilder: (context, index) {
                                 final group = filteredGroups[index];
                                 final groupMembers = contacts.where((contact) => 
-                                  contact.connectionType == group.name).toList();
+                                  contact.connectionType == group.id).toList();
                                 
                                 return _buildGroupCard(context, group, groupMembers, apiService);
                               },
@@ -934,12 +934,16 @@ Widget _buildGroupCard(BuildContext context, SocialGroup group, List<Contact> me
                       onPressed: () async {
                         if (nameController.text.isNotEmpty) {
                           final updatedGroup = group.copyWith(
+                            id: group.id,
                             name: nameController.text,
                             description: descriptionController.text,
                             period: period,
                             frequency: frequency,
                             colorCode: selectedColor,
                           );
+                          updatedGroup.id = group.id;
+
+                          // print('group is'); print(updatedGroup.toMap());
                           
                           try {
                             // Get current groups

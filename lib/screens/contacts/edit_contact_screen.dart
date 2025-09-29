@@ -284,9 +284,9 @@ class _EditContactScreenState extends State<EditContactScreen> {
                       children: _userGroups.map((group) {
                         return ConnectionTypeChip(
                           label: group.name,
-                          isSelected: _connectionType == group.name,
+                          isSelected: _connectionType == group.id,
                           onSelected: (selected) {
-                            if (selected) setState(() => _connectionType = group.name);
+                            if (selected) setState(() => _connectionType = group.id);
                           },
                         );
                       }).toList(),

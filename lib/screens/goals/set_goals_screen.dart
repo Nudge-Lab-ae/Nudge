@@ -54,7 +54,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
       // Fallback to default groups
       _userGroups = [
         SocialGroup(
-          id: 'family',
+          id: 'Family',
           name: 'Family',
           description: 'Family members',
           period: 'Monthly',
@@ -65,7 +65,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
           colorCode: '#4FC3F7',
         ),
         SocialGroup(
-          id: 'friend',
+          id: 'Friend',
           name: 'Friend',
           description: 'Friends',
           period: 'Quarterly',
@@ -76,7 +76,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
           colorCode: '#FF6F61',
         ),
         SocialGroup(
-          id: 'client',
+          id: 'Client',
           name: 'Client',
           description: 'Clients',
           period: 'Monthly',
@@ -87,7 +87,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
           colorCode: '#81C784',
         ),
         SocialGroup(
-          id: 'colleague',
+          id: 'Colleague',
           name: 'Colleague',
           description: 'Colleagues',
           period: 'Annually',
@@ -98,7 +98,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
           colorCode: '#FFC107',
         ),
         SocialGroup(
-          id: 'mentor',
+          id: 'Mentor',
           name: 'Mentor',
           description: 'Mentors',
           period: 'Annually',
@@ -174,7 +174,7 @@ Future<void> _saveGoals() async {
 
   void _addNewGroup() {
      final newGroup = SocialGroup(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: 'New Group',
       name: 'New Group',
       description: '',
       period: 'Monthly',
@@ -210,7 +210,7 @@ Future<void> _saveGoals() async {
   void _editGroup(SocialGroup group) {
     setState(() {
       _groupsBeingEdited[group.id] = SocialGroup(
-        id: group.id,
+        id: group.name,
         name: group.name,
         description: group.description,
         period: group.period,

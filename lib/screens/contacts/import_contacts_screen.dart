@@ -119,7 +119,7 @@ Future<void> _importDeviceContacts() async {
             const SizedBox(height: 8),
             const Text(
               'Easily import your existing contacts to get started with Nudge',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
+              style: TextStyle(fontSize: 16, color: Colors.black, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 30),
             
@@ -196,7 +196,7 @@ Future<void> _importDeviceContacts() async {
                             children: [
                               const Text(
                                 'Smart Filter',
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
                               ),
                               Text(
                                 'Prioritize contacts you interact with most',
@@ -380,17 +380,17 @@ Future<void> _importDeviceContacts() async {
                     SizedBox(height: 12),
                     ListTile(
                       leading: Icon(Icons.filter_list, color: Color.fromRGBO(45, 161, 175, 1)),
-                      title: Text('Smart Filter'),
+                      title: Text('Smart Filter', style: TextStyle(fontWeight: FontWeight.w800),),
                       subtitle: Text('Prioritizes contacts based on your interaction frequency'),
                     ),
                     ListTile(
                       leading: Icon(Icons.group, color: Color.fromRGBO(45, 161, 175, 1)),
-                      title: Text('Customizable Quantity'),
+                      title: Text('Customizable Quantity', style: TextStyle(fontWeight: FontWeight.w800),),
                       subtitle: Text('Choose how many contacts to import based on your needs'),
                     ),
                     ListTile(
                       leading: Icon(Icons.security, color: Color.fromRGBO(45, 161, 175, 1)),
-                      title: Text('Privacy First'),
+                      title: Text('Privacy First', style: TextStyle(fontWeight: FontWeight.w800),),
                       subtitle: Text('Your contacts are only stored on your device and our secure servers'),
                     ),
                   ],

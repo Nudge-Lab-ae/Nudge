@@ -75,7 +75,8 @@ Widget build(BuildContext context) {
               // ScaffoldMessenger.of(context).showSnackBar(
               //   SnackBar(content: Text('Test nudge sent for ${contact.name}')),
               // );
-              apiService.triggerManualNudge(contact.id);
+              // apiService.triggerManualNudge(contact.id);
+              apiService.scheduleRegularNotifications();
             },
             tooltip: 'Send test nudge',
           ),
