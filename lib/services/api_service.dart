@@ -58,7 +58,7 @@ class ApiService {
       final currentUser = _auth.currentUser;
       if (currentUser == null) throw Exception('No user logged in');
       
-      final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('scheduleRecurringNudges');
+      final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('rescheduleUserNudges');
       print('phase 2');
       
       final result = await callable.call({
