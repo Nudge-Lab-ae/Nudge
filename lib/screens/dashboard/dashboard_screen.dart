@@ -431,7 +431,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ActionChip(
                 avatar: const Icon(Icons.group_add, size: 18, color: Color.fromRGBO(45, 161, 175, 1)),
                 label: Text('Create Group', style: AppTextStyles.primary.copyWith(fontWeight: FontWeight.w600)),
-                onPressed: () => _showCreateGroupDialog(context),
+                onPressed: () {
+                  setState(() {
+                     _currentIndex = 2;
+                     attentionFilter = false;
+                     vipFilter = false;
+                  });
+                },
               ),
               ActionChip(
                 avatar: const Icon(Icons.notifications_active, size: 18, color: Color.fromRGBO(45, 161, 175, 1)),
@@ -676,27 +682,5 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       );
     }).toList();
-  }
-
-  void _showCreateGroupDialog(BuildContext context) {
-    // You'll need to implement this method using your existing group creation logic
-    // This is a placeholder - you should integrate your actual group creation dialog
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Create Group'),
-        content: Text('Group creation functionality would go here'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Create'),
-          ),
-        ],
-      ),
-    );
   }
 }
