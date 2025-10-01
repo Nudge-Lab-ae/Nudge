@@ -180,9 +180,10 @@ class _EditContactScreenState extends State<EditContactScreen> {
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(
-          title: Text('Edit Contact', style: AppTextStyles.title3.copyWith(color: Colors.white)),
-          backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
-          iconTheme: const IconThemeData(color: Colors.white),
+          title: Text('NUDGE', style: AppTextStyles.title3.copyWith(color: Colors.black, fontFamily: 'RobotoMono'),),
+          centerTitle: true,
+          iconTheme: IconThemeData(color: Colors.black),
+          backgroundColor: Colors.white,
         ),
         body: const Center(child: CircularProgressIndicator()),
       );
@@ -195,9 +196,10 @@ class _EditContactScreenState extends State<EditContactScreen> {
           builder: (context, groups, child) {
             return Scaffold(
       appBar: AppBar(
-        title: Text('Edit Contact', style: AppTextStyles.title3.copyWith(color: Colors.white)),
-        backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text('NUDGE', style: AppTextStyles.title3.copyWith(color: Colors.black, fontFamily: 'RobotoMono'),),
+        centerTitle: true,
+        iconTheme: IconThemeData(color: Colors.black),
+        backgroundColor: Colors.white,
         actions: [
           IconButton(
             icon: const Icon(Icons.save),
@@ -213,6 +215,11 @@ class _EditContactScreenState extends State<EditContactScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Padding(
+                padding: EdgeInsets.only(left: 10),
+                child:  Text('Edit Contact', style: AppTextStyles.primaryBold.copyWith(fontSize: 22)),),
+              const SizedBox(height: 30),
+
               Center(
                 child: Stack(
                   children: [

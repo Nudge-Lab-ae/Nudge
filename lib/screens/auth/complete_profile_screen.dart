@@ -95,10 +95,11 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Colors.white, fontFamily: 'RobotoMono'),),
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text('NUDGE', style: AppTextStyles.title3.copyWith(color: Colors.black, fontFamily: 'RobotoMono'),),
+        centerTitle: true,
+        iconTheme: IconThemeData(color: Colors.black),
+        backgroundColor: Colors.white,
         leading: Center(),
-        backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

@@ -95,9 +95,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
         
         return Scaffold(
           appBar: AppBar(
-            title: Text('Nudges & Reminders', style: AppTextStyles.title3.copyWith(color: Colors.white)),
-            iconTheme: const IconThemeData(color: Colors.white),
-            backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+            title: Text('Nudges & Reminders', style: AppTextStyles.title3.copyWith(color: Colors.black)),
+            centerTitle: true,
+            iconTheme: IconThemeData(color: Colors.black),
+            backgroundColor: Colors.white,
             // fromRGBO(45, 161, 175, 1)
             // (37, 150, 190, 1)
             bottom: TabBar(
@@ -110,12 +111,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
                 Tab(
                   // text: 'Upcoming (7 days)',
                   child: Text('Upcoming (7 days)', style: AppTextStyles.primaryBold.copyWith(
-                    color: _tabController.index == 0?Colors.white: Colors.black
+                    color: _tabController.index == 0?Colors.black: Colors.grey
                   ),),
                 ),
                 Tab(
                    child: Text('All Nudges', style: AppTextStyles.primaryBold.copyWith(
-                    color: _tabController.index == 1?Colors.white: Colors.black
+                    color: _tabController.index == 1?Colors.black: Colors.grey
                   ),),
                 ),
               ],
@@ -350,12 +351,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Filter Nudges'),
+          title: const Text('Filter Nudges', style: TextStyle(fontWeight: FontWeight.w700),),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               RadioListTile(
-                title: const Text('All Nudges'),
+                title: const Text('All Nudges', style: TextStyle(fontWeight: FontWeight.w600),),
                 value: 'all',
                 groupValue: _filter,
                 onChanged: (value) {
@@ -366,7 +367,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
                 },
               ),
               RadioListTile(
-                title: const Text('Upcoming'),
+                title: const Text('Upcoming', style: TextStyle(fontWeight: FontWeight.w600),),
                 value: 'upcoming',
                 groupValue: _filter,
                 onChanged: (value) {
@@ -377,7 +378,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
                 },
               ),
               RadioListTile(
-                title: const Text('Completed'),
+                title: const Text('Completed', style: TextStyle(fontWeight: FontWeight.w600),),
                 value: 'completed',
                 groupValue: _filter,
                 onChanged: (value) {

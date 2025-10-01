@@ -24,14 +24,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Colors.white, fontFamily: 'RobotoMono')),
-        backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
-        leading: IconButton(
-          onPressed: () {
-            Navigator.pop(context);
-          }, 
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-        ),
+         title: Text('NUDGE', style: AppTextStyles.title3.copyWith(color: Colors.black, fontFamily: 'RobotoMono'),),
+        centerTitle: true,
+        iconTheme: IconThemeData(color: Colors.black),
+        backgroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

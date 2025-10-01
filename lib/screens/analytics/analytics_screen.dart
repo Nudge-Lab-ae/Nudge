@@ -35,9 +35,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     
     return Scaffold(
       appBar: AppBar(
-        title: Text('Analytics', style: AppTextStyles.title3.copyWith(color: Colors.white)),
-        backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text('Analytics', style: AppTextStyles.title3.copyWith(color: Colors.black)),
+        centerTitle: true,
+        iconTheme: IconThemeData(color: Colors.black),
+        backgroundColor: Colors.white
       ),
       body: StreamBuilder<List<Contact>>(
         stream: apiService.getContactsStream(),

@@ -359,7 +359,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
+              backgroundColor: Colors.black,
+              body: Center(/* child: CircularProgressIndicator() */),
             );
           }
           

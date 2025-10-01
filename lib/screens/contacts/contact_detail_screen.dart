@@ -41,9 +41,10 @@ Widget build(BuildContext context) {
   
   return Scaffold(
     appBar: AppBar(
-      title: Text('Contact Details', style: AppTextStyles.title3.copyWith(color: Colors.white),),
-      backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
-      iconTheme: IconThemeData(color: Colors.white),
+      title: Text('NUDGE', style: AppTextStyles.title3.copyWith(color: Colors.black, fontFamily: 'RobotoMono'),),
+                  centerTitle: true,
+                  iconTheme: IconThemeData(color: Colors.black),
+                  backgroundColor: Colors.white,
       actions: [
         IconButton(
           icon: const Icon(Icons.edit),

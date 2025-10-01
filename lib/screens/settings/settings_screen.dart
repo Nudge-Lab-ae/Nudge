@@ -212,12 +212,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Settings', style: AppTextStyles.title2.copyWith(color: Colors.white)),
-        backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
+        title: Text('NUDGE', style: AppTextStyles.title3.copyWith(color: Colors.black, fontFamily: 'RobotoMono'),),
+                  centerTitle: true,
+                  iconTheme: IconThemeData(color: Colors.black),
+                  backgroundColor: Colors.white,
+        // leading: IconButton(
+        //   icon: const Icon(Icons.arrow_back, color: Colors.white),
+        //   onPressed: () => Navigator.pop(context),
+        // ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -230,6 +232,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const Text(
+                    'Adjust Settings',
+                    style: TextStyle(
+                      fontSize: 25,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xff777777),
+                      decoration: TextDecoration.underline
+                    ),
+                  ),
+                  const SizedBox(height: 25),
                   const Text(
                     'Subscription',
                     style: TextStyle(
