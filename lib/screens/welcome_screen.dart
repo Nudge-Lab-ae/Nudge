@@ -14,9 +14,9 @@ class WelcomeScreen extends StatelessWidget {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              const Color.fromRGBO(45, 161, 175, 1).withOpacity(0.8),
-              const Color.fromRGBO(45, 161, 175, 1).withOpacity(0.4),
-              Colors.white,
+              const Color.fromRGBO(45, 161, 175, 1).withOpacity(1),
+              const Color.fromRGBO(45, 161, 175, 1).withOpacity(1),
+              // Colors.white,
             ],
           ),
         ),
@@ -26,11 +26,11 @@ class WelcomeScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.favorite,
-                  size: 80,
-                  color: Colors.white,
-                ),
+                // const Icon(
+                //   Icons.favorite,
+                //   size: 80,
+                //   color: Colors.white,
+                // ),
                 const SizedBox(height: 20),
                 const Text(
                   'NUDGE',
@@ -42,7 +42,7 @@ class WelcomeScreen extends StatelessWidget {
                     fontFamily: 'RobotoMono'
                   ),
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 60),
                 const Text(
                   'Nurture your precious relationships',
                   style: TextStyle(

@@ -24,7 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Colors.white)),
+        title: Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Colors.white, fontFamily: 'RobotoMono')),
         backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
         leading: IconButton(
           onPressed: () {

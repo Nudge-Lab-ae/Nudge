@@ -76,7 +76,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     switch (_currentIndex) {
       case 0: // Dashboard
-        title = 'NUDGE Dashboard';
+        title = 'Dashboard';
         actions = [
           IconButton(
             icon: const Icon(Icons.search),
@@ -212,7 +212,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.favorite, size: 40, color: Colors.white),
+                   
                     SizedBox(width: 20),
                     Text(
                       'NUDGE',
@@ -308,6 +308,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         DateTime.now().subtract(const Duration(days: 30))
       )
     ).toList();
+
+    var size = MediaQuery.of(context).size;
     
     // Filter VIP contacts
     final vipContacts = contacts.where((contact) => contact.isVIP).toList();
@@ -366,14 +368,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 contacts.length.toString(),
                 Icons.contacts,
                 true,
+                size.width*0.25,
                 onTap: () => setState(() => _currentIndex = 1),
               ),
               const SizedBox(width: 10),
               _buildSummaryCard(
-                'VIP Contacts',
+                'Close Circle',
                 vipContacts.length.toString(),
                 Icons.star,
                 true,
+                size.width*0.22,
                 onTap: () {
                   // Could implement VIP filter in contacts view
                   setState(() {
@@ -385,10 +389,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(width: 10),
               _buildSummaryCard(
-                'Needs Attention',
+                'Needs Care',
                 needsAttention.length.toString(),
                 Icons.notifications_active,
                 false,
+                size.width*0.22,
                 onTap: () {
                   // Could implement needs attention filter in contacts view
                    setState(() {
@@ -458,7 +463,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Row(
               children: [
                 const Text(
-                  'VIP Contacts',
+                  'Close Circle',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const Spacer(),
@@ -495,7 +500,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Row(
               children: [
                 const Text(
-                  'Needs Attention',
+                  'Needs Care',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const Spacer(),
@@ -587,7 +592,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildSummaryCard(String title, String value, IconData icon, bool primary, {VoidCallback? onTap}) {
+  Widget _buildSummaryCard(String title, String value, IconData icon, bool primary, double width, {VoidCallback? onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Card(
@@ -602,10 +607,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 value,
                 style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
-              Text(
+              Container(
+                width: width,
+                child: Text(
                 title,
                 style: TextStyle(fontSize: primary?12:10, fontWeight: FontWeight.w600, color: Colors.grey),
               ),
+              )
             ],
           ),
         ),

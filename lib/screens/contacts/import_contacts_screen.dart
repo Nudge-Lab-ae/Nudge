@@ -18,9 +18,9 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   int _processedCount = 0;
   int _totalCount = 0;
   String _statusMessage = '';
-  int _selectedQuantity = 0; // 0 means all contacts
+  int _selectedQuantity = 50; // 0 means all contacts
   bool _useSmartFilter = true;
-  List<int> _quantityOptions = [50, 100, 200, 0]; // 0 represents "All Contacts"
+  List<int> _quantityOptions = [25, 50, 100, 150]; // 0 represents "All Contacts"
 
 Future<void> _importDeviceContacts() async {
   setState(() {

@@ -8,6 +8,7 @@ import 'package:nudge/firebase_options.dart';
 import 'package:nudge/screens/analytics/analytics_screen.dart';
 import 'package:nudge/screens/auth/complete_profile_screen.dart';
 import 'package:nudge/screens/contacts/edit_contact_screen.dart';
+import 'package:nudge/screens/splash_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/theme/text_styles.dart';
@@ -25,6 +26,7 @@ import 'screens/notifications/notifications_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'screens/groups/groups_list_screen.dart';
 import 'services/auth_service.dart';
+import 'models/user.dart' as user;
 // import 'package:firebase_app_check/firebase_app_check.dart';
 
 // Create a GlobalKey for navigator to handle notifications when app is in background
@@ -39,37 +41,29 @@ Future<void> main() async {
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
   ]);
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform, 
-    // name: "NudgeApp"
-    name: "Nudge"
-  );
-
-  //  await FirebaseAppCheck.instance.activate(
-  //   androidProvider: AndroidProvider.debug,
-  //   appleProvider: AppleProvider.debug,
-  // );
-  
-  // // Optional: Get and print debug token (for development)
-  // if (kDebugMode) {
-  //   String? token = await FirebaseAppCheck.instance.getToken(true);
-  //   print('App Check debug token: $token');
-    
-  //   // You can register this token in Firebase Console for testing
-  //   // Firebase Console → App Check → Manage debug tokens
-  // }
-  // printDebugToken();
-  
-  // Initialize local notifications
-  await initializeLocalNotifications();
-  
-  // Initialize FCM and set up message handlers
-  await initializeFCM();
-  
-  final nudgeService = NudgeService();
-  await nudgeService.initialize();
-
+   await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+      name: "Nudge"
+    );
   runApp(const NudgeApp());
+  _initializeInBackground();
+}
+
+Future<void> _initializeInBackground() async {
+  try {
+   
+    
+    // Initialize other services in background
+    await initializeLocalNotifications();
+    await initializeFCM();
+    
+    final nudgeService = NudgeService();
+    await nudgeService.initialize();
+    
+    print('Background initialization completed');
+  } catch (e) {
+    print('Background initialization error: $e');
+  }
 }
 
 // void printDebugToken() async {
@@ -268,7 +262,7 @@ class NudgeApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: 'NUDGE',
-        navigatorKey: navigatorKey, // Important for navigation from notifications
+        navigatorKey: navigatorKey,
         theme: ThemeData(
           primaryColor: const Color.fromRGBO(45, 161, 175, 1),
           colorScheme: ColorScheme.fromSwatch(
@@ -289,8 +283,9 @@ class NudgeApp extends StatelessWidget {
             labelSmall: AppTextStyles.caption,
           ),
         ),
-        initialRoute: '/',
+        initialRoute: '/splash', // Change initial route to splash
         routes: {
+          '/splash': (context) => const SplashScreen(), // Add splash route
           '/': (context) => const AuthWrapper(),
           '/welcome': (context) => const WelcomeScreen(),
           '/login': (context) => const LoginScreen(),
@@ -345,7 +340,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
   Future<void> _storeFCMTokenIfNeeded() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      // User is logged in, store FCM token
       final apiService = ApiService();
       String? token = await FirebaseMessaging.instance.getToken();
       if (token != null) {
@@ -357,12 +351,54 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    final user = context.watch<User?>();
+    final firebaseUser = context.watch<User?>();
     
-    if (user != null) {
-      return const DashboardScreen();
+    if (firebaseUser != null) {
+      return FutureBuilder<user.User>(
+        future: _getUserProfile(firebaseUser.uid),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+          
+          if (snapshot.hasError) {
+            return Scaffold(
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('Error: ${snapshot.error}'),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: () => setState(() {}),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+          
+          final userData = snapshot.data;
+          
+          // Check if profile is completed
+          if (userData == null || !userData.profileCompleted) {
+            return const CompleteProfileScreen();
+          } else {
+            return const DashboardScreen();
+          }
+        },
+      );
     } else {
       return const WelcomeScreen();
     }
+  }
+
+  Future<user.User> _getUserProfile(String userId) async {
+    final apiService = ApiService();
+    user.User thisUser = await apiService.getUser();
+    return thisUser;
   }
 }

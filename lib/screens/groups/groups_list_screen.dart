@@ -8,6 +8,7 @@ import 'package:shimmer/shimmer.dart';
 import '../../services/auth_service.dart';
 import '../../models/social_group.dart';
 import '../../models/contact.dart';
+import '../../models/nudge.dart';
 
 enum SortOption { name, memberCount, frequency }
 
@@ -23,6 +24,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   Stream<List<SocialGroup>>? _groupsStream;
+  Stream<List<Nudge>>? _nudgesStream;
   final ConfettiController _confettiController = ConfettiController(duration: const Duration(seconds: 3));
   SortOption _currentSortOption = SortOption.name;
   bool _sortAscending = true;
@@ -39,6 +41,11 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
       print('Error in groups stream: $error');
       return <SocialGroup>[];
     });
+    
+    _nudgesStream = apiService.getNudgesStream().handleError((error) {
+      print('Error in nudges stream: $error');
+      return <Nudge>[];
+    });
   }
 
   @override
@@ -53,7 +60,34 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
     super.dispose();
   }
 
-   List<SocialGroup> _sortGroups(List<SocialGroup> groups) {
+  // Calculate interaction progress for a group
+  double _calculateGroupProgress(List<Contact> groupMembers, List<Nudge> allNudges) {
+    if (groupMembers.isEmpty) return 0.0;
+
+    double totalProgress = 0.0;
+    int membersWithNudges = 0;
+
+    for (final member in groupMembers) {
+      // Get nudges for this specific contact
+      final memberNudges = allNudges.where((nudge) => nudge.contactId == member.id).toList();
+      
+      if (memberNudges.isNotEmpty) {
+        final totalNudges = memberNudges.length;
+        final completedNudges = memberNudges.where((nudge) => nudge.isCompleted).length;
+        final memberProgress = totalNudges > 0 ? completedNudges / totalNudges : 0.0;
+        totalProgress += memberProgress;
+        membersWithNudges++;
+      }
+    }
+
+    // If no members have nudges, return 0
+    if (membersWithNudges == 0) return 0.0;
+
+    // Return average progress across members
+    return totalProgress / membersWithNudges;
+  }
+
+  List<SocialGroup> _sortGroups(List<SocialGroup> groups) {
     List<SocialGroup> sortedGroups = List.from(groups);
     
     switch (_currentSortOption) {
@@ -147,165 +181,174 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
         return <Contact>[];
       }),
       initialData: const [],
-      child: Scaffold(
-        backgroundColor: Colors.grey[50],
-        appBar: !widget.showAppBar
-        ? null
-        :AppBar(
-          title: Text('Social Groups', style: AppTextStyles.title3.copyWith(color: Colors.white)),
-          iconTheme: const IconThemeData(color: Colors.white),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-          ),
-          backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.add),
-              onPressed: () => _showCreateGroupDialog(context, apiService),
+      child: StreamProvider<List<Nudge>>.value(
+        value: _nudgesStream ?? Stream.value([]),
+        initialData: const [],
+        child: Scaffold(
+          backgroundColor: Colors.grey[50],
+          appBar: !widget.showAppBar
+          ? null
+          :AppBar(
+            title: Text('Social Groups', style: AppTextStyles.title3.copyWith(color: Colors.white)),
+            iconTheme: const IconThemeData(color: Colors.white),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
             ),
-          ],
-        ),
-        body: Stack(
-          children: [
-            Column(
-              children: [
-                // Search bar with fun design
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color.fromRGBO(45, 161, 175, 1),
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(20),
-                      bottomRight: Radius.circular(20),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.blue.withOpacity(0.2),
-                        blurRadius: 10,
-                        offset: const Offset(0, 5),
+            backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.add),
+                onPressed: () => _showCreateGroupDialog(context, apiService),
+              ),
+            ],
+          ),
+          body: Stack(
+            children: [
+              Column(
+                children: [
+                  // Search bar with fun design
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color.fromRGBO(45, 161, 175, 1),
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(20),
+                        bottomRight: Radius.circular(20),
                       ),
-                    ],
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Container(
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.blue.withOpacity(0.2),
+                          blurRadius: 10,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Center(
+                              child: TextField(
+                              controller: _searchController,
+                              decoration: InputDecoration(
+                                hintText: 'Search groups...',
+                                hintStyle: TextStyle(fontWeight: FontWeight.w600),
+                                prefixIcon: const Icon(Icons.search, color: Colors.blue),
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              ),
+                              onChanged: (value) => setState(() => _searchQuery = value),
+                            ),
+                            )
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Container(
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Center(
-                            child: TextField(
-                            controller: _searchController,
-                            decoration: InputDecoration(
-                              hintText: 'Search groups...',
-                              hintStyle: TextStyle(fontWeight: FontWeight.w600),
-                              prefixIcon: const Icon(Icons.search, color: Colors.blue),
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                            ),
-                            onChanged: (value) => setState(() => _searchQuery = value),
+                          child: IconButton(
+                            icon: const Icon(Icons.filter_list, color: Colors.blue),
+                            onPressed: () => _showFilterOptions(context),
                           ),
-                          )
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: IconButton(
-                          icon: const Icon(Icons.filter_list, color: Colors.blue),
-                          onPressed: () => _showFilterOptions(context),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: StreamBuilder<List<SocialGroup>>(
-                    stream: _groupsStream,
-                    builder: (context, groupsSnapshot) {
-                      if (groupsSnapshot.hasError) {
-                        return _buildErrorState(groupsSnapshot.error.toString());
-                      }
+                  Expanded(
+                    child: StreamBuilder<List<SocialGroup>>(
+                      stream: _groupsStream,
+                      builder: (context, groupsSnapshot) {
+                        if (groupsSnapshot.hasError) {
+                          return _buildErrorState(groupsSnapshot.error.toString());
+                        }
 
-                      if (!groupsSnapshot.hasData) {
-                        return _buildLoadingState();
-                      }
+                        if (!groupsSnapshot.hasData) {
+                          return _buildLoadingState();
+                        }
 
-                      final groups = groupsSnapshot.data!;
-                      
-                      return Consumer<List<Contact>>(
-                        builder: (context, contacts, child) {
-
-                          final sortedGroups = _sortGroups(groups);
-            
-                          final filteredGroups = sortedGroups.where((group) {
-                            return group.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                                group.description.toLowerCase().contains(_searchQuery.toLowerCase());
-                          }).toList();
-                          
-                          if (groups.isEmpty) {
-                            return _buildEmptyState(apiService);
-                          }
-
-                          return RefreshIndicator(
-                            onRefresh: () async {
-                              setState(() => _initializeStreams());
-                              await Future.delayed(const Duration(seconds: 1));
-                            },
-                            child: GridView.builder(
-                              padding: const EdgeInsets.all(16),
-                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                crossAxisSpacing: 16,
-                                mainAxisSpacing: 16,
-                                childAspectRatio: 0.85,
-                              ),
-                              itemCount: filteredGroups.length,
-                              itemBuilder: (context, index) {
-                                final group = filteredGroups[index];
-                                final groupMembers = contacts.where((contact) => 
-                                  contact.connectionType == group.id).toList();
+                        final groups = groupsSnapshot.data!;
+                        
+                        return Consumer<List<Contact>>(
+                          builder: (context, contacts, child) {
+                            return Consumer<List<Nudge>>(
+                              builder: (context, nudges, child) {
+                                final sortedGroups = _sortGroups(groups);
+                
+                                final filteredGroups = sortedGroups.where((group) {
+                                  return group.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                                      group.description.toLowerCase().contains(_searchQuery.toLowerCase());
+                                }).toList();
                                 
-                                return _buildGroupCard(context, group, groupMembers, apiService);
+                                if (groups.isEmpty) {
+                                  return _buildEmptyState(apiService);
+                                }
+
+                                return RefreshIndicator(
+                                  onRefresh: () async {
+                                    setState(() => _initializeStreams());
+                                    await Future.delayed(const Duration(seconds: 1));
+                                  },
+                                  child: GridView.builder(
+                                    padding: const EdgeInsets.all(16),
+                                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 2,
+                                      crossAxisSpacing: 16,
+                                      mainAxisSpacing: 16,
+                                      childAspectRatio: 0.85,
+                                    ),
+                                    itemCount: filteredGroups.length,
+                                    itemBuilder: (context, index) {
+                                      final group = filteredGroups[index];
+                                      final groupMembers = contacts.where((contact) => 
+                                        contact.connectionType == group.id).toList();
+                                      
+                                      final progress = _calculateGroupProgress(groupMembers, nudges);
+                                      
+                                      return _buildGroupCard(context, group, groupMembers, progress, apiService);
+                                    },
+                                  ),
+                                );
                               },
-                            ),
-                          );
-                        },
-                      );
-                    },
+                            );
+                          },
+                        );
+                      },
+                    ),
                   ),
-                ),
-              ],
-            ),
-            // Confetti animation for when a group is created
-            Align(
-              alignment: Alignment.topCenter,
-              child: ConfettiWidget(
-                confettiController: _confettiController,
-                blastDirectionality: BlastDirectionality.explosive,
-                shouldLoop: false,
-                colors: const [
-                  Colors.green,
-                  Colors.blue,
-                  Colors.pink,
-                  Colors.orange,
-                  Colors.purple
                 ],
               ),
-            ),
-          ],
-        ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => _showCreateGroupDialog(context, apiService),
-          backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
-          icon: const Icon(Icons.group_add, color: Colors.white),
-          label: const Text('New Group', style: TextStyle(color: Colors.white)),
+              // Confetti animation for when a group is created
+              Align(
+                alignment: Alignment.topCenter,
+                child: ConfettiWidget(
+                  confettiController: _confettiController,
+                  blastDirectionality: BlastDirectionality.explosive,
+                  shouldLoop: false,
+                  colors: const [
+                    Colors.green,
+                    Colors.blue,
+                    Colors.pink,
+                    Colors.orange,
+                    Colors.purple
+                  ],
+                ),
+              ),
+            ],
+          ),
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: () => _showCreateGroupDialog(context, apiService),
+            backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+            icon: const Icon(Icons.group_add, color: Colors.white),
+            label: const Text('New Group', style: TextStyle(color: Colors.white)),
+          ),
         ),
       ),
     );
@@ -394,7 +437,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
     );
   }
 
-Widget _buildGroupCard(BuildContext context, SocialGroup group, List<Contact> members, ApiService apiService) {
+Widget _buildGroupCard(BuildContext context, SocialGroup group, List<Contact> members, double progress, ApiService apiService) {
   // Add safety check for color code
   Color cardColor;
   try {
@@ -451,14 +494,18 @@ Widget _buildGroupCard(BuildContext context, SocialGroup group, List<Contact> me
                         maxLines: 1,
                       ),
                     ),
-                    Container(
+                    
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: textColor.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        '${group.frequency}x/${group.period.substring(0, 1).toLowerCase()}',
+                        '${group.frequency}x/${group.period.toLowerCase()}',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
@@ -466,24 +513,17 @@ Widget _buildGroupCard(BuildContext context, SocialGroup group, List<Contact> me
                         ),
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 8),
+                    const SizedBox(height: 8),
                 Text(
                   group.description,
                   style: TextStyle(color: textColor.withOpacity(0.8), fontSize: 12),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
+                
+                
                 const Spacer(),
                 // Members section
-                // Row(
-                //   children: [
-                //     _buildMemberAvatars(members, textColor),
-                //     const SizedBox(width: 8),
-                   
-                //   ],
-                // ),
                  Text(
                       '${members.length} members',
                       style: TextStyle(
@@ -494,8 +534,11 @@ Widget _buildGroupCard(BuildContext context, SocialGroup group, List<Contact> me
                       overflow: TextOverflow.ellipsis,
                     ),
                 const SizedBox(height: 8),
-                // Progress bar for interaction frequency
-                _buildInteractionProgress(group, textColor),
+                // Progress bar for interaction frequency - only show if group has members
+                if (members.isNotEmpty)
+                  _buildInteractionProgress(progress, textColor)
+                else
+                  _buildEmptyProgress(textColor),
               ],
             ),
           ),
@@ -505,69 +548,7 @@ Widget _buildGroupCard(BuildContext context, SocialGroup group, List<Contact> me
   );
 }
   
-// Widget _buildMemberAvatars(List<Contact> members, Color textColor) {
-//   final displayMembers = members.take(3).toList();
-  
-//   return SizedBox(
-//     width: 80, // Fixed width to prevent overflow
-//     height: 32,
-//     child: Stack(
-//       children: [
-//         for (int i = 0; i < displayMembers.length; i++)
-//           Positioned(
-//             left: i * 20.0,
-//             child: Container(
-//               width: 28,
-//               height: 28,
-//               decoration: BoxDecoration(
-//                 color: Colors.white,
-//                 border: Border.all(color: textColor, width: 1.5),
-//                 shape: BoxShape.circle,
-//               ),
-//               child: displayMembers[i].imageUrl.isNotEmpty
-//                   ? ClipOval(
-//                       child: Image.network(
-//                         displayMembers[i].imageUrl,
-//                         width: 28,
-//                         height: 28,
-//                         fit: BoxFit.cover,
-//                         errorBuilder: (context, error, stackTrace) {
-//                           return Icon(Icons.person, size: 16, color: textColor);
-//                         },
-//                       ),
-//                     )
-//                   : Icon(Icons.person, size: 16, color: textColor),
-//             ),
-//           ),
-//         if (members.length > 3)
-//           Positioned(
-//             left: 60.0,
-//             child: Container(
-//               width: 28,
-//               height: 28,
-//               decoration: BoxDecoration(
-//                 color: Colors.white,
-//                 border: Border.all(color: textColor, width: 1.5),
-//                 shape: BoxShape.circle,
-//               ),
-//               child: Center(
-//                 child: Text(
-//                   '+${members.length - 3}',
-//                   style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: textColor),
-//                 ),
-//               ),
-//             ),
-//           ),
-//       ],
-//     ),
-//   );
-// }
-  
-  Widget _buildInteractionProgress(SocialGroup group, Color textColor) {
-    // This is a simplified progress indicator - you might want to calculate
-    // actual interaction progress based on your app's logic
-    final double progress = 0.7; // Example value
-    
+  Widget _buildInteractionProgress(double progress, Color textColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -587,6 +568,32 @@ Widget _buildGroupCard(BuildContext context, SocialGroup group, List<Contact> me
           '${(progress * 100).toInt()}% complete',
           style: TextStyle(fontSize: 10, color: textColor),
         ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyProgress(Color textColor) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+       Container(
+          height: 40,
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Center(
+            child: Text(
+              'Add members to track progress',
+              style: TextStyle(
+                fontSize: 10,
+                color: textColor.withOpacity(0.6),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+       
       ],
     );
   }
@@ -746,16 +753,23 @@ Widget _buildGroupCard(BuildContext context, SocialGroup group, List<Contact> me
                       ),
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
-                      initialValue: frequency.toString(),
+                   
+                      DropdownButtonFormField<String>(
+                      value: frequency.toString(),
+                       onChanged: (value) {
+                        frequency = int.tryParse(value!) ?? 4;
+                      },
+                      items: <String>['1', '2', '3', '4', '5', '6', '7']
+                          .map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
                       decoration: const InputDecoration(
-                        labelText: 'Frequency (times per period)',
+                        labelText: 'Contact Period',
                         border: OutlineInputBorder(),
                       ),
-                      keyboardType: TextInputType.number,
-                      onChanged: (value) {
-                        frequency = int.tryParse(value) ?? 4;
-                      },
                     ),
                     const SizedBox(height: 16),
                     const Text('Group Color', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -889,16 +903,33 @@ Widget _buildGroupCard(BuildContext context, SocialGroup group, List<Contact> me
                           ),
                         ),
                         const SizedBox(height: 16),
-                        TextFormField(
-                          initialValue: frequency.toString(),
+                        // TextFormField(
+                        //   initialValue: frequency.toString(),
+                        //   decoration: const InputDecoration(
+                        //     labelText: 'Frequency (times per period)',
+                        //     border: OutlineInputBorder(),
+                        //   ),
+                        //   keyboardType: TextInputType.number,
+                        //   onChanged: (value) {
+                        //     frequency = int.tryParse(value) ?? group.frequency;
+                        //   },
+                        // ),
+                         DropdownButtonFormField<String>(
+                          value: '4',
+                          onChanged: (String? value) {
+                            frequency = int.tryParse(value!) ?? group.frequency;
+                          },
+                          items: <String>['1', '2', '3', '4', '5', '6', '7']
+                              .map<DropdownMenuItem<String>>((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(value),
+                            );
+                          }).toList(),
                           decoration: const InputDecoration(
-                            labelText: 'Frequency (times per period)',
+                            labelText: 'Contact Period',
                             border: OutlineInputBorder(),
                           ),
-                          keyboardType: TextInputType.number,
-                          onChanged: (value) {
-                            frequency = int.tryParse(value) ?? group.frequency;
-                          },
                         ),
                         const SizedBox(height: 16),
                         const Text('Group Color', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -1037,8 +1068,8 @@ Widget _buildGroupCard(BuildContext context, SocialGroup group, List<Contact> me
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     _buildStatItem('Members', '${members.length}'),
-                    _buildStatItem('Frequency', '${group.frequency}x/${group.period.substring(0, 1).toLowerCase()}'),
-                    _buildStatItem('Last Contact', _formatDate(group.lastInteraction)),
+                    _buildStatItem('Frequency', '${group.frequency}x/${group.period.toLowerCase()}'),
+                    _buildStatItem('Last Engaged', _formatDate(group.lastInteraction)),
                   ],
                 ),
                 const SizedBox(height: 24),
@@ -1165,6 +1196,8 @@ Widget _buildGroupCard(BuildContext context, SocialGroup group, List<Contact> me
   String _formatDate(DateTime date) {
     final now = DateTime.now();
     final difference = now.difference(date);
+
+    if (difference.inDays > 7600) return 'N/A';
     
     if (difference.inDays == 0) return 'Today';
     if (difference.inDays == 1) return 'Yesterday';

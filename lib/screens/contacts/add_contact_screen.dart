@@ -263,7 +263,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                 setState(() => _isVIP = value ?? false);
                               },
                             ),
-                            const Text('Closed Circle'),
+                            const Text('Close Circle'),
                             
                             const SizedBox(width: 20),
                             

@@ -19,7 +19,8 @@ class SetGoalsScreen extends StatefulWidget {
 class _SetGoalsScreenState extends State<SetGoalsScreen> {
   late List<SocialGroup> _userGroups;
   bool _isLoading = true;
-  bool _isManagingGroups = false;
+  bool _isManagingGroups = true; // Start with group management for new users
+  bool _hasCompletedGroupSetup = false; // Track if user has completed group setup
   final Map<String, SocialGroup> _groupsBeingEdited = {};
 
   final Map<String, Map<String, dynamic>> _periodRanges = {
@@ -33,6 +34,12 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
   void initState() {
     super.initState();
     _loadUserGroups();
+    
+    // For new users (not from settings), start with group management
+    if (!widget.isFromSettings) {
+      _isManagingGroups = true;
+      _hasCompletedGroupSetup = false;
+    }
   }
 
   Future<void> _loadUserGroups() async {
@@ -48,10 +55,15 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
       setState(() {
         _userGroups = groups;
         _isLoading = false;
+        
+        // If user has groups already, mark group setup as completed
+        if (groups.isNotEmpty && !widget.isFromSettings) {
+          _hasCompletedGroupSetup = true;
+        }
       });
     } catch (e) {
       print('Error loading user groups: $e');
-      // Fallback to default groups
+      // Fallback to default groups for new users
       _userGroups = [
         SocialGroup(
           id: 'Family',
@@ -130,7 +142,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
     }
   }
 
-Future<void> _saveGoals() async {
+  Future<void> _saveGoals() async {
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
       final authService = Provider.of<AuthService>(context, listen: false);
@@ -172,9 +184,16 @@ Future<void> _saveGoals() async {
     });
   }
 
+  void _proceedToGoalSetting() {
+    setState(() {
+      _isManagingGroups = false;
+      _hasCompletedGroupSetup = true;
+    });
+  }
+
   void _addNewGroup() {
      final newGroup = SocialGroup(
-      id: 'New Group',
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
       name: 'New Group',
       description: '',
       period: 'Monthly',
@@ -210,7 +229,7 @@ Future<void> _saveGoals() async {
   void _editGroup(SocialGroup group) {
     setState(() {
       _groupsBeingEdited[group.id] = SocialGroup(
-        id: group.name,
+        id: group.id,
         name: group.name,
         description: group.description,
         period: group.period,
@@ -249,7 +268,6 @@ Future<void> _saveGoals() async {
       }
     }
   }
-
 
   void _cancelGroupEdit(String groupId) {
     setState(() {
@@ -300,6 +318,64 @@ Future<void> _saveGoals() async {
     );
   }
 
+  Widget _buildStepIndicator() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Step 1: Group Management
+          _buildStepCircle(1, 'Groups', _isManagingGroups || !_hasCompletedGroupSetup),
+          _buildStepConnector(),
+          // Step 2: Goal Setting
+          _buildStepCircle(2, 'Goals', !_isManagingGroups && _hasCompletedGroupSetup),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStepCircle(int stepNumber, String label, bool isActive) {
+    return Column(
+      children: [
+        Container(
+          width: 30,
+          height: 30,
+          decoration: BoxDecoration(
+            color: isActive ? const Color.fromRGBO(45, 161, 175, 1) : Colors.grey[300],
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: Text(
+              stepNumber.toString(),
+              style: TextStyle(
+                color: isActive ? Colors.white : Colors.grey[600],
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+            color: isActive ? const Color.fromRGBO(45, 161, 175, 1) : Colors.grey[600],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStepConnector() {
+    return Container(
+      width: 40,
+      height: 2,
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      color: Colors.grey[300],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -315,7 +391,7 @@ Future<void> _saveGoals() async {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _isManagingGroups ? 'Manage Groups' : 'Edit Goals', 
+          _isManagingGroups ? 'Set Up Groups' : 'Set Interaction Goals', 
           style: AppTextStyles.title2.copyWith(color: Colors.white),
         ),
         iconTheme: const IconThemeData(color: Colors.white),
@@ -327,98 +403,194 @@ Future<void> _saveGoals() async {
               )
             : null,
         actions: [
-          IconButton(
-            icon: Icon(
-              _isManagingGroups ? Icons.checklist : Icons.group,
-              color: Colors.white,
+          // Only show toggle if user has completed group setup or is from settings
+          if (_hasCompletedGroupSetup || widget.isFromSettings)
+            IconButton(
+              icon: Icon(
+                _isManagingGroups ? Icons.track_changes : Icons.group,
+                color: Colors.white,
+              ),
+              onPressed: _toggleGroupManagement,
+              tooltip: _isManagingGroups ? 'Set Goals' : 'Manage Groups',
             ),
-            onPressed: _toggleGroupManagement,
-            tooltip: _isManagingGroups ? 'Set Goals' : 'Manage Groups',
+        ],
+      ),
+      body: Column(
+        children: [
+          // Step Indicator
+          if (!widget.isFromSettings) _buildStepIndicator(),
+          
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (_isManagingGroups) ...[
+                    Text(
+                      widget.isFromSettings 
+                        ? 'Manage your contact groups. Add, edit, or remove groups to organize your contacts.'
+                        : 'First, set up your contact groups. These will help you organize your contacts and set interaction goals.',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    
+                    // Add new group button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _addNewGroup,
+                        icon: const Icon(Icons.add, color: Colors.white,),
+                        label: const Text('Add New Group'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 15),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    
+                    // List of groups for management
+                    ..._userGroups.map((group) => 
+                      _buildGroupManagementItem(group)
+                    ).toList(),
+                  ] else ...[
+                    Text(
+                      widget.isFromSettings 
+                        ? 'Adjust how often you want to engage with each group of contacts.'
+                        : 'Now, set your interaction goals. Adjust how often you want to engage with each group of contacts.',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+                    
+                    // Build settings for each group
+                    ..._userGroups.map((group) => Column(
+                      children: [
+                        _buildGroupSettings(group),
+                        const SizedBox(height: 30),
+                      ],
+                    )).toList(),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          
+          // Bottom Action Buttons
+          Container(
+            padding: const EdgeInsets.all(20),
+            child: _isManagingGroups 
+                ? _buildGroupManagementActions()
+                : _buildGoalSettingActions(),
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (!_isManagingGroups) ...[
-              Text(
-                widget.isFromSettings 
-                  ? 'Adjust how often you want to engage with each group of contacts.'
-                  : 'Adjust the default level of how often you want to engage with each group of contacts. This can be edited later by group or person.',
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
-                ),
-              ),
-              const SizedBox(height: 30),
-              
-              // Build settings for each group
-              ..._userGroups.map((group) => Column(
-                children: [
-                  _buildGroupSettings(group),
-                  const SizedBox(height: 30),
-                ],
-              )).toList(),
-            ] else ...[
-              const Text(
-                'Manage your contact groups. Add, edit, or remove groups to organize your contacts.',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
-                ),
-              ),
-              const SizedBox(height: 20),
-              
-              // Add new group button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _addNewGroup,
-                  icon: const Icon(Icons.add, color: Colors.white,),
-                  label: const Text('Add New Group'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              
-              // List of groups for management
-              ..._userGroups.map((group) => 
-                _buildGroupManagementItem(group)
-              ).toList(),
-            ],
-            
-            // Continue/Save Button
-            if (!_isManagingGroups) SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: _saveGoals,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: Text(
-                  widget.isFromSettings ? 'Save Changes' : 'Continue',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white
-                  ),
-                ),
-              ),
-            ),
-          ],
+    );
+  }
+
+  Widget _buildGroupManagementActions() {
+    return SizedBox(
+      width: double.infinity,
+      height: 50,
+      child: ElevatedButton(
+        onPressed: _userGroups.isNotEmpty ? _proceedToGoalSetting : null,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+        child: Text(
+          _userGroups.isNotEmpty ? 'Continue to Goal Setting' : 'Add at least one group',
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.white
+          ),
         ),
       ),
     );
+  }
+
+  Widget _buildGoalSettingActions() {
+    if (widget.isFromSettings) {
+      return SizedBox(
+        width: double.infinity,
+        height: 50,
+        child: ElevatedButton(
+          onPressed: _saveGoals,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          child: const Text(
+            'Save Changes',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.white
+            ),
+          ),
+        ),
+      );
+    } else {
+      return Row(
+        children: [
+          Expanded(
+            child: Container(
+              margin: const EdgeInsets.only(right: 10),
+              child: OutlinedButton(
+                onPressed: () {
+                  setState(() {
+                    _isManagingGroups = true;
+                  });
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color.fromRGBO(45, 161, 175, 1),
+                  side: const BorderSide(
+                    color: Color.fromRGBO(45, 161, 175, 1),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                ),
+                child: const Text('Back to Groups'),
+              ),
+            ),
+          ),
+          Expanded(
+            child: ElevatedButton(
+              onPressed: _saveGoals,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 15),
+              ),
+              child: const Text(
+                'Finish Setup',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
   }
 
   Widget _buildGroupSettings(SocialGroup group) {
@@ -584,14 +756,6 @@ Future<void> _saveGoals() async {
                             ),
                           ),
                         ],
-                        const SizedBox(height: 5),
-                        // Text(
-                        //   '${group.memberCount} members',
-                        //   style: const TextStyle(
-                        //     fontSize: 12,
-                        //     color: Colors.grey,
-                        //   ),
-                        // ),
                       ],
                     ),
                   ),

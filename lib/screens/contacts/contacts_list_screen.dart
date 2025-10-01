@@ -469,11 +469,11 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     
     switch (filter) {
       case 'vip':
-        title = 'No VIP contacts yet';
-        description = 'Mark contacts as VIP to see them here';
+        title = 'No Close Circle Contacts yet';
+        description = 'Mark contacts as Close Circle to see them here';
         break;
       case 'needs_attention':
-        title = 'No contacts need attention';
+        title = 'No contacts need care';
         description = 'All your contacts have been contacted recently';
         break;
       default:
@@ -544,9 +544,9 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
   String _getTitle(String? filter) {
     switch (filter) {
       case 'vip':
-        return 'VIP Contacts';
+        return 'Close Circle';
       case 'needs_attention':
-        return 'Contacts Needing Attention';
+        return 'Contacts Needing Care';
       default:
         return 'All Contacts';
     }

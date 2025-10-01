@@ -77,8 +77,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     const SizedBox(height: 24),
                     _buildNudgePerformanceSection(analytics, nudges),
                     const SizedBox(height: 24),
-                    _buildRelationshipHealthSection(analytics, contacts),
-                    const SizedBox(height: 24),
+                    // _buildRelationshipHealthSection(analytics, contacts),
+                    // const SizedBox(height: 24),
                     _buildVIPContactsSection(analytics, contacts),
                     const SizedBox(height: 24),
                     _buildInteractionPatternsSection(analytics, nudges),
@@ -115,22 +115,22 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            LinearPercentIndicator(
-              animation: true,
-              lineHeight: 20.0,
-              animationDuration: 1000,
-              percent: analytics.nudgeCompletionRate / 100,
-              center: Text("${analytics.nudgeCompletionRate.toStringAsFixed(1)}%", style: const TextStyle(color: Colors.white)),
-              barRadius: const Radius.circular(10),
-              progressColor: _getProgressColor(analytics.nudgeCompletionRate),
-              backgroundColor: Colors.grey[300],
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Nudge Completion Rate',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-              textAlign: TextAlign.center,
-            ),
+            // LinearPercentIndicator(
+            //   animation: true,
+            //   lineHeight: 20.0,
+            //   animationDuration: 1000,
+            //   percent: analytics.nudgeCompletionRate / 100,
+            //   center: Text("${analytics.nudgeCompletionRate.toStringAsFixed(1)}%", style: const TextStyle(color: Colors.white)),
+            //   barRadius: const Radius.circular(10),
+            //   progressColor: _getProgressColor(analytics.nudgeCompletionRate),
+            //   backgroundColor: Colors.grey[300],
+            // ),
+            // const SizedBox(height: 8),
+            // const Text(
+            //   'Nudge Completion Rate',
+            //   style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+            //   textAlign: TextAlign.center,
+            // ),
           ],
         ),
       ),
@@ -154,49 +154,49 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
-  Widget _buildRelationshipHealthSection(Analytics analytics, List<Contact> contacts) {
-    final healthData = _calculateRelationshipHealth(contacts);
+  // Widget _buildRelationshipHealthSection(Analytics analytics, List<Contact> contacts) {
+  //   final healthData = _calculateRelationshipHealth(contacts);
     
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Relationship Health by Type',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 200,
-              child: healthData.isEmpty
-                  ? const Center(child: Text('No data available'))
-                  : SfCartesianChart(
-                      primaryXAxis: CategoryAxis(),
-                      series: <ChartSeries>[
-                        ColumnSeries<Map<String, dynamic>, String>(
-                          dataSource: healthData,
-                          xValueMapper: (Map<String, dynamic> data, _) => data['type'],
-                          yValueMapper: (Map<String, dynamic> data, _) => data['health'],
-                          dataLabelSettings: const DataLabelSettings(isVisible: true),
-                          color: const Color.fromRGBO(45, 161, 175, 1),
-                        )
-                      ],
-                    ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Health score based on timely communication',
-              style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w700),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  //   return Card(
+  //     elevation: 4,
+  //     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+  //     child: Padding(
+  //       padding: const EdgeInsets.all(16.0),
+  //       child: Column(
+  //         crossAxisAlignment: CrossAxisAlignment.start,
+  //         children: [
+  //           const Text(
+  //             'Relationship Health by Type',
+  //             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+  //           ),
+  //           const SizedBox(height: 16),
+  //           SizedBox(
+  //             height: 200,
+  //             child: healthData.isEmpty
+  //                 ? const Center(child: Text('No data available'))
+  //                 : SfCartesianChart(
+  //                     primaryXAxis: CategoryAxis(),
+  //                     series: <ChartSeries>[
+  //                       ColumnSeries<Map<String, dynamic>, String>(
+  //                         dataSource: healthData,
+  //                         xValueMapper: (Map<String, dynamic> data, _) => data['type'],
+  //                         yValueMapper: (Map<String, dynamic> data, _) => data['health'],
+  //                         dataLabelSettings: const DataLabelSettings(isVisible: true),
+  //                         color: const Color.fromRGBO(45, 161, 175, 1),
+  //                       )
+  //                     ],
+  //                   ),
+  //           ),
+  //           const SizedBox(height: 16),
+  //           const Text(
+  //             'Health score based on timely communication',
+  //             style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w700),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildInteractionPatternsSection(Analytics analytics, List<Nudge> nudges) {
     final interactionData = _calculateInteractionPatterns(nudges);
@@ -257,14 +257,14 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'VIP Engagement',
+              'Close Circle Engagement',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             SizedBox(
               height: 200,
               child: vipInteractionData.isEmpty
-                  ? const Center(child: Text('No VIP contacts'))
+                  ? const Center(child: Text('No Close circle contacts'))
                   : SfCartesianChart(
                       primaryXAxis: CategoryAxis(),
                       series: <ChartSeries>[
@@ -282,9 +282,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('VIP Contact Engagement', style: TextStyle(fontWeight: FontWeight.w700),),
+                const Text('Close Contact Engagement', style: TextStyle(fontWeight: FontWeight.w700),),
                 Chip(
-                  label: Text('${vipContacts.length} VIPs', style: const TextStyle(color: Colors.white)),
+                  label: Text('${vipContacts.length} Contacts', style: const TextStyle(color: Colors.white)),
                   backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
                 ),
               ],
@@ -434,35 +434,35 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     return contactCount == 0 ? 100.0 : totalHealth / contactCount;
   }
 
-  List<Map<String, dynamic>> _calculateRelationshipHealth(List<Contact> contacts) {
-    final healthData = <Map<String, dynamic>>[];
-    final types = <String, List<double>>{};
+  // List<Map<String, dynamic>> _calculateRelationshipHealth(List<Contact> contacts) {
+  //   final healthData = <Map<String, dynamic>>[];
+  //   final types = <String, List<double>>{};
     
-    // Group contacts by type and calculate average health
-    for (var contact in contacts) {
-      if (!types.containsKey(contact.connectionType)) {
-        types[contact.connectionType] = [];
-      }
+  //   // Group contacts by type and calculate average health
+  //   for (var contact in contacts) {
+  //     if (!types.containsKey(contact.connectionType)) {
+  //       types[contact.connectionType] = [];
+  //     }
       
-      final daysSinceLastContact = DateTime.now().difference(contact.lastContacted).inDays;
-      final daysPerFrequency = contact.frequency * _getDaysInPeriod(contact.period);
+  //     final daysSinceLastContact = DateTime.now().difference(contact.lastContacted).inDays;
+  //     final daysPerFrequency = contact.frequency * _getDaysInPeriod(contact.period);
       
-      double healthScore = 100.0;
-      if (daysSinceLastContact > daysPerFrequency) {
-        healthScore = 100 - ((daysSinceLastContact - daysPerFrequency) / daysPerFrequency * 50).clamp(0, 100).toDouble();
-      }
+  //     double healthScore = 100.0;
+  //     if (daysSinceLastContact > daysPerFrequency) {
+  //       healthScore = 100 - ((daysSinceLastContact - daysPerFrequency) / daysPerFrequency * 50).clamp(0, 100).toDouble();
+  //     }
       
-      types[contact.connectionType]!.add(healthScore);
-    }
+  //     types[contact.connectionType]!.add(healthScore);
+  //   }
     
-    // Calculate average health for each type
-    types.forEach((type, scores) {
-      final averageHealth = scores.isEmpty ? 0 : scores.reduce((a, b) => a + b) / scores.length;
-      healthData.add({'type': type, 'health': averageHealth.roundToDouble()});
-    });
+  //   // Calculate average health for each type
+  //   types.forEach((type, scores) {
+  //     final averageHealth = scores.isEmpty ? 0 : scores.reduce((a, b) => a + b) / scores.length;
+  //     healthData.add({'type': type, 'health': averageHealth.roundToDouble()});
+  //   });
     
-    return healthData;
-  }
+  //   return healthData;
+  // }
 
   int _getDaysInPeriod(String period) {
     switch (period.toLowerCase()) {

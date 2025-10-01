@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:nudge/theme/text_styles.dart';
 import '../../services/api_service.dart';
-import '../goals/set_goals_screen.dart';
+// import '../goals/set_goals_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -374,29 +374,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 30),
             
             // Interaction Goals Section
-            const Text(
-              'Interaction Goals',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 15),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: OutlinedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const SetGoalsScreen(isFromSettings: true)),
-                  );
-                },
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color.fromRGBO(45, 161, 175, 1),
-                  side: const BorderSide(color: Color.fromRGBO(45, 161, 175, 1)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                child: const Text('Go to Interaction Goals'),
-              ),
-            ),
+            // const Text(
+            //   'Interaction Goals',
+            //   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            // ),
+            // const SizedBox(height: 15),
+            // SizedBox(
+            //   width: double.infinity,
+            //   height: 50,
+            //   child: OutlinedButton(
+            //     onPressed: () {
+            //       Navigator.push(
+            //         context,
+            //         MaterialPageRoute(builder: (context) => const SetGoalsScreen(isFromSettings: true)),
+            //       );
+            //     },
+            //     style: OutlinedButton.styleFrom(
+            //       foregroundColor: const Color.fromRGBO(45, 161, 175, 1),
+            //       side: const BorderSide(color: Color.fromRGBO(45, 161, 175, 1)),
+            //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            //     ),
+            //     child: const Text('Go to Interaction Goals'),
+            //   ),
+            // ),
             
             const SizedBox(height: 30),
             

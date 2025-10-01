@@ -302,7 +302,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
                       setState(() => _isVIP = value ?? false);
                     },
                   ),
-                  Text('Closed Circle', style: AppTextStyles.primary),
+                  Text('Close Circle', style: AppTextStyles.primary),
                   
                   const SizedBox(width: 20),
                   
