@@ -1,6 +1,9 @@
 // lib/main.dart
+import 'dart:io';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 // import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -38,13 +41,54 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-  ]);
-   await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-      name: "Nudge"
-    );
+  print('stage 1 - Widgets binding initialized');
+  
+  try {
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
+    print('stage 2 - Orientation set');
+
+    // Debug platform detection
+    if (kIsWeb) {
+      print('Running on Web');
+    } else if (Platform.isAndroid) {
+      print('Running on Android');
+    } else if (Platform.isIOS) {
+      print('Running on iOS');
+    }
+
+    print('Attempting Firebase initialization...');
+    
+    // await Firebase.initializeApp(
+    //   options: DefaultFirebaseOptions.currentPlatform,
+    //   name: Platform.isAndroid?"Nudge":"Nudge-iOS"
+    // );
+    if (Platform.isIOS) {
+       await Firebase.initializeApp();
+    } else {
+       await Firebase.initializeApp(
+       options: DefaultFirebaseOptions.currentPlatform,
+       name: "Nudge"
+  );
+    }
+   
+    print('stage 3 - Firebase initialized successfully');
+    
+  } catch (e, stack) {
+    print('Error during initialization: $e');
+    print('Stack trace: $stack');
+    
+    // Try fallback initialization without options
+    try {
+      print('Attempting fallback Firebase initialization...');
+      await Firebase.initializeApp();
+      print('Fallback Firebase initialization successful');
+    } catch (e2) {
+      print('Fallback also failed: $e2');
+    }
+  }
+  
   runApp(const NudgeApp());
   _initializeInBackground();
 }
@@ -55,6 +99,7 @@ Future<void> _initializeInBackground() async {
     
     // Initialize other services in background
     await initializeLocalNotifications();
+    await Future.delayed(Duration(seconds: 2));
     await initializeFCM();
     
     final nudgeService = NudgeService();
@@ -125,6 +170,10 @@ Future<void> initializeFCM() async {
 
   print('Notification permission: ${settings.authorizationStatus}');
 
+  if (Platform.isIOS) {
+    _setupIOSFCM();
+  }
+
   // Get FCM token - we'll store it when we have a user logged in
   String? token = await messaging.getToken();
   if (token != null) {
@@ -161,6 +210,57 @@ Future<void> initializeFCM() async {
     print('App opened from terminated state via notification');
     _handleTerminatedMessage(initialMessage);
   }
+}
+
+void _setupIOSFCM() {
+  // Request APNS token for iOS
+  FirebaseMessaging.instance.getAPNSToken().then((token) {
+    print('APNS Token: $token');
+  });
+  
+  // Handle token refresh for iOS
+  FirebaseMessaging.instance.onTokenRefresh.listen((token) async{
+    print('FCM Token refreshed: $token');
+    final apiService = ApiService();
+    await apiService.updateUser({'fcmToken': token});
+  });
+  
+  // Handle initial message when app is opened from terminated state
+  FirebaseMessaging.instance.getInitialMessage().then((message) {
+    if (message != null) {
+      print('App opened from terminated state with message: ${message.data}');
+      _handleMessage(message);
+    }
+  });
+  
+  // Handle messages when app is in foreground
+  FirebaseMessaging.onMessage.listen((message) {
+    print('Foreground message: ${message.data}');
+    _handleMessage(message);
+  });
+  
+  // Handle when app is in background but not terminated
+  FirebaseMessaging.onMessageOpenedApp.listen((message) {
+    print('App opened from background with message: ${message.data}');
+    _handleMessage(message);
+  });
+}
+
+// void _setupTokenRefreshListener() {
+//   // Set up token refresh listener
+//   FirebaseMessaging.instance.onTokenRefresh.listen((token) async{
+//     print('FCM Token refreshed: $token');
+//     final apiService = ApiService();
+//     await apiService.updateUser({'fcmToken': token});
+//   });
+// }
+
+void _handleMessage(RemoteMessage message) {
+  // Handle your notification message here
+  print('Handling message: ${message.data}');
+  
+  // You can navigate to specific screens based on message data
+  // or show local notifications, etc.
 }
 
 void _showLocalNotification(RemoteMessage message) {

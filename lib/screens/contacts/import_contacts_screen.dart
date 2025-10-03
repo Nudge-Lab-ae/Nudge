@@ -104,9 +104,9 @@ Future<void> _importDeviceContacts() async {
     return Scaffold(
       appBar: AppBar(
         title: Text('NUDGE', style: AppTextStyles.title3.copyWith(color: Colors.black, fontFamily: 'RobotoMono'),),
-                  centerTitle: true,
-                  iconTheme: IconThemeData(color: Colors.black),
-                  backgroundColor: Colors.white
+        centerTitle: true,
+        iconTheme: IconThemeData(color: Colors.black),
+        backgroundColor: Colors.white
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -69,22 +70,32 @@ class AuthService {
    Future<User?> signInWithGoogle() async {
     final FirebaseAuth _auth = FirebaseAuth.instance;
     final GoogleSignIn googleSignIn = GoogleSignIn.instance;
-    await googleSignIn.initialize(
-    serverClientId: '40187814474-5n0oil6qublvnso4km97sl0q6sh5im24.apps.googleusercontent.com',
-  );
+    print('stagea');
+    if (Platform.isAndroid || Platform.isIOS) {
+      await googleSignIn.initialize(
+        serverClientId: '40187814474-5n0oil6qublvnso4km97sl0q6sh5im24.apps.googleusercontent.com',
+      );
+    }
+    print('stageb');
 
    try {
     // Initiate the Google Sign-In process. A pop-up will appear for the user.
     final GoogleSignInAccount googleUser = await googleSignIn.authenticate();
 
+    print('stage1');
+
     // If the user cancelled the sign-in flow, googleUser will be null.
     
      final GoogleSignInAuthentication auth =  googleUser.authentication;
+
+     print('stage2');
 
     // Create Firebase credential
     final OAuthCredential credential = GoogleAuthProvider.credential(
       idToken: auth.idToken,
     );
+
+    print('stage3');
 
     // Sign in to Firebase
     final UserCredential userCredential = await _auth.signInWithCredential(credential);
@@ -92,7 +103,7 @@ class AuthService {
 
   } catch (error) {
     // Handle any exceptions that occur during the sign-in process.
-    
+    print('error signing in with google');
     return null;
   }
 }
@@ -118,6 +129,41 @@ class AuthService {
       print(e.toString());
       return null;
     }
+  }
+
+  Future<User?> modifiedAppleSignIn() async {
+    print('stage0');
+    AuthorizationCredentialAppleID? credential;
+    print('stage1');
+    try {
+      credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          // AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+      print('stage2');
+    } catch (e) {
+      print(e); print('is the error');
+      return null;
+    }
+
+    print('stage3');
+
+    OAuthProvider oAuthProvider = OAuthProvider('apple.com');
+    final AuthCredential authCredential = oAuthProvider.credential(
+        accessToken: credential.authorizationCode,
+        idToken: credential.identityToken);
+    print('stage4');
+    User? user = null;
+    try {
+      user = (await _auth.signInWithCredential(authCredential)).user!;
+    } catch (e) {
+      print('Errorrrr'); print(e.toString());
+      return null;
+    }
+    print('stage5');
+    return user;
   }
 
   // Sign in with Facebook

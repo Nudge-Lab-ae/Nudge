@@ -298,7 +298,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   onPressed: () async {
                     setState(() => _isLoading = true);
                     try {
-                      final user = await authService.signInWithApple();
+                      final user = await authService.modifiedAppleSignIn();
                       if (user != null) {
                         // Check if user already exists
                         final userData = await apiService.getUser();

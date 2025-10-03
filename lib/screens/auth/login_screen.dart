@@ -152,6 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
               child: OutlinedButton.icon(
                 onPressed: () async {
                   setState(() => _isLoading = true);
+                  print('logging in with google');
                   try {
                     final user = await authService.signInWithGoogle();
                     if (user != null) {
@@ -196,7 +197,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 onPressed: () async {
                   setState(() => _isLoading = true);
                   try {
-                    final user = await authService.signInWithApple();
+                    // final user = await authService.signInWithApple();
+                    final user = await authService.modifiedAppleSignIn();
                     
                     if (user != null) {
                       // Check if profile is completed
