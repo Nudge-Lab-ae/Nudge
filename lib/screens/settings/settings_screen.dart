@@ -212,9 +212,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('NUDGE', style: AppTextStyles.title3.copyWith(color: Colors.black, fontFamily: 'RobotoMono'),),
+        title: Text('NUDGE', style: AppTextStyles.title3.copyWith(color: Color.fromRGBO(45, 161, 175, 1), fontFamily: 'RobotoMono'),),
                   centerTitle: true,
-                  iconTheme: IconThemeData(color: Colors.black),
+                  iconTheme: IconThemeData(color: Color.fromRGBO(45, 161, 175, 1)),
                   backgroundColor: Colors.white,
         // leading: IconButton(
         //   icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -232,16 +232,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                 Padding(
+                  padding: EdgeInsets.only(left: 50),
+                  child:  const Text(
                     'Adjust Settings',
                     style: TextStyle(
                       fontSize: 25,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xff777777),
-                      decoration: TextDecoration.underline
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xff000000),
                     ),
                   ),
-                  const SizedBox(height: 25),
+                  ),
+                  const SizedBox(height: 35),
                   const Text(
                     'Subscription',
                     style: TextStyle(
@@ -273,7 +275,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   TextFormField(
                     controller: _usernameController,
                     decoration: InputDecoration(
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.grey, width: 1),
+                          borderRadius: BorderRadius.circular(10)
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.blue, width: 2),
+                          borderRadius: BorderRadius.circular(10)
+                        ),
+                        // Optional: to show border even when there's an error
+                        errorBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.red, width: 1),
+                          borderRadius: BorderRadius.circular(10)
+                        ),
+                        focusedErrorBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.red, width: 2),
+                          borderRadius: BorderRadius.circular(10)
+                        ),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -453,7 +471,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     maxLines: 3,
                     decoration: InputDecoration(
                       hintText: 'Please share your feedback, suggestions, or issues...',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                       enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                // Optional: to show border even when there's an error
+                errorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {

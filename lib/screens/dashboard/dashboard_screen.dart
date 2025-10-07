@@ -3,6 +3,7 @@ import 'package:nudge/models/social_group.dart';
 import 'package:nudge/screens/contacts/contact_detail_screen.dart';
 import 'package:nudge/screens/contacts/contacts_list_screen.dart';
 import 'package:nudge/screens/groups/groups_list_screen.dart';
+import 'package:nudge/screens/notifications/notifications_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/theme/text_styles.dart';
 import 'package:provider/provider.dart';
@@ -100,7 +101,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           IconButton(
             icon: const Icon(Icons.notifications),
             onPressed: () {
-              Navigator.pushNamed(context, '/notifications');
+              setState(() => _currentIndex = 3); // Switch to contacts view
             },
           ),
         ];
@@ -114,15 +115,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
         //   ),
         // ];
         break;
+        case 3: // Groups
+        title = 'Nudges & Reminders';
+        // actions = [
+        //   IconButton(
+        //     icon: const Icon(Icons.add),
+        //     onPressed: () => _showCreateGroupDialog(context),
+        //   ),
+        // ];
+        break;
       default:
         title = 'NUDGE';
     }
 
     return AppBar(
-      title: Text(title, style: TextStyle(color: Colors.white, fontSize: 22, fontFamily: 'Quicksand', fontWeight: FontWeight.bold)),
-      backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
-      iconTheme: const IconThemeData(color: Colors.white),
+      title: Text(title, style: TextStyle(color: Color.fromRGBO(45, 161, 175, 1), fontSize: 22, fontFamily: 'Quicksand', fontWeight: FontWeight.bold)),
+      backgroundColor: Colors.white,
+      iconTheme: const IconThemeData(color: Color.fromRGBO(45, 161, 175, 1),),
       actions: actions,
+      centerTitle: true,
     );
   }
 
@@ -134,6 +145,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return ContactsListScreen(showAppBar: false, filter: vipFilter?'vip':attentionFilter?'needs_attention':'',);
       case 2:
         return GroupsListScreen(showAppBar: false,);
+      case 3:
+        return NotificationsScreen(showAppBar: false,);
       default:
         return _buildDashboardContent(context, contacts, groups, apiService);
     }
@@ -173,6 +186,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   BottomNavigationBar _buildBottomNavigationBar() {
     return BottomNavigationBar(
       currentIndex: _currentIndex,
+      type: BottomNavigationBarType.fixed,
       onTap: (index) {
         setState(() => _currentIndex = index);
       },
@@ -189,6 +203,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         BottomNavigationBarItem(
           icon: Icon(Icons.group, color: _currentIndex == 2 ? Color.fromRGBO(45, 161, 175, 1) : Colors.grey),
           label: 'Groups',
+        ),
+         BottomNavigationBarItem(
+          icon: Icon(Icons.notifications, color: _currentIndex == 3 ? Color.fromRGBO(45, 161, 175, 1) : Colors.grey),
+          label: 'Nudges',
         ),
       ],
       selectedItemColor: Color.fromRGBO(45, 161, 175, 1),
@@ -260,7 +278,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             title: const Text('Nudges & Reminders', style: TextStyle(fontWeight: FontWeight.w600)),
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushNamed(context, '/notifications');
+               setState(() => _currentIndex = 3);
             },
           ),
           ListTile(
@@ -319,46 +337,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Card(
-            color: Colors.blue[50],
-            child: Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Row(
-                children: [
-                  const Icon(Icons.cloud_upload, color: Color.fromRGBO(45, 161, 175, 1)),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Contact Import Status',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${contacts.length} contacts imported',
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.import_contacts),
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/import_contacts');
-                    },
-                    tooltip: 'Import More Contacts',
-                  ),
-                ],
-              ),
-            ),
-          ),
+          // Card(
+          //   color: Colors.blue[50],
+          //   child: Padding(
+          //     padding: const EdgeInsets.all(12.0),
+          //     child: Row(
+          //       children: [
+          //         const Icon(Icons.cloud_upload, color: Color.fromRGBO(45, 161, 175, 1)),
+          //         const SizedBox(width: 10),
+          //         Expanded(
+          //           child: Column(
+          //             crossAxisAlignment: CrossAxisAlignment.start,
+          //             children: [
+          //               const Text(
+          //                 'Contact Import Status',
+          //                 style: TextStyle(
+          //                   fontWeight: FontWeight.bold,
+          //                   fontSize: 16,
+          //                 ),
+          //               ),
+          //               const SizedBox(height: 4),
+          //               Text(
+          //                 '${contacts.length} contacts imported',
+          //                 style: const TextStyle(fontSize: 14),
+          //               ),
+          //             ],
+          //           ),
+          //         ),
+          //         IconButton(
+          //           icon: const Icon(Icons.import_contacts),
+          //           onPressed: () {
+          //             Navigator.pushNamed(context, '/import_contacts');
+          //           },
+          //           tooltip: 'Import More Contacts',
+          //         ),
+          //       ],
+          //     ),
+          //   ),
+          // ),
           
-          const SizedBox(height: 20),
+          const SizedBox(height: 50),
           
           // Summary Cards
           Row(

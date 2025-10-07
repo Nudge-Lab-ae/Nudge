@@ -35,9 +35,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     
     return Scaffold(
       appBar: AppBar(
-        title: Text('Analytics', style: AppTextStyles.title3.copyWith(color: Colors.black)),
+        title: Text('NUDGE', style: AppTextStyles.title3.copyWith(color: Color.fromRGBO(45, 161, 175, 1), fontFamily: 'RobotoMono')),
         centerTitle: true,
-        iconTheme: IconThemeData(color: Colors.black),
+        iconTheme: IconThemeData(color: Color.fromRGBO(45, 161, 175, 1)),
         backgroundColor: Colors.white
       ),
       body: StreamBuilder<List<Contact>>(
@@ -74,6 +74,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Padding(
+                      padding: EdgeInsets.only(left: 60),
+                      child: Text('Analytics', style: AppTextStyles.title2.copyWith(color: Colors.black, fontWeight: FontWeight.w700, fontFamily: 'Quicksand')),
+                    ),
+                    const SizedBox(height: 24),
                     _buildSummarySection(analytics, contacts.length),
                     const SizedBox(height: 24),
                     _buildNudgePerformanceSection(analytics, nudges),

@@ -39,6 +39,6 @@ class DefaultFirebaseOptions {
       appId: "1:40187814474:web:5ee6d05692a546139efcb3",
       measurementId: "G-W4D7X08ZQ7",
       iosClientId: '40187814474-11mli98p5sdgjl2ve9h230hifooahh6j.apps.googleusercontent.com', // For Google Sign-In
-      iosBundleId: 'com.nudge.shay', // Make sure this matches exactly
+      iosBundleId: 'com.nudge-shay', // Make sure this matches exactly
   );
 }

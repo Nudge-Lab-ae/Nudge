@@ -399,7 +399,7 @@ class NudgeApp extends StatelessWidget {
           '/analytics': (context) => const AnalyticsScreen(),
           '/add_contact': (context) => const AddContactScreen(),
           '/import_contacts': (context) => const ImportContactsScreen(),
-          '/notifications': (context) => const NotificationsScreen(),
+          '/notifications': (context) => const NotificationsScreen(showAppBar: false,),
           '/settings': (context) => const SettingsScreen(),
           '/groups': (context) => const GroupsListScreen(showAppBar: true,),
           '/edit_contact': (context) {

@@ -211,7 +211,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: const Color.fromRGBO(45, 161, 175, 1),
+                      color:  Colors.white,
                       borderRadius: const BorderRadius.only(
                         bottomLeft: Radius.circular(20),
                         bottomRight: Radius.circular(20),

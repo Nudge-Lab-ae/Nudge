@@ -11,7 +11,10 @@ import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/models/nudge.dart';
 
 class NotificationsScreen extends StatefulWidget {
-  const NotificationsScreen({super.key});
+
+  final bool showAppBar;
+
+  const NotificationsScreen({super.key, required this.showAppBar});
 
   @override
   State<NotificationsScreen> createState() => _NotificationsScreenState();
@@ -95,13 +98,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
         
         return Scaffold(
           appBar: AppBar(
-            title: Text('Nudges & Reminders', style: AppTextStyles.title3.copyWith(color: Colors.black)),
-            centerTitle: true,
-            iconTheme: IconThemeData(color: Colors.black),
-            backgroundColor: Colors.white,
-            // fromRGBO(45, 161, 175, 1)
-            // (37, 150, 190, 1)
-            bottom: TabBar(
+            title: widget.showAppBar?Text('Nudges & Reminders', style: AppTextStyles.title3.copyWith(color: Colors.black))
+            :TabBar(
               controller: _tabController,
               unselectedLabelColor: Colors.grey,
               labelColor: Color.fromRGBO(45, 161, 175, 1) /* Colors.white*/,
@@ -121,6 +119,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
                 ),
               ],
             ),
+            centerTitle: true,
+            iconTheme: IconThemeData(color: Colors.black),
+            backgroundColor: Colors.white,
             actions: [
               if (_currentTabIndex == 1) // Only show filter on "All Nudges" tab
                 IconButton(

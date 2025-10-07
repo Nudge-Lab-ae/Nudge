@@ -180,9 +180,9 @@ class _EditContactScreenState extends State<EditContactScreen> {
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(
-          title: Text('NUDGE', style: AppTextStyles.title3.copyWith(color: Colors.black, fontFamily: 'RobotoMono'),),
+          title: Text('NUDGE', style: AppTextStyles.title3.copyWith(color: Color.fromRGBO(45, 161, 175, 1), fontFamily: 'RobotoMono'),),
           centerTitle: true,
-          iconTheme: IconThemeData(color: Colors.black),
+          iconTheme: IconThemeData(color: Color.fromRGBO(45, 161, 175, 1)),
           backgroundColor: Colors.white,
         ),
         body: const Center(child: CircularProgressIndicator()),
@@ -196,9 +196,9 @@ class _EditContactScreenState extends State<EditContactScreen> {
           builder: (context, groups, child) {
             return Scaffold(
       appBar: AppBar(
-        title: Text('NUDGE', style: AppTextStyles.title3.copyWith(color: Colors.black, fontFamily: 'RobotoMono'),),
+        title: Text('NUDGE', style: AppTextStyles.title3.copyWith(color: Color.fromRGBO(45, 161, 175, 1), fontFamily: 'RobotoMono'),),
         centerTitle: true,
-        iconTheme: IconThemeData(color: Colors.black),
+        iconTheme: IconThemeData(color: Color.fromRGBO(45, 161, 175, 1)),
         backgroundColor: Colors.white,
         actions: [
           IconButton(
@@ -273,9 +273,23 @@ class _EditContactScreenState extends State<EditContactScreen> {
                 decoration: InputDecoration(
                   hintText: 'Enter full name',
                   hintStyle: AppTextStyles.secondary,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+                   enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                // Optional: to show border even when there's an error
+                errorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -341,9 +355,23 @@ class _EditContactScreenState extends State<EditContactScreen> {
                 decoration: InputDecoration(
                   hintText: 'Enter phone number',
                   hintStyle: AppTextStyles.secondary,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+                   enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                // Optional: to show border even when there's an error
+                errorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -358,9 +386,23 @@ class _EditContactScreenState extends State<EditContactScreen> {
                 decoration: InputDecoration(
                   hintText: 'Enter email address',
                   hintStyle: AppTextStyles.secondary,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+                   enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                // Optional: to show border even when there's an error
+                errorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -374,9 +416,23 @@ class _EditContactScreenState extends State<EditContactScreen> {
                 decoration: InputDecoration(
                   hintText: 'Enter profession',
                   hintStyle: AppTextStyles.secondary,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+                   enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                // Optional: to show border even when there's an error
+                errorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -390,9 +446,23 @@ class _EditContactScreenState extends State<EditContactScreen> {
                 decoration: InputDecoration(
                   hintText: 'e.g.: #Highschool #Padel #ComicCon',
                   hintStyle: AppTextStyles.secondary,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+                   enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                // Optional: to show border even when there's an error
+                errorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -457,9 +527,23 @@ class _EditContactScreenState extends State<EditContactScreen> {
                 decoration: InputDecoration(
                   hintText: 'Add any notes about this contact',
                   hintStyle: AppTextStyles.secondary,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+                   enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                // Optional: to show border even when there's an error
+                errorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
                 ),
               ),
               const SizedBox(height: 30),

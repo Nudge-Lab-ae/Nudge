@@ -57,8 +57,22 @@ class _LoginScreenState extends State<LoginScreen> {
               controller: _emailController,
               decoration: InputDecoration(
                 hintText: 'Enter your email',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                // Optional: to show border even when there's an error
+                errorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 2),
+                  borderRadius: BorderRadius.circular(10)
                 ),
               ),
             ),
@@ -76,8 +90,22 @@ class _LoginScreenState extends State<LoginScreen> {
               obscureText: true,
               decoration: InputDecoration(
                 hintText: 'Enter your password',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                // Optional: to show border even when there's an error
+                errorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 2),
+                  borderRadius: BorderRadius.circular(10)
                 ),
               ),
             ),

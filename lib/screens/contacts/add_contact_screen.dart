@@ -132,9 +132,9 @@ class _AddContactScreenState extends State<AddContactScreen> {
           builder: (context, groups, child) {
             return Scaffold(
                 appBar: AppBar(
-                  title: Text('NUDGE', style: AppTextStyles.title3.copyWith(color: Colors.black, fontFamily: 'RobotoMono'),),
+                  title: Text('NUDGE', style: AppTextStyles.title3.copyWith(color: Color.fromRGBO(45, 161, 175, 1), fontFamily: 'RobotoMono'),),
                   centerTitle: true,
-                  iconTheme: IconThemeData(color: Colors.black),
+                  iconTheme: IconThemeData(color: Color.fromRGBO(45, 161, 175, 1)),
                   backgroundColor: Colors.white
                 ),
                 body: SingleChildScrollView(
@@ -215,9 +215,23 @@ class _AddContactScreenState extends State<AddContactScreen> {
                           },
                           decoration: InputDecoration(
                             hintText: 'Enter full name',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
+                              enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                // Optional: to show border even when there's an error
+                errorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
                           ),
                         ),
                         
@@ -325,9 +339,23 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                 controller: _tagsController,
                                 decoration: InputDecoration(
                                   hintText: 'Add new Social Group',
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
+                                    enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                // Optional: to show border even when there's an error
+                errorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
                                 ),
                               ),
                             ),
@@ -371,9 +399,23 @@ class _AddContactScreenState extends State<AddContactScreen> {
                           keyboardType: TextInputType.phone,
                           decoration: InputDecoration(
                             hintText: 'Enter phone number',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
+                              enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                // Optional: to show border even when there's an error
+                errorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
                           ),
                         ),
                         
@@ -390,9 +432,23 @@ class _AddContactScreenState extends State<AddContactScreen> {
                           keyboardType: TextInputType.emailAddress,
                           decoration: InputDecoration(
                             hintText: 'Enter email address',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
+                             enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                // Optional: to show border even when there's an error
+                errorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
                           ),
                         ),
                         
@@ -427,9 +483,23 @@ class _AddContactScreenState extends State<AddContactScreen> {
                           maxLines: 3,
                           decoration: InputDecoration(
                             hintText: 'Add any notes about this contact',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
+                             enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                // Optional: to show border even when there's an error
+                errorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
                           ),
                         ),
                         

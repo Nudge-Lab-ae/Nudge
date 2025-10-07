@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/theme/text_styles.dart';
 import 'package:provider/provider.dart';
-import '../notifications/notifications_screen.dart';
+// import '../notifications/notifications_screen.dart';
 import 'contact_detail_screen.dart';
 import 'add_contact_screen.dart';
 import '../../models/contact.dart';
@@ -133,20 +133,20 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
           ? Text('Add to $groupName', style: AppTextStyles.button.copyWith(color: Colors.white))
           : Text(_getTitle(widget.filter), style: AppTextStyles.button.copyWith(color: Colors.white)),
       backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
-      actions: [
-        if (!isAddToGroupMode) // Only show notifications in normal mode
-          IconButton(
-            icon: const Icon(Icons.notifications),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const NotificationsScreen(),
-                ),
-              );
-            },
-          ),
-      ],
+      // actions: [
+      //   if (!isAddToGroupMode) // Only show notifications in normal mode
+      //     IconButton(
+      //       icon: const Icon(Icons.notifications),
+      //       onPressed: () {
+      //         Navigator.push(
+      //           context,
+      //           MaterialPageRoute(
+      //             builder: (context) => const NotificationsScreen(),
+      //           ),
+      //         );
+      //       },
+      //     ),
+      // ],
     );
   }
 
