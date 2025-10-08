@@ -107,7 +107,7 @@ onPressed: () {
   Navigator.push(
     context,
     MaterialPageRoute(
-      builder: (context) => const ContactsListScreen(showAppBar: true,), // Changed from AddContactScreen
+      builder: (context) =>  ContactsListScreen(showAppBar: true, hideButton: (){},), // Changed from AddContactScreen
     ),
   );
 },

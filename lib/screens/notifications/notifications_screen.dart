@@ -24,16 +24,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
   final ScrollController _scrollController = ScrollController();
   String _filter = 'all'; // 'all', 'upcoming', 'completed'
   late TabController _tabController;
-  int _currentTabIndex = 0;
+  // int _currentTabIndex = 0;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
-      setState(() {
-        _currentTabIndex = _tabController.index;
-      });
+      // setState(() {
+      //   _currentTabIndex = _tabController.index;
+      // });
     });
   }
 
@@ -101,42 +101,45 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
             title: widget.showAppBar?Text('Nudges & Reminders', style: AppTextStyles.title3.copyWith(color: Colors.black))
             :TabBar(
               controller: _tabController,
-              unselectedLabelColor: Colors.grey,
+              // unselectedLabelColor: Colors.grey,
               labelColor: Color.fromRGBO(45, 161, 175, 1) /* Colors.white*/,
               indicatorColor: Color.fromRGBO(45, 161, 175, 1),
+              labelPadding: EdgeInsets.symmetric(horizontal: 0.0),
               // dividerColor: Color.fromRGBO(45, 161, 175, 1),
               tabs: [
                 Tab(
                   // text: 'Upcoming (7 days)',
                   child: Text('Upcoming (7 days)', style: AppTextStyles.primaryBold.copyWith(
-                    color: _tabController.index == 0?Colors.black: Colors.grey
+                    color: _tabController.index == 0?Colors.black: Colors.black, fontSize: 16
                   ),),
                 ),
                 Tab(
                    child: Text('All Nudges', style: AppTextStyles.primaryBold.copyWith(
-                    color: _tabController.index == 1?Colors.black: Colors.grey
+                    color: _tabController.index == 1?Colors.black: Colors.black, fontSize: 16
                   ),),
                 ),
               ],
             ),
+            automaticallyImplyLeading: false,
             centerTitle: true,
             iconTheme: IconThemeData(color: Colors.black),
             backgroundColor: Colors.white,
-            actions: [
-              if (_currentTabIndex == 1) // Only show filter on "All Nudges" tab
-                IconButton(
-                  icon: const Icon(Icons.filter_list),
-                  onPressed: () {
-                    _showFilterDialog(context);
-                  },
-                ),
-              IconButton(
-                icon: const Icon(Icons.add_alarm),
-                onPressed: () {
-                  _showScheduleOptions(context);
-                },
-              ),
-            ],
+            leading: Center(),
+            // actions: [
+            //   if (_currentTabIndex == 1) // Only show filter on "All Nudges" tab
+            //     IconButton(
+            //       icon: const Icon(Icons.filter_list),
+            //       onPressed: () {
+            //         _showFilterDialog(context);
+            //       },
+            //     ),
+            //   IconButton(
+            //     icon: const Icon(Icons.add_alarm),
+            //     onPressed: () {
+            //       _showScheduleOptions(context);
+            //     },
+            //   ),
+            // ],
           ),
           body: TabBarView(
             controller: _tabController,
@@ -347,54 +350,54 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
     );
   }
 
-  void _showFilterDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Filter Nudges', style: TextStyle(fontWeight: FontWeight.w700),),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              RadioListTile(
-                title: const Text('All Nudges', style: TextStyle(fontWeight: FontWeight.w600),),
-                value: 'all',
-                groupValue: _filter,
-                onChanged: (value) {
-                  setState(() {
-                    _filter = value!;
-                  });
-                  Navigator.of(context).pop();
-                },
-              ),
-              RadioListTile(
-                title: const Text('Upcoming', style: TextStyle(fontWeight: FontWeight.w600),),
-                value: 'upcoming',
-                groupValue: _filter,
-                onChanged: (value) {
-                  setState(() {
-                    _filter = value!;
-                  });
-                  Navigator.of(context).pop();
-                },
-              ),
-              RadioListTile(
-                title: const Text('Completed', style: TextStyle(fontWeight: FontWeight.w600),),
-                value: 'completed',
-                groupValue: _filter,
-                onChanged: (value) {
-                  setState(() {
-                    _filter = value!;
-                  });
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+  // void _showFilterDialog(BuildContext context) {
+  //   showDialog(
+  //     context: context,
+  //     builder: (context) {
+  //       return AlertDialog(
+  //         title: const Text('Filter Nudges', style: TextStyle(fontWeight: FontWeight.w700),),
+  //         content: Column(
+  //           mainAxisSize: MainAxisSize.min,
+  //           children: [
+  //             RadioListTile(
+  //               title: const Text('All Nudges', style: TextStyle(fontWeight: FontWeight.w600),),
+  //               value: 'all',
+  //               groupValue: _filter,
+  //               onChanged: (value) {
+  //                 setState(() {
+  //                   _filter = value!;
+  //                 });
+  //                 Navigator.of(context).pop();
+  //               },
+  //             ),
+  //             RadioListTile(
+  //               title: const Text('Upcoming', style: TextStyle(fontWeight: FontWeight.w600),),
+  //               value: 'upcoming',
+  //               groupValue: _filter,
+  //               onChanged: (value) {
+  //                 setState(() {
+  //                   _filter = value!;
+  //                 });
+  //                 Navigator.of(context).pop();
+  //               },
+  //             ),
+  //             RadioListTile(
+  //               title: const Text('Completed', style: TextStyle(fontWeight: FontWeight.w600),),
+  //               value: 'completed',
+  //               groupValue: _filter,
+  //               onChanged: (value) {
+  //                 setState(() {
+  //                   _filter = value!;
+  //                 });
+  //                 Navigator.of(context).pop();
+  //               },
+  //             ),
+  //           ],
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
 
   void _showScheduleOptions(BuildContext context) async {
     final authService = Provider.of<AuthService>(context, listen: false);

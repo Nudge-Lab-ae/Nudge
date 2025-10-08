@@ -12,6 +12,7 @@ import '../../widgets/connection_type_chip.dart';
 import 'dart:io';
 // import 'package:image_picker/image_picker.dart';
 import '../../services/storage_service.dart';
+import 'package:intl/intl.dart';
 
 class AddContactScreen extends StatefulWidget {
   final String? groupName;
@@ -32,6 +33,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
   final TextEditingController _socialGroupsController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
   final TextEditingController _tagsController = TextEditingController();
+  final TextEditingController _professionController = TextEditingController();
   File? _selectedImage;
   String _imageUrl = '';
   final StorageService _storageService = StorageService();
@@ -43,6 +45,9 @@ class _AddContactScreenState extends State<AddContactScreen> {
   List<String> _tags = [];
   List<String> _tagSuggestions = [];
   List<SocialGroup> _userGroups = [];
+  DateTime? _birthday;
+  DateTime? _anniversary;
+  DateTime? _workAnniversary;
 
   @override
   void initState() {
@@ -117,6 +122,31 @@ class _AddContactScreenState extends State<AddContactScreen> {
       _selectedImage = null;
       _imageUrl = '';
     });
+  }
+
+  Future<void> _selectDate(BuildContext context, {
+    bool isBirthday = false,
+    bool isAnniversary = false,
+    bool isWorkAnniversary = false,
+  }) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2100),
+    );
+    
+    if (picked != null) {
+      setState(() {
+        if (isBirthday) {
+          _birthday = picked;
+        } else if (isAnniversary) {
+          _anniversary = picked;
+        } else if (isWorkAnniversary) {
+          _workAnniversary = picked;
+        }
+      });
+    }
   }
 
   @override
@@ -297,6 +327,92 @@ class _AddContactScreenState extends State<AddContactScreen> {
                             //   }).toList(),
                             // ),
                           ],
+                        ),
+                        
+                        const SizedBox(height: 20),
+                        
+                        // Profession
+                        const Text(
+                          'Profession',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _professionController,
+                          decoration: InputDecoration(
+                            hintText: 'Enter profession',
+                              enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                // Optional: to show border even when there's an error
+                errorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 20),
+                        
+                        // Important Dates Section
+                        const Text(
+                          'Important Dates',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        
+                        // Birthday
+                        ListTile(
+                          leading: const Icon(Icons.cake),
+                          title: Text(
+                            _birthday != null
+                                ? 'Birthday: ${DateFormat('MMM d, y').format(_birthday!)}'
+                                : 'Add Birthday',
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.calendar_today),
+                            onPressed: () => _selectDate(context, isBirthday: true),
+                          ),
+                        ),
+                        
+                        // Anniversary
+                        ListTile(
+                          leading: const Icon(Icons.favorite),
+                          title: Text(
+                            _anniversary != null
+                                ? 'Anniversary: ${DateFormat('MMM d, y').format(_anniversary!)}'
+                                : 'Add Anniversary',
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.calendar_today),
+                            onPressed: () => _selectDate(context, isAnniversary: true),
+                          ),
+                        ),
+                        
+                        // Work Anniversary
+                        ListTile(
+                          leading: const Icon(Icons.work),
+                          title: Text(
+                            _workAnniversary != null
+                                ? 'Work Anniversary: ${DateFormat('MMM d, y').format(_workAnniversary!)}'
+                                : 'Add Work Anniversary',
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.calendar_today),
+                            onPressed: () => _selectDate(context, isWorkAnniversary: true),
+                          ),
                         ),
                         
                         const SizedBox(height: 20),
@@ -560,6 +676,10 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                   priority: _priority,
                                   tags: _tags,
                                   interactionHistory: {},
+                                  profession: _professionController.text.isEmpty ? null : _professionController.text,
+                                  birthday: _birthday,
+                                  anniversary: _anniversary,
+                                  workAnniversary: _workAnniversary,
                                 );
                                 
                                 // Save to Firestore
@@ -602,6 +722,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
     _socialGroupsController.dispose();
     _notesController.dispose();
     _tagsController.dispose();
+    _professionController.dispose();
     super.dispose();
   }
 }

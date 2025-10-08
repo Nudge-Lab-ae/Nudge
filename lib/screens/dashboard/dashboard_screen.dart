@@ -26,6 +26,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool vipFilter = false;
   bool attentionFilter = false;
   List<Contact> totalContacts = [];
+  bool hideFloatingActionButton = false;
 
   @override
   void initState() {
@@ -64,7 +65,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               return _buildCurrentView(context, contacts, groups, apiService);
             },
           ),
-          floatingActionButton: _buildFloatingActionButton(context),
+          floatingActionButton: hideFloatingActionButton?Center():_buildFloatingActionButton(context),
           bottomNavigationBar: _buildBottomNavigationBar(),
         ),
       ),
@@ -89,7 +90,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           IconButton(
             icon: const Icon(Icons.notifications),
             onPressed: () {
-              Navigator.pushNamed(context, '/notifications');
+              setState(() => _currentIndex = 3); // Switch to nudges view
             },
             tooltip: 'Notifications',
           ),
@@ -142,7 +143,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case 0:
         return _buildDashboardContent(context, contacts, groups, apiService);
       case 1:
-        return ContactsListScreen(showAppBar: false, filter: vipFilter?'vip':attentionFilter?'needs_attention':'',);
+        return ContactsListScreen(showAppBar: false, filter: vipFilter?'vip':attentionFilter?'needs_attention':'', hideButton: hideButton);
       case 2:
         return GroupsListScreen(showAppBar: false,);
       case 3:
@@ -183,12 +184,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  hideButton() {
+    setState(() {
+      hideFloatingActionButton = true;
+    });
+  }
+
   BottomNavigationBar _buildBottomNavigationBar() {
     return BottomNavigationBar(
       currentIndex: _currentIndex,
       type: BottomNavigationBarType.fixed,
       onTap: (index) {
-        setState(() => _currentIndex = index);
+        setState(() {
+          _currentIndex = index;
+          hideFloatingActionButton = false;
+        });
       },
       items: [
         BottomNavigationBarItem(

@@ -1148,9 +1148,13 @@ Widget _buildGroupCard(BuildContext context, SocialGroup group, List<Contact> me
                                   memberIds: updatedMemberIds,
                                   memberCount: updatedMemberIds.length,
                                 );
+                                final updatedContact = contact;
+                                updatedContact.connectionType = 'Contact';
+                                print('updated contact is '); print (updatedContact.connectionType);
                                 
                                 try {
                                   await apiService.updateGroup(updatedGroup);
+                                  await apiService.updateContact(updatedContact);
                                   Navigator.pop(context);
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(content: Text('Removed ${contact.name} from ${group.name}')),

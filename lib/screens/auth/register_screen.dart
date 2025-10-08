@@ -28,9 +28,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('NUDGE', style: AppTextStyles.title3.copyWith(color: Colors.black, fontFamily: 'RobotoMono'),),
+        title: Text('NUDGE', style: AppTextStyles.title3.copyWith(color: Color.fromRGBO(45, 161, 175, 1), fontFamily: 'RobotoMono'),),
         centerTitle: true,
-        iconTheme: IconThemeData(color: Colors.black),
+        iconTheme: IconThemeData(color: Color.fromRGBO(45, 161, 175, 1)),
         backgroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
@@ -161,6 +161,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 // Create initial user document
                                 await apiService.addUser(User(
                                   id: user.uid,
+                                  admin: false,
                                   email: user.email!,
                                   username: '',
                                   phoneNumber: '',
@@ -241,6 +242,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         if (userData.id == '') {
                           // Create initial user document
                           await apiService.addUser(User(
+                            admin: false,
                             id: user.uid,
                             email: user.email!,
                             username: user.displayName ?? '',
@@ -305,6 +307,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         if (userData.id == '') {
                           // Create initial user document
                           await apiService.addUser(User(
+                            admin: false,
                             id: user.uid,
                             email: user.email!,
                             username: user.displayName ?? '',

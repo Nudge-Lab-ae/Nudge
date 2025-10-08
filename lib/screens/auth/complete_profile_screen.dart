@@ -54,6 +54,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
           // Update user with profile information
           await apiService.addUser(User(
             id: user.uid,
+            admin: false,
             email: user.email!,
             username: _usernameController.text,
             phoneNumber: _phoneController.text,

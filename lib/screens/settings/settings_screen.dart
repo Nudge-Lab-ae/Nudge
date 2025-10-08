@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:nudge/screens/admin/feedback_management_screen.dart';
 import 'package:nudge/theme/text_styles.dart';
 import '../../services/api_service.dart';
+import 'package:nudge/models/user.dart' as user;
 // import '../goals/set_goals_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -25,6 +27,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _isEmailPasswordUser = false;
   bool _isChangingPassword = false;
   bool _isSubmittingFeedback = false;
+  user.User? _currentUser;
   
   // Feedback types
   final List<String> _feedbackTypes = [
@@ -63,6 +66,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() {
         _usernameController.text = userData.username;
         _emailController.text = userData.email;
+        _currentUser = userData;
         _isLoading = false;
       });
     } catch (e) {
@@ -518,7 +522,63 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                           ),
                   ),
-                ],
+
+                  const SizedBox(height: 30),
+
+                  // Feedback Management Section (for admins)
+                  _currentUser!.admin
+                  ?Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Feedback Management',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'View and manage user feedback submissions',
+                          style: TextStyle(color: Colors.grey.shade600),
+                        ),
+                        SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => FeedbackManagementScreen(),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.purple,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            child: const Text(
+                              'Manage Feedback',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ):Center(),
+                                  ],
               ),
             ),
           ],

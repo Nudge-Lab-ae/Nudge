@@ -122,6 +122,7 @@ class ApiService {
         // Create user document if it doesn't exist
         final newUser = app_user.User(
           id: currentUser.uid,
+          admin: false,
           email: currentUser.email ?? '',
           username: currentUser.displayName ?? currentUser.email!.split('@')[0],
           createdAt: DateTime.now(),
@@ -158,6 +159,7 @@ class ApiService {
           return app_user.User.fromMap(snapshot.data() as Map<String, dynamic>);
         }
         return app_user.User(
+          admin: false,
           id: user.uid,
           email: user.email ?? '',
           username: user.displayName ?? user.email!.split('@')[0],
@@ -485,6 +487,7 @@ Future<Map<String, dynamic>> register(String email, String password) async {
     
     // Create user document with minimal information
     final newUser = app_user.User(
+      admin: false,
       id: result.user!.uid,
       email: email,
       username: '', // Will be set in CompleteProfileScreen
@@ -521,6 +524,7 @@ Future<Map<String, dynamic>> register(String email, String password) async {
     
     // Create user document with additional info
     final newUser = app_user.User(
+      admin: false,
       id: result.user!.uid,
       email: email,
       username: username,
@@ -594,24 +598,6 @@ Future<void> submitFeedback({
     }
   }
 
-  // Get all feedbacks for admin purposes (optional)
-  Stream<List<Map<String, dynamic>>> getFeedbacksStream() {
-    return _firestore
-        .collection('feedbacks')
-        .orderBy('timestamp', descending: true)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) {
-              final data = doc.data();
-              return {
-                'id': doc.id,
-                ...data,
-                'timestamp': data['timestamp']?.toDate() ?? DateTime.now(),
-              };
-            })
-            .toList());
-  }
-
   String _getPlatform() {
     if (Platform.isAndroid) return 'Android';
     if (Platform.isIOS) return 'iOS';
@@ -619,6 +605,106 @@ Future<void> submitFeedback({
     if (Platform.isMacOS) return 'macOS';
     if (Platform.isLinux) return 'Linux';
     return 'Unknown';
+  }
+
+  // Add these methods to your existing ApiService class
+
+// Feedback management methods
+  Stream<List<Map<String, dynamic>>> getFeedbacksStream({String? statusFilter}) {
+    try {
+      Query query = _firestore
+          .collection('feedbacks')
+          .orderBy('timestamp', descending: true);
+      
+      // Apply status filter if provided
+      if (statusFilter != null && statusFilter.isNotEmpty && statusFilter != 'all') {
+        query = query.where('status', isEqualTo: statusFilter);
+      }
+      
+      return query.snapshots().map((snapshot) => snapshot.docs
+          .map((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            return {
+              'id': doc.id,
+              ...data,
+              'timestamp': data['timestamp']?.toDate() ?? DateTime.now(),
+            };
+          })
+          .toList());
+    } catch (e) {
+      print('Error getting feedbacks stream: $e');
+      return Stream.value([]);
+    }
+  }
+
+  Future<void> updateFeedbackStatus(String feedbackId, String newStatus) async {
+    try {
+      await _firestore.collection('feedbacks').doc(feedbackId).update({
+        'status': newStatus,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      throw Exception('Failed to update feedback status: $e');
+    }
+  }
+
+  Future<void> addFeedbackResponse(String feedbackId, String response) async {
+    try {
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) throw Exception('No user logged in');
+      
+      final responseData = {
+        'responderId': currentUser.uid,
+        'responderEmail': currentUser.email,
+        'response': response,
+        'timestamp': FieldValue.serverTimestamp(),
+      };
+      
+      await _firestore.collection('feedbacks').doc(feedbackId).update({
+        'adminResponse': responseData,
+        'status': 'responded',
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      throw Exception('Failed to add feedback response: $e');
+    }
+  }
+
+  Future<void> deleteFeedback(String feedbackId) async {
+    try {
+      await _firestore.collection('feedbacks').doc(feedbackId).delete();
+    } catch (e) {
+      throw Exception('Failed to delete feedback: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> getFeedbackStats() async {
+    try {
+      final snapshot = await _firestore.collection('feedbacks').get();
+      final allFeedbacks = snapshot.docs.map((doc) => doc.data()).toList();
+      
+      final total = allFeedbacks.length;
+      final newCount = allFeedbacks.where((f) => f['status'] == 'new').length;
+      final reviewedCount = allFeedbacks.where((f) => f['status'] == 'reviewed').length;
+      final respondedCount = allFeedbacks.where((f) => f['status'] == 'responded').length;
+      
+      // Count by type
+      final typeCounts = <String, int>{};
+      for (final feedback in allFeedbacks) {
+        final type = feedback['type'] ?? 'Unknown';
+        typeCounts[type] = (typeCounts[type] ?? 0) + 1;
+      }
+      
+      return {
+        'total': total,
+        'new': newCount,
+        'reviewed': reviewedCount,
+        'responded': respondedCount,
+        'typeCounts': typeCounts,
+      };
+    } catch (e) {
+      throw Exception('Failed to get feedback stats: $e');
+    }
   }
 
 

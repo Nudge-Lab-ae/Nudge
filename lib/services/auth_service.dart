@@ -133,15 +133,24 @@ class AuthService {
 
   Future<User?> modifiedAppleSignIn() async {
     print('stage0');
-    AuthorizationCredentialAppleID? credential;
+    UserCredential? credential;
     print('stage1');
     try {
-      credential = await SignInWithApple.getAppleIDCredential(
-        scopes: [
-          AppleIDAuthorizationScopes.email,
-          // AppleIDAuthorizationScopes.fullName,
-        ],
-      );
+      // credential = await SignInWithApple.getAppleIDCredential(
+      //   scopes: [
+      //     AppleIDAuthorizationScopes.email,
+      //     // AppleIDAuthorizationScopes.fullName,
+      //   ],
+      //   webAuthenticationOptions: WebAuthenticationOptions(
+      //     clientId: 'com.services.nudge', // e.g., com.example.app.service
+      //     redirectUri: Uri.parse('https://nudge-965c2.firebaseapp.com/__/auth/handler'),
+      //   ),
+      // );
+      final appleProvider = AppleAuthProvider()
+        .addScope('email')
+        .addScope('name');
+
+    credential = await FirebaseAuth.instance.signInWithProvider(appleProvider);
       print('stage2');
     } catch (e) {
       print(e); print('is the error');
@@ -152,8 +161,8 @@ class AuthService {
 
     OAuthProvider oAuthProvider = OAuthProvider('apple.com');
     final AuthCredential authCredential = oAuthProvider.credential(
-        accessToken: credential.authorizationCode,
-        idToken: credential.identityToken);
+        accessToken: credential.credential!.accessToken,
+        idToken: credential.credential!.token.toString());
     print('stage4');
     User? user = null;
     try {

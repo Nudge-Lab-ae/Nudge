@@ -6,6 +6,7 @@ class User {
   String phoneNumber;
   String photoURL;
   String bio;
+  bool admin;
   String description;
   DateTime createdAt;
   // Map<String, dynamic> defaultFrequencies;
@@ -30,6 +31,7 @@ class User {
     required this.phoneNumber,
     required this.photoURL,
     required this.profileCompleted,
+    required this.admin,
   });
 
   Map<String, dynamic> toMap() {
@@ -48,6 +50,7 @@ class User {
       'phoneNumber': phoneNumber,
       'photoUrl': photoURL,
       'profileCompleted': profileCompleted,
+      'admin': admin,
     };
   }
 
@@ -66,7 +69,8 @@ class User {
       description: map['description'],
       phoneNumber: map['phoneNumber'],
       photoURL: map['photoUrl'],
-      profileCompleted: map['profileCompleted']
+      profileCompleted: map['profileCompleted'],
+      admin: map['admin']
     );
   }
 }
