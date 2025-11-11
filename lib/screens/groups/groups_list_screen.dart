@@ -207,11 +207,11 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
             children: [
               Column(
                 children: [
-                  // Search bar with fun design
+                  // Sticky Header Section
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color:  Colors.white,
+                      color: Colors.white,
                       borderRadius: const BorderRadius.only(
                         bottomLeft: Radius.circular(20),
                         bottomRight: Radius.circular(20),
@@ -224,41 +224,48 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                         ),
                       ],
                     ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                    child: Column(
                       children: [
-                        Expanded(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Center(
-                              child: TextField(
-                              controller: _searchController,
-                              decoration: InputDecoration(
-                                hintText: 'Search groups...',
-                                hintStyle: TextStyle(fontWeight: FontWeight.w600),
-                                prefixIcon: const Icon(Icons.search, color: Colors.blue),
-                                border: InputBorder.none,
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        // Search and Filter Row
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Center(
+                                  child: TextField(
+                                    controller: _searchController,
+                                    decoration: InputDecoration(
+                                      hintText: 'Search groups...',
+                                      hintStyle: TextStyle(fontWeight: FontWeight.w600),
+                                      prefixIcon: const Icon(Icons.search, color: Colors.blue),
+                                      border: InputBorder.none,
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                    ),
+                                    onChanged: (value) => setState(() => _searchQuery = value),
+                                  ),
+                                ),
                               ),
-                              onChanged: (value) => setState(() => _searchQuery = value),
                             ),
-                            )
-                          ),
+                            const SizedBox(width: 10),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: IconButton(
+                                icon: const Icon(Icons.filter_list, color: Colors.blue),
+                                onPressed: () => _showFilterOptions(context),
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 10),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: IconButton(
-                            icon: const Icon(Icons.filter_list, color: Colors.blue),
-                            onPressed: () => _showFilterOptions(context),
-                          ),
-                        ),
+                        const SizedBox(height: 8),
+                        // Optional: Add some summary stats or quick actions here
                       ],
                     ),
                   ),
@@ -296,24 +303,27 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                                     setState(() => _initializeStreams());
                                     await Future.delayed(const Duration(seconds: 1));
                                   },
-                                  child: GridView.builder(
-                                    padding: const EdgeInsets.all(16),
-                                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 2,
-                                      crossAxisSpacing: 16,
-                                      mainAxisSpacing: 16,
-                                      childAspectRatio: 0.85,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(bottom: 80.0), // Add bottom padding for FAB
+                                    child: GridView.builder(
+                                      padding: const EdgeInsets.all(16),
+                                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 2,
+                                        crossAxisSpacing: 16,
+                                        mainAxisSpacing: 16,
+                                        childAspectRatio: 0.8, // Slightly increased for toggle
+                                      ),
+                                      itemCount: filteredGroups.length,
+                                      itemBuilder: (context, index) {
+                                        final group = filteredGroups[index];
+                                        final groupMembers = contacts.where((contact) => 
+                                          contact.connectionType == group.id).toList();
+                                        
+                                        final progress = _calculateGroupProgress(groupMembers, nudges);
+                                        
+                                        return _buildGroupCard(context, group, groupMembers, progress, apiService);
+                                      },
                                     ),
-                                    itemCount: filteredGroups.length,
-                                    itemBuilder: (context, index) {
-                                      final group = filteredGroups[index];
-                                      final groupMembers = contacts.where((contact) => 
-                                        contact.connectionType == group.id).toList();
-                                      
-                                      final progress = _calculateGroupProgress(groupMembers, nudges);
-                                      
-                                      return _buildGroupCard(context, group, groupMembers, progress, apiService);
-                                    },
                                   ),
                                 );
                               },
@@ -325,7 +335,8 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                   ),
                 ],
               ),
-              // Confetti animation for when a group is created
+              
+              // Confetti animation
               Align(
                 alignment: Alignment.topCenter,
                 child: ConfettiWidget(
@@ -437,117 +448,166 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
     );
   }
 
-Widget _buildGroupCard(BuildContext context, SocialGroup group, List<Contact> members, double progress, ApiService apiService) {
-  // Add safety check for color code
-  Color cardColor;
-  try {
-    cardColor = Color(int.parse(group.colorCode.replaceFirst('#', ''), radix: 16) + 0xFF000000);
-  } catch (e) {
-    cardColor = const Color.fromRGBO(45, 161, 175, 1); // Default color
-  }
-  
-  final Color textColor = cardColor.computeLuminance() > 0.5 ? Colors.black : Colors.white;
-  
-  return GestureDetector(
-    onTap: () => _showGroupDetails(context, group, members, apiService),
-    onLongPress: () => _showDeleteConfirmation(context, group, apiService),
-    child: Container(
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: cardColor.withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            top: -20,
-            right: -20,
-            child: Icon(
-              _getGroupIcon(group.name),
-              size: 100,
-              color: Colors.white.withOpacity(0.1),
+    Widget _buildGroupCard(BuildContext context, SocialGroup group, List<Contact> members, double progress, ApiService apiService) {
+      // Add safety check for color code
+      Color cardColor;
+      try {
+        cardColor = Color(int.parse(group.colorCode.replaceFirst('#', ''), radix: 16) + 0xFF000000);
+      } catch (e) {
+        cardColor = const Color.fromRGBO(45, 161, 175, 1); // Default color
+      }
+      
+      final Color textColor = cardColor.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+      
+      return Container(
+        margin: const EdgeInsets.only(bottom: 8), // Add spacing between cards
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.8),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+              spreadRadius: 1,
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          ],
+        ),
+        child: GestureDetector(
+          onTap: () => _showGroupDetails(context, group, members, apiService),
+          onLongPress: () => _showDeleteConfirmation(context, group, apiService),
+          child: Container(
+            decoration: BoxDecoration(
+              color: cardColor,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Stack(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        group.name,
+                Positioned(
+                  top: -20,
+                  right: -20,
+                  child: Icon(
+                    _getGroupIcon(group.name),
+                    size: 100,
+                    color: Colors.white.withOpacity(0.1),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              group.name,
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: textColor,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: textColor.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '${group.frequency}x/${group.period.toLowerCase()}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: textColor,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        group.description,
+                        style: TextStyle(color: textColor.withOpacity(0.8), fontSize: 12),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      
+                      const Spacer(),
+                      
+                      // Date Nudges Toggle
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Date Nudges',
+                              style: TextStyle(
+                                color: textColor,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                          Transform.scale(
+                            scale: 0.8,
+                            child: Switch(
+                              value: group.dateNudgesEnabled,
+                              onChanged: (value) async {
+                                final updatedGroup = group.copyWith(
+                                  dateNudgesEnabled: value,
+                                );
+                                try {
+                                  final currentGroups = await apiService.getGroupsStream().first;
+                                  final updatedGroups = currentGroups.map((g) => 
+                                    g.id == group.id ? updatedGroup : g
+                                  ).toList();
+                                  
+                                  await apiService.updateGroups(updatedGroups);
+                                  setState(() {});
+                                } catch (e) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Error updating date nudges: $e')),
+                                  );
+                                }
+                              },
+                              activeColor: textColor,
+                              inactiveTrackColor: textColor.withOpacity(0.3),
+                            ),
+                          ),
+                        ],
+                      ),
+                      
+                      // Members section
+                      Text(
+                        '${members.length} members',
                         style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
                           color: textColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
                         ),
                         overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
                       ),
-                    ),
-                    
-                  ],
+                      const SizedBox(height: 8),
+                      
+                      // Progress bar for interaction frequency - only show if group has members
+                      if (members.isNotEmpty)
+                        _buildInteractionProgress(progress, textColor)
+                      else
+                        _buildEmptyProgress(textColor),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 8),
-                Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: textColor.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '${group.frequency}x/${group.period.toLowerCase()}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: textColor,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                Text(
-                  group.description,
-                  style: TextStyle(color: textColor.withOpacity(0.8), fontSize: 12),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                
-                
-                const Spacer(),
-                // Members section
-                 Text(
-                      '${members.length} members',
-                      style: TextStyle(
-                        color: textColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                const SizedBox(height: 8),
-                // Progress bar for interaction frequency - only show if group has members
-                if (members.isNotEmpty)
-                  _buildInteractionProgress(progress, textColor)
-                else
-                  _buildEmptyProgress(textColor),
               ],
             ),
           ),
-        ],
-      ),
-    ),
-  );
-}
-  
+        ),
+      );
+    }
+
   Widget _buildInteractionProgress(double progress, Color textColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -814,6 +874,7 @@ Widget _buildGroupCard(BuildContext context, SocialGroup group, List<Contact> me
                         memberCount: 0,
                         lastInteraction: DateTime.now(),
                         colorCode: selectedColor,
+                        dateNudgesEnabled: false,
                       );
                       
                       try {

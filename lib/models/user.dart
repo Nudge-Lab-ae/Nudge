@@ -4,7 +4,7 @@ class User {
   String email;
   String username;
   String phoneNumber;
-  String photoURL;
+  String photoUrl;
   String bio;
   bool admin;
   String description;
@@ -14,6 +14,7 @@ class User {
   final List<Map<String, dynamic>>? groups;
   final List<Map<String, dynamic>> nudges;
   final bool profileCompleted;
+  final bool weeklyDigestEnabled;
   // final List<Map<String, dynamic>> contacts; //
 
   User({
@@ -29,9 +30,10 @@ class User {
     required this.bio,
     required this.description,
     required this.phoneNumber,
-    required this.photoURL,
+    required this.photoUrl,
     required this.profileCompleted,
     required this.admin,
+    required this.weeklyDigestEnabled,
   });
 
   Map<String, dynamic> toMap() {
@@ -48,9 +50,10 @@ class User {
       'bio': bio,
       'description': description,
       'phoneNumber': phoneNumber,
-      'photoUrl': photoURL,
+      'photoUrl': photoUrl,
       'profileCompleted': profileCompleted,
       'admin': admin,
+      'weeklyDigestEnabled': weeklyDigestEnabled,
     };
   }
 
@@ -68,9 +71,10 @@ class User {
       bio: map['bio'],
       description: map['description'],
       phoneNumber: map['phoneNumber'],
-      photoURL: map['photoUrl'],
+      photoUrl: map['photoUrl'],
       profileCompleted: map['profileCompleted'],
-      admin: map['admin']
+      admin: map['admin'],
+      weeklyDigestEnabled: map['weeklyDigestEnabled']
     );
   }
 }

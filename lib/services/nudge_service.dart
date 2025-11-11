@@ -77,6 +77,8 @@ class NudgeService {
         isPushNotification: shouldSendPush,
         priority: contact.priority,
         isVIP: contact.isVIP,
+        groupName: contact.connectionType,
+        contactImageUrl: contact.imageUrl
       );
 
       nudge.nudgeId = nudge.id;

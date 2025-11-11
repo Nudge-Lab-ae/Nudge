@@ -1,6 +1,12 @@
 // lib/screens/contacts/add_contact_screen.dart
+import 'dart:typed_data';
+
+import 'package:crop_your_image/crop_your_image.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:nudge/services/api_service.dart';
+import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/theme/text_styles.dart';
 import 'package:provider/provider.dart';
 // import '../../services/database_service.dart';
@@ -11,7 +17,7 @@ import '../../models/social_group.dart';
 import '../../widgets/connection_type_chip.dart';
 import 'dart:io';
 // import 'package:image_picker/image_picker.dart';
-import '../../services/storage_service.dart';
+// import '../../services/storage_service.dart';
 import 'package:intl/intl.dart';
 
 class AddContactScreen extends StatefulWidget {
@@ -36,7 +42,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
   final TextEditingController _professionController = TextEditingController();
   File? _selectedImage;
   String _imageUrl = '';
-  final StorageService _storageService = StorageService();
+  // final StorageService _storageService = StorageService();
   
   String _connectionType = 'Friend';
   // String _frequency = 'Monthly';
@@ -48,6 +54,9 @@ class _AddContactScreenState extends State<AddContactScreen> {
   DateTime? _birthday;
   DateTime? _anniversary;
   DateTime? _workAnniversary;
+  bool _isCropping = false;
+  final _cropController = CropController();
+  Uint8List? _imageBytes;
 
   @override
   void initState() {
@@ -103,16 +112,32 @@ class _AddContactScreenState extends State<AddContactScreen> {
   }
 
   Future<void> _pickImage() async {
-    final File? imageFile = await _storageService.pickImage();
-    if (imageFile != null) {
+    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      final bytes = await File(pickedFile.path).readAsBytes();
       setState(() {
-        _selectedImage = imageFile;
+        _imageBytes = bytes;
+        _isCropping = true;
       });
     }
   }
 
+  // Add the crop image method
+  Future<void> _cropImage() async {
+    if (_imageBytes == null) return;
+    _cropController.crop();
+  }
+
+  void _cancelCrop() {
+  setState(() {
+    _isCropping = false;
+    _imageBytes = null;
+  });
+}
+
   Future<Map<String, dynamic>> matchSchedule (String groupName, List<SocialGroup> groups) async{
-    SocialGroup myGroup = groups.firstWhere((group) => group.name == groupName);
+    print(groupName);
+    SocialGroup myGroup = groups.firstWhere((group) => group.id == groupName);
     Map<String, dynamic> schedule = {'period': myGroup.period, 'frequency': myGroup.frequency};
     return schedule;
    }
@@ -149,8 +174,139 @@ class _AddContactScreenState extends State<AddContactScreen> {
     }
   }
 
+  Widget _buildCropScreen() {
+    var size = MediaQuery.of(context).size;
+    return Container(
+      width: size.width,
+      height: size.height,
+      color: Colors.white,
+      child: Column(
+      children: [
+        const SizedBox(height: 100),
+        Text(
+          'Crop Contact Picture',
+          style: AppTextStyles.title2.copyWith(
+            color: Colors.black, fontFamily: 'QuickSand',
+            fontWeight: FontWeight.w600, textBaseline: null,
+            decorationColor: Colors.black, decorationThickness: 0
+          ),
+          // style: TextStyle(
+          //   fontSize: 18, 
+          //   fontWeight: FontWeight.w500, 
+          //   decoration: TextDecoration.underline, 
+          //   decorationColor: Colors.transparent,
+          //   color: Colors.black,
+          //   ),
+        ),
+        // const SizedBox(height: 10),
+        // const Text(
+        //   'Adjust the square to frame the photo',
+        //   style: TextStyle(color: Colors.grey, fontSize: 16, fontWeight: FontWeight.w500),
+        // ),
+        // const SizedBox(height: 20),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: _imageBytes != null
+                ? Crop(
+                    image: _imageBytes!,
+                    controller: _cropController,
+                    aspectRatio: 1,
+                    onCropped: (result) {
+                      switch (result) {
+                        case CropSuccess(:final croppedImage):
+                          setState(() {
+                            // Store the cropped image for the contact
+                            _imageBytes = croppedImage;
+                            _isCropping = false;
+                          });
+                        case CropFailure(:final cause):
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Error'),
+                              content: Text('Failed to crop image: $cause'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('OK'),
+                                ),
+                              ],
+                            ),
+                          );
+                      }
+                    },
+                    withCircleUi: true,
+                    baseColor: Colors.white,
+                    maskColor: Colors.white.withAlpha(100),
+                    cornerDotBuilder: (size, edgeAlignment) => const DotControl(color: Colors.blue),
+                  )
+                : const Center(child: CircularProgressIndicator()),
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _cancelCrop,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    side: const BorderSide(color: Colors.red),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Text('Cancel'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: _cropImage,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Text('Save Crop', style: TextStyle(color: Colors.white)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ));
+  }
+
+    Future<String> uploadImageToFirebase(Uint8List imageBytes, String fileName) async {
+  try {
+    // Reference to Firebase Storage
+    final storageRef = FirebaseStorage.instance.ref();
+
+    // Create a child reference (folder + filename)
+    final imagesRef = storageRef.child('uploads/$fileName');
+
+    // Upload raw data
+    UploadTask uploadTask = imagesRef.putData(
+      imageBytes,
+      SettableMetadata(contentType: 'image/png'), // or 'image/jpeg'
+    );
+
+    // Wait until upload completes
+    TaskSnapshot snapshot = await uploadTask;
+
+    // Get the download URL
+    String downloadUrl = await snapshot.ref.getDownloadURL();
+    return downloadUrl;
+  } catch (e) {
+    throw Exception('Upload failed: $e');
+  }
+}
+
   @override
   Widget build(BuildContext context) {
+     if (_isCropping) {
+        return _buildCropScreen();
+      }
     final authService = Provider.of<AuthService>(context);
     final apiService = Provider.of<ApiService>(context);
     final user = authService.currentUser;
@@ -188,14 +344,14 @@ class _AddContactScreenState extends State<AddContactScreen> {
                               GestureDetector(
                                 onTap: _pickImage,
                                 child: CircleAvatar(
-                                  radius: 50,
+                                  radius: 80,
                                   backgroundColor: Color.fromRGBO(45, 161, 175, 1),
-                                  backgroundImage: _selectedImage != null
-                                      ? FileImage(_selectedImage!)
+                                  backgroundImage: _imageBytes != null
+                                      ? MemoryImage(_imageBytes!)
                                       : (_imageUrl.isNotEmpty
                                           ? NetworkImage(_imageUrl)
                                           : null),
-                                  child: _selectedImage == null && _imageUrl.isEmpty
+                                  child: _imageBytes == null && _imageUrl.isEmpty
                                       ? const Icon(Icons.camera_alt, size: 40)
                                       : null,
                                 ),
@@ -626,70 +782,85 @@ class _AddContactScreenState extends State<AddContactScreen> {
                           width: double.infinity,
                           height: 50,
                           child: ElevatedButton(
-                          onPressed: () async {
+                         onPressed: () async {
                             print('stage0');
-                              if (_formKey.currentState!.validate() && user != null) {
-                                // Upload image if selected
-                                if (_selectedImage != null) {
-                                  try {
-                                    _imageUrl = await _storageService.uploadContactImage(_selectedImage!, 'new_contact_${DateTime.now().millisecondsSinceEpoch}');
-                                  } catch (e) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Failed to upload image: $e')),
-                                    );
-                                    return;
-                                  }
+                            if (_formKey.currentState!.validate() && user != null) {
+                              // Upload image if selected
+                              if (_imageBytes != null) {
+                                try {
+                                  _imageUrl = await uploadImageToFirebase(_imageBytes!, 'new_contact_${DateTime.now().millisecondsSinceEpoch}');
+                                } catch (e) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Failed to upload image: $e')),
+                                  );
+                                  return;
                                 }
-
-                                // Use group settings if provided, otherwise use default matching
-                                String period;
-                                int frequency;
-                                print('stage1');
-                                
-                                if (widget.groupPeriod != null && widget.groupFrequency != null) {
-                                  period = widget.groupPeriod!;
-                                  frequency = widget.groupFrequency!;
-                                } else {
-                                  Map<String, dynamic> schedule = await matchSchedule(_connectionType, groups);
-                                  period = schedule['period'];
-                                  frequency = schedule['frequency'];
-                                }
-                                print('stage2');
-                                
-                                final newContact = Contact(
-                                  id: '', // Will be generated by Firestore
-                                  name: _nameController.text,
-                                  connectionType: _connectionType,
-                                  frequency: frequency,
-                                  period: period,
-                                  socialGroups: _socialGroupsController.text
-                                      .split(' ')
-                                      .where((group) => group.startsWith('#'))
-                                      .map((group) => group.substring(1))
-                                      .toList(),
-                                  phoneNumber: _phoneController.text,
-                                  email: _emailController.text,
-                                  notes: _notesController.text,
-                                  imageUrl: _imageUrl,
-                                  lastContacted: DateTime.now(),
-                                  isVIP: _isVIP,
-                                  priority: _priority,
-                                  tags: _tags,
-                                  interactionHistory: {},
-                                  profession: _professionController.text.isEmpty ? null : _professionController.text,
-                                  birthday: _birthday,
-                                  anniversary: _anniversary,
-                                  workAnniversary: _workAnniversary,
-                                );
-                                
-                                // Save to Firestore
-                                await apiService.addContact(newContact);
-                                print('stage3');
-                                
-                                // Navigate back
-                                Navigator.pop(context);
                               }
-                            },
+
+                              // Use group settings if provided, otherwise use default matching
+                              String period;
+                              int frequency;
+                              print('stage1');
+                              
+                              if (widget.groupPeriod != null && widget.groupFrequency != null) {
+                                period = widget.groupPeriod!;
+                                frequency = widget.groupFrequency!;
+                              } else {
+                                Map<String, dynamic> schedule = await matchSchedule(_connectionType, groups);
+                                period = schedule['period'];
+                                frequency = schedule['frequency'];
+                              }
+                              print('stage2');
+                              
+                              final newContact = Contact(
+                                id: '', // Will be generated by Firestore
+                                name: _nameController.text,
+                                connectionType: _connectionType,
+                                frequency: frequency,
+                                period: period,
+                                socialGroups: _socialGroupsController.text
+                                    .split(' ')
+                                    .where((group) => group.startsWith('#'))
+                                    .map((group) => group.substring(1))
+                                    .toList(),
+                                phoneNumber: _phoneController.text,
+                                email: _emailController.text,
+                                notes: _notesController.text,
+                                imageUrl: _imageUrl,
+                                lastContacted: DateTime.now(),
+                                isVIP: _isVIP,
+                                priority: _priority,
+                                tags: _tags,
+                                interactionHistory: {},
+                                profession: _professionController.text.isEmpty ? null : _professionController.text,
+                                birthday: _birthday,
+                                anniversary: _anniversary,
+                                workAnniversary: _workAnniversary,
+                              );
+                              
+                              // Save to Firestore
+                              await apiService.addContact(newContact);
+                              print('stage3');
+                              
+                              // Automatically schedule nudge based on connection category
+                              try {
+                                final nudgeService = NudgeService();
+                                await nudgeService.scheduleNudgeForContact(
+                                  newContact, 
+                                  user.uid,
+                                  period: period,
+                                  frequency: frequency,
+                                );
+                                print('Automatic nudge scheduled for ${newContact.name}');
+                              } catch (e) {
+                                print('Error scheduling automatic nudge: $e');
+                                // Don't show error to user - nudge scheduling is secondary
+                              }
+                              
+                              // Navigate back
+                              Navigator.pop(context);
+                            }
+                          },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
                               shape: RoundedRectangleBorder(

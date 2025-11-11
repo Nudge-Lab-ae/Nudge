@@ -65,9 +65,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 controller: _emailController,
                 decoration: InputDecoration(
                   hintText: 'Enter email address',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+                  // border: OutlineInputBorder(
+                  //   borderRadius: BorderRadius.circular(10),
+                  // ),
+                   enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                // Optional: to show border even when there's an error
+                errorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -95,9 +112,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 obscureText: true,
                 decoration: InputDecoration(
                   hintText: 'Enter password',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+                  enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                // Optional: to show border even when there's an error
+                errorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -125,9 +156,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 obscureText: true,
                 decoration: InputDecoration(
                   hintText: 'Confirm your password',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+                   enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                // Optional: to show border even when there's an error
+                errorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -167,12 +212,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   phoneNumber: '',
                                   bio: '',
                                   description: '',
-                                  photoURL: '',
+                                  photoUrl: '',
                                   createdAt: DateTime.now(),
                                   nudges: [],
                                   goals: {},
                                   groups: [],
                                   profileCompleted: false,
+                                  weeklyDigestEnabled: false,
                                 ));
                                 
                                 // Navigate to complete profile screen
@@ -249,12 +295,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             phoneNumber: '',
                             bio: '',
                             description: '',
-                            photoURL: user.photoURL ?? '',
+                            photoUrl: user.photoURL ?? '',
                             createdAt: DateTime.now(),
                             nudges: [],
                             goals: {},
                             groups: [],
                             profileCompleted: false,
+                            weeklyDigestEnabled: false
                           ));
                         }
                         
@@ -314,12 +361,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             phoneNumber: '',
                             bio: '',
                             description: '',
-                            photoURL: user.photoURL ?? '',
+                            photoUrl: user.photoURL ?? '',
                             createdAt: DateTime.now(),
                             nudges: [],
                             goals: {},
                             groups: [],
                             profileCompleted: false,
+                            weeklyDigestEnabled: false,
                           ));
                         }
                         

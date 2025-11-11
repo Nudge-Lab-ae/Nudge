@@ -75,6 +75,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
           memberCount: 0,
           lastInteraction: DateTime.now(),
           colorCode: '#4FC3F7',
+          dateNudgesEnabled: false
         ),
         SocialGroup(
           id: 'Friend',
@@ -86,6 +87,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
           memberCount: 0,
           lastInteraction: DateTime.now(),
           colorCode: '#FF6F61',
+          dateNudgesEnabled: false
         ),
         SocialGroup(
           id: 'Client',
@@ -97,6 +99,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
           memberCount: 0,
           lastInteraction: DateTime.now(),
           colorCode: '#81C784',
+          dateNudgesEnabled: false
         ),
         SocialGroup(
           id: 'Colleague',
@@ -108,6 +111,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
           memberCount: 0,
           lastInteraction: DateTime.now(),
           colorCode: '#FFC107',
+          dateNudgesEnabled: false,
         ),
         SocialGroup(
           id: 'Mentor',
@@ -119,6 +123,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
           memberCount: 0,
           lastInteraction: DateTime.now(),
           colorCode: '#607D8B',
+          dateNudgesEnabled: false,
         ),
       ];
       setState(() {
@@ -202,6 +207,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
       memberCount: 0,
       lastInteraction: DateTime.now(),
       colorCode: '#2596BE',
+      dateNudgesEnabled: false,
     );
     
     setState(() {
@@ -238,6 +244,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
         memberCount: group.memberCount,
         lastInteraction: group.lastInteraction,
         colorCode: group.colorCode,
+        dateNudgesEnabled: group.dateNudgesEnabled
       );
     });
   }
@@ -697,20 +704,20 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
                 },
               ),
               const SizedBox(height: 15),
-              TextFormField(
-                initialValue: editedGroup.description,
-                decoration: const InputDecoration(
-                  labelText: 'Description (optional)',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 2,
-                onChanged: (value) {
-                  setState(() {
-                    _groupsBeingEdited[group.id] = editedGroup.copyWith(description: value);
-                  });
-                },
-              ),
-              const SizedBox(height: 15),
+              // TextFormField(
+              //   initialValue: editedGroup.description,
+              //   decoration: const InputDecoration(
+              //     labelText: 'Description (optional)',
+              //     border: OutlineInputBorder(),
+              //   ),
+              //   maxLines: 2,
+              //   onChanged: (value) {
+              //     setState(() {
+              //       _groupsBeingEdited[group.id] = editedGroup.copyWith(description: value);
+              //     });
+              //   },
+              // ),
+              // const SizedBox(height: 15),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [

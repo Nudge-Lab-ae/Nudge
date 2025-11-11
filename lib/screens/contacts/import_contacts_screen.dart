@@ -2,6 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:nudge/theme/text_styles.dart';
 import 'package:provider/provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_contacts/flutter_contacts.dart' as fContacts;
+
 import '../../services/contact_sync_service.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
@@ -18,29 +21,291 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   int _processedCount = 0;
   int _totalCount = 0;
   String _statusMessage = '';
-  int _selectedQuantity = 50; // 0 means all contacts
+  int _selectedQuantity = 50;
   bool _useSmartFilter = true;
-  List<int> _quantityOptions = [25, 50, 100, 150]; // 0 represents "All Contacts"
+  final List<int> _quantityOptions = [25, 50, 100, 150];
 
-Future<void> _importDeviceContacts() async {
-  setState(() {
-    _isImporting = true;
-    _processedCount = 0;
-    _totalCount = 0;
-    _statusMessage = 'Checking for existing contacts...';
-  });
-  
-  final authService = Provider.of<AuthService>(context, listen: false);
-  final apiService = Provider.of<ApiService>(context, listen: false);
-  final user = authService.currentUser;
-  if (user == null) return;
-  
-  final syncService = ContactSyncService(apiService: apiService);
-  
-  try {
-    final result = await syncService.importDeviceContacts(
-      limit: _selectedQuantity,
-      useSmartFilter: _useSmartFilter,
+  void _showSettingsDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Permission Required'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              openAppSettings();
+            },
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _importDeviceContacts() async {
+    setState(() {
+      _isImporting = true;
+      _processedCount = 0;
+      _totalCount = 0;
+      _statusMessage = 'Checking for existing contacts...';
+    });
+
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final apiService = Provider.of<ApiService>(context, listen: false);
+    final user = authService.currentUser;
+    if (user == null) return;
+
+    final syncService = ContactSyncService(apiService: apiService);
+
+    try {
+      final result = await syncService.importDeviceContacts(
+        limit: _selectedQuantity,
+        useSmartFilter: _useSmartFilter,
+        onProgress: (processed, total) {
+          setState(() {
+            _processedCount = processed;
+            _totalCount = total;
+            _statusMessage = 'Processing $processed of $total contacts...';
+          });
+        },
+      );
+
+      setState(() => _isImporting = false);
+
+      if (result['needsSettings'] == true) {
+        _showSettingsDialog(result['message']);
+        return;
+      }
+
+      if (result['success'] == true) {
+        if (result['importedCount'] == 0) {
+          setState(() {
+            _statusMessage =
+                'No new contacts to import - all contacts already exist in Nudge';
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('All contacts already imported')),
+          );
+        } else {
+          setState(() {
+            _statusMessage =
+                'Successfully imported ${result['importedCount']} contacts!';
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Contacts imported successfully')),
+          );
+        }
+
+        await Future.delayed(const Duration(seconds: 2));
+      } else {
+        setState(() {
+          _statusMessage = 'Import failed: ${result['message']}';
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to import contacts: ${result['message']}')),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isImporting = false;
+        _statusMessage = 'Error: $e';
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to import contacts: $e')),
+      );
+    }
+  }
+
+  /// Multi-select picker UI embedded in the screen.
+  /// This fetches contacts, shows a checkbox list, and imports the selected ones.
+  Future<void> _pickContactsAndImport() async {
+    final permissionOk = await fContacts.FlutterContacts.requestPermission();
+    if (!permissionOk) {
+      _showSettingsDialog('Contacts permission is required to pick contacts');
+      return;
+    }
+
+    final contacts = await fContacts.FlutterContacts.getContacts(withProperties: true);
+
+    final selectedContacts = await showDialog<List<fContacts.Contact>>(
+      context: context,
+      builder: (context) {
+        final tempSelected = <fContacts.Contact>[];
+        final searchController = TextEditingController();
+        List<fContacts.Contact> filtered = List.of(contacts);
+
+        void applyFilter(String query) {
+          final q = query.trim().toLowerCase();
+          filtered = q.isEmpty
+              ? List.of(contacts)
+              : contacts.where((c) {
+                  final name = c.displayName.toLowerCase();
+                  final phones = c.phones.map((p) => p.number.toLowerCase()).join(' ');
+                  final emails = c.emails.map((e) => e.address.toLowerCase()).join(' ');
+                  return name.contains(q) || phones.contains(q) || emails.contains(q);
+                }).toList();
+        }
+
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: const Text('Select Contacts'),
+              content: SizedBox(
+                width: double.maxFinite,
+                height: 520,
+                child: Column(
+                  children: [
+                    // Search bar
+                    TextField(
+                      controller: searchController,
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.search),
+                        hintText: 'Search by name, phone, or email',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                      onChanged: (val) {
+                        setStateDialog(() {
+                          applyFilter(val);
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    // Info + select all
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Showing ${filtered.length} of ${contacts.length}',
+                            style: const TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                        ),
+                        TextButton.icon(
+                          onPressed: () {
+                            setStateDialog(() {
+                              // Select all filtered
+                              for (final c in filtered) {
+                                if (!tempSelected.contains(c)) {
+                                  tempSelected.add(c);
+                                }
+                              }
+                            });
+                          },
+                          icon: const Icon(Icons.select_all),
+                          label: const Text('Select all'),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            setStateDialog(() {
+                              // Clear only filtered from selection
+                              tempSelected.removeWhere((c) => filtered.contains(c));
+                            });
+                          },
+                          child: const Text('Clear'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    // List of contacts
+                    Expanded(
+                      child: filtered.isEmpty
+                          ? const Center(child: Text('No contacts found'))
+                          : ListView.separated(
+                              itemCount: filtered.length,
+                              separatorBuilder: (_, __) => const Divider(height: 1),
+                              itemBuilder: (context, index) {
+                                final contact = filtered[index];
+                                final isSelected = tempSelected.contains(contact);
+                                final primaryPhone = contact.phones.isNotEmpty
+                                    ? contact.phones.first.number
+                                    : '';
+                                final primaryEmail = contact.emails.isNotEmpty
+                                    ? contact.emails.first.address
+                                    : '';
+                                return CheckboxListTile(
+                                  title: Text(contact.displayName),
+                                  subtitle: Text(
+                                    [primaryPhone, primaryEmail]
+                                        .where((s) => s.isNotEmpty)
+                                        .join(' • '),
+                                  ),
+                                  value: isSelected,
+                                  onChanged: (checked) {
+                                    setStateDialog(() {
+                                      if (checked == true) {
+                                        tempSelected.add(contact);
+                                      } else {
+                                        tempSelected.remove(contact);
+                                      }
+                                    });
+                                  },
+                                  controlAffinity: ListTileControlAffinity.leading,
+                                );
+                              },
+                            ),
+                    ),
+                    // Selection count
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        'Selected: ${tempSelected.length}',
+                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, []),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () => Navigator.pop(context, tempSelected),
+                  icon: const Icon(Icons.download),
+                  label: const Text('Import'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (selectedContacts == null || selectedContacts.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No contacts selected')),
+      );
+      return;
+    }
+
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final apiService = Provider.of<ApiService>(context, listen: false);
+    final user = authService.currentUser;
+    if (user == null) return;
+
+    final syncService = ContactSyncService(apiService: apiService);
+
+    setState(() {
+      _isImporting = true;
+      _processedCount = 0;
+      _totalCount = selectedContacts.length;
+      _statusMessage = 'Importing selected contacts...';
+    });
+
+    // Note: ContactSyncService.importFromContactPicker should be refactored to accept pickedContacts
+    final result = await syncService.importFromContactPicker(
+      pickedContacts: selectedContacts,
       onProgress: (processed, total) {
         setState(() {
           _processedCount = processed;
@@ -49,51 +314,26 @@ Future<void> _importDeviceContacts() async {
         });
       },
     );
-    
+
     setState(() => _isImporting = false);
-    
+
     if (result['success'] == true) {
-      if (result['importedCount'] == 0) {
-        setState(() {
-          _statusMessage = 'No new contacts to import - all contacts already exist in Nudge';
-        });
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('All contacts already imported')),
-        );
-      } else {
-        setState(() {
-          _statusMessage = 'Successfully imported ${result['importedCount']} contacts!';
-        });
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Contacts imported successfully')),
-        );
-      }
-      
-      // Navigate after a short delay to show success message
-      await Future.delayed(const Duration(seconds: 2));
+      setState(() {
+        _statusMessage =
+            'Successfully imported ${result['importedCount']} contacts from picker!';
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Contacts imported successfully')),
+      );
     } else {
       setState(() {
         _statusMessage = 'Import failed: ${result['message']}';
       });
-      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to import contacts: ${result['message']}')),
       );
     }
-  } catch (e) {
-    setState(() {
-      _isImporting = false;
-      _statusMessage = 'Error: $e';
-    });
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Failed to import contacts: $e')),
-    );
   }
-}
-
 
   String _getQuantityLabel(int quantity) {
     return quantity == 0 ? 'All Contacts' : 'First $quantity Contacts';
@@ -103,15 +343,20 @@ Future<void> _importDeviceContacts() async {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('NUDGE', style: AppTextStyles.title3.copyWith(color: Color.fromRGBO(45, 161, 175, 1), fontFamily: 'RobotoMono'),),
+        title: Text(
+          'NUDGE',
+          style: AppTextStyles.title3.copyWith(
+            color: const Color.fromRGBO(45, 161, 175, 1),
+            fontFamily: 'RobotoMono',
+          ),
+        ),
         centerTitle: true,
-        iconTheme: IconThemeData(color: Color.fromRGBO(45, 161, 175, 1)),
-        backgroundColor: Colors.white
+        iconTheme: const IconThemeData(color: Color.fromRGBO(45, 161, 175, 1)),
+        backgroundColor: Colors.white,
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: ListView(
-          // crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
               'Import Your Contacts',
@@ -123,7 +368,7 @@ Future<void> _importDeviceContacts() async {
               style: TextStyle(fontSize: 16, color: Colors.black, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 30),
-            
+
             // Import Options Card
             Card(
               elevation: 4,
@@ -140,14 +385,14 @@ Future<void> _importDeviceContacts() async {
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Quantity Selection
                     const Text(
                       'How many contacts would you like to import?',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                     ),
                     const SizedBox(height: 12),
-                    
+
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
@@ -164,19 +409,19 @@ Future<void> _importDeviceContacts() async {
                           selectedColor: const Color.fromRGBO(45, 161, 175, 0.2),
                           checkmarkColor: const Color.fromRGBO(45, 161, 175, 1),
                           labelStyle: TextStyle(
-                            color: _selectedQuantity == quantity 
+                            color: _selectedQuantity == quantity
                                 ? const Color.fromRGBO(45, 161, 175, 1)
                                 : Colors.black,
-                            fontWeight: _selectedQuantity == quantity 
-                                ? FontWeight.bold 
+                            fontWeight: _selectedQuantity == quantity
+                                ? FontWeight.bold
                                 : FontWeight.normal,
                           ),
                         );
                       }).toList(),
                     ),
-                    
+
                     const SizedBox(height: 20),
-                    
+
                     // Smart Filter Option
                     Row(
                       children: [
@@ -208,50 +453,74 @@ Future<void> _importDeviceContacts() async {
                         ),
                       ],
                     ),
-                    
+
                     const SizedBox(height: 16),
-                    
-                    // Import Button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _isImporting ? null : _importDeviceContacts,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+
+                    // Buttons: import device contacts + pick selected contacts
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: _isImporting ? null : _importDeviceContacts,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: _isImporting
+                                ? const Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                      SizedBox(width: 12),
+                                      Text('Importing...', style: TextStyle(color: Colors.white)),
+                                    ],
+                                  )
+                                : const Text(
+                                    'Start Import',
+                                    style: TextStyle(fontSize: 16, color: Colors.white),
+                                  ),
                           ),
                         ),
-                        child: _isImporting
-                            ? const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
-                                    ),
-                                  ),
-                                  SizedBox(width: 12),
-                                  Text('Importing...', style: TextStyle(color: Colors.white)),
-                                ],
-                              )
-                            : const Text(
-                                'Start Import',
-                                style: TextStyle(fontSize: 16, color: Colors.white),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: _isImporting ? null : _pickContactsAndImport,
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                      ),
+                              side: const BorderSide(color: Color.fromRGBO(45, 161, 175, 1)),
+                            ),
+                            icon: const Icon(Icons.group_add, color: Color.fromRGBO(45, 161, 175, 1)),
+                            label: const Text(
+                              'Pick & Import Selected',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Color.fromRGBO(45, 161, 175, 1),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Progress Section
             if (_isImporting) ...[
               Card(
@@ -269,16 +538,17 @@ Future<void> _importDeviceContacts() async {
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 16),
-                      
+
                       LinearProgressIndicator(
                         value: _totalCount > 0 ? _processedCount / _totalCount : 0,
                         backgroundColor: Colors.grey[200],
-                        valueColor: const AlwaysStoppedAnimation<Color>(Color.fromRGBO(45, 161, 175, 1)),
+                        valueColor:
+                            const AlwaysStoppedAnimation<Color>(Color.fromRGBO(45, 161, 175, 1)),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      
+
                       const SizedBox(height: 12),
-                      
+
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -287,7 +557,7 @@ Future<void> _importDeviceContacts() async {
                             style: const TextStyle(fontSize: 14),
                           ),
                           Text(
-                            '${_processedCount}/${_totalCount}',
+                            '$_processedCount/$_totalCount',
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
@@ -300,9 +570,9 @@ Future<void> _importDeviceContacts() async {
                 ),
               ),
             ],
-            
+
             const SizedBox(height: 20),
-            
+
             // Results Section
             if (!_isImporting && _statusMessage.isNotEmpty) ...[
               Card(
@@ -310,20 +580,14 @@ Future<void> _importDeviceContacts() async {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                color: _statusMessage.contains('Success') 
-                    ? Colors.green[50] 
-                    : Colors.red[50],
+                color: _statusMessage.contains('Success') ? Colors.green[50] : Colors.red[50],
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Row(
                     children: [
                       Icon(
-                        _statusMessage.contains('Success') 
-                            ? Icons.check_circle 
-                            : Icons.error,
-                        color: _statusMessage.contains('Success') 
-                            ? Colors.green 
-                            : Colors.red,
+                        _statusMessage.contains('Success') ? Icons.check_circle : Icons.error,
+                        color: _statusMessage.contains('Success') ? Colors.green : Colors.red,
                         size: 32,
                       ),
                       const SizedBox(width: 12),
@@ -332,23 +596,19 @@ Future<void> _importDeviceContacts() async {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              _statusMessage.contains('Success') 
-                                  ? 'Import Successful' 
-                                  : 'Import Failed',
+                              _statusMessage.contains('Success') ? 'Import Successful' : 'Import Failed',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: _statusMessage.contains('Success') 
-                                    ? Colors.green 
-                                    : Colors.red,
+                                color: _statusMessage.contains('Success') ? Colors.green : Colors.red,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               _statusMessage,
                               style: TextStyle(
-                                color: _statusMessage.contains('Success') 
-                                    ? Colors.green[800] 
+                                color: _statusMessage.contains('Success')
+                                    ? Colors.green[800]
                                     : Colors.red[800],
                               ),
                             ),
@@ -360,16 +620,16 @@ Future<void> _importDeviceContacts() async {
                 ),
               ),
             ],
-            
+
             const SizedBox(height: 20),
-            
+
             // Information Section
-             Card(
+            Card(
               elevation: 2,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Padding(
+              child: const Padding(
                 padding: EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -381,17 +641,17 @@ Future<void> _importDeviceContacts() async {
                     SizedBox(height: 12),
                     ListTile(
                       leading: Icon(Icons.filter_list, color: Color.fromRGBO(45, 161, 175, 1)),
-                      title: Text('Smart Filter', style: TextStyle(fontWeight: FontWeight.w800),),
+                      title: Text('Smart Filter', style: TextStyle(fontWeight: FontWeight.w800)),
                       subtitle: Text('Prioritizes contacts based on your interaction frequency'),
                     ),
                     ListTile(
                       leading: Icon(Icons.group, color: Color.fromRGBO(45, 161, 175, 1)),
-                      title: Text('Customizable Quantity', style: TextStyle(fontWeight: FontWeight.w800),),
+                      title: Text('Customizable Quantity', style: TextStyle(fontWeight: FontWeight.w800)),
                       subtitle: Text('Choose how many contacts to import based on your needs'),
                     ),
                     ListTile(
                       leading: Icon(Icons.security, color: Color.fromRGBO(45, 161, 175, 1)),
-                      title: Text('Privacy First', style: TextStyle(fontWeight: FontWeight.w800),),
+                      title: Text('Privacy First', style: TextStyle(fontWeight: FontWeight.w800)),
                       subtitle: Text('Your contacts are only stored on your device and our secure servers'),
                     ),
                   ],

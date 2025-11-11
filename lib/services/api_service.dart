@@ -114,18 +114,22 @@ class ApiService {
     try {
       final currentUser = _auth.currentUser;
       if (currentUser == null) throw Exception('No user logged in');
-      
+      print('stage 1');
       final doc = await _usersCollection.doc(currentUser.uid).get();
+      print('stage 2');
       if (doc.exists) {
+        print('stage 3');
         return app_user.User.fromMap(doc.data() as Map<String, dynamic>);
       } else {
         // Create user document if it doesn't exist
+        print('stage 4');
         final newUser = app_user.User(
           id: currentUser.uid,
           admin: false,
           email: currentUser.email ?? '',
           username: currentUser.displayName ?? currentUser.email!.split('@')[0],
           createdAt: DateTime.now(),
+          weeklyDigestEnabled: false,
          groups: [
           {"name": "Family", "id": "Family", "period": "Monthly", "frequency": 4, "colorCode": "#4FC3F7"},
           {"name": "Friend",  "id": "Friend", "period": "Quarterly", "frequency": 7, "colorCode": "#FF6F61"},
@@ -137,7 +141,7 @@ class ApiService {
           // contacts: [],
           nudges: [],
           phoneNumber: '',
-          photoURL: '',
+          photoUrl: '',
           description: '',
           bio: '',
           profileCompleted: false,
@@ -169,10 +173,11 @@ class ApiService {
           // contacts: [],
           nudges: [],
           phoneNumber: '',
-          photoURL: '',
+          photoUrl: '',
           description: '',
           bio: '',
           profileCompleted: false,
+          weeklyDigestEnabled: false
         );
       });
     });
@@ -308,6 +313,7 @@ class ApiService {
             memberCount: 0,
             lastInteraction: DateTime.now(),
             colorCode: '#FF0000',
+            dateNudgesEnabled: false,
           );
         }
       }).toList();
@@ -494,13 +500,14 @@ Future<Map<String, dynamic>> register(String email, String password) async {
       phoneNumber: '',
       bio: '',
       description: '',
-      photoURL: '',
+      photoUrl: '',
       createdAt: DateTime.now(),
       groups: [], // Will be set in SetGoalsScreen
       goals: {},
       // contacts: [],
       nudges: [],
       profileCompleted: false,
+      weeklyDigestEnabled: false
     );
     
     await _usersCollection.doc(result.user!.uid).set(newUser.toMap());
@@ -531,7 +538,7 @@ Future<Map<String, dynamic>> register(String email, String password) async {
       phoneNumber: '',
       bio: '',
       description: '',
-      photoURL: '',
+      photoUrl: '',
       createdAt: DateTime.now(),
       groups: [
        {"name": "Family", "id": "Family", "period": "Monthly", "frequency": 4, "colorCode": "#4FC3F7"},
@@ -544,6 +551,7 @@ Future<Map<String, dynamic>> register(String email, String password) async {
       // contacts: [],
       nudges: [],
       profileCompleted: false,
+      weeklyDigestEnabled: false
     );
     
     await _usersCollection.doc(result.user!.uid).set(newUser.toMap());
@@ -577,7 +585,7 @@ Future<void> submitFeedback({
           'userId': currentUser.uid,
           'email': currentUser.email,
           'username': userData?['username'] ?? '',
-          'photoURL': userData?['photoURL'] ?? '',
+          'photoUrl': userData?['photoUrl'] ?? '',
         },
         'message': message,
         'type': type,

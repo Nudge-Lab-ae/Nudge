@@ -10,6 +10,7 @@ class SocialGroup {
   int memberCount;
   DateTime lastInteraction;
   String colorCode;
+  bool dateNudgesEnabled = true;
 
   SocialGroup({
     required this.id,
@@ -21,6 +22,7 @@ class SocialGroup {
     required this.memberCount,
     required this.lastInteraction,
     required this.colorCode,
+    required this.dateNudgesEnabled,
   });
 
   Map<String, dynamic> toMap() {
@@ -35,6 +37,7 @@ class SocialGroup {
       'lastInteraction': lastInteraction.millisecondsSinceEpoch,
       'colorCode': colorCode,
       'createdAt': DateTime.now().millisecondsSinceEpoch,
+      'dateNudgesEnabled': dateNudgesEnabled,
     };
   }
 
@@ -50,6 +53,7 @@ class SocialGroup {
       memberCount: data['memberCount'] ?? 0,
       lastInteraction: DateTime.fromMillisecondsSinceEpoch(data['lastInteraction'] ?? 0),
       colorCode: data['colorCode'] ?? '#2596BE',
+      dateNudgesEnabled: data['dateNudgesEnabled'] ?? false,
     );
   }
 
@@ -64,6 +68,7 @@ class SocialGroup {
       memberCount: data['memberCount'] ?? 0,
       lastInteraction: DateTime.fromMillisecondsSinceEpoch(data['lastInteraction'] ?? 0),
       colorCode: data['colorCode'] ?? '#2596BE',
+      dateNudgesEnabled: data['dateNudgesEnabled'] ?? false,
     );
   }
 
@@ -77,6 +82,7 @@ class SocialGroup {
     int? memberCount,
     DateTime? lastInteraction,
     String? colorCode,
+    bool? dateNudgesEnabled,
   }) {
     return SocialGroup(
       id: id ?? this.id,
@@ -88,6 +94,7 @@ class SocialGroup {
       memberCount: memberCount ?? this.memberCount,
       lastInteraction: lastInteraction ?? this.lastInteraction,
       colorCode: colorCode ?? this.colorCode,
+      dateNudgesEnabled: dateNudgesEnabled ?? this.dateNudgesEnabled,
     );
   }
 }

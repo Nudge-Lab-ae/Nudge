@@ -19,6 +19,8 @@ class Nudge {
   bool isPushNotification;
   int priority;
   bool isVIP;
+  String contactImageUrl; 
+  String groupName;
 
   Nudge({
     required this.id,
@@ -38,6 +40,8 @@ class Nudge {
     required this.isPushNotification,
     required this.priority,
     required this.isVIP,
+    required this.contactImageUrl,
+    required this.groupName
   });
 
   // Convert to Map for Firestore
@@ -60,6 +64,8 @@ class Nudge {
       'isPushNotification': isPushNotification,
       'isVIP': isVIP,
       'priority': priority,
+      'groupName': groupName,
+      'contactImageUrl': contactImageUrl
     };
   }
 
@@ -87,6 +93,8 @@ class Nudge {
       priority: data['priority'] ?? 3,
       isVIP: data['isVIP'] ?? false,
       isPushNotification: data['isPushNotification'] ?? false,
+      contactImageUrl: data['contactImageUrl'] ?? '',
+      groupName: data['groupName'] ?? '',
     );
   }
 
@@ -116,6 +124,8 @@ class Nudge {
       priority: data['priority'] ?? 3,
       isPushNotification: data['isPushNotification'] ?? false,
       isVIP: data['isVIP'] ?? false,
+      contactImageUrl: data['contactImageUrl'] ?? '',
+      groupName: data['groupName'] ?? '',
     );
   }
 }

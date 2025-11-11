@@ -1,5 +1,12 @@
+import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:crop_your_image/crop_your_image.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:nudge/screens/admin/feedback_management_screen.dart';
 import 'package:nudge/theme/text_styles.dart';
 import '../../services/api_service.dart';
@@ -16,6 +23,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final _formKey = GlobalKey<FormState>();
   final _feedbackFormKey = GlobalKey<FormState>();
+   bool _weeklyDigestEnabled = false;
   late TextEditingController _usernameController;
   late TextEditingController _emailController;
   late TextEditingController _oldPasswordController;
@@ -28,6 +36,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _isChangingPassword = false;
   bool _isSubmittingFeedback = false;
   user.User? _currentUser;
+
+  bool _isCropping = false;
+  final _cropController = CropController();
+  Uint8List? _imageBytes;
+  String? _currentProfileImageUrl;
   
   // Feedback types
   final List<String> _feedbackTypes = [
@@ -64,9 +77,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
       
       setState(() {
-        _usernameController.text = userData.username;
+         _usernameController.text = userData.username;
         _emailController.text = userData.email;
         _currentUser = userData;
+        _currentProfileImageUrl = userData.photoUrl;
+        _weeklyDigestEnabled = userData.weeklyDigestEnabled;
         _isLoading = false;
       });
     } catch (e) {
@@ -74,6 +89,78 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      final bytes = await File(pickedFile.path).readAsBytes();
+      setState(() {
+        _imageBytes = bytes;
+        _isCropping = true;
+      });
+    }
+  }
+
+  // Future<void> _cropImage() async {
+  //   if (_imageBytes == null) return;
+    
+  //   _cropController.crop();
+  // }
+
+  void _cancelCrop() {
+    setState(() {
+      _isCropping = false;
+      _imageBytes = null;
+    });
+  }
+
+  Future<String> _uploadImageToFirebase(Uint8List imageBytes, String fileName) async {
+    try {
+      final storageRef = FirebaseStorage.instance.ref();
+      final imagesRef = storageRef.child('profile_pictures/$fileName');
+      
+      UploadTask uploadTask = imagesRef.putData(
+        imageBytes,
+        SettableMetadata(contentType: 'image/png'),
+      );
+      
+      TaskSnapshot snapshot = await uploadTask;
+      String downloadUrl = await snapshot.ref.getDownloadURL();
+      return downloadUrl;
+    } catch (e) {
+      throw Exception('Upload failed: $e');
+    }
+  }
+
+  Future<void> _updateProfilePicture(Uint8List imageBytes) async {
+    try {
+      setState(() => _isChangingPassword = true);
+      
+      String uniqueID = _usernameController.text + DateTime.now().millisecondsSinceEpoch.toString();
+      String imageUrl = await _uploadImageToFirebase(imageBytes, uniqueID);
+      
+      await ApiService().updateUser({
+        'photoUrl': imageUrl,
+        'updatedAt': DateTime.now(),
+      });
+      
+      setState(() {
+        _currentProfileImageUrl = imageUrl;
+        _isCropping = false;
+        _imageBytes = null;
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile picture updated successfully')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error updating profile picture: $e')),
+      );
+    } finally {
+      setState(() => _isChangingPassword = false);
     }
   }
 
@@ -206,6 +293,187 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+ 
+
+Future<void> _updateWeeklyDigestSetting(bool enabled) async {
+  try {
+    await ApiService().updateUser({
+      'weeklyDigestEnabled': enabled,
+      'updatedAt': DateTime.now(),
+    });
+  } catch (e) {
+    print('Error updating weekly digest setting: $e');
+  }
+}
+
+void _showDeleteAccountConfirmation() {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Delete Account'),
+      content: const Text(
+        'This action cannot be undone. All your data, contacts, groups, and settings will be permanently deleted.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: _deleteAccount,
+          style: TextButton.styleFrom(foregroundColor: Colors.red),
+          child: const Text('Delete Account'),
+        ),
+      ],
+    ),
+  );
+}
+
+Future<void> _deleteAccount() async {
+  try {
+    // Close dialog
+    Navigator.pop(context);
+    
+    // Show loading
+    setState(() => _isChangingPassword = true);
+    
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      // Delete user data from Firestore first
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).delete();
+      
+      // Delete user authentication
+      await user.delete();
+      
+      // Navigate to login
+      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Account deleted successfully')),
+      );
+    }
+  } catch (e) {
+    setState(() => _isChangingPassword = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error deleting account: $e')),
+    );
+  }
+}
+
+ Widget _buildProfilePictureSection() {
+    return Column(
+      children: [
+        if (_isCropping) ...[
+          const SizedBox(height: 20),
+          const Text(
+            'Crop Your Profile Picture',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Adjust the square to frame your photo',
+            style: TextStyle(color: Colors.grey),
+          ),
+          const SizedBox(height: 20),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: _imageBytes != null
+                  ? Crop(
+                      image: _imageBytes!,
+                      controller: _cropController,
+                      aspectRatio: 1,
+                      onCropped: (result) {
+                        switch (result) {
+                          case CropSuccess(:final croppedImage):
+                            _updateProfilePicture(croppedImage);
+                          case CropFailure(:final cause):
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Error'),
+                                content: Text('Failed to crop image: $cause'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: const Text('OK'),
+                                  ),
+                                ],
+                              ),
+                            );
+                        }
+                      },
+                      withCircleUi: true,
+                      baseColor: Colors.blue.shade900,
+                      maskColor: Colors.white.withAlpha(100),
+                      cornerDotBuilder: (size, edgeAlignment) => const DotControl(color: Colors.blue),
+                    )
+                  : const Center(child: CircularProgressIndicator()),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _cancelCrop,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      side: const BorderSide(color: Colors.red),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: const Text('Cancel'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ] else ...[
+          const SizedBox(height: 20),
+          Center(
+            child: GestureDetector(
+              onTap: _pickImage,
+              child: Stack(
+                children: [
+                  CircleAvatar(
+                    radius: 50,
+                    backgroundImage: _currentProfileImageUrl != null && _currentProfileImageUrl!.isNotEmpty
+                        ? NetworkImage(_currentProfileImageUrl!)
+                        : null,
+                    backgroundColor: const Color.fromRGBO(45, 161, 175, 0.1),
+                    child: _currentProfileImageUrl == null || _currentProfileImageUrl!.isEmpty
+                        ? const Icon(Icons.person, size: 40, color: Color.fromRGBO(45, 161, 175, 1))
+                        : null,
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: const BoxDecoration(
+                        color: Color.fromRGBO(45, 161, 175, 1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.edit, size: 16, color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Tap to change profile picture',
+            style: TextStyle(color: Colors.grey, fontSize: 14),
+          ),
+          const SizedBox(height: 30),
+        ],
+      ],
+    );
+  }
+
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -225,11 +493,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
         //   onPressed: () => Navigator.pop(context),
         // ),
       ),
-      body: SingleChildScrollView(
+      body: _isCropping 
+          ? _buildProfilePictureSection()
+          : SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+
+             _buildProfilePictureSection(),
             // Profile Settings Section
             Form(
               key: _formKey,
@@ -382,6 +654,50 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       },
                     ),
                   ],
+
+                   // Weekly Digest Section
+            const SizedBox(height: 30),
+            const Text(
+              'Notifications',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 15),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Weekly Digest',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        'Receive weekly summary of relationships needing attention',
+                        style: TextStyle(fontSize: 14, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                ),
+               Container(
+                width: 100,
+                child:  Switch(
+                  value: _weeklyDigestEnabled,
+                  inactiveThumbColor: Colors.white,
+                  inactiveTrackColor: Color(0xffdddddd),
+                  onChanged: (value) {
+                    setState(() {
+                      _weeklyDigestEnabled = value;
+                    });
+                    _updateWeeklyDigestSetting(value);
+                  },
+                  activeColor: const Color.fromRGBO(45, 161, 175, 1),
+                ),
+               )
+              ],
+            ),
+
                   
                   const SizedBox(height: 30),
                   SizedBox(
@@ -431,7 +747,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
             //     child: const Text('Go to Interaction Goals'),
             //   ),
             // ),
-            
+
+          // Add after General section in settings_screen.dart
+
+           
+            // Delete Account Section
+            const SizedBox(height: 40),
+            const Text(
+              'Account Actions',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 15),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: OutlinedButton(
+                onPressed: _showDeleteAccountConfirmation,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.red,
+                  side: const BorderSide(color: Colors.red),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: const Text(
+                  'Delete Account',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+
             const SizedBox(height: 30),
             
             // Feedback Section

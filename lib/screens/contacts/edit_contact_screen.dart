@@ -1,5 +1,10 @@
 // lib/screens/contacts/edit_contact_screen.dart
+import 'dart:typed_data';
+
+import 'package:crop_your_image/crop_your_image.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -52,6 +57,10 @@ class _EditContactScreenState extends State<EditContactScreen> {
   bool _isLoading = true;
   Contact? _originalContact;
   List<SocialGroup> _userGroups = [];
+  bool _isCropping = false;
+  bool saving = false;
+  final _cropController = CropController();
+  Uint8List? _imageBytes;
 
   @override
   void initState() {
@@ -147,14 +156,30 @@ class _EditContactScreenState extends State<EditContactScreen> {
     }
   }
 
-  Future<void> _pickImage() async {
-    final File? imageFile = await _storageService.pickImage();
-    if (imageFile != null) {
-      setState(() {
-        _selectedImage = imageFile;
-      });
+   Future<void> _pickImage() async {
+      final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+      if (pickedFile != null) {
+        final bytes = await File(pickedFile.path).readAsBytes();
+        setState(() {
+          _imageBytes = bytes;
+          _isCropping = true;
+        });
+      }
     }
+
+    // Add the crop image method
+    Future<void> _cropImage() async {
+      if (_imageBytes == null) return;
+      _cropController.crop();
+    }
+
+    void _cancelCrop() {
+    setState(() {
+      _isCropping = false;
+      _imageBytes = null;
+    });
   }
+
 
   void _deleteImage() async {
   // If there's an existing image URL, delete it from storage
@@ -173,9 +198,141 @@ class _EditContactScreenState extends State<EditContactScreen> {
   });
 }
 
+  Widget _buildCropScreen() {
+      var size = MediaQuery.of(context).size;
+      return Container(
+        width: size.width,
+        height: size.height,
+        color: Colors.white,
+        child: Column(
+        children: [
+          const SizedBox(height: 100),
+          Text(
+            'Crop Contact Picture',
+            style: AppTextStyles.title2.copyWith(
+              color: Colors.black, fontFamily: 'QuickSand',
+              fontWeight: FontWeight.w600, textBaseline: null,
+              decorationColor: Colors.black, decorationThickness: 0
+            ),
+            // style: TextStyle(
+            //   fontSize: 18, 
+            //   fontWeight: FontWeight.w500, 
+            //   decoration: TextDecoration.underline, 
+            //   decorationColor: Colors.transparent,
+            //   color: Colors.black,
+            //   ),
+          ),
+          // const SizedBox(height: 10),
+          // const Text(
+          //   'Adjust the square to frame the photo',
+          //   style: TextStyle(color: Colors.grey, fontSize: 16, fontWeight: FontWeight.w500),
+          // ),
+          // const SizedBox(height: 20),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: _imageBytes != null
+                  ? Crop(
+                      image: _imageBytes!,
+                      controller: _cropController,
+                      aspectRatio: 1,
+                      onCropped: (result) {
+                        switch (result) {
+                          case CropSuccess(:final croppedImage):
+                            setState(() {
+                              // Store the cropped image for the contact
+                              _imageBytes = croppedImage;
+                              _isCropping = false;
+                            });
+                          case CropFailure(:final cause):
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Error'),
+                                content: Text('Failed to crop image: $cause'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: const Text('OK'),
+                                  ),
+                                ],
+                              ),
+                            );
+                        }
+                      },
+                      withCircleUi: true,
+                      baseColor: Colors.white,
+                      maskColor: Colors.white.withAlpha(100),
+                      cornerDotBuilder: (size, edgeAlignment) => const DotControl(color: Colors.blue),
+                    )
+                  : const Center(child: CircularProgressIndicator()),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _cancelCrop,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      side: const BorderSide(color: Colors.red),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: const Text('Cancel'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _cropImage,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: const Text('Save Crop', style: TextStyle(color: Colors.white)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ));
+    }
+
+      Future<String> uploadImageToFirebase(Uint8List imageBytes, String fileName) async {
+    try {
+      // Reference to Firebase Storage
+      final storageRef = FirebaseStorage.instance.ref();
+
+      // Create a child reference (folder + filename)
+      final imagesRef = storageRef.child('uploads/$fileName');
+
+      // Upload raw data
+      UploadTask uploadTask = imagesRef.putData(
+        imageBytes,
+        SettableMetadata(contentType: 'image/png'), // or 'image/jpeg'
+      );
+
+      // Wait until upload completes
+      TaskSnapshot snapshot = await uploadTask;
+
+      // Get the download URL
+      String downloadUrl = await snapshot.ref.getDownloadURL();
+      return downloadUrl;
+    } catch (e) {
+      throw Exception('Upload failed: $e');
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     final apiService = Provider.of<ApiService>(context, listen: false);
+      if (_isCropping) {
+        return _buildCropScreen();
+      }
 
     if (_isLoading) {
       return Scaffold(
@@ -226,14 +383,14 @@ class _EditContactScreenState extends State<EditContactScreen> {
                     GestureDetector(
                       onTap: _pickImage,
                       child: CircleAvatar(
-                        radius: 50,
-                        backgroundColor: Color.fromRGBO(45, 161, 175, 1),
-                        backgroundImage: _selectedImage != null
-                            ? FileImage(_selectedImage!)
-                            : (_imageUrl.isNotEmpty
-                                ? NetworkImage(_imageUrl)
-                                : null),
-                        child: _selectedImage == null && _imageUrl.isEmpty
+                          radius: 80,
+                          backgroundColor: Color.fromRGBO(45, 161, 175, 1),
+                          backgroundImage: _imageBytes != null
+                              ? MemoryImage(_imageBytes!)
+                              : (_imageUrl.isNotEmpty
+                                  ? NetworkImage(_imageUrl)
+                                  : null),
+                          child: _imageBytes == null && _imageUrl.isEmpty
                             ? const Icon(Icons.camera_alt, size: 40)
                             : null,
                       ),
@@ -555,12 +712,12 @@ class _EditContactScreenState extends State<EditContactScreen> {
                 child: ElevatedButton(
                   onPressed: () => _saveContact (groups),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+                    backgroundColor: saving?Colors.grey: Color.fromRGBO(45, 161, 175, 1),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: Text('Save Changes', style: AppTextStyles.button),
+                  child: Text(saving?'Saving Changes...':'Save Changes', style: AppTextStyles.button),
                 ),
               ),
               const SizedBox(height: 20),
@@ -615,13 +772,16 @@ class _EditContactScreenState extends State<EditContactScreen> {
   }
 
   Future<Map<String, dynamic>> matchSchedule (String groupName, List<SocialGroup> groups) async{
-    SocialGroup myGroup = groups.firstWhere((group) => group.name == groupName);
+    SocialGroup myGroup = groups.firstWhere((group) => group.id == groupName);
     Map<String, dynamic> schedule = {'period': myGroup.period, 'frequency': myGroup.frequency};
     return schedule;
    }
 
   Future<void> _saveContact(List<SocialGroup> groups) async {
     final apiService = Provider.of<ApiService>(context, listen: false);
+    if (saving) {
+      return;
+    }
     print('phase 1');
     if (_formKey.currentState!.validate()) {
       final authService = Provider.of<AuthService>(context, listen: false);
@@ -630,6 +790,9 @@ class _EditContactScreenState extends State<EditContactScreen> {
       print('phase 2');
 
       if (user != null) {
+        setState(() {
+          saving = true;
+        });
         if (widget.isImported) {
           // Convert imported contact to regular contact
           final apiService = ApiService();
@@ -662,22 +825,24 @@ class _EditContactScreenState extends State<EditContactScreen> {
           );
           print('phase 4');
         } else if (_originalContact != null) {
-          
+          print('subphase1');
           // Upload new image if selected
           String updatedImageUrl = _imageUrl;
-          if (_selectedImage != null) {
+          if (_imageBytes != null) {
             try {
               // Delete old image if it exists
               if (_imageUrl.isNotEmpty) {
                 await _storageService.deleteImage(_imageUrl);
               }
-              
+              print('subphase2');
               // Upload new image
-              updatedImageUrl = await _storageService.uploadContactImage(
-                _selectedImage!, 
+              updatedImageUrl = await uploadImageToFirebase(
+                _imageBytes!, 
                 _originalContact!.id
               );
+              print('updated image is'); print (updatedImageUrl);
             } catch (e) {
+              print('subphase3');
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Failed to upload image: $e')),
               );
@@ -717,10 +882,17 @@ class _EditContactScreenState extends State<EditContactScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Contact updated successfully')),
           );
+        } else {
+          print('here');
         }
+        setState(() {
+          saving = false;
+        });
         
         // Navigate back
         Navigator.pop(context);
+      } else {
+        print('user is null');
       }
     }
   }

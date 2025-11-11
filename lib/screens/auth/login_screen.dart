@@ -226,11 +226,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   setState(() => _isLoading = true);
                   try {
                     // final user = await authService.signInWithApple();
-                    final user = await authService.modifiedAppleSignIn();
-                    
-                    if (user != null) {
+                    await authService.modifiedAppleSignIn();
+                    final userData = await apiService.getUser();
+                    if (userData.email.isNotEmpty) {
                       // Check if profile is completed
-                      final userData = await apiService.getUser();
+                      
                       if (userData.profileCompleted) {
                         // Navigation handled by AuthWrapper
                         completeNavigation();
@@ -239,11 +239,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         // Navigator.pushReplacementNamed(context, '/complete_profile');
                         completeProfile();
                       }
+                    } else {
+                      print('returning empty user');
                     }
                   } catch (e) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Error: ${e.toString()}'),
+                        content: Text('Unable to Login. Please try again.'),
                       ),
                     );
                   } finally {

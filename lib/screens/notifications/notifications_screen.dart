@@ -1,19 +1,21 @@
 // lib/screens/notifications/notifications_screen.dart
+import 'dart:collection';
+
 import 'package:flutter/material.dart';
 import 'package:nudge/models/contact.dart';
 import 'package:nudge/models/social_group.dart';
 import 'package:nudge/theme/text_styles.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:table_calendar/table_calendar.dart'; // Add this package to pubspec.yaml
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/services/auth_service.dart';
 import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/models/nudge.dart';
+// import 'package:nudge/screens/contacts/contact_detail_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
-
   final bool showAppBar;
-
   const NotificationsScreen({super.key, required this.showAppBar});
 
   @override
@@ -22,19 +24,18 @@ class NotificationsScreen extends StatefulWidget {
 
 class _NotificationsScreenState extends State<NotificationsScreen> with SingleTickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
-  String _filter = 'all'; // 'all', 'upcoming', 'completed'
   late TabController _tabController;
-  // int _currentTabIndex = 0;
+  String _activeFilter = 'upcoming'; // 'upcoming', 'completed', 'overdue'
+  CalendarFormat _calendarFormat = CalendarFormat.month;
+  DateTime _focusedDay = DateTime.now();
+  DateTime? _selectedDay;
+  bool _showCalendar = false;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _tabController.addListener(() {
-      // setState(() {
-      //   _currentTabIndex = _tabController.index;
-      // });
-    });
+    _tabController = TabController(length: 3, vsync: this);
+    _selectedDay = DateTime.now();
   }
 
   @override
@@ -50,7 +51,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
     
     if (user == null) {
       return const Scaffold(
-        body: Center(child: Text('Please log in to view notifications')),
+        body: Center(child: Text('Please log in to view nudges')),
       );
     }
     
@@ -61,7 +62,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
-            body: Center(child: CircularProgressIndicator(color: Color.fromRGBO(45, 161, 175, 1),)),
+            body: Center(child: CircularProgressIndicator(color: Color.fromRGBO(45, 161, 175, 1))),
           );
         }
         
@@ -71,84 +72,521 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
           );
         }
         
-        final nudges = snapshot.data ?? [];
+        final allNudges = snapshot.data ?? [];
         final now = DateTime.now();
         
-        // Filter nudges for the "Upcoming" tab (next 7 days)
-        final upcomingNudges = nudges.where((nudge) => 
-          nudge.scheduledTime.isAfter(now) && 
-          nudge.scheduledTime.isBefore(now.add(const Duration(days: 7))) &&
-          !nudge.isCompleted
+        // Filter to show only next nudge per contact for list views
+        final nextNudgePerContact = _getNextNudgePerContact(allNudges);
+        
+        // Categorize nudges
+        final upcomingNudges = nextNudgePerContact.where((nudge) => 
+          nudge.scheduledTime.isAfter(now) && !nudge.isCompleted
         ).toList();
         
-        // Filter nudges for the "All" tab (based on current filter)
-        List<Nudge> filteredNudges;
-        switch (_filter) {
-          case 'upcoming':
-            filteredNudges = nudges.where((nudge) => 
-              nudge.scheduledTime.isAfter(now) && !nudge.isCompleted
-            ).toList();
-            break;
-          case 'completed':
-            filteredNudges = nudges.where((nudge) => nudge.isCompleted).toList();
-            break;
-          default:
-            filteredNudges = List.from(nudges);
-        }
+        final completedNudges = nextNudgePerContact.where((nudge) => nudge.isCompleted).toList();
         
+        final overdueNudges = nextNudgePerContact.where((nudge) => 
+          nudge.scheduledTime.isBefore(now) && !nudge.isCompleted
+        ).toList();
+
+        // Group by time periods
+        final todayNudges = _getNudgesForPeriod(upcomingNudges, 'today');
+        final thisWeekNudges = _getNudgesForPeriod(upcomingNudges, 'thisWeek');
+        final nextWeekNudges = _getNudgesForPeriod(upcomingNudges, 'nextWeek');
+
         return Scaffold(
-          appBar: AppBar(
-            title: widget.showAppBar?Text('Nudges & Reminders', style: AppTextStyles.title3.copyWith(color: Colors.black))
-            :TabBar(
-              controller: _tabController,
-              // unselectedLabelColor: Colors.grey,
-              labelColor: Color.fromRGBO(45, 161, 175, 1) /* Colors.white*/,
-              indicatorColor: Color.fromRGBO(45, 161, 175, 1),
-              labelPadding: EdgeInsets.symmetric(horizontal: 0.0),
-              // dividerColor: Color.fromRGBO(45, 161, 175, 1),
-              tabs: [
-                Tab(
-                  // text: 'Upcoming (7 days)',
-                  child: Text('Upcoming (7 days)', style: AppTextStyles.primaryBold.copyWith(
-                    color: _tabController.index == 0?Colors.black: Colors.black, fontSize: 16
-                  ),),
+          appBar: _buildAppBar(),
+          body: _showCalendar 
+              ? _buildCalendarView(allNudges, user.uid)
+              : _buildListView(
+                  todayNudges, 
+                  thisWeekNudges, 
+                  nextWeekNudges, 
+                  completedNudges, 
+                  overdueNudges, 
+                  user.uid
                 ),
-                Tab(
-                   child: Text('All Nudges', style: AppTextStyles.primaryBold.copyWith(
-                    color: _tabController.index == 1?Colors.black: Colors.black, fontSize: 16
-                  ),),
-                ),
-              ],
-            ),
-            automaticallyImplyLeading: false,
-            centerTitle: true,
-            iconTheme: IconThemeData(color: Colors.black),
-            backgroundColor: Colors.white,
-            leading: Center(),
-            // actions: [
-            //   if (_currentTabIndex == 1) // Only show filter on "All Nudges" tab
-            //     IconButton(
-            //       icon: const Icon(Icons.filter_list),
-            //       onPressed: () {
-            //         _showFilterDialog(context);
-            //       },
-            //     ),
-            //   IconButton(
-            //     icon: const Icon(Icons.add_alarm),
-            //     onPressed: () {
-            //       _showScheduleOptions(context);
-            //     },
-            //   ),
-            // ],
+          floatingActionButton: _buildCalendarToggle(),
+        );
+      },
+    );
+  }
+
+  AppBar _buildAppBar() {
+    return AppBar(
+      title: Text('Nudges', style: AppTextStyles.title3.copyWith(color: Colors.black)),
+      backgroundColor: Colors.white,
+      iconTheme: const IconThemeData(color: Colors.black),
+      centerTitle: true,
+      actions: [
+        if (!_showCalendar) 
+          IconButton(
+            icon: const Icon(Icons.filter_list),
+            onPressed: _showFilterBottomSheet,
+            tooltip: 'Filter Nudges',
           ),
-          body: TabBarView(
-            controller: _tabController,
+        IconButton(
+          icon: const Icon(Icons.add_alarm),
+          onPressed: () => _showScheduleOptions(context),
+          tooltip: 'Schedule Nudges',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCalendarToggle() {
+    return FloatingActionButton(
+      onPressed: () {
+        setState(() {
+          _showCalendar = !_showCalendar;
+        });
+      },
+      backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+      child: Icon(_showCalendar ? Icons.list : Icons.calendar_today, color: Colors.white),
+    );
+  }
+
+  Widget _buildCalendarView(List<Nudge> allNudges, String userId) {
+    // Group nudges by date for calendar
+    final events = LinkedHashMap<DateTime, List<Nudge>>(
+      equals: isSameDay,
+      hashCode: (DateTime key) => key.day * 1000000 + key.month * 10000 + key.year,
+    )..addAll(_groupNudgesByDate(allNudges));
+
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        children: [
+          TableCalendar<Nudge>(
+            firstDay: DateTime.now().subtract(const Duration(days: 365)),
+            lastDay: DateTime.now().add(const Duration(days: 365)),
+            focusedDay: _focusedDay,
+            calendarFormat: _calendarFormat,
+            selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+            onDaySelected: (selectedDay, focusedDay) {
+              setState(() {
+                _selectedDay = selectedDay;
+                _focusedDay = focusedDay;
+              });
+            },
+            onPageChanged: (focusedDay) {
+              _focusedDay = focusedDay;
+            },
+            eventLoader: (day) => events[day] ?? [],
+            calendarStyle: CalendarStyle(
+              selectedDecoration: const BoxDecoration(
+                color: Color.fromRGBO(45, 161, 175, 1),
+                shape: BoxShape.circle,
+              ),
+              todayDecoration: BoxDecoration(
+                color: const Color.fromRGBO(45, 161, 175, 0.2),
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color.fromRGBO(45, 161, 175, 1)),
+              ),
+              markerDecoration: const BoxDecoration(
+                color: Colors.orange,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: _buildDayEvents(events[_selectedDay] ?? [], userId),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildListView(
+    List<Nudge> todayNudges,
+    List<Nudge> thisWeekNudges, 
+    List<Nudge> nextWeekNudges,
+    List<Nudge> completedNudges,
+    List<Nudge> overdueNudges,
+    String userId
+  ) {
+    List<Nudge> displayedNudges;
+    
+    switch (_activeFilter) {
+      case 'completed':
+        displayedNudges = completedNudges;
+        break;
+      case 'overdue':
+        displayedNudges = overdueNudges;
+        break;
+      default:
+        displayedNudges = [...todayNudges, ...thisWeekNudges, ...nextWeekNudges];
+    }
+
+    return Column(
+      children: [
+        // Interactive Filter Chips
+        _buildFilterChips(todayNudges.length + thisWeekNudges.length + nextWeekNudges.length, 
+                         completedNudges.length, overdueNudges.length),
+        
+        // Nudge List with Sections
+        Expanded(
+          child: _activeFilter == 'upcoming' 
+              ? _buildGroupedNudgeList(todayNudges, thisWeekNudges, nextWeekNudges, userId)
+              : _buildNudgeList(displayedNudges, userId, showSections: false),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFilterChips(int upcomingCount, int completedCount, int overdueCount) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      color: Colors.grey[50],
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildFilterChip('Upcoming', upcomingCount, 'upcoming', Icons.upcoming),
+          _buildFilterChip('Completed', completedCount, 'completed', Icons.check_circle),
+          _buildFilterChip('Overdue', overdueCount, 'overdue', Icons.warning),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String label, int count, String filter, IconData icon) {
+    final isActive = _activeFilter == filter;
+    return FilterChip(
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: isActive ? Colors.white : const Color.fromRGBO(45, 161, 175, 1)),
+          const SizedBox(width: 4),
+          Text('$count', style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: isActive ? Colors.white : Colors.black,
+          )),
+        ],
+      ),
+      selected: isActive,
+      onSelected: (selected) {
+        setState(() {
+          _activeFilter = filter;
+        });
+      },
+      backgroundColor: Colors.white,
+      selectedColor: const Color.fromRGBO(45, 161, 175, 1),
+      checkmarkColor: Colors.white,
+      shape: StadiumBorder(side: BorderSide(
+        color: isActive ? const Color.fromRGBO(45, 161, 175, 1) : Colors.grey.shade300,
+      )),
+    );
+  }
+
+  Widget _buildGroupedNudgeList(List<Nudge> today, List<Nudge> thisWeek, List<Nudge> nextWeek, String userId) {
+    final sections = [
+      _buildNudgeSection('Today', today, userId, today.isEmpty),
+      _buildNudgeSection('This Week', thisWeek, userId, thisWeek.isEmpty),
+      _buildNudgeSection('Next Week', nextWeek, userId, nextWeek.isEmpty),
+    ];
+
+    return ListView.builder(
+      controller: _scrollController,
+      itemCount: sections.length,
+      itemBuilder: (context, index) => sections[index],
+    );
+  }
+
+  Widget _buildNudgeSection(String title, List<Nudge> nudges, String userId, bool isEmpty) {
+    if (isEmpty && title != 'Today') return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color.fromRGBO(45, 161, 175, 1),
+            ),
+          ),
+        ),
+        if (isEmpty)
+          _buildEmptySection(title)
+        else
+          ...nudges.map((nudge) => _buildNudgeCard(nudge, userId)).toList(),
+      ],
+    );
+  }
+
+  Widget _buildEmptySection(String period) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+      child: Column(
+        children: [
+          Icon(Icons.celebration, size: 48, color: Colors.grey[400]),
+          const SizedBox(height: 8),
+          Text(
+            'No nudges $period',
+            style: TextStyle(color: Colors.grey[600], fontSize: 16),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNudgeList(List<Nudge> nudges, String userId, {bool showSections = true}) {
+    if (nudges.isEmpty) {
+      return _buildEmptyState();
+    }
+
+    return ListView.builder(
+      controller: _scrollController,
+      itemCount: nudges.length,
+      itemBuilder: (context, index) => _buildNudgeCard(nudges[index], userId),
+    );
+  }
+
+  Widget _buildNudgeCard(Nudge nudge, String userId) {
+    final nudgeService = NudgeService();
+    final isOverdue = nudge.scheduledTime.isBefore(DateTime.now()) && !nudge.isCompleted;
+    
+    return Dismissible(
+      key: Key(nudge.id),
+      background: _buildSwipeBackground(Icons.snooze, Colors.blue),
+      secondaryBackground: _buildSwipeBackground(Icons.check, Colors.green, isLeft: false),
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.endToStart) {
+          // Mark as complete
+          nudgeService.markNudgeAsComplete(nudge.id, userId, nudge.contactId);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Nudge marked as complete')),
+          );
+          return true;
+        } else {
+          // Snooze
+          _snoozeNudge(nudge, userId);
+          return false;
+        }
+      },
+      child: Card(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: ListTile(
+          leading: _buildContactAvatar(nudge),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Upcoming Tab (next 7 days)
-              _buildTabContent(upcomingNudges, user.uid, true),
-              
-              // All Nudges Tab
-              _buildTabContent(filteredNudges, user.uid, false),
+              Text(
+                'Connect with ${nudge.contactName}',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  decoration: nudge.isCompleted ? TextDecoration.lineThrough : null,
+                ),
+              ),
+              if (nudge.groupName.isNotEmpty)
+                Chip(
+                  label: Text(
+                    nudge.groupName,
+                    style: const TextStyle(fontSize: 10),
+                  ),
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
+                ),
+            ],
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${DateFormat('MMM dd, yyyy • hh:mm a').format(nudge.scheduledTime)} • ${nudge.frequency}',
+              ),
+              if (isOverdue)
+                const Text(
+                  'Overdue',
+                  style: TextStyle(
+                    color: Colors.orange,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+            ],
+          ),
+          trailing: PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (value) => _handlePopupAction(value, nudge, userId),
+            itemBuilder: (BuildContext context) => [
+              const PopupMenuItem(
+                value: 'view_contact',
+                child: Row(
+                  children: [
+                    Icon(Icons.person, size: 20),
+                    SizedBox(width: 8),
+                    Text('View Contact'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'adjust_frequency',
+                child: Row(
+                  children: [
+                    Icon(Icons.schedule, size: 20),
+                    SizedBox(width: 8),
+                    Text('Adjust Frequency'),
+                  ],
+                ),
+              ),
+              if (!nudge.isCompleted)
+                const PopupMenuItem(
+                  value: 'mark_complete',
+                  child: Row(
+                    children: [
+                      Icon(Icons.check, size: 20, color: Colors.green),
+                      SizedBox(width: 8),
+                      Text('Mark Complete'),
+                    ],
+                  ),
+                ),
+              const PopupMenuItem(
+                value: 'snooze',
+                child: Row(
+                  children: [
+                    Icon(Icons.snooze, size: 20),
+                    SizedBox(width: 8),
+                    Text('Snooze'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete, size: 20, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text('Delete'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          onTap: () {
+            _showNudgeDetails(nudge, context, userId);
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSwipeBackground(IconData icon, Color color, {bool isLeft = true}) {
+    return Container(
+      color: color,
+      alignment: isLeft ? Alignment.centerLeft : Alignment.centerRight,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Icon(icon, color: Colors.white),
+    );
+  }
+
+  Widget _buildContactAvatar(Nudge nudge) {
+    // In a real app, you would fetch the contact's image URL
+    // For now, we'll use initials as a fallback
+    final initials = nudge.contactName.split(' ').map((n) => n[0]).take(2).join();
+    
+    return CircleAvatar(
+      backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+      child: nudge.contactImageUrl.isNotEmpty
+          ? ClipOval(
+              child: Image.network(
+                nudge.contactImageUrl,
+                width: 40,
+                height: 40,
+                fit: BoxFit.cover,
+              ),
+            )
+          : Text(
+              initials,
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+    );
+  }
+
+  Widget _buildDayEvents(List<Nudge> dayNudges, String userId) {
+    if (dayNudges.isEmpty) {
+      return const Center(
+        child: Text('No nudges scheduled for this day'),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: dayNudges.length,
+      itemBuilder: (context, index) => _buildNudgeCard(dayNudges[index], userId),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.celebration,
+              size: 80,
+              color: Color.fromRGBO(45, 161, 175, 1),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Every nudge brings you closer to stronger connections 💬',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey,
+              ),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: () => _showScheduleOptions(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              ),
+              child: const Text('Schedule Your First Nudge', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showFilterBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Filter Nudges',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              ...['upcoming', 'completed', 'overdue'].map((filter) {
+                return RadioListTile(
+                  title: Text(
+                    filter == 'upcoming' ? 'Upcoming' : 
+                    filter == 'completed' ? 'Completed' : 'Overdue',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  value: filter,
+                  groupValue: _activeFilter,
+                  onChanged: (value) {
+                    setState(() {
+                      _activeFilter = value!;
+                    });
+                    Navigator.of(context).pop();
+                  },
+                );
+              }).toList(),
             ],
           ),
         );
@@ -156,250 +594,89 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
     );
   }
 
-  Widget _buildTabContent(List<Nudge> nudges, String userId, bool isUpcomingTab) {
-    return Column(
-      children: [
-        if (!isUpcomingTab) _buildStatsRow(nudges),
-        Expanded(
-          child: nudges.isEmpty
-              ? _buildEmptyState(isUpcomingTab)
-              : _buildNudgeList(nudges, context, userId, isUpcomingTab),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatsRow(List<Nudge> nudges) {
-    final now = DateTime.now();
-    final upcoming = nudges.where((nudge) => nudge.scheduledTime.isAfter(now) && !nudge.isCompleted).length;
-    final completed = nudges.where((nudge) => nudge.isCompleted).length;
-    final overdue = nudges.where((nudge) => nudge.scheduledTime.isBefore(now) && !nudge.isCompleted).length;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      color: Colors.grey[100],
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildStatItem('Upcoming', upcoming.toString(), Color.fromRGBO(45, 161, 175, 1)),
-          _buildStatItem('Completed', completed.toString(), Colors.green),
-          _buildStatItem('Overdue', overdue.toString(), Colors.orange),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatItem(String label, String value, Color color) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNudgeList(List<Nudge> nudges, BuildContext context, String userId, bool isUpcomingTab) {
-    // For upcoming tab, sort by scheduled time (soonest first)
-    // For all tab, sort by scheduled time but keep completed at the bottom
-    if (isUpcomingTab) {
-      nudges.sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
-    } else {
-      nudges.sort((a, b) {
-        if (a.isCompleted && !b.isCompleted) return 1;
-        if (!a.isCompleted && b.isCompleted) return -1;
-        return a.scheduledTime.compareTo(b.scheduledTime);
-      });
+  // Helper methods for data processing
+  List<Nudge> _getNextNudgePerContact(List<Nudge> allNudges) {
+    final Map<String, Nudge> nextNudges = {};
+    
+    for (final nudge in allNudges) {
+      if (!nextNudges.containsKey(nudge.contactId) || 
+          nudge.scheduledTime.isBefore(nextNudges[nudge.contactId]!.scheduledTime)) {
+        nextNudges[nudge.contactId] = nudge;
+      }
     }
     
-    return ListView.builder(
-      controller: _scrollController,
-      itemCount: nudges.length,
-      itemBuilder: (context, index) {
-        return _buildNudgeCard(nudges[index], context, userId);
-      },
-    );
+    return nextNudges.values.toList();
   }
 
-  Widget _buildNudgeCard(Nudge nudge, BuildContext context, String userId) {
-    final nudgeService = NudgeService();
-    final isOverdue = nudge.scheduledTime.isBefore(DateTime.now()) && !nudge.isCompleted;
+  List<Nudge> _getNudgesForPeriod(List<Nudge> nudges, String period) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
     
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: isOverdue ? Colors.orange[50] : null,
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: isOverdue
-              ? Colors.orange
-              : nudge.isCompleted
-                  ? Colors.green
-                  : const Color.fromRGBO(45, 161, 175, 1),
-          child: Icon(
-            isOverdue
-                ? Icons.warning
-                : nudge.isCompleted
-                    ? Icons.check
-                    : Icons.notifications,
-            color: Colors.white,
-          ),
-        ),
-        title: Text(
-          'Connect with ${nudge.contactName}',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            decoration: nudge.isCompleted ? TextDecoration.lineThrough : null,
-          ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '${DateFormat('MMM dd, yyyy • hh:mm a').format(nudge.scheduledTime)} • ${nudge.frequency}',
-            ),
-            if (isOverdue)
-              const Text(
-                'Overdue',
-                style: TextStyle(
-                  color: Colors.orange,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (!nudge.isCompleted)
-              IconButton(
-                icon: const Icon(Icons.check, color: Colors.green),
-                onPressed: () {
-                  nudgeService.markNudgeAsComplete(nudge.id, userId, nudge.contactId);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Nudge marked as complete')),
-                  );
-                },
-              ),
-            IconButton(
-              icon: const Icon(Icons.snooze, color: Color.fromRGBO(45, 161, 175, 1)),
-              onPressed: () {
-                _snoozeNudge(nudge, userId);
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete, color: Colors.red),
-              onPressed: () {
-                _deleteNudge(nudge, userId);
-              },
-            ),
-          ],
-        ),
-        onTap: () {
-          _showNudgeDetails(nudge, context, userId);
-        },
-      ),
-    );
+    switch (period) {
+      case 'today':
+        return nudges.where((nudge) => 
+          isSameDay(nudge.scheduledTime, today)
+        ).toList();
+      case 'thisWeek':
+        final endOfWeek = today.add(const Duration(days: 7));
+        return nudges.where((nudge) => 
+          nudge.scheduledTime.isAfter(today) && 
+          nudge.scheduledTime.isBefore(endOfWeek) &&
+          !isSameDay(nudge.scheduledTime, today)
+        ).toList();
+      case 'nextWeek':
+        final startOfNextWeek = today.add(const Duration(days: 7));
+        final endOfNextWeek = today.add(const Duration(days: 14));
+        return nudges.where((nudge) => 
+          nudge.scheduledTime.isAfter(startOfNextWeek) && 
+          nudge.scheduledTime.isBefore(endOfNextWeek)
+        ).toList();
+      default:
+        return nudges;
+    }
   }
 
-  Widget _buildEmptyState(bool isUpcomingTab) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.notifications_off,
-            size: 64,
-            color: Colors.grey,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            isUpcomingTab ? 'No upcoming nudges' : 'No nudges yet',
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            isUpcomingTab 
-              ? 'You have no nudges scheduled for the next 7 days'
-              : 'Schedule your first nudge to stay connected',
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () {
-              _showScheduleOptions(context);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
-            ),
-            child:  Text('Schedule Nudges', style: AppTextStyles.button.copyWith(color: Colors.white),),
-          ),
-        ],
-      ),
-    );
+  Map<DateTime, List<Nudge>> _groupNudgesByDate(List<Nudge> nudges) {
+    final Map<DateTime, List<Nudge>> events = {};
+    
+    for (final nudge in nudges) {
+      final date = DateTime(nudge.scheduledTime.year, nudge.scheduledTime.month, nudge.scheduledTime.day);
+      if (events[date] == null) {
+        events[date] = [];
+      }
+      events[date]!.add(nudge);
+    }
+    
+    return events;
   }
 
-  // void _showFilterDialog(BuildContext context) {
-  //   showDialog(
-  //     context: context,
-  //     builder: (context) {
-  //       return AlertDialog(
-  //         title: const Text('Filter Nudges', style: TextStyle(fontWeight: FontWeight.w700),),
-  //         content: Column(
-  //           mainAxisSize: MainAxisSize.min,
-  //           children: [
-  //             RadioListTile(
-  //               title: const Text('All Nudges', style: TextStyle(fontWeight: FontWeight.w600),),
-  //               value: 'all',
-  //               groupValue: _filter,
-  //               onChanged: (value) {
-  //                 setState(() {
-  //                   _filter = value!;
-  //                 });
-  //                 Navigator.of(context).pop();
-  //               },
-  //             ),
-  //             RadioListTile(
-  //               title: const Text('Upcoming', style: TextStyle(fontWeight: FontWeight.w600),),
-  //               value: 'upcoming',
-  //               groupValue: _filter,
-  //               onChanged: (value) {
-  //                 setState(() {
-  //                   _filter = value!;
-  //                 });
-  //                 Navigator.of(context).pop();
-  //               },
-  //             ),
-  //             RadioListTile(
-  //               title: const Text('Completed', style: TextStyle(fontWeight: FontWeight.w600),),
-  //               value: 'completed',
-  //               groupValue: _filter,
-  //               onChanged: (value) {
-  //                 setState(() {
-  //                   _filter = value!;
-  //                 });
-  //                 Navigator.of(context).pop();
-  //               },
-  //             ),
-  //           ],
-  //         ),
-  //       );
-  //     },
-  //   );
-  // }
+  void _handlePopupAction(String value, Nudge nudge, String userId) {
+    final nudgeService = NudgeService();
+    
+    switch (value) {
+      case 'view_contact':
+        // Navigate to contact details
+        // You'll need to fetch the contact first
+        break;
+      // case 'adjust_frequency':
+      //   _showFrequencyDialog(nudge, userId);
+      //   break;
+      case 'mark_complete':
+        nudgeService.markNudgeAsComplete(nudge.id, userId, nudge.contactId);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Nudge marked as complete')),
+        );
+        break;
+      case 'snooze':
+        _snoozeNudge(nudge, userId);
+        break;
+      case 'delete':
+        _deleteNudge(nudge, userId);
+        break;
+    }
+  }
 
-  void _showScheduleOptions(BuildContext context) async {
+    void _showScheduleOptions(BuildContext context) async {
     final authService = Provider.of<AuthService>(context, listen: false);
     final apiService = Provider.of<ApiService>(context, listen: false);
 
@@ -470,6 +747,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
       },
     );
   }
+
 
   void _snoozeNudge(Nudge nudge, String userId) {
     final nudgeService = NudgeService();
@@ -617,4 +895,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
       },
     );
   }
+
 }
+
+
+  

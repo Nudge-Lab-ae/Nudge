@@ -83,7 +83,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: () {
-              setState(() => _currentIndex = 1); // Switch to contacts view
+              setState(() {
+                _currentIndex = 1;
+                attentionFilter = false;
+                vipFilter = false;
+              }); // Switch to contacts view
             },
             tooltip: 'Search Contacts',
           ),
@@ -198,6 +202,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         setState(() {
           _currentIndex = index;
           hideFloatingActionButton = false;
+          attentionFilter = false;
+          vipFilter = false;
         });
       },
       items: [
