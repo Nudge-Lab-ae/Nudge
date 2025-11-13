@@ -267,7 +267,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(context, []),
+                  onPressed: () => Navigator.pop(context),
                   child: const Text('Cancel'),
                 ),
                 ElevatedButton.icon(
@@ -345,12 +345,13 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
       appBar: AppBar(
         title: Text(
           'NUDGE',
-          style: AppTextStyles.title3.copyWith(
+          style: AppTextStyles.title2.copyWith(
             color: const Color.fromRGBO(45, 161, 175, 1),
             fontFamily: 'RobotoMono',
           ),
         ),
         centerTitle: true,
+        surfaceTintColor: Colors.transparent,
         iconTheme: const IconThemeData(color: Color.fromRGBO(45, 161, 175, 1)),
         backgroundColor: Colors.white,
       ),
@@ -495,6 +496,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
                         Expanded(
                           child: OutlinedButton.icon(
                             onPressed: _isImporting ? null : _pickContactsAndImport,
+                            // iconAlignment: IconAlignment.end,
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
@@ -502,7 +504,10 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
                               ),
                               side: const BorderSide(color: Color.fromRGBO(45, 161, 175, 1)),
                             ),
-                            icon: const Icon(Icons.group_add, color: Color.fromRGBO(45, 161, 175, 1)),
+                            icon: Padding(
+                              padding: EdgeInsets.only(left: 5),
+                              child: Icon(Icons.group_add, color: Color.fromRGBO(45, 161, 175, 1)),
+                            ),
                             label: const Text(
                               'Pick & Import Selected',
                               style: TextStyle(

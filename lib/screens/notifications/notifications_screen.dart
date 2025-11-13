@@ -114,10 +114,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
 
   AppBar _buildAppBar() {
     return AppBar(
-      title: Text('Nudges', style: AppTextStyles.title3.copyWith(color: Colors.black)),
+      title: Text('Nudges', style: AppTextStyles.title3.copyWith(color: Colors.black, fontWeight: FontWeight.w800)),
       backgroundColor: Colors.white,
       iconTheme: const IconThemeData(color: Colors.black),
-      centerTitle: true,
+      leading: Center(),
+      leadingWidth: 0,
+      automaticallyImplyLeading: false,
+      centerTitle: false,
       actions: [
         if (!_showCalendar) 
           IconButton(

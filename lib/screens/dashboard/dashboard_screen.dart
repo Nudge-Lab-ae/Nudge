@@ -121,7 +121,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         // ];
         break;
         case 3: // Groups
-        title = 'Nudges & Reminders';
+        title = 'Nudges';
         // actions = [
         //   IconButton(
         //     icon: const Icon(Icons.add),
@@ -132,12 +132,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
       default:
         title = 'NUDGE';
     }
+    print(title);
 
     return AppBar(
-      title: Text(title, style: TextStyle(color: Color.fromRGBO(45, 161, 175, 1), fontSize: 22, fontFamily: 'Quicksand', fontWeight: FontWeight.bold)),
+      title: Text('NUDGE', style: TextStyle(color: Color.fromRGBO(45, 161, 175, 1), fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold)),
       backgroundColor: Colors.white,
       iconTheme: const IconThemeData(color: Color.fromRGBO(45, 161, 175, 1),),
       actions: actions,
+      elevation: 0,
+      surfaceTintColor: Colors.transparent,
       centerTitle: true,
     );
   }
@@ -326,14 +329,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
             leading: const Icon(Icons.exit_to_app),
             title: const Text('Logout', style: TextStyle(fontWeight: FontWeight.w600)),
             onTap: () async {
-              Navigator.pop(context);
-              await authService.signOut();
+              _showLogoutConfirmation(authService);
             },
           ),
         ],
       ),
     );
   }
+
+  void _showLogoutConfirmation(AuthService authService) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Logging Out', style: TextStyle(fontWeight: FontWeight.w800),),
+      content: const Text(
+        'Are you sure you want to log out of your account?',
+        style: TextStyle(fontWeight: FontWeight.w500),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () async {
+            Navigator.pop(context);
+            await authService.signOut();
+          },
+          style: TextButton.styleFrom(foregroundColor: Colors.red),
+          child: const Text('Confirm'),
+        ),
+      ],
+    ),
+  );
+}
+
 
   Widget _buildDashboardContent(BuildContext context, List<Contact> contacts, List<SocialGroup> groups, ApiService apiService) {
     // Filter contacts that need attention (not contacted in a while)
@@ -349,50 +379,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final vipContacts = contacts.where((contact) => contact.isVIP).toList();
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.only(left: 16.0, right: 16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Card(
-          //   color: Colors.blue[50],
-          //   child: Padding(
-          //     padding: const EdgeInsets.all(12.0),
-          //     child: Row(
-          //       children: [
-          //         const Icon(Icons.cloud_upload, color: Color.fromRGBO(45, 161, 175, 1)),
-          //         const SizedBox(width: 10),
-          //         Expanded(
-          //           child: Column(
-          //             crossAxisAlignment: CrossAxisAlignment.start,
-          //             children: [
-          //               const Text(
-          //                 'Contact Import Status',
-          //                 style: TextStyle(
-          //                   fontWeight: FontWeight.bold,
-          //                   fontSize: 16,
-          //                 ),
-          //               ),
-          //               const SizedBox(height: 4),
-          //               Text(
-          //                 '${contacts.length} contacts imported',
-          //                 style: const TextStyle(fontSize: 14),
-          //               ),
-          //             ],
-          //           ),
-          //         ),
-          //         IconButton(
-          //           icon: const Icon(Icons.import_contacts),
-          //           onPressed: () {
-          //             Navigator.pushNamed(context, '/import_contacts');
-          //           },
-          //           tooltip: 'Import More Contacts',
-          //         ),
-          //       ],
-          //     ),
-          //   ),
-          // ),
           
-          const SizedBox(height: 50),
+          const SizedBox(height: 10),
+          Text('Dashboard', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20)),
+          const SizedBox(height: 20),
           
           // Summary Cards
           Row(

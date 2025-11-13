@@ -103,11 +103,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  // Future<void> _cropImage() async {
-  //   if (_imageBytes == null) return;
+  Future<void> _cropImage() async {
+    if (_imageBytes == null) return;
     
-  //   _cropController.crop();
-  // }
+    _cropController.crop();
+  }
 
   void _cancelCrop() {
     setState(() {
@@ -310,7 +310,7 @@ void _showDeleteAccountConfirmation() {
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
-      title: const Text('Delete Account'),
+      title: const Text('Delete Account', style: TextStyle(fontWeight: FontWeight.w800),),
       content: const Text(
         'This action cannot be undone. All your data, contacts, groups, and settings will be permanently deleted.',
       ),
@@ -426,6 +426,20 @@ Future<void> _deleteAccount() async {
                     child: const Text('Cancel'),
                   ),
                 ),
+                SizedBox(
+                  width: 20,
+                ),
+                 Expanded(
+                  child: OutlinedButton(
+                    onPressed: _cropImage,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.blue,
+                      side: const BorderSide(color: Colors.blue),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: const Text('Crop Image'),
+                  ),
+                ),
               ],
             ),
           ),
@@ -484,7 +498,7 @@ Future<void> _deleteAccount() async {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('NUDGE', style: AppTextStyles.title3.copyWith(color: Color.fromRGBO(45, 161, 175, 1), fontFamily: 'RobotoMono'),),
+        title: Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Color.fromRGBO(45, 161, 175, 1), fontFamily: 'RobotoMono'),),
                   centerTitle: true,
                   iconTheme: IconThemeData(color: Color.fromRGBO(45, 161, 175, 1)),
                   backgroundColor: Colors.white,
@@ -492,6 +506,7 @@ Future<void> _deleteAccount() async {
         //   icon: const Icon(Icons.arrow_back, color: Colors.white),
         //   onPressed: () => Navigator.pop(context),
         // ),
+        surfaceTintColor: Colors.transparent,
       ),
       body: _isCropping 
           ? _buildProfilePictureSection()

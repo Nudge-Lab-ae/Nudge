@@ -25,6 +25,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
   String _searchQuery = '';
   Stream<List<SocialGroup>>? _groupsStream;
   Stream<List<Nudge>>? _nudgesStream;
+  List allContacts = [];
   final ConfettiController _confettiController = ConfettiController(duration: const Duration(seconds: 3));
   SortOption _currentSortOption = SortOption.name;
   bool _sortAscending = true;
@@ -209,7 +210,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                 children: [
                   // Sticky Header Section
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.only(left: 16, right: 16),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: const BorderRadius.only(
@@ -225,8 +226,16 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                       ],
                     ),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Search and Filter Row
+                         SizedBox(
+                          height: 10,
+                        ),
+                        Text('Social Groups', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20)),
+                        SizedBox(
+                          height: 10,
+                        ),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
@@ -288,7 +297,6 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                             return Consumer<List<Nudge>>(
                               builder: (context, nudges, child) {
                                 final sortedGroups = _sortGroups(groups);
-                
                                 final filteredGroups = sortedGroups.where((group) {
                                   return group.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
                                       group.description.toLowerCase().contains(_searchQuery.toLowerCase());
@@ -492,7 +500,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(10),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -553,7 +561,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                             ),
                           ),
                           Transform.scale(
-                            scale: 0.8,
+                            scale: 0.5,
                             child: Switch(
                               value: group.dateNudgesEnabled,
                               onChanged: (value) async {
@@ -594,10 +602,10 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                       const SizedBox(height: 8),
                       
                       // Progress bar for interaction frequency - only show if group has members
-                      if (members.isNotEmpty)
-                        _buildInteractionProgress(progress, textColor)
-                      else
-                        _buildEmptyProgress(textColor),
+                      // if (members.isNotEmpty)
+                      //   _buildInteractionProgress(progress, textColor)
+                      // else
+                      //   _buildEmptyProgress(textColor),
                     ],
                   ),
                 ),
@@ -608,55 +616,55 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
       );
     }
 
-  Widget _buildInteractionProgress(double progress, Color textColor) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Interaction Progress',
-          style: TextStyle(fontSize: 10, color: textColor.withOpacity(0.8)),
-        ),
-        const SizedBox(height: 4),
-        LinearProgressIndicator(
-          value: progress,
-          backgroundColor: textColor.withOpacity(0.2),
-          valueColor: AlwaysStoppedAnimation<Color>(textColor),
-          borderRadius: BorderRadius.circular(4),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          '${(progress * 100).toInt()}% complete',
-          style: TextStyle(fontSize: 10, color: textColor),
-        ),
-      ],
-    );
-  }
+  // Widget _buildInteractionProgress(double progress, Color textColor) {
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       Text(
+  //         'Interaction Progress',
+  //         style: TextStyle(fontSize: 10, color: textColor.withOpacity(0.8)),
+  //       ),
+  //       const SizedBox(height: 4),
+  //       LinearProgressIndicator(
+  //         value: progress,
+  //         backgroundColor: textColor.withOpacity(0.2),
+  //         valueColor: AlwaysStoppedAnimation<Color>(textColor),
+  //         borderRadius: BorderRadius.circular(4),
+  //       ),
+  //       const SizedBox(height: 4),
+  //       Text(
+  //         '${(progress * 100).toInt()}% complete',
+  //         style: TextStyle(fontSize: 10, color: textColor),
+  //       ),
+  //     ],
+  //   );
+  // }
 
-  Widget _buildEmptyProgress(Color textColor) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-       Container(
-          height: 40,
-          decoration: BoxDecoration(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Center(
-            child: Text(
-              'Add members to track progress',
-              style: TextStyle(
-                fontSize: 10,
-                color: textColor.withOpacity(0.6),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ),
+  // Widget _buildEmptyProgress(Color textColor) {
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //      Container(
+  //         height: 40,
+  //         decoration: BoxDecoration(
+  //           color: Colors.transparent,
+  //           borderRadius: BorderRadius.circular(4),
+  //         ),
+  //         child: Center(
+  //           child: Text(
+  //             'Add members to track progress',
+  //             style: TextStyle(
+  //               fontSize: 10,
+  //               color: textColor.withOpacity(0.6),
+  //               fontWeight: FontWeight.bold,
+  //             ),
+  //           ),
+  //         ),
+  //       ),
        
-      ],
-    );
-  }
+  //     ],
+  //   );
+  // }
 
   IconData _getGroupIcon(String groupName) {
     if (groupName.toLowerCase().contains('family')) return Icons.family_restroom;
@@ -1144,6 +1152,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                           Navigator.pop(context);
                           Navigator.pushNamed(context, '/contacts', arguments: {
                             'action': 'add_to_group',
+                            'contacts': allContacts, 
                             'groupId': group.id,
                             'groupName': group.name,
                             'groupPeriod': group.period,

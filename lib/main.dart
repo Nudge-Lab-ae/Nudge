@@ -364,11 +364,11 @@ class NudgeApp extends StatelessWidget {
         title: 'NUDGE',
         navigatorKey: navigatorKey,
         theme: ThemeData(
-          primaryColor: const Color.fromRGBO(45, 161, 175, 1),
+          primaryColor: Colors.white,
           colorScheme: ColorScheme.fromSwatch(
             primarySwatch: Colors.blue,
           ).copyWith(
-            secondary: const Color.fromRGBO(45, 161, 175, 1),
+            secondary: Colors.white
           ),
           fontFamily: 'Quicksand',
           textTheme: const TextTheme(

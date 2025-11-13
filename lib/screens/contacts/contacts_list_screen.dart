@@ -49,6 +49,9 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     final groupName = routeArgs?['groupName'];
     final groupPeriod = routeArgs?['groupPeriod'];
     final groupFrequency = routeArgs?['groupFrequency'];
+    // allcontacts = routeArgs?['contacts'];
+    
+     
     
     // If user is not logged in, show empty state
     if (user == null) {
@@ -312,7 +315,13 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     }
 
     List<Contact> _getVisibleContacts() {
-      final contacts = Provider.of<List<Contact>>(context, listen: false);
+      List<Contact> contacts = [];
+      if (widget.mode == 'add_to_group') {
+        contacts = totalContacts;
+      } else {
+        contacts = Provider.of<List<Contact>>(context, listen: false);
+      }
+       
       final filteredContacts = _applyFilter(contacts, _currentFilter);
       
       return filteredContacts.where((contact) {
