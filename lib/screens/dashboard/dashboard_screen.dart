@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:nudge/models/analytics.dart';
+import 'package:nudge/models/nudge.dart';
 import 'package:nudge/models/social_group.dart';
 import 'package:nudge/screens/contacts/contact_detail_screen.dart';
 import 'package:nudge/screens/contacts/contacts_list_screen.dart';
@@ -6,6 +8,7 @@ import 'package:nudge/screens/groups/groups_list_screen.dart';
 import 'package:nudge/screens/notifications/notifications_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/theme/text_styles.dart';
+import 'package:percent_indicator/percent_indicator.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../services/auth_service.dart';
@@ -365,6 +368,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 }
 
 
+  // Update the _buildDashboardContent method in dashboard_screen.dart
   Widget _buildDashboardContent(BuildContext context, List<Contact> contacts, List<SocialGroup> groups, ApiService apiService) {
     // Filter contacts that need attention (not contacted in a while)
     final needsAttention = contacts.where((contact) => 
@@ -378,246 +382,378 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // Filter VIP contacts
     final vipContacts = contacts.where((contact) => contact.isVIP).toList();
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.only(left: 16.0, right: 16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          
-          const SizedBox(height: 10),
-          Text('Dashboard', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20)),
-          const SizedBox(height: 20),
-          
-          // Summary Cards
-          Row(
+    return StreamBuilder<List<Nudge>>(
+      stream: NudgeService().getNudgesStream(Provider.of<AuthService>(context).currentUser!.uid),
+      builder: (context, nudgeSnapshot) {
+        final nudges = nudgeSnapshot.data ?? [];
+        final analytics = _calculateAnalytics(contacts, nudges);
+        final nudgePerformance = _calculateNudgePerformance(nudges);
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.only(left: 16.0, right: 16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildSummaryCard(
-                'Total Contacts',
-                contacts.length.toString(),
-                Icons.contacts,
-                true,
-                size.width*0.25,
-                onTap: () => setState(() => _currentIndex = 1),
-              ),
-              const SizedBox(width: 10),
-              _buildSummaryCard(
-                'Close Circle',
-                vipContacts.length.toString(),
-                Icons.star,
-                true,
-                size.width*0.22,
-                onTap: () {
-                  // Could implement VIP filter in contacts view
-                  setState(() {
-                     _currentIndex = 1;
-                     vipFilter = true;
-                     attentionFilter = false;
-                  });
-                },
-              ),
-              const SizedBox(width: 10),
-              _buildSummaryCard(
-                'Needs Care',
-                needsAttention.length.toString(),
-                Icons.notifications_active,
-                false,
-                size.width*0.22,
-                onTap: () {
-                  // Could implement needs attention filter in contacts view
-                   setState(() {
-                     _currentIndex = 1;
-                     attentionFilter = true;
-                     vipFilter = false;
-                  });
-                },
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 20),
-          
-          // Quick Actions
-          const Text(
-            'Quick Actions',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 10),
-          
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              ActionChip(
-                avatar: const Icon(Icons.person_add, size: 18, color: Color.fromRGBO(45, 161, 175, 1)),
-                label: Text('Add Contact', style: AppTextStyles.primary.copyWith(fontWeight: FontWeight.w600)),
-                onPressed: () {
-                  Navigator.pushNamed(context, '/add_contact');
-                },
-              ),
-              ActionChip(
-                avatar: const Icon(Icons.import_contacts, size: 18, color: Color.fromRGBO(45, 161, 175, 1)),
-                label: Text('Import Contacts', style: AppTextStyles.primary.copyWith(fontWeight: FontWeight.w600)),
-                onPressed: () {
-                  Navigator.pushNamed(context, '/import_contacts');
-                },
-              ),
-              ActionChip(
-                avatar: const Icon(Icons.group_add, size: 18, color: Color.fromRGBO(45, 161, 175, 1)),
-                label: Text('Create Group', style: AppTextStyles.primary.copyWith(fontWeight: FontWeight.w600)),
-                onPressed: () {
-                  setState(() {
-                     _currentIndex = 2;
-                     attentionFilter = false;
-                     vipFilter = false;
-                  });
-                },
-              ),
-              ActionChip(
-                avatar: const Icon(Icons.notifications_active, size: 18, color: Color.fromRGBO(45, 161, 175, 1)),
-                label: Text('Schedule Nudges', style: AppTextStyles.primary.copyWith(fontWeight: FontWeight.w600)),
-                onPressed: () async {
-                  final nudgeService = NudgeService();
-                  final authService = Provider.of<AuthService>(context, listen: false);
-                  nudgeService.showNudgeScheduleDialog(context, contacts, groups, authService.currentUser!.uid);
-                },
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 20),
-          
-          // VIP Contacts Section
-          if (vipContacts.isNotEmpty) ...[
-            Row(
-              children: [
-                const Text(
-                  'Close Circle',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const Spacer(),
-                TextButton(
-                  onPressed: () {
+              const SizedBox(height: 10),
+              Text('Dashboard', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20)),
+              const SizedBox(height: 20),
+              
+              Row(
+                children: [
+                  _buildSummaryCard(
+                    'Total Contacts',
+                    contacts.length.toString(),
+                    Icons.contacts,
+                    true,
+                    size.width*0.25,
+                    onTap: () => setState(() => _currentIndex = 1),
+                  ),
+                  const SizedBox(width: 10),
+                  _buildSummaryCard(
+                    'Close Circle',
+                    vipContacts.length.toString(),
+                    Icons.star,
+                    true,
+                    size.width*0.22,
+                    onTap: () {
                       setState(() {
-                     _currentIndex = 1;
-                     attentionFilter = false;
-                     vipFilter = true;
-                  });
-                  },
-                  child: const Text('View All', style: TextStyle(color: Color.fromRGBO(45, 161, 175, 1))),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            
-            SizedBox(
-              height: 120,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: vipContacts.length,
-                itemBuilder: (context, index) {
-                  final contact = vipContacts[index];
-                  return _buildContactCard(contact, apiService);
-                },
-              ),
-            ),
-            const SizedBox(height: 20),
-          ],
-          
-          // Needs Attention Section
-          if (needsAttention.isNotEmpty) ...[
-            Row(
-              children: [
-                const Text(
-                  'Needs Care',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const Spacer(),
-                TextButton(
-                  onPressed: () {
-                    setState(() => _currentIndex = 1);
-                  },
-                  child: const Text('View All'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            
-            Column(
-              children: needsAttention.take(3).map((contact) => 
-                ListTile(
-                  leading: CircleAvatar(
-                    backgroundImage: contact.imageUrl.isNotEmpty
-                        ? NetworkImage(contact.imageUrl)
-                        : null,
-                    child: contact.imageUrl.isEmpty 
-                        ? const Icon(Icons.person) 
-                        : null,
+                        _currentIndex = 1;
+                        vipFilter = true;
+                        attentionFilter = false;
+                      });
+                    },
                   ),
-                  title: Text(contact.name),
-                  subtitle: Text(
-                    'Last contacted: ${DateFormat('MMM d, y').format(contact.lastContacted)}',
+                  const SizedBox(width: 10),
+                  _buildSummaryCard(
+                    'Needs Care',
+                    needsAttention.length.toString(),
+                    Icons.notifications_active,
+                    false,
+                    size.width*0.22,
+                    onTap: () {
+                      setState(() {
+                        _currentIndex = 1;
+                        attentionFilter = true;
+                        vipFilter = false;
+                      });
+                    },
                   ),
-                  trailing: const VIPBadge(),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ContactDetailScreen(contact: contact)
-                      ),
-                    );
-                  },
-                )
-              ).toList(),
-            ),
-            
-            if (needsAttention.length > 3)
-              TextButton(
-                onPressed: () {
-                  setState(() => _currentIndex = 1);
-                },
-                child: const Text('View All Contacts Needing Attention'),
+                ],
               ),
-            
-            const SizedBox(height: 20),
-          ],
-          
-          // Analytics Preview
-          if (contacts.isNotEmpty) ...[
-            const Text(
-              'Relationship Insights',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            
-            // Simple analytics preview
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              
+              const SizedBox(height: 20),
+              
+              // Quick Actions
+              const Text(
+                'Quick Actions',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  ActionChip(
+                    avatar: const Icon(Icons.person_add, size: 18, color: Color.fromRGBO(45, 161, 175, 1)),
+                    label: Text('Add Contact', style: AppTextStyles.primary.copyWith(fontWeight: FontWeight.w600)),
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/add_contact');
+                    },
+                  ),
+                  ActionChip(
+                    avatar: const Icon(Icons.import_contacts, size: 18, color: Color.fromRGBO(45, 161, 175, 1)),
+                    label: Text('Import Contacts', style: AppTextStyles.primary.copyWith(fontWeight: FontWeight.w600)),
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/import_contacts');
+                    },
+                  ),
+                  ActionChip(
+                    avatar: const Icon(Icons.group_add, size: 18, color: Color.fromRGBO(45, 161, 175, 1)),
+                    label: Text('Create Group', style: AppTextStyles.primary.copyWith(fontWeight: FontWeight.w600)),
+                    onPressed: () {
+                      setState(() {
+                        _currentIndex = 2;
+                        attentionFilter = false;
+                        vipFilter = false;
+                      });
+                    },
+                  ),
+                  ActionChip(
+                    avatar: const Icon(Icons.notifications_active, size: 18, color: Color.fromRGBO(45, 161, 175, 1)),
+                    label: Text('Schedule Nudges', style: AppTextStyles.primary.copyWith(fontWeight: FontWeight.w600)),
+                    onPressed: () async {
+                      final nudgeService = NudgeService();
+                      final authService = Provider.of<AuthService>(context, listen: false);
+                      nudgeService.showNudgeScheduleDialog(context, contacts, groups, authService.currentUser!.uid);
+                    },
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 20),
+              
+              // VIP Contacts Section
+              if (vipContacts.isNotEmpty) ...[
+                Row(
                   children: [
                     const Text(
-                      'Contact Distribution',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      'Close Circle',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
-                    const SizedBox(height: 10),
-                    // Simple chart or stats preview
-                    ..._buildContactStats(contacts),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _currentIndex = 1;
+                          attentionFilter = false;
+                          vipFilter = true;
+                        });
+                      },
+                      child: const Text('View All', style: TextStyle(color: Color.fromRGBO(45, 161, 175, 1))),
+                    ),
                   ],
                 ),
-              ),
+                const SizedBox(height: 10),
+                
+                SizedBox(
+                  height: 120,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: vipContacts.length,
+                    itemBuilder: (context, index) {
+                      final contact = vipContacts[index];
+                      return _buildContactCard(contact, apiService);
+                    },
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+              
+              // Needs Attention Section
+              if (needsAttention.isNotEmpty) ...[
+                Row(
+                  children: [
+                    const Text(
+                      'Needs Care',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () {
+                        setState(() => _currentIndex = 1);
+                      },
+                      child: const Text('View All'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                
+                Column(
+                  children: needsAttention.take(3).map((contact) => 
+                    ListTile(
+                      leading: CircleAvatar(
+                        backgroundImage: contact.imageUrl.isNotEmpty
+                            ? NetworkImage(contact.imageUrl)
+                            : null,
+                        child: contact.imageUrl.isEmpty 
+                            ? const Icon(Icons.person) 
+                            : null,
+                      ),
+                      title: Text(contact.name),
+                      subtitle: Text(
+                        'Last contacted: ${DateFormat('MMM d, y').format(contact.lastContacted)}',
+                      ),
+                      trailing: const VIPBadge(),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ContactDetailScreen(contact: contact)
+                          ),
+                        );
+                      },
+                    )
+                  ).toList(),
+                ),
+                
+                if (needsAttention.length > 3)
+                  TextButton(
+                    onPressed: () {
+                      setState(() => _currentIndex = 1);
+                    },
+                    child: const Text('View All Contacts Needing Attention'),
+                  ),
+                
+                const SizedBox(height: 20),
+                  // Relationship Summary Section (moved from Analytics)
+              _buildSummarySection(analytics, contacts.length),
+              const SizedBox(height: 20),
+              
+              // Nudge Performance Section (moved from Analytics)
+              _buildNudgePerformanceSection(nudgePerformance),
+              const SizedBox(height: 20),
+              
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Add these methods to the _DashboardScreenState class
+  Widget _buildSummarySection(Analytics analytics, int totalContacts) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Relationship Summary',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 10),
-            TextButton(
-              onPressed: () {
-                Navigator.pushNamed(context, '/analytics');
-              },
-              child: const Text('View Detailed Analytics', style: TextStyle(color: Color.fromRGBO(45, 161, 175, 1))),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildStatCard('Total Contacts', totalContacts.toString(), Icons.people),
+                _buildStatCard('Close Circle', analytics.vipContacts.toString(), Icons.star),
+                _buildStatCard('Needs Care', analytics.contactsNeedingAttention.toString(), Icons.notifications_active),
+              ],
             ),
           ],
-        ],
+        ),
       ),
     );
+  }
+
+  Widget _buildStatCard(String title, String value, IconData icon) {
+    return Column(
+      children: [
+        Icon(icon, size: 30, color: const Color.fromRGBO(45, 161, 175, 1)),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        Text(
+          title,
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNudgePerformanceSection(Map<String, int> nudgePerformance) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Nudge Performance',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildNudgeStat('Scheduled', nudgePerformance['scheduled'] ?? 0, Icons.schedule),
+                _buildNudgeStat('Completed', nudgePerformance['completed'] ?? 0, Icons.check_circle),
+                _buildNudgeStat('Missed', nudgePerformance['missed'] ?? 0, Icons.not_interested),
+              ],
+            ),
+            const SizedBox(height: 16),
+            LinearPercentIndicator(
+              animation: true,
+              lineHeight: 20.0,
+              animationDuration: 1000,
+              percent: (nudgePerformance['completionRate'] ?? 0) / 100,
+              center: Text("${(nudgePerformance['completionRate'] ?? 0).toStringAsFixed(1)}%", 
+                  style: const TextStyle(color: Colors.white, fontSize: 12)),
+              barRadius: const Radius.circular(10),
+              progressColor: _getProgressColor(nudgePerformance['completionRate']?.toDouble() ?? 0),
+              backgroundColor: Colors.grey[300],
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Nudge Completion Rate',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNudgeStat(String title, int value, IconData icon) {
+    return Column(
+      children: [
+        Icon(icon, size: 30, color: const Color.fromRGBO(45, 161, 175, 1)),
+        const SizedBox(height: 8),
+        Text(
+          value.toString(),
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        Text(
+          title,
+          style: const TextStyle(fontSize: 12),
+        ),
+      ],
+    );
+  }
+
+  Color _getProgressColor(double percentage) {
+    if (percentage >= 80) return Colors.green;
+    if (percentage >= 60) return const Color.fromRGBO(45, 161, 175, 1);
+    if (percentage >= 40) return Colors.orange;
+    return Colors.red;
+  }
+
+  Analytics _calculateAnalytics(List<Contact> contacts, List<Nudge> nudges) {
+    final vipCount = contacts.where((c) => c.isVIP).length;
+    
+    // Calculate contacts needing attention (not contacted in the last 30 days)
+    final needsAttention = contacts.where((c) => 
+      c.lastContacted.isBefore(DateTime.now().subtract(const Duration(days: 30)))
+    ).length;
+    
+    return Analytics(
+      totalContacts: contacts.length,
+      vipContacts: vipCount,
+      completedNudges: nudges.where((nudge) => nudge.isCompleted).length,
+      contactsNeedingAttention: needsAttention,
+      contactsByType: {},
+      relationshipHealth: 0,
+      nudgeCompletionRate: 0,
+      weeklyConnections: 0,
+      monthlyCatchups: 0,
+      vipInteractions: 0,
+      newConnections: 0,
+      lastUpdated: DateTime.now(),
+    );
+  }
+
+  Map<String, int> _calculateNudgePerformance(List<Nudge> nudges) {
+    final scheduled = nudges.length;
+    final completed = nudges.where((nudge) => nudge.isCompleted).length;
+    final missed = nudges.where((nudge) => !nudge.isCompleted && nudge.scheduledTime.isBefore(DateTime.now())).length;
+    final completionRate = scheduled == 0 ? 0 : (completed / scheduled * 100).round();
+    
+    return {
+      'scheduled': scheduled,
+      'completed': completed,
+      'missed': missed,
+      'completionRate': completionRate,
+    };
   }
 
   Widget _buildSummaryCard(String title, String value, IconData icon, bool primary, double width, {VoidCallback? onTap}) {
@@ -698,25 +834,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  List<Widget> _buildContactStats(List<Contact> contacts) {
-    final typeCounts = <String, int>{};
-    for (var contact in contacts) {
-      typeCounts[contact.connectionType] = (typeCounts[contact.connectionType] ?? 0) + 1;
-    }
+  // List<Widget> _buildContactStats(List<Contact> contacts) {
+  //   final typeCounts = <String, int>{};
+  //   for (var contact in contacts) {
+  //     typeCounts[contact.connectionType] = (typeCounts[contact.connectionType] ?? 0) + 1;
+  //   }
     
-    return typeCounts.entries.map((entry) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4.0),
-        child: Row(
-          children: [
-            Text(entry.key, style: TextStyle(fontWeight: FontWeight.w700)),
-            const Spacer(),
-            Text('${entry.value}'),
-            const SizedBox(width: 4),
-            Text('(${((entry.value / contacts.length) * 100).toStringAsFixed(1)}%)'),
-          ],
-        ),
-      );
-    }).toList();
-  }
+  //   return typeCounts.entries.map((entry) {
+  //     return Padding(
+  //       padding: const EdgeInsets.symmetric(vertical: 4.0),
+  //       child: Row(
+  //         children: [
+  //           Text(entry.key, style: TextStyle(fontWeight: FontWeight.w700)),
+  //           const Spacer(),
+  //           Text('${entry.value}'),
+  //           const SizedBox(width: 4),
+  //           Text('(${((entry.value / contacts.length) * 100).toStringAsFixed(1)}%)'),
+  //         ],
+  //       ),
+  //     );
+  //   }).toList();
+  // }
 }

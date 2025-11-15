@@ -9,24 +9,20 @@ class User {
   bool admin;
   String description;
   DateTime createdAt;
-  // Map<String, dynamic> defaultFrequencies;
   final Map<String, dynamic>? goals;
   final List<Map<String, dynamic>>? groups;
   final List<Map<String, dynamic>> nudges;
   final bool profileCompleted;
   final bool weeklyDigestEnabled;
-  // final List<Map<String, dynamic>> contacts; //
 
   User({
     required this.id,
     required this.email,
     required this.username,
     required this.createdAt,
-    // required this.defaultFrequencies,
     required this.nudges,
     required this.goals,
     required this.groups,
-    // required this.contacts,
     required this.bio,
     required this.description,
     required this.phoneNumber,
@@ -36,17 +32,50 @@ class User {
     required this.weeklyDigestEnabled,
   });
 
+  // Method to get default values for all fields
+  static Map<String, dynamic> get defaultValues {
+    return {
+      'id': '',
+      'email': '',
+      'username': '',
+      'createdAt': DateTime.now().millisecondsSinceEpoch,
+      'nudges': [],
+      'goals': {},
+      'groups': [
+        {"name": "Family", "id": "Family", "period": "Monthly", "frequency": 4, "colorCode": "#4FC3F7"},
+        {"name": "Friend", "id": "Friend", "period": "Quarterly", "frequency": 7, "colorCode": "#FF6F61"},
+        {"name": "Client", "id": "Client", "period": "Monthly", "frequency": 2, "colorCode": "#81C784"},
+        {"name": "Colleague", "id": "Colleague", "period": "Annually", "frequency": 4, "colorCode": "#FFC107"},
+        {"name": "Mentor", "id": "Mentor", "period": "Annually", "frequency": 2, "colorCode": "#607D8B"},
+      ],
+      'bio': '',
+      'description': '',
+      'phoneNumber': '',
+      'photoUrl': '',
+      'profileCompleted': false,
+      'admin': false,
+      'weeklyDigestEnabled': false,
+    };
+  }
+
+  // Method to check if user data is complete
+  bool get hasCompleteData {
+    return id.isNotEmpty &&
+        email.isNotEmpty &&
+        username.isNotEmpty &&
+        goals != null &&
+        groups != null;
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'email': email,
       'username': username,
       'createdAt': createdAt.millisecondsSinceEpoch,
-      // 'defaultFrequencies': defaultFrequencies,
       'nudges': nudges,
       'goals': goals ?? {},
-      'groups': groups,
-      // 'contacts': contacts,
+      'groups': groups ?? User.defaultValues['groups'],
       'bio': bio,
       'description': description,
       'phoneNumber': phoneNumber,
@@ -58,23 +87,26 @@ class User {
   }
 
   factory User.fromMap(Map<String, dynamic> map) {
+    // Use default values for any missing fields
+    final defaultValues = User.defaultValues;
+    
     return User(
-      id: map['id'],
-      email: map['email'],
-      username: map['username'],
-      createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt']),
-      // defaultFrequencies: Map<String, String>.from(map['defaultFrequencies']),
-      nudges: List<Map<String, dynamic>>.from(map['nudges'] ?? {}),
-      goals: Map<String, dynamic>.from(map['goals'] ?? {}),
-      groups:  List<Map<String, dynamic>>.from(map['groups'] ?? {}),
-      // contacts: List<Map<String, dynamic>>.from(map['contacts'] ?? []),
-      bio: map['bio'],
-      description: map['description'],
-      phoneNumber: map['phoneNumber'],
-      photoUrl: map['photoUrl'],
-      profileCompleted: map['profileCompleted'],
-      admin: map['admin'],
-      weeklyDigestEnabled: map['weeklyDigestEnabled']
+      id: map['id'] ?? defaultValues['id']!,
+      email: map['email'] ?? defaultValues['email']!,
+      username: map['username'] ?? defaultValues['username']!,
+      createdAt: map['createdAt'] != null 
+          ? DateTime.fromMillisecondsSinceEpoch(map['createdAt'])
+          : defaultValues['createdAt']!,
+      nudges: List<Map<String, dynamic>>.from(map['nudges'] ?? defaultValues['nudges']!),
+      goals: Map<String, dynamic>.from(map['goals'] ?? defaultValues['goals']!),
+      groups: List<Map<String, dynamic>>.from(map['groups'] ?? defaultValues['groups']!),
+      bio: map['bio'] ?? defaultValues['bio']!,
+      description: map['description'] ?? defaultValues['description']!,
+      phoneNumber: map['phoneNumber'] ?? defaultValues['phoneNumber']!,
+      photoUrl: map['photoUrl'] ?? defaultValues['photoUrl']!,
+      profileCompleted: map['profileCompleted'] ?? defaultValues['profileCompleted']!,
+      admin: map['admin'] ?? defaultValues['admin']!,
+      weeklyDigestEnabled: map['weeklyDigestEnabled'] ?? defaultValues['weeklyDigestEnabled']!,
     );
   }
 }

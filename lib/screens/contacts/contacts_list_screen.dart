@@ -61,15 +61,22 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     return Scaffold(
       appBar: !widget.showAppBar
       ? null
-      :_isSelecting
+      /* :_isSelecting
           ? _buildSelectionAppBar(context, groupName)
-          : _buildNormalAppBar(context, isAddToGroupMode, groupName),
+           */: _buildNormalAppBar(context, isAddToGroupMode, groupName),
       body: GestureDetector(
     onTap: _isSelecting ? _exitSelectionMode : null,
     behavior: HitTestBehavior.opaque,
     child: Column(
         children: [
           // Add selection controls here
+          isAddToGroupMode
+          ?Text('Add to $groupName', style: AppTextStyles.title3.copyWith(color: Colors.black))
+          :Center(),
+          isAddToGroupMode
+          ?SizedBox(
+            height: 10,
+          ):Center(),
           _buildSelectionControls(),
           Expanded(
             child: StreamProvider<List<Contact>>(
@@ -202,11 +209,12 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
 
   AppBar _buildNormalAppBar(BuildContext context, bool isAddToGroupMode, String? groupName) {
     return AppBar(
-      iconTheme: const IconThemeData(color: Colors.white),
+      iconTheme: const IconThemeData(color: Color.fromRGBO(45, 161, 175, 1)),
       title: isAddToGroupMode 
-          ? Text('Add to $groupName', style: AppTextStyles.button.copyWith(color: Colors.white))
-          : Text(_getTitle(_currentFilter), style: AppTextStyles.button.copyWith(color: Colors.white)),
-      backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+          ? Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Color.fromRGBO(45, 161, 175, 1), fontFamily: 'RobotoMono'))
+          : Text(_getTitle(_currentFilter), style: AppTextStyles.button.copyWith(color: Color.fromRGBO(45, 161, 175, 1))),
+      backgroundColor: Colors.white,
+      surfaceTintColor: Colors.transparent,
       actions: [
         if (!isAddToGroupMode) // Only show bulk actions in normal mode
           PopupMenuButton<String>(
@@ -247,49 +255,49 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     );
   }
 
-  PreferredSizeWidget _buildSelectionAppBar(BuildContext context, String? groupName) {
-    String title;
-    if (_selectionMode == 'add_to_group') {
-      title = '${_selectedContacts.length} selected${groupName != null ? ' for $groupName' : ''}';
-    } else {
-      title = '${_selectedContacts.length} selected for deletion';
-    }
+  // PreferredSizeWidget _buildSelectionAppBar(BuildContext context, String? groupName) {
+  //   String title;
+  //   if (_selectionMode == 'add_to_group') {
+  //     title = '${_selectedContacts.length} selected${groupName != null ? ' for $groupName' : ''}';
+  //   } else {
+  //     title = '${_selectedContacts.length} selected for deletion';
+  //   }
 
-    return AppBar(
-      backgroundColor: _selectionMode == 'delete' ? Colors.red : const Color.fromRGBO(45, 161, 175, 1),
-      iconTheme: const IconThemeData(color: Colors.white),
-      title: Text(
-        title,
-        style: AppTextStyles.button.copyWith(color: Colors.white),
-      ),
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back),
-        onPressed: _exitSelectionMode,
-      ),
-      actions: [
-        // Select All / Deselect All button
-        IconButton(
-          icon: Icon(_selectedContacts.length == _getVisibleContactsCount() ? Icons.deselect : Icons.select_all),
-          onPressed: _toggleSelectAll,
-          tooltip: _selectedContacts.length == _getVisibleContactsCount() ? 'Deselect All' : 'Select All',
-        ),
+  //   return AppBar(
+  //     backgroundColor: _selectionMode == 'delete' ? Colors.red : const Color.fromRGBO(45, 161, 175, 1),
+  //     iconTheme: const IconThemeData(color: Colors.white),
+  //     title: Text(
+  //       title,
+  //       style: AppTextStyles.button.copyWith(color: Colors.white),
+  //     ),
+  //     leading: IconButton(
+  //       icon: const Icon(Icons.arrow_back),
+  //       onPressed: _exitSelectionMode,
+  //     ),
+  //     actions: [
+  //       // Select All / Deselect All button
+  //       IconButton(
+  //         icon: Icon(_selectedContacts.length == _getVisibleContactsCount() ? Icons.deselect : Icons.select_all),
+  //         onPressed: _toggleSelectAll,
+  //         tooltip: _selectedContacts.length == _getVisibleContactsCount() ? 'Deselect All' : 'Select All',
+  //       ),
         
-        // Cancel selection button
-        IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: _exitSelectionMode,
-          tooltip: 'Cancel Selection',
-        ),
+  //       // Cancel selection button
+  //       IconButton(
+  //         icon: const Icon(Icons.close),
+  //         onPressed: _exitSelectionMode,
+  //         tooltip: 'Cancel Selection',
+  //       ),
         
-        if (_selectionMode == 'delete' && _selectedContacts.isNotEmpty)
-          IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: () => _deleteSelectedContacts(context),
-            tooltip: 'Delete Selected',
-          ),
-      ],
-    );
-  }
+  //       if (_selectionMode == 'delete' && _selectedContacts.isNotEmpty)
+  //         IconButton(
+  //           icon: const Icon(Icons.delete),
+  //           onPressed: () => _deleteSelectedContacts(context),
+  //           tooltip: 'Delete Selected',
+  //         ),
+  //     ],
+  //   );
+  // }
 
       void _exitSelectionMode() {
       setState(() {

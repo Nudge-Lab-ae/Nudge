@@ -110,19 +110,76 @@ class ApiService {
   }
 
   // User methods
+  Future<void> ensureUserDocumentCompleteness(String userId) async {
+    try {
+      final userDoc = await _usersCollection.doc(userId).get();
+      
+      if (userDoc.exists) {
+        final userData = userDoc.data() as Map<String, dynamic>;
+        final defaultValues = app_user.User.defaultValues;
+        
+        // Check for missing fields and prepare updates
+        final updates = <String, dynamic>{};
+        bool needsUpdate = false;
+        
+        // Check each field and set default values if missing
+        defaultValues.forEach((key, defaultValue) {
+          if (!userData.containsKey(key) || userData[key] == null) {
+            updates[key] = defaultValue;
+            needsUpdate = true;
+            print('Adding missing field: $key with value: $defaultValue');
+          }
+        });
+        
+        // Special handling for nested objects that might be partially missing
+        if (userData['groups'] == null || 
+            (userData['groups'] is List && (userData['groups'] as List).isEmpty)) {
+          updates['groups'] = defaultValues['groups'];
+          needsUpdate = true;
+          print('Adding default groups');
+        }
+        
+        if (userData['goals'] == null) {
+          updates['goals'] = defaultValues['goals'];
+          needsUpdate = true;
+          print('Adding default goals');
+        }
+        
+        if (userData['nudges'] == null) {
+          updates['nudges'] = defaultValues['nudges'];
+          needsUpdate = true;
+          print('Adding default nudges');
+        }
+        
+        // Update the document if any fields are missing
+        if (needsUpdate) {
+          await _usersCollection.doc(userId).update(updates);
+          print('User document updated with missing fields for user: $userId');
+        } else {
+          print('User document is complete for user: $userId');
+        }
+      }
+    } catch (e) {
+      print('Error ensuring user document completeness: $e');
+      // Don't throw here, as we don't want to block the app if this fails
+    }
+  }
+
+  // Update the existing getUser method to ensure document completeness
   Future<app_user.User> getUser() async {
     try {
       final currentUser = _auth.currentUser;
       if (currentUser == null) throw Exception('No user logged in');
-      print('stage 1');
+      
+      // First, ensure the document has all required fields
+      await ensureUserDocumentCompleteness(currentUser.uid);
+      
       final doc = await _usersCollection.doc(currentUser.uid).get();
-      print('stage 2');
+      
       if (doc.exists) {
-        print('stage 3');
         return app_user.User.fromMap(doc.data() as Map<String, dynamic>);
       } else {
         // Create user document if it doesn't exist
-        print('stage 4');
         final newUser = app_user.User(
           id: currentUser.uid,
           admin: false,
@@ -130,15 +187,14 @@ class ApiService {
           username: currentUser.displayName ?? currentUser.email!.split('@')[0],
           createdAt: DateTime.now(),
           weeklyDigestEnabled: false,
-         groups: [
-          {"name": "Family", "id": "Family", "period": "Monthly", "frequency": 4, "colorCode": "#4FC3F7"},
-          {"name": "Friend",  "id": "Friend", "period": "Quarterly", "frequency": 7, "colorCode": "#FF6F61"},
-          {"name": "Client",  "id": "Client", "period": "Monthly", "frequency": 2, "colorCode": "#81C784"},
-          {"name": "Colleague",  "id": "Colleague", "period": "Annually", "frequency": 4, "colorCode": "#FFC107"},
-          {"name": "Mentor",  "id": "Mentor", "period": "Annually", "frequency": 2, "colorCode": "#607D8B"},
-        ],
+          groups: [
+            {"name": "Family", "id": "Family", "period": "Monthly", "frequency": 4, "colorCode": "#4FC3F7"},
+            {"name": "Friend", "id": "Friend", "period": "Quarterly", "frequency": 7, "colorCode": "#FF6F61"},
+            {"name": "Client", "id": "Client", "period": "Monthly", "frequency": 2, "colorCode": "#81C784"},
+            {"name": "Colleague", "id": "Colleague", "period": "Annually", "frequency": 4, "colorCode": "#FFC107"},
+            {"name": "Mentor", "id": "Mentor", "period": "Annually", "frequency": 2, "colorCode": "#607D8B"},
+          ],
           goals: {},
-          // contacts: [],
           nudges: [],
           phoneNumber: '',
           photoUrl: '',
@@ -146,6 +202,7 @@ class ApiService {
           bio: '',
           profileCompleted: false,
         );
+        
         await _usersCollection.doc(currentUser.uid).set(newUser.toMap());
         return newUser;
       }

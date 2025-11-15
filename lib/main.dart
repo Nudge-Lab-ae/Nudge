@@ -430,11 +430,17 @@ class AuthWrapper extends StatefulWidget {
   State<AuthWrapper> createState() => _AuthWrapperState();
 }
 
+// Update the _AuthWrapperState in lib/main.dart
+
 class _AuthWrapperState extends State<AuthWrapper> {
+  bool _isCheckingUserData = false;
+  String _checkingStatus = '';
+
   @override
   void initState() {
     super.initState();
     _storeFCMTokenIfNeeded();
+    checkUser();
   }
 
   Future<void> _storeFCMTokenIfNeeded() async {
@@ -449,19 +455,53 @@ class _AuthWrapperState extends State<AuthWrapper> {
     }
   }
 
+  checkUser() async{
+    final apiService = ApiService();
+    user.User thisUser = await apiService.getUser();
+    _ensureUserDataCompleteness(thisUser.id);
+  }
+
+  Future<void> _ensureUserDataCompleteness(String userId) async {
+    if (_isCheckingUserData) return;
+    
+    setState(() {
+      _isCheckingUserData = true;
+      _checkingStatus = 'Checking user data...';
+    });
+
+    try {
+      final apiService = ApiService();
+      
+      setState(() {
+        _checkingStatus = 'Ensuring data completeness...';
+      });
+      
+      // This will check and update any missing fields in the user document
+      await apiService.ensureUserDocumentCompleteness(userId);
+      print('finished checking');
+      setState(() {
+        _isCheckingUserData = false;
+        _checkingStatus = '';
+      });
+      
+    } catch (e) {
+      print('Error ensuring user data completeness: $e');
+      setState(() {
+        _isCheckingUserData = false;
+        _checkingStatus = 'Data check completed with warnings';
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final firebaseUser = context.watch<User?>();
-    
     if (firebaseUser != null) {
       return FutureBuilder<user.User>(
         future: _getUserProfile(firebaseUser.uid),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Scaffold(
-              backgroundColor: Colors.black,
-              body: Center(/* child: CircularProgressIndicator() */),
-            );
+            return _buildLoadingScreen();
           }
           
           if (snapshot.hasError) {
@@ -497,8 +537,46 @@ class _AuthWrapperState extends State<AuthWrapper> {
     }
   }
 
+  Widget _buildLoadingScreen() {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color.fromRGBO(45, 161, 175, 1)),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              _checkingStatus.isNotEmpty ? _checkingStatus : 'Loading...',
+              style: const TextStyle(
+                color: Color.fromRGBO(45, 161, 175, 1),
+                fontSize: 16,
+              ),
+            ),
+            if (_isCheckingUserData) ...[
+              const SizedBox(height: 10),
+              const Text(
+                'This may take a moment...',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<user.User> _getUserProfile(String userId) async {
     final apiService = ApiService();
+    
+    // First ensure the user document has all required fields
+    
+    // Then get the user data
     user.User thisUser = await apiService.getUser();
     return thisUser;
   }

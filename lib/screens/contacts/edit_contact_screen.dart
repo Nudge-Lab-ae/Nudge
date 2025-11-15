@@ -337,7 +337,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(
-          title: Text('NUDGE', style: AppTextStyles.title3.copyWith(color: Color.fromRGBO(45, 161, 175, 1), fontFamily: 'RobotoMono'),),
+          title: Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Color.fromRGBO(45, 161, 175, 1), fontFamily: 'RobotoMono'),),
           centerTitle: true,
           iconTheme: IconThemeData(color: Color.fromRGBO(45, 161, 175, 1)),
           backgroundColor: Colors.white,
@@ -353,7 +353,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
           builder: (context, groups, child) {
             return Scaffold(
       appBar: AppBar(
-        title: Text('NUDGE', style: AppTextStyles.title3.copyWith(color: Color.fromRGBO(45, 161, 175, 1), fontFamily: 'RobotoMono'),),
+        title: Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Color.fromRGBO(45, 161, 175, 1), fontFamily: 'RobotoMono'),),
         centerTitle: true,
         iconTheme: IconThemeData(color: Color.fromRGBO(45, 161, 175, 1)),
         backgroundColor: Colors.white,

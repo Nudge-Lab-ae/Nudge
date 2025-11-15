@@ -30,6 +30,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   bool _showCalendar = false;
+  String _statsTimeFrame = 'week'; // 'day', 'week', 'month'
+
+  // Dunbar's Principle thresholds
+  static const int weeklyThreshold = 20;
+  static const int monthlyThreshold = 80;
 
   @override
   void initState() {
@@ -94,6 +99,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
         final thisWeekNudges = _getNudgesForPeriod(upcomingNudges, 'thisWeek');
         final nextWeekNudges = _getNudgesForPeriod(upcomingNudges, 'nextWeek');
 
+        // Calculate stats for current time frame
+        final stats = _calculateNudgeStats(allNudges, _statsTimeFrame);
+        final showWarning = _shouldShowWarning(stats['scheduledCount'] ?? 0, _statsTimeFrame);
+
         return Scaffold(
           appBar: _buildAppBar(),
           body: _showCalendar 
@@ -104,7 +113,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
                   nextWeekNudges, 
                   completedNudges, 
                   overdueNudges, 
-                  user.uid
+                  user.uid,
+                  stats,
+                  showWarning,
                 ),
           floatingActionButton: _buildCalendarToggle(),
         );
@@ -112,7 +123,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
     );
   }
 
-  AppBar _buildAppBar() {
+AppBar _buildAppBar() {
     return AppBar(
       title: Text('Nudges', style: AppTextStyles.title3.copyWith(color: Colors.black, fontWeight: FontWeight.w800)),
       backgroundColor: Colors.white,
@@ -150,7 +161,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
   }
 
   Widget _buildCalendarView(List<Nudge> allNudges, String userId) {
-    // Group nudges by date for calendar
     final events = LinkedHashMap<DateTime, List<Nudge>>(
       equals: isSameDay,
       hashCode: (DateTime key) => key.day * 1000000 + key.month * 10000 + key.year,
@@ -207,7 +217,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
     List<Nudge> nextWeekNudges,
     List<Nudge> completedNudges,
     List<Nudge> overdueNudges,
-    String userId
+    String userId,
+    Map<String, int> stats,
+    bool showWarning,
   ) {
     List<Nudge> displayedNudges;
     
@@ -224,6 +236,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
 
     return Column(
       children: [
+        // Stats Header with Time Frame Filter
+        _buildStatsHeader(stats, showWarning),
+        
+        // Warning Banner if needed
+        if (showWarning) _buildWarningBanner(stats['scheduledCount'] ?? 0, _statsTimeFrame),
+        
         // Interactive Filter Chips
         _buildFilterChips(todayNudges.length + thisWeekNudges.length + nextWeekNudges.length, 
                          completedNudges.length, overdueNudges.length),
@@ -235,6 +253,130 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
               : _buildNudgeList(displayedNudges, userId, showSections: false),
         ),
       ],
+    );
+  }
+
+  Widget _buildStatsHeader(Map<String, int> stats, bool showWarning) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      color: Colors.grey[50],
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Scheduled Nudges',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              DropdownButton<String>(
+                value: _statsTimeFrame,
+                icon: const Icon(Icons.arrow_drop_down, size: 20),
+                underline: Container(height: 0),
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _statsTimeFrame = newValue!;
+                  });
+                },
+                items: <String>['day', 'week', 'month'].map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(
+                      value == 'day' ? 'Today' : 
+                      value == 'week' ? 'This Week' : 'This Month',
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildStatItem('Scheduled', stats['scheduledCount'] ?? 0, 
+                  showWarning ? Colors.orange : const Color.fromRGBO(45, 161, 175, 1)),
+              _buildStatItem('Completed', stats['completedCount'] ?? 0, Colors.green),
+              _buildStatItem('Total', (stats['scheduledCount'] ?? 0) + (stats['completedCount'] ?? 0), Colors.grey),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem(String label, int count, Color color) {
+    return Column(
+      children: [
+        Text(
+          '$count',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            color: Colors.grey,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWarningBanner(int scheduledCount, String timeFrame) {
+    String message;
+    if (timeFrame == 'week' && scheduledCount > weeklyThreshold) {
+      message = "🔥 You're scheduling a high number of connections this week — you may feel stretched. Consider spreading them out.";
+    } else if (timeFrame == 'month' && scheduledCount > monthlyThreshold) {
+      message = "🔥 Looks like lots of nudges this month — you might feel overwhelmed.";
+    } else {
+      message = "🔥 You're about to exceed your recommended number of daily notifications based on your group settings.";
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.orange[50],
+        border: Border.all(color: Colors.orange),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.warning, color: Colors.orange[800], size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                color: Colors.orange[800],
+                fontSize: 12,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: _showGoalSettings,
+            child: Text(
+              'Review goal settings',
+              style: TextStyle(
+                color: Colors.orange[800],
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -252,6 +394,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
       ),
     );
   }
+
 
   Widget _buildFilterChip(String label, int count, String filter, IconData icon) {
     final isActive = _activeFilter == filter;
@@ -750,6 +893,84 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
       },
     );
   }
+
+  Map<String, int> _calculateNudgeStats(List<Nudge> allNudges, String timeFrame) {
+    final now = DateTime.now();
+    int scheduledCount = 0;
+    int completedCount = 0;
+
+    for (final nudge in allNudges) {
+      final isInTimeFrame = _isInTimeFrame(nudge.scheduledTime, timeFrame, now);
+      
+      if (isInTimeFrame) {
+        if (nudge.isCompleted) {
+          completedCount++;
+        } else {
+          scheduledCount++;
+        }
+      }
+    }
+
+    return {
+      'scheduledCount': scheduledCount,
+      'completedCount': completedCount,
+    };
+  }
+
+  bool _isInTimeFrame(DateTime nudgeTime, String timeFrame, DateTime now) {
+    switch (timeFrame) {
+      case 'day':
+        return isSameDay(nudgeTime, now);
+      case 'week':
+        final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+        final endOfWeek = startOfWeek.add(const Duration(days: 7));
+        return nudgeTime.isAfter(startOfWeek) && nudgeTime.isBefore(endOfWeek);
+      case 'month':
+        final startOfMonth = DateTime(now.year, now.month, 1);
+        final endOfMonth = DateTime(now.year, now.month + 1, 1);
+        return nudgeTime.isAfter(startOfMonth) && nudgeTime.isBefore(endOfMonth);
+      default:
+        return false;
+    }
+  }
+
+  bool _shouldShowWarning(int scheduledCount, String timeFrame) {
+    switch (timeFrame) {
+      case 'week':
+        return scheduledCount > weeklyThreshold;
+      case 'month':
+        return scheduledCount > monthlyThreshold;
+      case 'day':
+        return scheduledCount > (weeklyThreshold ~/ 7); // Daily threshold = weekly/7
+      default:
+        return false;
+    }
+  }
+
+  void _showGoalSettings() {
+    // Navigate to goal settings screen or show dialog
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Review Goal Settings'),
+        content: const Text('Consider adjusting your contact frequencies or spreading out your nudges to maintain quality interactions.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _showScheduleOptions(context);
+            },
+            child: const Text('Adjust Schedule'),
+          ),
+        ],
+      ),
+    );
+  }
+
 
 
   void _snoozeNudge(Nudge nudge, String userId) {

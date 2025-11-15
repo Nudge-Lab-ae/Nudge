@@ -1,4 +1,6 @@
 // lib/services/nudge_service.dart
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:nudge/services/api_service.dart';
@@ -168,31 +170,165 @@ class NudgeService {
     }
   }
 
-  // Schedule nudges for a group of contacts
-   Future<Map<String, dynamic>> scheduleNudgesForGroup(
+    // Schedule nudges for a group of contacts
+  Future<Map<String, dynamic>> scheduleDistributedNudges(
+    List<Contact> contacts,
+    String userId,
+    String period,
+    int frequency,
+  ) async {
+    try {
+      int successCount = 0;
+      int failCount = 0;
+      List<String> failedContacts = [];
+
+      // Sort contacts by priority (VIP first)
+      contacts.sort((a, b) {
+        if (a.isVIP && !b.isVIP) return -1;
+        if (!a.isVIP && b.isVIP) return 1;
+        return b.priority.compareTo(a.priority);
+      });
+
+      // Calculate distribution parameters
+      final distribution = _calculateDistribution(period, frequency, contacts.length);
+      final baseTime = DateTime.now();
+      
+      for (int i = 0; i < contacts.length; i++) {
+        final contact = contacts[i];
+        
+        try {
+          // Calculate staggered time with random offset
+          final scheduledTime = _calculateDistributedTime(
+            baseTime, 
+            i, 
+            distribution['intervalDays']!, 
+            distribution['periodDays']!,
+            distribution['targetNudges']!,
+          );
+
+          final success = await scheduleNudgeForContact(
+            contact,
+            userId,
+            period: period,
+            frequency: frequency,
+            scheduledTime: scheduledTime,
+          );
+
+          if (success) {
+            successCount++;
+          } else {
+            failCount++;
+            failedContacts.add(contact.name);
+          }
+        } catch (e) {
+          failCount++;
+          failedContacts.add(contact.name);
+          print('Error scheduling distributed nudge for ${contact.name}: $e');
+        }
+
+        // Small delay to avoid overwhelming the system
+        await Future.delayed(const Duration(milliseconds: 50));
+      }
+
+      return {
+        'successCount': successCount,
+        'failCount': failCount,
+        'failedContacts': failedContacts,
+        'distribution': distribution,
+      };
+    } catch (e) {
+      print('Error in distributed scheduling: $e');
+      rethrow;
+    }
+  }
+
+  Map<String, double> _calculateDistribution(String period, int frequency, int contactCount) {
+    // Calculate period days based on period type
+    int periodDays;
+    switch (period) {
+      case 'days':
+        periodDays = 1;
+        break;
+      case 'weeks':
+        periodDays = 7;
+        break;
+      case 'months':
+        periodDays = 30;
+        break;
+      case 'years':
+        periodDays = 365;
+        break;
+      default:
+        periodDays = 30; // Default to month
+    }
+
+    final targetNudges = frequency.toDouble();
+    final intervalDays = periodDays / targetNudges;
+
+    return {
+      'periodDays': periodDays.toDouble(),
+      'targetNudges': targetNudges,
+      'intervalDays': intervalDays,
+    };
+  }
+
+  DateTime _calculateDistributedTime(
+    DateTime baseTime, 
+    int contactIndex, 
+    double intervalDays, 
+    double periodDays,
+    double targetNudges,
+  ) {
+    // Calculate base offset
+    double baseOffsetDays = contactIndex * (intervalDays / targetNudges);
+    
+    // Add random offset (±10-15% of interval)
+    final random = Random();
+    final randomOffset = (random.nextDouble() * 0.3 - 0.15) * intervalDays;
+    
+    // Calculate total offset
+    double totalOffsetDays = baseOffsetDays + randomOffset;
+    
+    // Ensure offset stays within period bounds
+    totalOffsetDays = totalOffsetDays.clamp(0, periodDays - 1);
+    
+    return baseTime.add(Duration(
+      days: totalOffsetDays.floor(),
+      hours: ((totalOffsetDays % 1) * 24).floor(),
+    ));
+  }
+
+  // Update the scheduleNudgesForGroup method to use distributed scheduling when possible
+  Future<Map<String, dynamic>> scheduleNudgesForGroup(
     List<Contact> contacts, 
     String userId, 
     {bool staggered = false, 
-     Duration staggerInterval = const Duration(hours: 1)}
+    Duration staggerInterval = const Duration(hours: 1),
+    String? period,
+    int? frequency}
   ) async {
+    // Use distributed scheduling if period and frequency are provided
+    if (period != null && frequency != null) {
+      return await scheduleDistributedNudges(contacts, userId, period, frequency);
+    }
+    
+    // Fall back to original staggered scheduling
     int successCount = 0;
     int failCount = 0;
     List<String> failedContacts = [];
     
-   contacts.sort((a, b) {
+    contacts.sort((a, b) {
       if (a.isVIP && !b.isVIP) return -1;
       if (!a.isVIP && b.isVIP) return 1;
       return 0;
     });
     
-    // Calculate base time and staggered times if needed
     DateTime baseTime = DateTime.now();
     List<DateTime> scheduledTimes = [];
     
     if (staggered) {
       scheduledTimes = _calculateStaggeredTimes(baseTime, contacts.length, staggerInterval);
     } else {
-      // All at the same time
       scheduledTimes = List<DateTime>.filled(contacts.length, baseTime);
     }
     
@@ -213,7 +349,6 @@ class NudgeService {
         failedContacts.add(contact.name);
       }
       
-      // Add a small delay to avoid overwhelming the system
       await Future.delayed(const Duration(milliseconds: 100));
     }
     
@@ -222,9 +357,7 @@ class NudgeService {
       'failCount': failCount,
       'failedContacts': failedContacts,
     };
-
   }
-
   // Mark a nudge as complete
   Future<void> markNudgeAsComplete(String nudgeId, String userId, String contactId) async {
     try {
