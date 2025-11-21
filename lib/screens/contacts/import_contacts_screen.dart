@@ -1,6 +1,9 @@
 // lib/screens/contacts/import_contacts_screen.dart
+import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:nudge/theme/text_styles.dart';
+// import 'package:nudge/theme/text_styles.dart';
+import 'package:nudge/widgets/gradient_text.dart';
 import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_contacts/flutter_contacts.dart' as fContacts;
@@ -343,16 +346,25 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'NUDGE',
-          style: AppTextStyles.title2.copyWith(
-            color: const Color.fromRGBO(45, 161, 175, 1),
-            fontFamily: 'RobotoMono',
+        title: GradientText( text: 'NUDGE', style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF5CDEE5), // #5CDEE5
+                  Color(0xFF2D85F6), // #2D85F6
+                  Color(0xFF7A4BFF), // #7A4BFF
+                ], stops: [0.0, 0.6, 1.0], begin: Alignment.topCenter, end: Alignment.bottomCenter,
           ),
         ),
+        // Text(
+        //   'NUDGE',
+        //   style: AppTextStyles.title2.copyWith(
+        //     color: const Color(0xff3CB3E9),
+        //     fontFamily: 'RobotoMono',
+        //   ),
+        // ),
         centerTitle: true,
         surfaceTintColor: Colors.transparent,
-        iconTheme: const IconThemeData(color: Color.fromRGBO(45, 161, 175, 1)),
+        iconTheme: const IconThemeData(color: Color(0xff3CB3E9)),
         backgroundColor: Colors.white,
       ),
       body: Padding(
@@ -408,10 +420,10 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
                           },
                           backgroundColor: Colors.grey[200],
                           selectedColor: const Color.fromRGBO(45, 161, 175, 0.2),
-                          checkmarkColor: const Color.fromRGBO(45, 161, 175, 1),
+                          checkmarkColor: const Color(0xff3CB3E9),
                           labelStyle: TextStyle(
                             color: _selectedQuantity == quantity
-                                ? const Color.fromRGBO(45, 161, 175, 1)
+                                ? const Color(0xff3CB3E9)
                                 : Colors.black,
                             fontWeight: _selectedQuantity == quantity
                                 ? FontWeight.bold
@@ -424,7 +436,9 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
                     const SizedBox(height: 20),
 
                     // Smart Filter Option
-                    Row(
+                    Platform.isIOS
+                    ? Center()
+                    : Row(
                       children: [
                         Switch(
                           value: _useSmartFilter,
@@ -433,7 +447,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
                               _useSmartFilter = value;
                             });
                           },
-                          activeColor: const Color.fromRGBO(45, 161, 175, 1),
+                          activeColor: const Color(0xff3CB3E9),
                           inactiveTrackColor: Colors.grey,
                         ),
                         const SizedBox(width: 8),
@@ -464,7 +478,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
                           child: ElevatedButton(
                             onPressed: _isImporting ? null : _importDeviceContacts,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+                              backgroundColor: const Color(0xff3CB3E9),
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -502,17 +516,17 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              side: const BorderSide(color: Color.fromRGBO(45, 161, 175, 1)),
+                              side: const BorderSide(color: Color(0xff3CB3E9)),
                             ),
                             icon: Padding(
                               padding: EdgeInsets.only(left: 5),
-                              child: Icon(Icons.group_add, color: Color.fromRGBO(45, 161, 175, 1)),
+                              child: Icon(Icons.group_add, color: Color(0xff3CB3E9)),
                             ),
                             label: const Text(
                               'Pick & Import Selected',
                               style: TextStyle(
                                 fontSize: 16,
-                                color: Color.fromRGBO(45, 161, 175, 1),
+                                color: Color(0xff3CB3E9),
                               ),
                             ),
                           ),
@@ -548,7 +562,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
                         value: _totalCount > 0 ? _processedCount / _totalCount : 0,
                         backgroundColor: Colors.grey[200],
                         valueColor:
-                            const AlwaysStoppedAnimation<Color>(Color.fromRGBO(45, 161, 175, 1)),
+                            const AlwaysStoppedAnimation<Color>(Color(0xff3CB3E9)),
                         borderRadius: BorderRadius.circular(4),
                       ),
 
@@ -645,17 +659,17 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
                     ),
                     SizedBox(height: 12),
                     ListTile(
-                      leading: Icon(Icons.filter_list, color: Color.fromRGBO(45, 161, 175, 1)),
+                      leading: Icon(Icons.filter_list, color: Color(0xff3CB3E9)),
                       title: Text('Smart Filter', style: TextStyle(fontWeight: FontWeight.w800)),
                       subtitle: Text('Prioritizes contacts based on your interaction frequency'),
                     ),
                     ListTile(
-                      leading: Icon(Icons.group, color: Color.fromRGBO(45, 161, 175, 1)),
+                      leading: Icon(Icons.group, color: Color(0xff3CB3E9)),
                       title: Text('Customizable Quantity', style: TextStyle(fontWeight: FontWeight.w800)),
                       subtitle: Text('Choose how many contacts to import based on your needs'),
                     ),
                     ListTile(
-                      leading: Icon(Icons.security, color: Color.fromRGBO(45, 161, 175, 1)),
+                      leading: Icon(Icons.security, color: Color(0xff3CB3E9)),
                       title: Text('Privacy First', style: TextStyle(fontWeight: FontWeight.w800)),
                       subtitle: Text('Your contacts are only stored on your device and our secure servers'),
                     ),

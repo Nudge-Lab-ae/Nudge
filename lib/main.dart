@@ -545,13 +545,13 @@ class _AuthWrapperState extends State<AuthWrapper> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color.fromRGBO(45, 161, 175, 1)),
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xff3CB3E9)),
             ),
             const SizedBox(height: 20),
             Text(
               _checkingStatus.isNotEmpty ? _checkingStatus : 'Loading...',
               style: const TextStyle(
-                color: Color.fromRGBO(45, 161, 175, 1),
+                color: Color(0xff3CB3E9),
                 fontSize: 16,
               ),
             ),

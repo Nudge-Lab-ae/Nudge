@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:nudge/screens/contacts/import_contacts_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/theme/text_styles.dart';
+import 'package:nudge/widgets/gradient_text.dart';
 import 'package:provider/provider.dart';
 // import '../notifications/notifications_screen.dart';
 import 'contact_detail_screen.dart';
@@ -175,16 +176,16 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                   _selectedContacts.length == _getVisibleContactsCount() 
                     ? Icons.deselect 
                     : Icons.select_all,
-                  color: const Color.fromRGBO(45, 161, 175, 1),
+                  color: const Color(0xff3CB3E9),
                 ),
                 label: Text(
                   _selectedContacts.length == _getVisibleContactsCount() 
                     ? 'Deselect All' 
                     : 'Select All',
-                  style: const TextStyle(color: Color.fromRGBO(45, 161, 175, 1)),
+                  style: const TextStyle(color: Color(0xff3CB3E9)),
                 ),
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color.fromRGBO(45, 161, 175, 1)),
+                  side: const BorderSide(color: Color(0xff3CB3E9)),
                 ),
               ),
             ),
@@ -209,10 +210,19 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
 
   AppBar _buildNormalAppBar(BuildContext context, bool isAddToGroupMode, String? groupName) {
     return AppBar(
-      iconTheme: const IconThemeData(color: Color.fromRGBO(45, 161, 175, 1)),
+      iconTheme: const IconThemeData(color: Color(0xff3CB3E9)),
       title: isAddToGroupMode 
-          ? Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Color.fromRGBO(45, 161, 175, 1), fontFamily: 'RobotoMono'))
-          : Text(_getTitle(_currentFilter), style: AppTextStyles.button.copyWith(color: Color.fromRGBO(45, 161, 175, 1))),
+          ? GradientText( text: 'NUDGE', style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
+                  gradient: LinearGradient(
+                    colors: [
+                      Color(0xFF5CDEE5), // #5CDEE5
+                      Color(0xFF2D85F6), // #2D85F6
+                      Color(0xFF7A4BFF), // #7A4BFF
+                    ], stops: [0.0, 0.6, 1.0], begin: Alignment.topCenter, end: Alignment.bottomCenter,
+              ),
+            )
+          // Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Color(0xff3CB3E9), fontFamily: 'RobotoMono'))
+          : Text(_getTitle(_currentFilter), style: AppTextStyles.button.copyWith(color: Color(0xff3CB3E9))),
       backgroundColor: Colors.white,
       surfaceTintColor: Colors.transparent,
       actions: [
@@ -264,7 +274,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
   //   }
 
   //   return AppBar(
-  //     backgroundColor: _selectionMode == 'delete' ? Colors.red : const Color.fromRGBO(45, 161, 175, 1),
+  //     backgroundColor: _selectionMode == 'delete' ? Colors.red : const Color(0xff3CB3E9),
   //     iconTheme: const IconThemeData(color: Colors.white),
   //     title: Text(
   //       title,
@@ -379,7 +389,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
   Widget _buildNormalContactTile(Contact contact, bool isAddToGroupMode, String? groupName, String? groupPeriod, int? groupFrequency) {
     return ListTile(
       leading: CircleAvatar(
-        backgroundColor: Color.fromRGBO(45, 161, 175, 1),
+        backgroundColor: Color(0xff3CB3E9),
         backgroundImage: contact.imageUrl.isNotEmpty
             ? NetworkImage(contact.imageUrl)
             : null,
@@ -433,7 +443,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
               await _addMultipleContactsToGroup(context, groupName!, groupPeriod!, groupFrequency!, contacts );
             }
           },
-          backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+          backgroundColor: const Color(0xff3CB3E9),
           icon: const Icon(Icons.group_add, color: Colors.white),
           label: Text('Add ${_selectedContacts.length} Contacts', style: const TextStyle(color: Colors.white)),
         );
@@ -461,7 +471,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
         },
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text('New Contact', style: TextStyle(color: Colors.white)),
-        backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+        backgroundColor: const Color(0xff3CB3E9),
       );
     } else {
       return FloatingActionButton(
@@ -473,7 +483,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
             ),
           );
         },
-        backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+        backgroundColor: const Color(0xff3CB3E9),
         child: const Icon(Icons.add, color: Colors.white),
       );
     }
@@ -519,7 +529,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8.0),
                     child: PopupMenuButton<String>(
-                      icon: const Icon(Icons.filter_list, color: Color.fromRGBO(45, 161, 175, 1)),
+                      icon: const Icon(Icons.filter_list, color: Color(0xff3CB3E9)),
                       onSelected: (String newValue) {
                         setState(() {
                           _currentFilter = newValue;
@@ -560,7 +570,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: Color.fromRGBO(45, 161, 175, 1),
+              color: Color(0xff3CB3E9),
             ),
           ),
           TextButton(
@@ -957,7 +967,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                           );
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+                          backgroundColor: const Color(0xff3CB3E9),
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
                         icon: const Icon(Icons.person_add, color: Colors.white),
@@ -980,8 +990,8 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                             );
                           },
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color.fromRGBO(45, 161, 175, 1),
-                            side: const BorderSide(color: Color.fromRGBO(45, 161, 175, 1)),
+                            foregroundColor: const Color(0xff3CB3E9),
+                            side: const BorderSide(color: Color(0xff3CB3E9)),
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
                           icon: const Icon(Icons.smart_button),
@@ -997,8 +1007,8 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                       child: OutlinedButton.icon(
                         onPressed: _importFromContactPicker,
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color.fromRGBO(45, 161, 175, 1),
-                          side: const BorderSide(color: Color.fromRGBO(45, 161, 175, 1)),
+                          foregroundColor: const Color(0xff3CB3E9),
+                          side: const BorderSide(color: Color(0xff3CB3E9)),
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
                         icon: const Icon(Icons.import_contacts),

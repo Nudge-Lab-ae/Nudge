@@ -8,6 +8,7 @@ import 'package:nudge/screens/groups/groups_list_screen.dart';
 import 'package:nudge/screens/notifications/notifications_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/theme/text_styles.dart';
+import 'package:nudge/widgets/gradient_text.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -138,9 +139,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     print(title);
 
     return AppBar(
-      title: Text('NUDGE', style: TextStyle(color: Color.fromRGBO(45, 161, 175, 1), fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold)),
+      title: GradientText( text: 'NUDGE', style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
+      gradient: LinearGradient(
+        colors: [
+          Color(0xFF5CDEE5), // #5CDEE5
+          Color(0xFF2D85F6), // #2D85F6
+          Color(0xFF7A4BFF), // #7A4BFF
+        ], stops: [0.0, 0.6, 1.0], begin: Alignment.topCenter, end: Alignment.bottomCenter,
+  ),
+),
+      // Text('NUDGE', style: TextStyle(color: Color(0xff3CB3E9), fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold)),
       backgroundColor: Colors.white,
-      iconTheme: const IconThemeData(color: Color.fromRGBO(45, 161, 175, 1),),
+      iconTheme: const IconThemeData(color: Color(0xff3CB3E9),),
       actions: actions,
       elevation: 0,
       surfaceTintColor: Colors.transparent,
@@ -170,7 +180,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           onPressed: () {
             Navigator.pushNamed(context, '/add_contact');
           },
-          backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+          backgroundColor: const Color(0xff3CB3E9),
           child: const Icon(Icons.add, color: Colors.white),
         );
       case 1: // Contacts - Add Contact
@@ -178,7 +188,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           onPressed: () {
             Navigator.pushNamed(context, '/add_contact');
           },
-          backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+          backgroundColor: const Color(0xff3CB3E9),
           child: const Icon(Icons.add, color: Colors.white),
         );
         case 2: // Groups - Create Group
@@ -188,7 +198,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           onPressed: () {
             Navigator.pushNamed(context, '/add_contact');
           },
-          backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+          backgroundColor: const Color(0xff3CB3E9),
           child: const Icon(Icons.add, color: Colors.white),
         );
     }
@@ -214,25 +224,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
       },
       items: [
         BottomNavigationBarItem(
-          icon: Icon(Icons.dashboard, color: _currentIndex == 0 ? Color.fromRGBO(45, 161, 175, 1) : Colors.grey),
+          icon: Icon(Icons.dashboard, color: _currentIndex == 0 ? Color(0xff3CB3E9) : Colors.grey),
           label: 'Dashboard',
-          backgroundColor: Color.fromRGBO(45, 161, 175, 1),
+          backgroundColor: Color(0xff3CB3E9),
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.contacts, color: _currentIndex == 1 ? Color.fromRGBO(45, 161, 175, 1) : Colors.grey),
+          icon: Icon(Icons.contacts, color: _currentIndex == 1 ? Color(0xff3CB3E9) : Colors.grey),
           label: 'Contacts',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.group, color: _currentIndex == 2 ? Color.fromRGBO(45, 161, 175, 1) : Colors.grey),
+          icon: Icon(Icons.group, color: _currentIndex == 2 ? Color(0xff3CB3E9) : Colors.grey),
           label: 'Groups',
         ),
          BottomNavigationBarItem(
-          icon: Icon(Icons.notifications, color: _currentIndex == 3 ? Color.fromRGBO(45, 161, 175, 1) : Colors.grey),
+          icon: Icon(Icons.notifications, color: _currentIndex == 3 ? Color(0xff3CB3E9) : Colors.grey),
           label: 'Nudges',
         ),
       ],
-      selectedItemColor: Color.fromRGBO(45, 161, 175, 1),
-      selectedLabelStyle: TextStyle(color: Color.fromRGBO(45, 161, 175, 1), fontWeight: FontWeight.w600),
+      selectedItemColor: Color(0xff3CB3E9),
+      selectedLabelStyle: TextStyle(color: Color(0xff3CB3E9), fontWeight: FontWeight.w600),
       unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w600),
     );
   }
@@ -245,7 +255,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           DrawerHeader(
             decoration: BoxDecoration(
-              color: const Color.fromRGBO(45, 161, 175, 1),
+              color: const Color(0xff3CB3E9),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -455,21 +465,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 runSpacing: 10,
                 children: [
                   ActionChip(
-                    avatar: const Icon(Icons.person_add, size: 18, color: Color.fromRGBO(45, 161, 175, 1)),
+                    avatar: const Icon(Icons.person_add, size: 18, color: Color(0xff3CB3E9)),
                     label: Text('Add Contact', style: AppTextStyles.primary.copyWith(fontWeight: FontWeight.w600)),
                     onPressed: () {
                       Navigator.pushNamed(context, '/add_contact');
                     },
                   ),
                   ActionChip(
-                    avatar: const Icon(Icons.import_contacts, size: 18, color: Color.fromRGBO(45, 161, 175, 1)),
+                    avatar: const Icon(Icons.import_contacts, size: 18, color: Color(0xff3CB3E9)),
                     label: Text('Import Contacts', style: AppTextStyles.primary.copyWith(fontWeight: FontWeight.w600)),
                     onPressed: () {
                       Navigator.pushNamed(context, '/import_contacts');
                     },
                   ),
                   ActionChip(
-                    avatar: const Icon(Icons.group_add, size: 18, color: Color.fromRGBO(45, 161, 175, 1)),
+                    avatar: const Icon(Icons.group_add, size: 18, color: Color(0xff3CB3E9)),
                     label: Text('Create Group', style: AppTextStyles.primary.copyWith(fontWeight: FontWeight.w600)),
                     onPressed: () {
                       setState(() {
@@ -480,7 +490,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     },
                   ),
                   ActionChip(
-                    avatar: const Icon(Icons.notifications_active, size: 18, color: Color.fromRGBO(45, 161, 175, 1)),
+                    avatar: const Icon(Icons.notifications_active, size: 18, color: Color(0xff3CB3E9)),
                     label: Text('Schedule Nudges', style: AppTextStyles.primary.copyWith(fontWeight: FontWeight.w600)),
                     onPressed: () async {
                       final nudgeService = NudgeService();
@@ -510,7 +520,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           vipFilter = true;
                         });
                       },
-                      child: const Text('View All', style: TextStyle(color: Color.fromRGBO(45, 161, 175, 1))),
+                      child: const Text('View All', style: TextStyle(color: Color(0xff3CB3E9))),
                     ),
                   ],
                 ),
@@ -543,7 +553,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       onPressed: () {
                         setState(() => _currentIndex = 1);
                       },
-                      child: const Text('View All'),
+                      child: const Text('View All', style: TextStyle(color: Color(0xff3CB3E9)),),
                     ),
                   ],
                 ),
@@ -556,8 +566,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         backgroundImage: contact.imageUrl.isNotEmpty
                             ? NetworkImage(contact.imageUrl)
                             : null,
+                        backgroundColor: Color(0xff3CB3E9),
                         child: contact.imageUrl.isEmpty 
-                            ? const Icon(Icons.person) 
+                            ? const Icon(Icons.person, color: Colors.white,) 
                             : null,
                       ),
                       title: Text(contact.name),
@@ -582,7 +593,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     onPressed: () {
                       setState(() => _currentIndex = 1);
                     },
-                    child: const Text('View All Contacts Needing Attention'),
+                    child: const Text('View All Contacts Needing Attention', style: TextStyle(color: Color(0xff3CB3E9)),),
                   ),
                 
                 const SizedBox(height: 20),
@@ -634,7 +645,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildStatCard(String title, String value, IconData icon) {
     return Column(
       children: [
-        Icon(icon, size: 30, color: const Color.fromRGBO(45, 161, 175, 1)),
+        Icon(icon, size: 30, color: const Color(0xff3CB3E9)),
         const SizedBox(height: 8),
         Text(
           value,
@@ -697,7 +708,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildNudgeStat(String title, int value, IconData icon) {
     return Column(
       children: [
-        Icon(icon, size: 30, color: const Color.fromRGBO(45, 161, 175, 1)),
+        Icon(icon, size: 30, color: const Color(0xff3CB3E9)),
         const SizedBox(height: 8),
         Text(
           value.toString(),
@@ -713,7 +724,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Color _getProgressColor(double percentage) {
     if (percentage >= 80) return Colors.green;
-    if (percentage >= 60) return const Color.fromRGBO(45, 161, 175, 1);
+    if (percentage >= 60) return const Color(0xff3CB3E9);
     if (percentage >= 40) return Colors.orange;
     return Colors.red;
   }
@@ -765,7 +776,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, color: const Color.fromRGBO(45, 161, 175, 1)),
+              Icon(icon, color: const Color(0xff3CB3E9)),
               const SizedBox(height: 8),
               Text(
                 value,
@@ -808,7 +819,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   backgroundImage: contact.imageUrl.isNotEmpty
                       ? NetworkImage(contact.imageUrl)
                       : null,
-                  backgroundColor: Color.fromRGBO(45, 161, 175, 1),
+                  backgroundColor: Color(0xff3CB3E9),
                   radius: 20,
                   child: contact.imageUrl.isEmpty 
                       ? const Icon(Icons.person, size: 20) 

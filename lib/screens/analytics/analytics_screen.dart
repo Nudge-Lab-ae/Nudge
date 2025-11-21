@@ -6,6 +6,7 @@ import 'package:nudge/models/contact.dart';
 // import 'package:nudge/models/nudge.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/theme/text_styles.dart';
+import 'package:nudge/widgets/gradient_text.dart';
 import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 // import 'package:percent_indicator/percent_indicator.dart';
@@ -35,10 +36,19 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     
     return Scaffold(
       appBar: AppBar(
-        title: Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Color.fromRGBO(45, 161, 175, 1), fontFamily: 'RobotoMono')),
+        title: GradientText( text: 'NUDGE', style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF5CDEE5), // #5CDEE5
+                    Color(0xFF2D85F6), // #2D85F6
+                    Color(0xFF7A4BFF), // #7A4BFF
+                  ], stops: [0.0, 0.6, 1.0], begin: Alignment.topCenter, end: Alignment.bottomCenter,
+            ),
+          ),
+        // Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Color(0xff3CB3E9), fontFamily: 'RobotoMono')),
         centerTitle: true,
         surfaceTintColor: Colors.transparent,
-        iconTheme: IconThemeData(color: Color.fromRGBO(45, 161, 175, 1)),
+        iconTheme: IconThemeData(color: Color(0xff3CB3E9)),
         backgroundColor: Colors.white
       ),
       body: StreamBuilder<List<Contact>>(
@@ -234,7 +244,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   Widget _buildInsightItem(String title, String value, IconData icon) {
     return Column(
       children: [
-        Icon(icon, size: 24, color: const Color.fromRGBO(45, 161, 175, 1)),
+        Icon(icon, size: 24, color: const Color(0xff3CB3E9)),
         const SizedBox(height: 8),
         Text(
           value,
@@ -277,7 +287,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   Color _getCategoryColor(String category) {
     // Generate consistent colors based on category
     final colors = [
-      const Color.fromRGBO(45, 161, 175, 1), // Primary teal
+      const Color(0xff3CB3E9), // Primary teal
       Colors.green[600]!,
       Colors.purple[600]!,
       Colors.amber[700]!,

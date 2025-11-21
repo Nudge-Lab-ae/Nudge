@@ -186,7 +186,7 @@ class ApiService {
           email: currentUser.email ?? '',
           username: currentUser.displayName ?? currentUser.email!.split('@')[0],
           createdAt: DateTime.now(),
-          weeklyDigestEnabled: false,
+          weeklyDigestEnabled: true,
           groups: [
             {"name": "Family", "id": "Family", "period": "Monthly", "frequency": 4, "colorCode": "#4FC3F7"},
             {"name": "Friend", "id": "Friend", "period": "Quarterly", "frequency": 7, "colorCode": "#FF6F61"},
@@ -234,7 +234,7 @@ class ApiService {
           description: '',
           bio: '',
           profileCompleted: false,
-          weeklyDigestEnabled: false
+          weeklyDigestEnabled: true
         );
       });
     });
@@ -249,6 +249,12 @@ class ApiService {
         .map((snapshot) => snapshot.docs
             .map((doc) => Contact.fromMap(doc.data() as Map<String, dynamic>..['id'] = doc.id))
             .toList());
+  }
+
+  Future<List<Contact>> getAllContacts() async{
+    String userId = _auth.currentUser!.uid;
+    QuerySnapshot snap = await _getUserContactsCollection(userId).orderBy('name').get();
+    return snap.docs.map((doc) => Contact.fromMap(doc.data() as Map<String, dynamic>..['id'] = doc.id)).toList();
   }
 
   Future<void> addContact(Contact contact) async {
@@ -274,6 +280,25 @@ class ApiService {
       throw Exception('Failed to update contact: $e');
     }
   }
+
+  Future<void> updateCloseCircleContacts(List<Contact> closeCircleContacts) async {
+  try {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) throw Exception('No user logged in');
+    
+    // Update each contact to mark as close circle
+    for (final contact in closeCircleContacts) {
+      await _getUserContactsCollection(currentUser.uid)
+          .doc(contact.id)
+          .update({
+            'isVIP': true,
+            'updatedAt': DateTime.now(),
+          });
+    }
+  } catch (e) {
+    throw Exception('Failed to update close circle contacts: $e');
+  }
+}
 
   Future<void> deleteContact(String contactId) async {
     String userId = _auth.currentUser!.uid;
@@ -564,7 +589,7 @@ Future<Map<String, dynamic>> register(String email, String password) async {
       // contacts: [],
       nudges: [],
       profileCompleted: false,
-      weeklyDigestEnabled: false
+      weeklyDigestEnabled: true
     );
     
     await _usersCollection.doc(result.user!.uid).set(newUser.toMap());
@@ -608,7 +633,7 @@ Future<Map<String, dynamic>> register(String email, String password) async {
       // contacts: [],
       nudges: [],
       profileCompleted: false,
-      weeklyDigestEnabled: false
+      weeklyDigestEnabled: true
     );
     
     await _usersCollection.doc(result.user!.uid).set(newUser.toMap());

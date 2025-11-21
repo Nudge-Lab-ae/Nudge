@@ -11,7 +11,7 @@ class SearchScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('NUDGE'),
-        backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+        backgroundColor: const Color(0xff3CB3E9),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications),
@@ -111,7 +111,7 @@ onPressed: () {
     ),
   );
 },
-        backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+        backgroundColor: const Color(0xff3CB3E9),
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );

@@ -348,7 +348,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
           width: 30,
           height: 30,
           decoration: BoxDecoration(
-            color: isActive ? const Color.fromRGBO(45, 161, 175, 1) : Colors.grey[300],
+            color: isActive ? const Color(0xff3CB3E9) : Colors.grey[300],
             shape: BoxShape.circle,
           ),
           child: Center(
@@ -367,7 +367,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
           style: TextStyle(
             fontSize: 12,
             fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-            color: isActive ? const Color.fromRGBO(45, 161, 175, 1) : Colors.grey[600],
+            color: isActive ? const Color(0xff3CB3E9) : Colors.grey[600],
           ),
         ),
       ],
@@ -389,7 +389,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
       return Scaffold(
         appBar: AppBar(
           title: const Text('NUDGE'),
-          backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+          backgroundColor: const Color(0xff3CB3E9),
         ),
         body: const Center(child: CircularProgressIndicator()),
       );
@@ -402,7 +402,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
           style: AppTextStyles.title2.copyWith(color: Colors.white),
         ),
         iconTheme: const IconThemeData(color: Colors.white),
-        backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+        backgroundColor: const Color(0xff3CB3E9),
         leading: widget.isFromSettings
             ? IconButton(
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -453,7 +453,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
                         icon: const Icon(Icons.add, color: Colors.white,),
                         label: const Text('Add New Group'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+                          backgroundColor: const Color(0xff3CB3E9),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 15),
                         ),
@@ -509,7 +509,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
       child: ElevatedButton(
         onPressed: _userGroups.isNotEmpty ? _proceedToGoalSetting : null,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+          backgroundColor: const Color(0xff3CB3E9),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
@@ -534,7 +534,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
         child: ElevatedButton(
           onPressed: _saveGoals,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+            backgroundColor: const Color(0xff3CB3E9),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
             ),
@@ -562,9 +562,9 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
                   });
                 },
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color.fromRGBO(45, 161, 175, 1),
+                  foregroundColor: const Color(0xff3CB3E9),
                   side: const BorderSide(
-                    color: Color.fromRGBO(45, 161, 175, 1),
+                    color: Color(0xff3CB3E9),
                   ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -579,7 +579,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
             child: ElevatedButton(
               onPressed: _saveGoals,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+                backgroundColor: const Color(0xff3CB3E9),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -652,8 +652,8 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
           max: range['max']!.toDouble(),
           divisions: range['divisions'],
           label: group.frequency.toString(),
-          thumbColor: const Color.fromRGBO(45, 161, 175, 1),
-          activeColor: const Color.fromRGBO(45, 161, 175, 1),
+          thumbColor: const Color(0xff3CB3E9),
+          activeColor: const Color(0xff3CB3E9),
           onChanged: (value) {
             setState(() {
               group.frequency = value.toInt();
@@ -767,7 +767,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.edit, color: Color.fromRGBO(45, 161, 175, 1)),
+                    icon: const Icon(Icons.edit, color: Color(0xff3CB3E9)),
                     onPressed: () => _editGroup(group),
                   ),
                   IconButton(
@@ -798,7 +798,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: isSelected
-                ? const Color.fromRGBO(45, 161, 175, 1)
+                ? const Color(0xff3CB3E9)
                 : Colors.grey[200],
             foregroundColor: isSelected ? Colors.white : Colors.black,
             shape: RoundedRectangleBorder(

@@ -231,7 +231,7 @@ Future<void> _loadSuggestions() async {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+                    backgroundColor: const Color(0xff3CB3E9),
                   ),
                   child:  Text('Apply Suggestion', style: AppTextStyles.button.copyWith(color: Colors.white),),
                 ),

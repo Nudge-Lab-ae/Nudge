@@ -196,7 +196,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
               icon: const Icon(Icons.arrow_back, color: Colors.white),
               onPressed: () => Navigator.pop(context),
             ),
-            backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+            backgroundColor: const Color(0xff3CB3E9),
             actions: [
               IconButton(
                 icon: const Icon(Icons.add),
@@ -364,7 +364,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
           ),
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () => _showCreateGroupDialog(context, apiService),
-            backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+            backgroundColor: const Color(0xff3CB3E9),
             icon: const Icon(Icons.group_add, color: Colors.white),
             label: const Text('New Group', style: TextStyle(color: Colors.white)),
           ),
@@ -390,7 +390,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
           ElevatedButton(
             onPressed: () => setState(() => _initializeStreams()),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+              backgroundColor: const Color(0xff3CB3E9),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
             child: const Text('Try Again', style: TextStyle(color: Colors.white)),
@@ -446,7 +446,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
           ElevatedButton(
             onPressed: () => _showCreateGroupDialog(context, apiService),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+              backgroundColor: const Color(0xff3CB3E9),
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
             ),
             child: const Text('Create Your First Group', style: TextStyle(color: Colors.white)),
@@ -462,7 +462,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
       try {
         cardColor = Color(int.parse(group.colorCode.replaceFirst('#', ''), radix: 16) + 0xFF000000);
       } catch (e) {
-        cardColor = const Color.fromRGBO(45, 161, 175, 1); // Default color
+        cardColor = const Color(0xff3CB3E9); // Default color
       }
       
       final Color textColor = cardColor.computeLuminance() > 0.5 ? Colors.black : Colors.white;
@@ -897,7 +897,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+                    backgroundColor: const Color(0xff3CB3E9),
                   ),
                   child: const Text('Create', style: TextStyle(color: Colors.white)),
                 ),
@@ -1067,7 +1067,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+                        backgroundColor: const Color(0xff3CB3E9),
                       ),
                       child: const Text('Save', style: TextStyle(color: Colors.white)),
                     ),
@@ -1191,7 +1191,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                                   'groupFrequency': group.frequency
                                 });
                               },
-                              child: const Text('Add Members', style: TextStyle(color: Color.fromRGBO(45, 161, 175, 1))),
+                              child: const Text('Add Members', style: TextStyle(color: Color(0xff3CB3E9))),
                             ),
                           ],
                         ),

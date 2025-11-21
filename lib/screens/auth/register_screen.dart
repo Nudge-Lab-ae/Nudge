@@ -1,7 +1,8 @@
 // register_screen.dart
 import 'package:flutter/material.dart';
 import 'package:nudge/models/user.dart';
-import 'package:nudge/theme/text_styles.dart';
+// import 'package:nudge/theme/text_styles.dart';
+import 'package:nudge/widgets/gradient_text.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 import '../../services/api_service.dart';
@@ -28,9 +29,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('NUDGE', style: AppTextStyles.title3.copyWith(color: Color.fromRGBO(45, 161, 175, 1), fontFamily: 'RobotoMono'),),
+        title: GradientText( text: 'NUDGE', style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF5CDEE5), // #5CDEE5
+                  Color(0xFF2D85F6), // #2D85F6
+                  Color(0xFF7A4BFF), // #7A4BFF
+                ], stops: [0.0, 0.6, 1.0], begin: Alignment.topCenter, end: Alignment.bottomCenter,
+          ),
+        ),
+        // Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Color(0xff3CB3E9), fontFamily: 'RobotoMono'),),
         centerTitle: true,
-        iconTheme: IconThemeData(color: Color.fromRGBO(45, 161, 175, 1)),
+        iconTheme: IconThemeData(color: Color(0xff3CB3E9)),
+        surfaceTintColor: Colors.transparent,
         backgroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
@@ -245,7 +256,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+                          backgroundColor: const Color(0xff3CB3E9),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),

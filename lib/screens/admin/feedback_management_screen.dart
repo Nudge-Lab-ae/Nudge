@@ -25,11 +25,11 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('NUDGE', style: AppTextStyles.title3.copyWith(
-          color: Color.fromRGBO(45, 161, 175, 1), 
+          color: Color(0xff3CB3E9), 
           fontFamily: 'RobotoMono'
         )),
         centerTitle: true,
-        iconTheme: IconThemeData(color: Color.fromRGBO(45, 161, 175, 1)),
+        iconTheme: IconThemeData(color: Color(0xff3CB3E9)),
         backgroundColor: Colors.white,
         actions: [
           IconButton(
@@ -93,7 +93,7 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Color.fromRGBO(45, 161, 175, 1),
+                  color: Color(0xff3CB3E9),
                 ),
               ),
               SizedBox(height: 12),

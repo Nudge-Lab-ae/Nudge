@@ -128,4 +128,48 @@ class Nudge {
       groupName: data['groupName'] ?? '',
     );
   }
+
+   Nudge copyWith({
+  String? id,
+  String? nudgeId,
+  String? contactId,
+  String? contactName,
+  String? nudgeType,
+  String? message,
+  DateTime? scheduledTime,
+  bool? isCompleted,
+  bool? isSnoozed,
+  DateTime? completedAt,
+  DateTime? snoozedUntil,
+  String? userId,
+  String? period,
+  int? frequency,
+  bool? isPushNotification,
+  int? priority,
+  bool? isVIP,
+  String? contactImageUrl,
+  String? groupName,
+  }) {
+    return Nudge(
+      id: id ?? this.id,
+      nudgeId: nudgeId ?? this.nudgeId,
+      contactId: contactId ?? this.contactId,
+      contactName: contactName ?? this.contactName,
+      contactImageUrl: contactImageUrl ?? this.contactImageUrl,
+      frequency: frequency ?? this.frequency,
+      period: period ?? this.period,
+      nudgeType: nudgeType ?? this.nudgeType,
+      message: message ?? this.message,
+      scheduledTime: scheduledTime ?? this.scheduledTime,
+      isCompleted: isCompleted ?? this.isCompleted,
+      isSnoozed: isSnoozed ?? this.isSnoozed,
+      completedAt: completedAt ?? this.completedAt,
+      snoozedUntil: snoozedUntil ?? this.snoozedUntil,
+      userId: userId ?? this.userId,
+      isPushNotification: isPushNotification ?? this.isPushNotification,
+      priority: priority ?? this.priority,
+      isVIP: isVIP ?? this.isVIP,
+      groupName: groupName ?? this.groupName,
+    );
+  }
 }

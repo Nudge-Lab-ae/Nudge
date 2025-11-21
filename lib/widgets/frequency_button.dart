@@ -19,12 +19,12 @@ class FrequencyButton extends StatelessWidget {
       height: 80,
       decoration: BoxDecoration(
         color: isSelected
-            ? const Color.fromRGBO(45, 161, 175, 1)
+            ? const Color(0xff3CB3E9)
             : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: isSelected
-              ? const Color.fromRGBO(45, 161, 175, 1)
+              ? const Color(0xff3CB3E9)
               : Colors.grey.shade300,
         ),
       ),

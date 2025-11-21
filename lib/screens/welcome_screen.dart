@@ -14,8 +14,8 @@ class WelcomeScreen extends StatelessWidget {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              const Color.fromRGBO(45, 161, 175, 1).withOpacity(1),
-              const Color.fromRGBO(45, 161, 175, 1).withOpacity(1),
+              const Color(0xff3CB3E9).withOpacity(1),
+              const Color(0xff3CB3E9).withOpacity(1),
               // Colors.white,
             ],
           ),
@@ -77,7 +77,7 @@ class WelcomeScreen extends StatelessWidget {
 },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
-                      foregroundColor: const Color.fromRGBO(45, 161, 175, 1),
+                      foregroundColor: const Color(0xff3CB3E9),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(25),
                       ),

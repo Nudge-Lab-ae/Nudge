@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:nudge/screens/contacts/edit_contact_screen.dart';
 import 'package:nudge/services/api_service.dart';
-import 'package:nudge/theme/text_styles.dart';
+// import 'package:nudge/theme/text_styles.dart';
+import 'package:nudge/widgets/gradient_text.dart';
 import 'package:provider/provider.dart';
 import '../../models/contact.dart';
 // import '../../services/database_service.dart';
@@ -95,10 +96,20 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Color.fromRGBO(45, 161, 175, 1), fontFamily: 'RobotoMono'),),
+        title: GradientText( text: 'NUDGE', style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF5CDEE5), // #5CDEE5
+                  Color(0xFF2D85F6), // #2D85F6
+                  Color(0xFF7A4BFF), // #7A4BFF
+                ], stops: [0.0, 0.6, 1.0], begin: Alignment.topCenter, end: Alignment.bottomCenter,
+          ),
+        ),
+        // Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Color(0xff3CB3E9), fontFamily: 'RobotoMono'),),
         centerTitle: true,
-        iconTheme: IconThemeData(color: Color.fromRGBO(45, 161, 175, 1)),
+        iconTheme: IconThemeData(color: Color(0xff3CB3E9)),
         backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
@@ -130,7 +141,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                 children: [
                   CircleAvatar(
                     radius: 50,
-                    backgroundColor: Color.fromRGBO(45, 161, 175, 1),
+                    backgroundColor: Color(0xff3CB3E9),
                     backgroundImage: _currentContact.imageUrl.isNotEmpty
                         ? isLocalImage
                             ? FileImage(File(_currentContact.imageUrl.replaceFirst('file://', '')))
@@ -175,7 +186,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                     : Switch(
                         value: _currentContact.isVIP,
                         onChanged: _toggleVIPStatus,
-                        activeColor: Color.fromRGBO(45, 161, 175, 1),
+                        activeColor: Color(0xff3CB3E9),
                       ),
               ),
             ),
@@ -370,7 +381,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                           ),
                         ),
                         IconButton(
-                          icon: Icon(Icons.edit, color: Color.fromRGBO(45, 161, 175, 1)),
+                          icon: Icon(Icons.edit, color: Color(0xff3CB3E9)),
                           onPressed: _editNextNudge,
                           tooltip: 'Edit Nudge Schedule',
                         ),
@@ -484,7 +495,7 @@ class __NextNudgeDialogState extends State<_NextNudgeDialog> {
             }
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+            backgroundColor: const Color(0xff3CB3E9),
           ),
           child: const Text('Save', style: TextStyle(color: Colors.white)),
         ),

@@ -61,7 +61,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:  Color(0xffE3EFEE),
+      backgroundColor: Colors.white,
       body: AnimatedBuilder(
         animation: _controller,
         builder: (context, child) {
@@ -74,15 +74,11 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
           );
         },
         child: Center(
-          child: Text(
-            'N',
-            style: TextStyle(
-              fontFamily: 'RobotoMono',
-              fontSize: 250,
-              fontWeight: FontWeight.w700,
-              color:  Color(0xFF4DC1CF),
-              letterSpacing: 2,
-            ),
+          child: Image.asset(
+            'assets/Nudge-logo.jpg',
+            width: 250,
+            height: 250,
+            fit: BoxFit.contain,
           ),
         ),
       ),

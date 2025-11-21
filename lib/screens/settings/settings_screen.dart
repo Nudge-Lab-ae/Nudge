@@ -6,9 +6,14 @@ import 'package:crop_your_image/crop_your_image.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+// import 'package:http/http.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:nudge/screens/admin/feedback_management_screen.dart';
-import 'package:nudge/theme/text_styles.dart';
+import 'package:nudge/services/auth_service.dart';
+// import 'package:nudge/theme/text_styles.dart';
+import 'package:nudge/widgets/gradient_text.dart';
+import 'package:provider/provider.dart';
 import '../../services/api_service.dart';
 import 'package:nudge/models/user.dart' as user;
 // import '../goals/set_goals_screen.dart';
@@ -23,7 +28,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final _formKey = GlobalKey<FormState>();
   final _feedbackFormKey = GlobalKey<FormState>();
-   bool _weeklyDigestEnabled = false;
+   bool _weeklyDigestEnabled = true;
   late TextEditingController _usernameController;
   late TextEditingController _emailController;
   late TextEditingController _oldPasswordController;
@@ -36,6 +41,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _isChangingPassword = false;
   bool _isSubmittingFeedback = false;
   user.User? _currentUser;
+  bool deleting = false;
 
   bool _isCropping = false;
   final _cropController = CropController();
@@ -306,7 +312,7 @@ Future<void> _updateWeeklyDigestSetting(bool enabled) async {
   }
 }
 
-void _showDeleteAccountConfirmation() {
+void _showDeleteAccountConfirmation(AuthService authService) {
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
@@ -320,45 +326,83 @@ void _showDeleteAccountConfirmation() {
           child: const Text('Cancel'),
         ),
         TextButton(
-          onPressed: _deleteAccount,
-          style: TextButton.styleFrom(foregroundColor: Colors.red),
-          child: const Text('Delete Account'),
+          // onPressed: _deleteAccount,
+          onPressed: (){
+            Navigator.pop(context);
+            deleteUser(authService);
+          } ,
+          style: TextButton.styleFrom(foregroundColor: deleting?Colors.grey:Colors.red),
+          child: Text(deleting?'Deleting Account':'Delete Account'),
         ),
       ],
     ),
   );
 }
-
-Future<void> _deleteAccount() async {
-  try {
-    // Close dialog
-    Navigator.pop(context);
+Future<bool> deleteUser(AuthService authService) async {
+    FirebaseFirestore _firestore = FirebaseFirestore.instance;
+    FirebaseAuth _auth = FirebaseAuth.instance;
+    final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
+    String uid = _auth.currentUser!.uid;
+    // setState(() {
+    //   deleting = true;
+    // });
     
-    // Show loading
-    setState(() => _isChangingPassword = true);
-    
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      // Delete user data from Firestore first
-      await FirebaseFirestore.instance.collection('users').doc(user.uid).delete();
-      
-      // Delete user authentication
-      await user.delete();
-      
-      // Navigate to login
-      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Account deleted successfully')),
-      );
+    try {
+      User thisUser = _auth.currentUser!;
+      await _firestore.collection('users').doc(uid).delete();
+      await thisUser.delete();
+      authService.signOut();
+      Navigator.pop(context);
+      await _auth.signOut();
+      // setState(() {
+      //   deleting = false;
+      // });
+    } catch (error) {
+      print('Error deleting user');
+      print(error);
+      return false;
     }
-  } catch (e) {
-    setState(() => _isChangingPassword = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error deleting account: $e')),
-    );
+    
+    try{ 
+      await _googleSignIn.disconnect();
+      await _googleSignIn.signOut();
+      return true;
+    } catch (error) {
+      print('Error logging out');
+      return false;
+    }
   }
-}
+
+// Future<void> _deleteAccount() async {
+//   try {
+//     // Close dialog
+//     Navigator.pop(context);
+    
+//     // Show loading
+//     setState(() => _isChangingPassword = true);
+    
+//     final user = FirebaseAuth.instance.currentUser;
+//     if (user != null) {
+//       // Delete user data from Firestore first
+//       await FirebaseFirestore.instance.collection('users').doc(user.uid).delete();
+      
+//       // Delete user authentication
+//       await user.delete();
+      
+//       // Navigate to login
+//       Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+      
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         const SnackBar(content: Text('Account deleted successfully')),
+//       );
+//     }
+//   } catch (e) {
+//     setState(() => _isChangingPassword = false);
+//     ScaffoldMessenger.of(context).showSnackBar(
+//       SnackBar(content: Text('Error deleting account: $e')),
+//     );
+//   }
+// }
 
  Widget _buildProfilePictureSection() {
     return Column(
@@ -457,7 +501,7 @@ Future<void> _deleteAccount() async {
                         : null,
                     backgroundColor: const Color.fromRGBO(45, 161, 175, 0.1),
                     child: _currentProfileImageUrl == null || _currentProfileImageUrl!.isEmpty
-                        ? const Icon(Icons.person, size: 40, color: Color.fromRGBO(45, 161, 175, 1))
+                        ? const Icon(Icons.person, size: 40, color: Color(0xff3CB3E9))
                         : null,
                   ),
                   Positioned(
@@ -466,7 +510,7 @@ Future<void> _deleteAccount() async {
                     child: Container(
                       padding: const EdgeInsets.all(6),
                       decoration: const BoxDecoration(
-                        color: Color.fromRGBO(45, 161, 175, 1),
+                        color: Color(0xff3CB3E9),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.edit, size: 16, color: Colors.white),
@@ -490,6 +534,7 @@ Future<void> _deleteAccount() async {
 
   @override
   Widget build(BuildContext context) {
+    final authService = Provider.of<AuthService>(context, listen: false);
     if (_isLoading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -498,9 +543,18 @@ Future<void> _deleteAccount() async {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Color.fromRGBO(45, 161, 175, 1), fontFamily: 'RobotoMono'),),
+        title: GradientText( text: 'NUDGE', style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF5CDEE5), // #5CDEE5
+                    Color(0xFF2D85F6), // #2D85F6
+                    Color(0xFF7A4BFF), // #7A4BFF
+                  ], stops: [0.0, 0.6, 1.0], begin: Alignment.topCenter, end: Alignment.bottomCenter,
+            ),
+          ),
+        // Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Color(0xff3CB3E9), fontFamily: 'RobotoMono'),),
                   centerTitle: true,
-                  iconTheme: IconThemeData(color: Color.fromRGBO(45, 161, 175, 1)),
+                  iconTheme: IconThemeData(color: Color(0xff3CB3E9)),
                   backgroundColor: Colors.white,
         // leading: IconButton(
         //   icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -707,7 +761,7 @@ Future<void> _deleteAccount() async {
                     });
                     _updateWeeklyDigestSetting(value);
                   },
-                  activeColor: const Color.fromRGBO(45, 161, 175, 1),
+                  activeColor: const Color(0xff3CB3E9),
                 ),
                )
               ],
@@ -723,7 +777,7 @@ Future<void> _deleteAccount() async {
                         : ElevatedButton(
                             onPressed: _updateUserData,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+                              backgroundColor: const Color(0xff3CB3E9),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
                             child: const Text(
@@ -755,8 +809,8 @@ Future<void> _deleteAccount() async {
             //       );
             //     },
             //     style: OutlinedButton.styleFrom(
-            //       foregroundColor: const Color.fromRGBO(45, 161, 175, 1),
-            //       side: const BorderSide(color: Color.fromRGBO(45, 161, 175, 1)),
+            //       foregroundColor: const Color(0xff3CB3E9),
+            //       side: const BorderSide(color: Color(0xff3CB3E9)),
             //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             //     ),
             //     child: const Text('Go to Interaction Goals'),
@@ -777,7 +831,9 @@ Future<void> _deleteAccount() async {
               width: double.infinity,
               height: 50,
               child: OutlinedButton(
-                onPressed: _showDeleteAccountConfirmation,
+                onPressed: () {
+                  _showDeleteAccountConfirmation(authService);
+                },
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.red,
                   side: const BorderSide(color: Colors.red),
@@ -807,7 +863,9 @@ Future<void> _deleteAccount() async {
                   const Text('Type', style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   GestureDetector(
-                    onTap: _showFeedbackTypeDialog,
+                    onTap: () {
+                      _showFeedbackTypeDialog();
+                    },
                     child: AbsorbPointer(
                       child: TextFormField(
                         controller: _feedbackTypeController,
@@ -871,7 +929,7 @@ Future<void> _deleteAccount() async {
                         : ElevatedButton(
                             onPressed: _submitFeedback,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+                              backgroundColor: const Color(0xff3CB3E9),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
                             child: const Text(

@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/theme/text_styles.dart';
+import 'package:nudge/widgets/gradient_text.dart';
 import 'package:provider/provider.dart';
 // import '../../services/database_service.dart';
 import '../../services/auth_service.dart';
@@ -264,7 +265,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                 child: ElevatedButton(
                   onPressed: _cropImage,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+                    backgroundColor: const Color(0xff3CB3E9),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                   child: const Text('Save Crop', style: TextStyle(color: Colors.white)),
@@ -318,9 +319,19 @@ class _AddContactScreenState extends State<AddContactScreen> {
           builder: (context, groups, child) {
             return Scaffold(
                 appBar: AppBar(
-                  title: Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Color.fromRGBO(45, 161, 175, 1), fontFamily: 'RobotoMono'),),
+                  title: GradientText( text: 'NUDGE', style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
+                      gradient: LinearGradient(
+                        colors: [
+                          Color(0xFF5CDEE5), // #5CDEE5
+                          Color(0xFF2D85F6), // #2D85F6
+                          Color(0xFF7A4BFF), // #7A4BFF
+                        ], stops: [0.0, 0.6, 1.0], begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                  ),
+                ),
+                  // Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Color(0xff3CB3E9), fontFamily: 'RobotoMono'),),
                   centerTitle: true,
-                  iconTheme: IconThemeData(color: Color.fromRGBO(45, 161, 175, 1)),
+                  iconTheme: IconThemeData(color: Color(0xff3CB3E9)),
+                  surfaceTintColor: Colors.transparent,
                   backgroundColor: Colors.white
                 ),
                 body: SingleChildScrollView(
@@ -345,7 +356,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                 onTap: _pickImage,
                                 child: CircleAvatar(
                                   radius: 80,
-                                  backgroundColor: Color.fromRGBO(45, 161, 175, 1),
+                                  backgroundColor: Color(0xff3CB3E9),
                                   backgroundImage: _imageBytes != null
                                       ? MemoryImage(_imageBytes!)
                                       : (_imageUrl.isNotEmpty
@@ -862,7 +873,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                             }
                           },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+                              backgroundColor: const Color(0xff3CB3E9),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),

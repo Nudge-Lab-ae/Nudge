@@ -161,6 +161,9 @@ class ContactSyncService {
           priority: 3,
           tags: [],
           interactionHistory: {},
+          birthday: _extractBirthday(deviceContact),
+          anniversary: _extractAnniversary(deviceContact),
+          // importantDates: _extractImportantDates(deviceContact),
         );
 
         // Add to batch
@@ -195,6 +198,135 @@ class ContactSyncService {
       };
     }
   }
+
+  DateTime? _extractBirthday(fContacts.Contact contact) {
+  final birthdayEvent = contact.events.firstWhere(
+    (e) => e.label.name.toLowerCase().contains('birthday'),
+  );
+  return DateTime(birthdayEvent.year!, birthdayEvent.month, birthdayEvent.day);
+}
+
+DateTime? _extractAnniversary(fContacts.Contact contact) {
+  final anniversaryEvent = contact.events.firstWhere(
+    (e) => e.label.name.toLowerCase().contains('anniversary'),
+    // orElse: () => fContacts.Event('', ''),
+  );
+  return DateTime(anniversaryEvent.year!, anniversaryEvent.month, anniversaryEvent.day);
+}
+
+// List<DateTime> _extractImportantDates(fContacts.Contact contact) {
+//   return contact.events
+//       .map((e) => DateTime(e.year!, e.month, e.day))
+//       .toList();
+// }
+
+Future<Map<String, dynamic>> importContactsWithGroup({
+  required List<fContacts.Contact> pickedContacts,
+  required String groupId,
+  required Function(int processed, int total) onProgress,
+}) async {
+  try {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
+      return {
+        'success': false,
+        'message': 'User not logged in',
+        'importedCount': 0
+      };
+    }
+
+    // Get existing contacts to avoid duplicates
+    final existingContacts = await _getExistingContacts(currentUser.uid);
+    final existingPhoneNumbers = existingContacts.map((c) => _normalizePhoneNumber(c.phoneNumber)).toSet();
+    final existingEmails = existingContacts.map((c) => c.email.toLowerCase()).toSet();
+
+    int importedCount = 0;
+    int processedCount = 0;
+    int totalContacts = pickedContacts.length;
+
+    // Filter out already imported contacts
+    final contactsToImport = pickedContacts.where((deviceContact) {
+      final hasMatchingPhone = deviceContact.phones.any((phone) {
+        return existingPhoneNumbers.contains(_normalizePhoneNumber(phone.normalizedNumber));
+      });
+      final hasMatchingEmail = deviceContact.emails.any((email) {
+        return existingEmails.contains(email.address.toLowerCase());
+      });
+      return !hasMatchingPhone && !hasMatchingEmail;
+    }).toList();
+
+    if (contactsToImport.isEmpty) {
+      return {
+        'success': true,
+        'message': 'All selected contacts already exist in Nudge',
+        'importedCount': 0
+      };
+    }
+
+    // Reference to Firestore subcollection
+    final contactsRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUser.uid)
+        .collection('contacts');
+
+    for (var deviceContact in contactsToImport) {
+      processedCount++;
+      onProgress(processedCount, totalContacts);
+
+      if ((deviceContact.name.first.isEmpty && deviceContact.name.last.isEmpty)) {
+        continue;
+      }
+
+      final displayName = _getDisplayName(deviceContact);
+
+      // Extract important dates
+      final birthday = _extractBirthday(deviceContact);
+      final anniversary = _extractAnniversary(deviceContact);
+      Contact nudgeContact = Contact(
+        id: '',
+        name: displayName,
+        phoneNumber: deviceContact.phones.isNotEmpty
+            ? deviceContact.phones.first.normalizedNumber
+            : '',
+        email: deviceContact.emails.isNotEmpty
+            ? deviceContact.emails.first.address
+            : '',
+        connectionType: 'Contact',
+        frequency: 2,
+        period: 'Monthly',
+        socialGroups: [groupId], // Assign to the selected group
+        notes: '',
+        imageUrl: deviceContact.photoOrThumbnail != null
+            ? 'data:image/png;base64,${String.fromCharCodes(deviceContact.photoOrThumbnail!)}'
+            : '',
+        lastContacted: DateTime.now(),
+        isVIP: false,
+        priority: 3,
+        tags: [],
+        interactionHistory: {},
+        birthday: birthday,
+        anniversary: anniversary,
+      );
+
+      await contactsRef.add(nudgeContact.toMap());
+      importedCount++;
+    }
+
+    return {
+      'success': true,
+      'message': 'Successfully imported $importedCount contacts to group',
+      'importedCount': importedCount
+    };
+  } catch (e, stack) {
+    print('Error in contact import with group: $e');
+    print('Stack trace: $stack');
+    return {
+      'success': false,
+      'message': 'Failed to import contacts: $e',
+      'importedCount': 0
+    };
+  }
+}
 
 Future<Map<String, dynamic>> importFromContactPicker({
   required List<fContacts.Contact> pickedContacts,

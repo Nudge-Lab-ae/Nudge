@@ -106,7 +106,7 @@ class NudgeCard extends StatelessWidget {
       case 'followup':
         return Colors.blue;
       default:
-        return const Color.fromRGBO(45, 161, 175, 1);
+        return const Color(0xff3CB3E9);
     }
   }
 }

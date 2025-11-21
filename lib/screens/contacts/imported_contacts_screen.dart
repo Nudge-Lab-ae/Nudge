@@ -63,7 +63,7 @@ class _ImportedContactsScreenState extends State<ImportedContactsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Imported Contacts'),
-        backgroundColor: const Color.fromRGBO(45, 161, 175, 1),
+        backgroundColor: const Color(0xff3CB3E9),
       ),
       body: _importedContacts.isEmpty
           ? const Center(

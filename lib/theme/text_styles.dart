@@ -76,7 +76,7 @@ class AppTextStyles {
   static const TextStyle buttonSecondary = TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.w600,
-    color: Color.fromRGBO(45, 161, 175, 1),
+    color: Color(0xff3CB3E9),
   );
 
   // Custom text styles with parameters

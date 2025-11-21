@@ -54,7 +54,7 @@ class User {
       'photoUrl': '',
       'profileCompleted': false,
       'admin': false,
-      'weeklyDigestEnabled': false,
+      'weeklyDigestEnabled': true,
     };
   }
 
