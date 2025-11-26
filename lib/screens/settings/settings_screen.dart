@@ -6,7 +6,7 @@ import 'package:crop_your_image/crop_your_image.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+// import 'package:google_sign_in/google_sign_in.dart';
 // import 'package:http/http.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:nudge/screens/admin/feedback_management_screen.dart';
@@ -325,84 +325,65 @@ void _showDeleteAccountConfirmation(AuthService authService) {
           onPressed: () => Navigator.pop(context),
           child: const Text('Cancel'),
         ),
-        TextButton(
-          // onPressed: _deleteAccount,
-          onPressed: (){
+       TextButton(
+          onPressed: deleting ? null : () {
             Navigator.pop(context);
             deleteUser(authService);
-          } ,
-          style: TextButton.styleFrom(foregroundColor: deleting?Colors.grey:Colors.red),
-          child: Text(deleting?'Deleting Account':'Delete Account'),
+          },
+          style: TextButton.styleFrom(
+            foregroundColor: deleting ? Colors.grey : Colors.red,
+          ),
+          child: Text(deleting ? 'Deleting...' : 'Delete Account'),
         ),
       ],
     ),
   );
 }
-Future<bool> deleteUser(AuthService authService) async {
-    FirebaseFirestore _firestore = FirebaseFirestore.instance;
-    FirebaseAuth _auth = FirebaseAuth.instance;
-    final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
-    String uid = _auth.currentUser!.uid;
-    // setState(() {
-    //   deleting = true;
-    // });
-    
-    try {
-      User thisUser = _auth.currentUser!;
-      await _firestore.collection('users').doc(uid).delete();
-      await thisUser.delete();
-      authService.signOut();
-      Navigator.pop(context);
-      await _auth.signOut();
-      // setState(() {
-      //   deleting = false;
-      // });
-    } catch (error) {
-      print('Error deleting user');
-      print(error);
-      return false;
-    }
-    
-    try{ 
-      await _googleSignIn.disconnect();
-      await _googleSignIn.signOut();
-      return true;
-    } catch (error) {
-      print('Error logging out');
-      return false;
-    }
-  }
 
-// Future<void> _deleteAccount() async {
-//   try {
-//     // Close dialog
-//     Navigator.pop(context);
+Future<bool> deleteUser(AuthService authService) async {
+  FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  FirebaseAuth _auth = FirebaseAuth.instance;
+  // final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
+  String uid = _auth.currentUser!.uid;
+  
+  setState(() {
+    deleting = true;
+  });
+  
+  try {
+    User thisUser = _auth.currentUser!;
+    await _firestore.collection('users').doc(uid).delete();
+    await thisUser.delete();
     
-//     // Show loading
-//     setState(() => _isChangingPassword = true);
+    // Sign out and navigate to welcome screen
+    await authService.signOut();
+    await _auth.signOut();
     
-//     final user = FirebaseAuth.instance.currentUser;
-//     if (user != null) {
-//       // Delete user data from Firestore first
-//       await FirebaseFirestore.instance.collection('users').doc(user.uid).delete();
-      
-//       // Delete user authentication
-//       await user.delete();
-      
-//       // Navigate to login
-//       Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
-      
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         const SnackBar(content: Text('Account deleted successfully')),
-//       );
-//     }
-//   } catch (e) {
-//     setState(() => _isChangingPassword = false);
-//     ScaffoldMessenger.of(context).showSnackBar(
-//       SnackBar(content: Text('Error deleting account: $e')),
-//     );
-//   }
-// }
+    // Navigate to welcome screen and remove all routes
+    Navigator.pushNamedAndRemoveUntil(context, '/welcome', (route) => false);
+    setState(() {
+      deleting = true;
+    });
+    
+    return true;
+  } catch (error) {
+    print('Error deleting user');
+    print(error);
+    
+    // Show error message
+    // ScaffoldMessenger.of(context).showSnackBar(
+    //   SnackBar(
+    //     content: Text('Error deleting account: $error'),
+    //     backgroundColor: Colors.red,
+    //   ),
+    // );
+    
+    setState(() {
+      deleting = false;
+    });
+    return false;
+  }
+}
 
  Widget _buildProfilePictureSection() {
     return Column(

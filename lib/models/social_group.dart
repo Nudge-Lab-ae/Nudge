@@ -10,7 +10,8 @@ class SocialGroup {
   int memberCount;
   DateTime lastInteraction;
   String colorCode;
-  bool dateNudgesEnabled = true;
+  bool birthdayNudgesEnabled = true;
+  bool anniversaryNudgesEnabled = true;
 
   SocialGroup({
     required this.id,
@@ -22,7 +23,8 @@ class SocialGroup {
     required this.memberCount,
     required this.lastInteraction,
     required this.colorCode,
-    required this.dateNudgesEnabled,
+    required this.birthdayNudgesEnabled,
+    required this.anniversaryNudgesEnabled,
   });
 
   Map<String, dynamic> toMap() {
@@ -37,7 +39,8 @@ class SocialGroup {
       'lastInteraction': lastInteraction.millisecondsSinceEpoch,
       'colorCode': colorCode,
       'createdAt': DateTime.now().millisecondsSinceEpoch,
-      'dateNudgesEnabled': dateNudgesEnabled,
+      'birthdayNudgesEnabled': birthdayNudgesEnabled,
+      'anniversaryNudgesEnabled': anniversaryNudgesEnabled,
     };
   }
 
@@ -53,7 +56,8 @@ class SocialGroup {
       memberCount: data['memberCount'] ?? 0,
       lastInteraction: DateTime.fromMillisecondsSinceEpoch(data['lastInteraction'] ?? 0),
       colorCode: data['colorCode'] ?? '#2596BE',
-      dateNudgesEnabled: data['dateNudgesEnabled'] ?? false,
+      birthdayNudgesEnabled: data['birthdayNudgesEnabled'] ?? false,
+      anniversaryNudgesEnabled: data['anniversaryNudgesEnabled'] ?? false,
     );
   }
 
@@ -68,7 +72,8 @@ class SocialGroup {
       memberCount: data['memberCount'] ?? 0,
       lastInteraction: DateTime.fromMillisecondsSinceEpoch(data['lastInteraction'] ?? 0),
       colorCode: data['colorCode'] ?? '#2596BE',
-      dateNudgesEnabled: data['dateNudgesEnabled'] ?? false,
+      birthdayNudgesEnabled: data['birthdayNudgesEnabled'] ?? false,
+      anniversaryNudgesEnabled: data['anniversaryNudgesEnabled'] ?? false,
     );
   }
 
@@ -82,19 +87,22 @@ class SocialGroup {
     int? memberCount,
     DateTime? lastInteraction,
     String? colorCode,
-    bool? dateNudgesEnabled,
+    bool? birthdayNudgesEnabled,
+    bool? anniversaryNudgesEnabled,
+
   }) {
     return SocialGroup(
       id: id ?? this.id,
       name: name ?? this.name,
       description: description ?? this.description,
-      frequency: frequency ?? this.frequency,
       period: period ?? this.period,
+      frequency: frequency ?? this.frequency,
       memberIds: memberIds ?? this.memberIds,
       memberCount: memberCount ?? this.memberCount,
       lastInteraction: lastInteraction ?? this.lastInteraction,
       colorCode: colorCode ?? this.colorCode,
-      dateNudgesEnabled: dateNudgesEnabled ?? this.dateNudgesEnabled,
+      birthdayNudgesEnabled: birthdayNudgesEnabled ?? this.birthdayNudgesEnabled,
+      anniversaryNudgesEnabled: anniversaryNudgesEnabled?? this.anniversaryNudgesEnabled,
     );
   }
 }

@@ -68,62 +68,67 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
         SocialGroup(
           id: 'Family',
           name: 'Family',
-          description: 'Family members',
+          description: 'Family member',
           period: 'Monthly',
           frequency: 4,
           memberIds: [],
           memberCount: 0,
           lastInteraction: DateTime.now(),
           colorCode: '#4FC3F7',
-          dateNudgesEnabled: false
+          anniversaryNudgesEnabled: false,
+          birthdayNudgesEnabled: false
         ),
         SocialGroup(
           id: 'Friend',
           name: 'Friend',
-          description: 'Friends',
+          description: 'Friend',
           period: 'Quarterly',
           frequency: 7,
           memberIds: [],
           memberCount: 0,
           lastInteraction: DateTime.now(),
           colorCode: '#FF6F61',
-          dateNudgesEnabled: false
+         anniversaryNudgesEnabled: false,
+          birthdayNudgesEnabled: false
         ),
         SocialGroup(
           id: 'Client',
           name: 'Client',
-          description: 'Clients',
+          description: 'Client',
           period: 'Monthly',
           frequency: 2,
           memberIds: [],
           memberCount: 0,
           lastInteraction: DateTime.now(),
           colorCode: '#81C784',
-          dateNudgesEnabled: false
+          anniversaryNudgesEnabled: false,
+          birthdayNudgesEnabled: false
         ),
         SocialGroup(
           id: 'Colleague',
           name: 'Colleague',
-          description: 'Colleagues',
+          description: 'Colleague',
           period: 'Annually',
           frequency: 4,
           memberIds: [],
           memberCount: 0,
           lastInteraction: DateTime.now(),
           colorCode: '#FFC107',
-          dateNudgesEnabled: false,
+          anniversaryNudgesEnabled: false,
+          birthdayNudgesEnabled: false
         ),
         SocialGroup(
           id: 'Mentor',
           name: 'Mentor',
-          description: 'Mentors',
+          description: 'Mentor',
           period: 'Annually',
           frequency: 2,
           memberIds: [],
           memberCount: 0,
           lastInteraction: DateTime.now(),
           colorCode: '#607D8B',
-          dateNudgesEnabled: false,
+          anniversaryNudgesEnabled: false,
+          birthdayNudgesEnabled: false
         ),
       ];
       setState(() {
@@ -207,7 +212,8 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
       memberCount: 0,
       lastInteraction: DateTime.now(),
       colorCode: '#2596BE',
-      dateNudgesEnabled: false,
+      anniversaryNudgesEnabled: false,
+      birthdayNudgesEnabled: false
     );
     
     setState(() {
@@ -244,7 +250,8 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
         memberCount: group.memberCount,
         lastInteraction: group.lastInteraction,
         colorCode: group.colorCode,
-        dateNudgesEnabled: group.dateNudgesEnabled
+        anniversaryNudgesEnabled: group.anniversaryNudgesEnabled,
+        birthdayNudgesEnabled: group.birthdayNudgesEnabled
       );
     });
   }
@@ -617,7 +624,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
         
         // Period Selection
         Text(
-          'Contact Period:',
+          'Contact Frequency:',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
@@ -625,14 +632,35 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildPeriodButton('Weekly', group.period == 'Weekly', group),
-            _buildPeriodButton('Monthly', group.period == 'Monthly', group),
-            _buildPeriodButton('Quarterly', group.period == 'Quarterly', group),
-            _buildPeriodButton('Annually', group.period == 'Annually', group),
-          ],
+        // Row(
+        //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        //   children: [
+        //     _buildPeriodButton('Weekly', group.period == 'Weekly', group),
+        //     _buildPeriodButton('Monthly', group.period == 'Monthly', group),
+        //     _buildPeriodButton('Quarterly', group.period == 'Quarterly', group),
+        //     _buildPeriodButton('Annually', group.period == 'Annually', group),
+        //   ],
+        // ),
+        DropdownButtonFormField<String>(
+          value: FrequencyPeriodMapper.getConversationalChoice(group.frequency, group.period),
+          onChanged: (String? newValue) {
+            if (newValue != null) {
+              final frequencyData = FrequencyPeriodMapper.getFrequencyPeriod(newValue);
+              setState(() {
+                group.frequency = frequencyData['frequency'] as int;
+                group.period = frequencyData['period'] as String;
+              });
+            }
+          },
+          items: FrequencyPeriodMapper.frequencyMapping.keys.map<DropdownMenuItem<String>>((String value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(value),
+            );
+          }).toList(),
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+          ),
         ),
         const SizedBox(height: 20),
         
@@ -783,32 +811,32 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
     );
   }
 
-  Widget _buildPeriodButton(String period, bool isSelected, SocialGroup group) {
-    return Expanded(
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        child: ElevatedButton(
-          onPressed: () {
-            setState(() {
-              group.period = period;
-              // Reset frequency to middle value when period changes
-              final range = _periodRanges[period]!;
-              group.frequency = ((range['min']! + range['max']!) / 2).toInt();
-            });
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: isSelected
-                ? const Color(0xff3CB3E9)
-                : Colors.grey[200],
-            foregroundColor: isSelected ? Colors.white : Colors.black,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            padding: const EdgeInsets.symmetric(vertical: 12),
-          ),
-          child: Text(period, style: const TextStyle(fontSize: 12)),
-        ),
-      ),
-    );
-  }
+  // Widget _buildPeriodButton(String period, bool isSelected, SocialGroup group) {
+  //   return Expanded(
+  //     child: Container(
+  //       margin: const EdgeInsets.symmetric(horizontal: 4),
+  //       child: ElevatedButton(
+  //         onPressed: () {
+  //           setState(() {
+  //             group.period = period;
+  //             // Reset frequency to middle value when period changes
+  //             final range = _periodRanges[period]!;
+  //             group.frequency = ((range['min']! + range['max']!) / 2).toInt();
+  //           });
+  //         },
+  //         style: ElevatedButton.styleFrom(
+  //           backgroundColor: isSelected
+  //               ? const Color(0xff3CB3E9)
+  //               : Colors.grey[200],
+  //           foregroundColor: isSelected ? Colors.white : Colors.black,
+  //           shape: RoundedRectangleBorder(
+  //             borderRadius: BorderRadius.circular(8),
+  //           ),
+  //           padding: const EdgeInsets.symmetric(vertical: 12),
+  //         ),
+  //         child: Text(period, style: const TextStyle(fontSize: 12)),
+  //       ),
+  //     ),
+  //   );
+  // }
 }

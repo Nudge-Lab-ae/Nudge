@@ -2,6 +2,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:nudge/services/nudge_service.dart';
 // import 'package:nudge/theme/text_styles.dart';
 import 'package:nudge/widgets/gradient_text.dart';
 import 'package:provider/provider.dart';
@@ -102,6 +103,9 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
                 'Successfully imported ${result['importedCount']} contacts!';
           });
 
+          // _scheduleNudgesForImportedContacts(result['importedCount']);
+          _showImportSuccessAndScheduleNudges(result['importedCount'], user.uid);
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Contacts imported successfully')),
           );
@@ -128,6 +132,25 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
       );
     }
   }
+
+  void _showImportSuccessAndScheduleNudges(int importedCount, String userId) async {
+  // Show initial success message
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Row(
+        children: [
+          const Icon(Icons.check_circle, color: Colors.white),
+          const SizedBox(width: 8),
+          Text('Imported $importedCount contacts successfully!'),
+        ],
+      ),
+      backgroundColor: Colors.green,
+    ),
+  );
+
+  // Schedule nudges in background
+  await _scheduleNudgesForImportedContacts(importedCount, userId);
+}
 
   /// Multi-select picker UI embedded in the screen.
   /// This fetches contacts, shows a checkbox list, and imports the selected ones.
@@ -328,6 +351,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Contacts imported successfully')),
       );
+      _scheduleNudgesForImportedContacts(result['importedCount'], user.uid);
     } else {
       setState(() {
         _statusMessage = 'Import failed: ${result['message']}';
@@ -341,6 +365,87 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   String _getQuantityLabel(int quantity) {
     return quantity == 0 ? 'All Contacts' : 'First $quantity Contacts';
   }
+
+  // Add to _ImportContactsScreenState class in import_contacts_screen.dart
+
+ Future<void> _scheduleNudgesForImportedContacts(int importedCount, String userId) async {
+  final apiService = Provider.of<ApiService>(context, listen: false);
+  final nudgeService = NudgeService();
+  
+  try {
+    // Show scheduling indicator
+    setState(() {
+      _statusMessage = 'Scheduling nudges for imported contacts...';
+      _isImporting = true;
+    });
+
+    // Get the updated contacts list
+    final contacts = await apiService.getAllContacts();
+    
+    // Schedule nudges for newly imported contacts
+    int scheduledCount = 0;
+    for (final contact in contacts) {
+      // Use default settings for imported contacts
+      final success = await nudgeService.scheduleNudgeForContact(
+        contact,
+        userId,
+        period: 'Monthly',
+        frequency: 2,
+      );
+      
+      if (success) scheduledCount++;
+    }
+    
+    setState(() {
+      _isImporting = false;
+    });
+
+    if (scheduledCount > 0) {
+      _showNudgeScheduledMessage(scheduledCount);
+    }
+  } catch (e) {
+    setState(() {
+      _isImporting = false;
+    });
+    print('Error scheduling nudges: $e');
+    // Don't show error to user as this is background process
+  }
+}
+
+void _showNudgeScheduledMessage(int scheduledCount) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.auto_awesome, color: Colors.white, size: 18),
+              SizedBox(width: 8),
+              Text(
+                'Automatic Nudge Scheduling',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Nudges scheduled for $scheduledCount contacts. You\'ll receive reminders automatically!',
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
+          ),
+        ],
+      ),
+      backgroundColor: const Color(0xff3CB3E9),
+      duration: const Duration(seconds: 5),
+      behavior: SnackBarBehavior.floating,
+    ),
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {

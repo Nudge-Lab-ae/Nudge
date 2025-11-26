@@ -8,6 +8,7 @@ import 'package:crop_your_image/crop_your_image.dart';
 import 'package:country_code_picker/country_code_picker.dart';
 import 'package:nudge/models/contact.dart';
 import 'package:nudge/models/social_group.dart';
+import 'package:nudge/services/nudge_service.dart';
 // import 'package:nudge/models/user.dart';
 // import 'package:nudge/theme/text_styles.dart';
 import 'package:nudge/widgets/gradient_text.dart';
@@ -83,16 +84,75 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
     _initializeDefaultGroups();
   }
 
-  void _initializeDefaultGroups() {
-    _userGroups.addAll([
-      SocialGroup(id: 'family', name: 'Family', period: 'Monthly', frequency: 4, colorCode: '#4FC3F7', description: '', memberCount: 0, memberIds: [], lastInteraction: DateTime.now(), dateNudgesEnabled: false),
-      SocialGroup(id: 'friend', name: 'Friend', period: 'Weekly', frequency: 2, colorCode: '#FF6F61', description: '', memberCount: 0, memberIds: [], lastInteraction: DateTime.now(), dateNudgesEnabled: false),
-      SocialGroup(id: 'colleagues', name: 'Colleagues', period: 'Monthly', frequency: 2, colorCode: '#81C784', description: '', memberCount: 0, memberIds: [], lastInteraction: DateTime.now(), dateNudgesEnabled: false),
-      SocialGroup(id: 'clients', name: 'Clients', period: 'Quarterly', frequency: 1, colorCode: '#FFC107', description: '', memberCount: 0, memberIds: [], lastInteraction: DateTime.now(), dateNudgesEnabled: false),
-      SocialGroup(id: 'mentors', name: 'Mentors', period: 'Annually', frequency: 2, colorCode: '#607D8B', description: '', memberCount: 0, memberIds: [], lastInteraction: DateTime.now(), dateNudgesEnabled: false),
-    ]);
-  }
-
+void _initializeDefaultGroups() {
+  _userGroups.addAll([
+    SocialGroup(
+      id: 'family', 
+      name: 'Family', 
+      frequency: 4,
+      period: 'Monthly',
+      colorCode: '#4FC3F7', 
+      description: '', 
+      memberCount: 0, 
+      memberIds: [], 
+      lastInteraction: DateTime.now(), 
+      birthdayNudgesEnabled: true,
+      anniversaryNudgesEnabled: true,
+    ),
+    SocialGroup(
+      id: 'friend', 
+      name: 'Friend', 
+      frequency: 2,
+      period: 'Weekly',
+      colorCode: '#FF6F61', 
+      description: '', 
+      memberCount: 0, 
+      memberIds: [], 
+      lastInteraction: DateTime.now(), 
+      birthdayNudgesEnabled: true,
+      anniversaryNudgesEnabled: true,
+    ),
+    SocialGroup(
+      id: 'colleague', 
+      name: 'Colleague', 
+      frequency: 2,
+      period: 'Monthly',
+      colorCode: '#81C784', 
+      description: '', 
+      memberCount: 0, 
+      memberIds: [], 
+      lastInteraction: DateTime.now(), 
+      birthdayNudgesEnabled: true,
+      anniversaryNudgesEnabled: true,
+    ),
+    SocialGroup(
+      id: 'client', 
+      name: 'Client', 
+      frequency: 1,
+      period: 'Quarterly',
+      colorCode: '#FFC107', 
+      description: '', 
+      memberCount: 0, 
+      memberIds: [], 
+      lastInteraction: DateTime.now(), 
+      birthdayNudgesEnabled: true,
+      anniversaryNudgesEnabled: true,
+    ),
+    SocialGroup(
+      id: 'mentor', 
+      name: 'Mentor', 
+      frequency: 2,
+      period: 'Yearly',
+      colorCode: '#607D8B', 
+      description: '', 
+      memberCount: 0, 
+      memberIds: [], 
+      lastInteraction: DateTime.now(), 
+      birthdayNudgesEnabled: true,
+      anniversaryNudgesEnabled: true,
+    ),
+  ]);
+}
   Future<void> _pickImage() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
@@ -225,11 +285,16 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
           await apiService.updateCloseCircleContacts(_closeCircleContacts);
         }
 
+        if (_selectedContacts.isNotEmpty) {
+          // Schedule nudges in background without waiting
+          _scheduleNudgesForImportedContacts();
+        }
         // Navigate to dashboard
-        Navigator.pushReplacement(
-          context, 
-          MaterialPageRoute(builder: (context) => const DashboardScreen()),
-        );
+        // Navigator.pushReplacement(
+        //   context, 
+        //   MaterialPageRoute(builder: (context) => const DashboardScreen()),
+        // );
+         _navigateToDashboardWithSuccess();
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -239,6 +304,51 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
       setState(() => _isLoading = false);
     }
   }
+
+  void _navigateToDashboardWithSuccess() {
+  // Show success message before navigation
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Row(
+        children: [
+          const Icon(Icons.celebration, color: Colors.white),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Onboarding Complete!',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                Text(
+                  _selectedContacts.isNotEmpty 
+                      ? 'Your first nudges have been scheduled'
+                      : 'You can add contacts and schedule nudges anytime',
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: Colors.green,
+      duration: const Duration(seconds: 4),
+    ),
+  );
+
+  // Navigate after showing the message
+  Future.delayed(const Duration(milliseconds: 1500), () {
+    Navigator.pushReplacement(
+      context, 
+      MaterialPageRoute(builder: (context) => const DashboardScreen()),
+    );
+  });
+}
 
   // void _reorderGroups(int oldIndex, int newIndex) {
   //   setState(() {
@@ -596,7 +706,7 @@ Future<void> _pickContactsManually() async {
     // Import contacts and assign to the selected group
     final result = await syncService.importContactsWithGroup(
       pickedContacts: deviceContacts,
-      groupId: group.id,
+      groupId: group.name,
       onProgress: (processed, total) {
         // Progress callback if needed
       },
@@ -612,7 +722,7 @@ Future<void> _pickContactsManually() async {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Successfully imported ${result['importedCount']} contacts to ${group.name}!')),
+        SnackBar(content: Text('Successfully imported contacts to ${group.name}!')),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -962,143 +1072,197 @@ Widget _buildGroupsStep() {
 }
 
 // Update the _buildEditableGroupItem to include drag handle
-Widget _buildEditableGroupItem(SocialGroup group, int index) {
-  final Map<String, Map<String, dynamic>> periodRanges = {
-    'Weekly': {'min': 1, 'max': 7, 'divisions': 6},
-    'Monthly': {'min': 1, 'max': 7, 'divisions': 6},
-    'Quarterly': {'min': 1, 'max': 7, 'divisions': 6},
-    'Annually': {'min': 1, 'max': 7, 'divisions': 6},
-  };
+  Widget _buildEditableGroupItem(SocialGroup group, int index) {
+    // List of conversational frequency options
+    // final List<String> frequencyOptions = [
+    //   'Every few days',
+    //   'Weekly', 
+    //   'Every 2 weeks',
+    //   'Monthly',
+    //   'Quarterly',
+    //   'Twice a year',
+    //   'Once a year'
+    // ];
 
-  return Padding(
-    padding: const EdgeInsets.all(16),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Header row with drag handle and delete
-        Row(
-          children: [
-            ReorderableDragStartListener(
-              index: index,
-              child: const Icon(Icons.drag_handle, color: Colors.grey),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: TextFormField(
-                initialValue: group.name,
-                decoration: const InputDecoration(
-                  labelText: 'Group Name',
-                  border: OutlineInputBorder(),
-                  isDense: true,
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header row with drag handle and delete
+          Row(
+            children: [
+              ReorderableDragStartListener(
+                index: index,
+                child: const Icon(Icons.drag_handle, color: Colors.grey),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: TextFormField(
+                  initialValue: group.name,
+                  decoration: const InputDecoration(
+                    labelText: 'Group Name',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _userGroups[index] = group.copyWith(name: value);
+                    });
+                  },
                 ),
+              ),
+              const SizedBox(width: 10),
+              IconButton(
+                icon: const Icon(Icons.delete, color: Colors.red),
+                onPressed: () => _deleteGroup(index),
+              ),
+            ],
+          ),
+          const SizedBox(height: 15),
+          
+          // Frequency Dropdown
+          const Text('Contact Frequency:', style: TextStyle(fontWeight: FontWeight.w500)),
+          const SizedBox(height: 8),
+         DropdownButtonFormField<String>(
+            value: _getCurrentFrequencyChoice(group),
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              isDense: true,
+            ),
+            items: FrequencyPeriodMapper.frequencyMapping.keys.map((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(value),
+              );
+            }).toList(),
+            onChanged: (String? newValue) {
+              if (newValue != null) {
+                final frequencyData = FrequencyPeriodMapper.getFrequencyPeriod(newValue);
+                setState(() {
+                  _userGroups[index] = group.copyWith(
+                    frequency: frequencyData['frequency'] as int,
+                    period: frequencyData['period'] as String,
+                  );
+                });
+              }
+            },
+          ),
+          
+          const SizedBox(height: 20),
+          
+          // Date Nudges Section
+          const Text('Date Nudges:', style: TextStyle(fontWeight: FontWeight.w500)),
+          const SizedBox(height: 8),
+          
+          // Birthday Nudges Toggle
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Send a nudge for birthdays',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                ),
+              ),
+              Switch(
+                value: group.birthdayNudgesEnabled,
                 onChanged: (value) {
                   setState(() {
-                    _userGroups[index] = group.copyWith(name: value);
+                    _userGroups[index] = group.copyWith(birthdayNudgesEnabled: value);
                   });
                 },
               ),
-            ),
-            const SizedBox(width: 10),
-            IconButton(
-              icon: const Icon(Icons.delete, color: Colors.red),
-              onPressed: () => _deleteGroup(index),
-            ),
-          ],
-        ),
-        const SizedBox(height: 15),
-        
-        // Period selection
-        const Text('Contact Period:', style: TextStyle(fontWeight: FontWeight.w500)),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            _buildPeriodButton('Weekly', group.period == 'Weekly', index),
-            _buildPeriodButton('Monthly', group.period == 'Monthly', index),
-            _buildPeriodButton('Quarterly', group.period == 'Quarterly', index),
-            _buildPeriodButton('Annually', group.period == 'Annually', index),
-          ],
-        ),
-        const SizedBox(height: 20),
-        
-        // Frequency slider
-        Text(
-          _getFrequencyLabel(group.period, group.frequency.toDouble()),
-          style: const TextStyle(fontWeight: FontWeight.w500),
-        ),
-        const SizedBox(height: 8),
-        Slider(
-          value: group.frequency.toDouble(),
-          min: periodRanges[group.period]!['min']!.toDouble(),
-          max: periodRanges[group.period]!['max']!.toDouble(),
-          divisions: periodRanges[group.period]!['divisions'],
-          label: group.frequency.toString(),
-          thumbColor: const Color(0xff3CB3E9),
-          activeColor: const Color(0xff3CB3E9),
-          onChanged: (value) {
-            setState(() {
-              _userGroups[index] = group.copyWith(frequency: value.toInt());
-            });
-          },
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(periodRanges[group.period]!['min'].toString()),
-            Text(periodRanges[group.period]!['max'].toString()),
-          ],
-        ),
-      ],
-    ),
-  );
-}
-
-  Widget _buildPeriodButton(String period, bool isSelected, int groupIndex) {
-    return Expanded(
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 2),
-        child: ElevatedButton(
-          onPressed: () {
-            setState(() {
-              final range = {
-                'Weekly': {'min': 1, 'max': 7, 'divisions': 6},
-                'Monthly': {'min': 1, 'max': 7, 'divisions': 6},
-                'Quarterly': {'min': 1, 'max': 7, 'divisions': 6},
-                'Annually': {'min': 1, 'max': 7, 'divisions': 6},
-              }[period]!;
-              
-              _userGroups[groupIndex] = _userGroups[groupIndex].copyWith(
-                period: period,
-                frequency: ((range['min']! + range['max']!) / 2).toInt(),
-              );
-            });
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: isSelected ? const Color(0xff3CB3E9) : Colors.grey[200],
-            foregroundColor: isSelected ? Colors.white : Colors.black,
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            ],
           ),
-          child: Text(period, style: const TextStyle(fontSize: 12)),
-        ),
+          
+          // Anniversary Nudges Toggle
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Send a nudge for anniversaries',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                ),
+              ),
+              Switch(
+                value: group.anniversaryNudgesEnabled,
+                onChanged: (value) {
+                  setState(() {
+                    _userGroups[index] = group.copyWith(anniversaryNudgesEnabled: value);
+                  });
+                },
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 10),
+          
+          // Members section
+          Text(
+            '${group.memberIds.length} members',
+            style: const TextStyle(
+              color: Colors.grey,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+          ),
+        ],
       ),
     );
   }
 
+  String _getCurrentFrequencyChoice(SocialGroup group) {
+  return FrequencyPeriodMapper.getConversationalChoice(group.frequency, group.period);
+}
+
+  // Widget _buildPeriodButton(String period, bool isSelected, int groupIndex) {
+  //   return Expanded(
+  //     child: Container(
+  //       margin: const EdgeInsets.symmetric(horizontal: 2),
+  //       child: ElevatedButton(
+  //         onPressed: () {
+  //           setState(() {
+  //             final range = {
+  //               'Weekly': {'min': 1, 'max': 7, 'divisions': 6},
+  //               'Monthly': {'min': 1, 'max': 7, 'divisions': 6},
+  //               'Quarterly': {'min': 1, 'max': 7, 'divisions': 6},
+  //               'Annually': {'min': 1, 'max': 7, 'divisions': 6},
+  //             }[period]!;
+              
+  //             _userGroups[groupIndex] = _userGroups[groupIndex].copyWith(
+  //               period: period,
+  //               frequency: ((range['min']! + range['max']!) / 2).toInt(),
+  //             );
+  //           });
+  //         },
+  //         style: ElevatedButton.styleFrom(
+  //           backgroundColor: isSelected ? const Color(0xff3CB3E9) : Colors.grey[200],
+  //           foregroundColor: isSelected ? Colors.white : Colors.black,
+  //           padding: const EdgeInsets.symmetric(vertical: 8),
+  //         ),
+  //         child: Text(period, style: const TextStyle(fontSize: 12)),
+  //       ),
+  //     ),
+  //   );
+  // }
+
   void _addNewGroup() {
-    setState(() {
-      _userGroups.add(SocialGroup(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        name: 'New Group',
-        description: '',
-        period: 'Monthly',
-        frequency: 2,
-        memberIds: [],
-        memberCount: 0,
-        lastInteraction: DateTime.now(),
-        colorCode: '#2596BE',
-        dateNudgesEnabled: false,
-      ));
-    });
-  }
+  setState(() {
+    _userGroups.add(SocialGroup(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      name: 'New Group',
+      description: '',
+      period: 'Monthly',
+      frequency: 2, // Default frequency
+      memberIds: [],
+      memberCount: 0,
+      lastInteraction: DateTime.now(),
+      colorCode: '#2596BE',
+      birthdayNudgesEnabled: true, // Default enabled
+      anniversaryNudgesEnabled: true, // Default enabled
+    ));
+  });
+}
 
   void _deleteGroup(int index) {
     showDialog(
@@ -1125,20 +1289,20 @@ Widget _buildEditableGroupItem(SocialGroup group, int index) {
     );
   }
 
-  String _getFrequencyLabel(String period, double frequency) {
-    switch (period) {
-      case 'Weekly':
-        return '${frequency.toInt()} times per week';
-      case 'Monthly':
-        return '${frequency.toInt()} times per month';
-      case 'Quarterly':
-        return '${frequency.toInt()} times per quarter';
-      case 'Annually':
-        return '${frequency.toInt()} times per year';
-      default:
-        return '${frequency.toInt()} times';
-    }
-  }
+  // String _getFrequencyLabel(String period, double frequency) {
+  //   switch (period) {
+  //     case 'Weekly':
+  //       return '${frequency.toInt()} times per week';
+  //     case 'Monthly':
+  //       return '${frequency.toInt()} times per month';
+  //     case 'Quarterly':
+  //       return '${frequency.toInt()} times per quarter';
+  //     case 'Annually':
+  //       return '${frequency.toInt()} times per year';
+  //     default:
+  //       return '${frequency.toInt()} times';
+  //   }
+  // }
 
   Widget _buildContactsStep() {
     return SingleChildScrollView(
@@ -1362,6 +1526,47 @@ Widget _buildEditableGroupItem(SocialGroup group, int index) {
       subtitle: Text(subtitle, style: const TextStyle(color: Colors.grey)),
     );
   }
+
+  Future<void> _scheduleNudgesForImportedContacts() async {
+  final authService = Provider.of<AuthService>(context, listen: false);
+  final nudgeService = NudgeService();
+  final user = authService.currentUser;
+  
+  if (user == null || _selectedContacts.isEmpty) return;
+
+  try {
+    int scheduledCount = 0;
+    
+    for (final contact in _selectedContacts) {
+      // Find the group for this contact
+      SocialGroup? group = _userGroups.firstWhere(
+        (g) => contact.socialGroups.contains(g.id),
+        orElse: () => _userGroups.first, // Default to first group
+      );
+      
+      final success = await nudgeService.scheduleNudgeForContact(
+        contact,
+        user.uid,
+        period: group.period,
+        frequency: group.frequency,
+      );
+      
+      if (success) scheduledCount++;
+      
+      // Small delay to avoid overwhelming the system
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+    
+    if (scheduledCount > 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Scheduled nudges for $scheduledCount contacts')),
+      );
+    }
+  } catch (e) {
+    print('Error scheduling nudges: $e');
+    // Don't show error to user as this is background process
+  }
+}
 
   @override
   Widget build(BuildContext context) {

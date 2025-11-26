@@ -395,7 +395,8 @@ class ApiService {
             memberCount: 0,
             lastInteraction: DateTime.now(),
             colorCode: '#FF0000',
-            dateNudgesEnabled: false,
+            birthdayNudgesEnabled: false,
+            anniversaryNudgesEnabled: false
           );
         }
       }).toList();
@@ -760,6 +761,45 @@ Future<void> submitFeedback({
     }
   }
 
+  Stream<List<Map<String, dynamic>>> getPublicFeedbacksStream({
+  String? statusFilter,
+  int limit = 50,
+}) {
+  Query query = _firestore
+      .collection('feedbacks')
+      .where('isPublic', isEqualTo: true)
+      .orderBy('timestamp', descending: true)
+      .limit(limit);
+
+  if (statusFilter != null) {
+    query = query.where('status', isEqualTo: statusFilter);
+  }
+
+  return query.snapshots().map((snapshot) {
+    return snapshot.docs.map((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+      return {'id': doc.id, ...data};
+    }).toList();
+  });
+}
+
+Future<void> updateFeedbackAdminData({
+  required String feedbackId,
+  String? adminTitle,
+  String? status,
+  bool? isPublic,
+}) async {
+  final updateData = <String, dynamic>{};
+  
+  if (adminTitle != null) updateData['adminTitle'] = adminTitle;
+  if (status != null) updateData['status'] = status;
+  if (isPublic != null) updateData['isPublic'] = isPublic;
+  
+  if (updateData.isNotEmpty) {
+    await _firestore.collection('feedbacks').doc(feedbackId).update(updateData);
+  }
+}
+
   Future<void> deleteFeedback(String feedbackId) async {
     try {
       await _firestore.collection('feedbacks').doc(feedbackId).delete();
@@ -798,5 +838,31 @@ Future<void> submitFeedback({
   }
 
 
+}
+
+class FrequencyPeriodMapper {
+  static const Map<String, Map<String, dynamic>> frequencyMapping = {
+    'Every few days': {'frequency': 2, 'period': 'Weekly'},
+    'Weekly': {'frequency': 1, 'period': 'Weekly'},
+    'Every 2 weeks': {'frequency': 2, 'period': 'Monthly'},
+    'Monthly': {'frequency': 1, 'period': 'Monthly'},
+    'Quarterly': {'frequency': 1, 'period': 'Quarterly'},
+    'Twice a year': {'frequency': 2, 'period': 'Yearly'},
+    'Once a year': {'frequency': 1, 'period': 'Yearly'},
+  };
+
+  static String getConversationalChoice(int frequency, String period) {
+    for (var entry in frequencyMapping.entries) {
+      if (entry.value['frequency'] == frequency && entry.value['period'] == period) {
+        return entry.key;
+      }
+    }
+    // Default fallback
+    return 'Monthly';
+  }
+
+  static Map<String, dynamic> getFrequencyPeriod(String conversationalChoice) {
+    return frequencyMapping[conversationalChoice] ?? {'frequency': 1, 'period': 'Monthly'};
+  }
 }
 

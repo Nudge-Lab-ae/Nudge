@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:nudge/services/api_service.dart';
@@ -15,7 +17,9 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
   final ApiService _apiService = ApiService();
   String _statusFilter = 'all';
   String _typeFilter = 'all';
-  final List<String> _statusOptions = ['all', 'new', 'reviewed', 'responded'];
+  final List<String> _statusOptions = [
+  'all', 'new', 'reviewed', 'responded', 'received', 'planned', 'in_progress', 'completed'
+];
   final List<String> _typeOptions = [
     'all', 'Feedback', 'Bug Report', 'Feature Request', 'General Inquiry', 'Complaint'
   ];
@@ -268,131 +272,357 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
       },
     );
   }
+// Add these new status options at the top of _FeedbackManagementScreenState
 
-  Widget _buildFeedbackItem(Map<String, dynamic> feedback) {
-    final user = feedback['user'] ?? {};
-    final timestamp = feedback['timestamp'] ?? DateTime.now();
-    final status = feedback['status'] ?? 'new';
-    final type = feedback['type'] ?? 'Feedback';
-    final message = feedback['message'] ?? '';
-    final adminResponse = feedback['adminResponse'];
-    
-    return Card(
-      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: ExpansionTile(
-        leading: Container(
-          padding: EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: _getStatusColor(status).withOpacity(0.1),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            _getTypeIcon(type),
-            color: _getStatusColor(status),
-            size: 20,
-          ),
+// Update the _buildFeedbackItem method to include admin title and public status
+Widget _buildFeedbackItem(Map<String, dynamic> feedback) {
+  final user = feedback['user'] ?? {};
+  final timestamp = feedback['timestamp'] ?? DateTime.now();
+  final status = feedback['status'] ?? 'new';
+  final type = feedback['type'] ?? 'Feedback';
+  final message = feedback['message'] ?? '';
+  final adminResponse = feedback['adminResponse'];
+  final section = feedback['section'] ?? 'unknown';
+  final adminTitle = feedback['adminTitle'];
+  final isPublic = feedback['isPublic'] ?? false;
+  // final votes = feedback['votes'] ?? 0;
+  
+  final TextEditingController _titleController = TextEditingController(text: adminTitle ?? '');
+  final TextEditingController _responseController = TextEditingController();
+
+  return Card(
+    margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+    child: ExpansionTile(
+      leading: Container(
+        padding: EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: _getStatusColor(status).withOpacity(0.1),
+          shape: BoxShape.circle,
         ),
-        title: Text(
-          user['username'] ?? user['email'] ?? 'Unknown User',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        child: Icon(
+          _getTypeIcon(type),
+          color: _getStatusColor(status),
+          size: 20,
         ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              type,
-              style: TextStyle(color: Colors.grey.shade600),
-            ),
-            Text(
-              DateFormat('MMM dd, yyyy - HH:mm').format(timestamp),
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-            ),
-          ],
-        ),
-        trailing: Chip(
-          label: Text(
-            status.toUpperCase(),
-            style: TextStyle(
-              fontSize: 10,
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          backgroundColor: _getStatusColor(status),
-        ),
+      ),
+      title: Text(
+        adminTitle ?? 'No Title Set',
+        style: TextStyle(fontWeight: FontWeight.bold),
+      ),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // User Info
-                _buildInfoRow('User', '${user['username'] ?? 'N/A'} (${user['email']})'),
-                _buildInfoRow('Platform', feedback['platform'] ?? 'Unknown'),
-                _buildInfoRow('App Version', feedback['appVersion'] ?? '1.0.0'),
-                
-                SizedBox(height: 12),
-                
-                // Message
-                Text(
-                  'Message:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+          Text('From: ${user['username'] ?? user['email'] ?? 'Unknown User'}'),
+          Text(
+            'Section: ${_getSectionName(section)}',
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+          ),
+          Text(
+            DateFormat('MMM dd, yyyy - HH:mm').format(timestamp),
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+          ),
+        ],
+      ),
+      trailing: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Chip(
+            label: Text(
+              status.toUpperCase(),
+              style: TextStyle(
+                fontSize: 10,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            backgroundColor: _getStatusColor(status),
+          ),
+          if (isPublic) 
+            Chip(
+              label: Text(
+                'PUBLIC',
+                style: TextStyle(
+                  fontSize: 8,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
                 ),
-                SizedBox(height: 4),
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
-                    borderRadius: BorderRadius.circular(8),
+              ),
+              backgroundColor: Colors.green,
+            ),
+        ],
+      ),
+      children: [
+        Padding(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // User Info
+              _buildInfoRow('User', '${user['username'] ?? 'N/A'} (${user['email']})'),
+              _buildInfoRow('Platform', feedback['platform'] ?? 'Unknown'),
+              _buildInfoRow('App Version', feedback['appVersion'] ?? '1.0.0'),
+              _buildInfoRow('Section', _getSectionName(section)),
+              
+              SizedBox(height: 12),
+              
+              // Admin Title Input
+              Text(
+                'Admin Title (for forum):',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 4),
+              TextField(
+                controller: _titleController,
+                decoration: InputDecoration(
+                  hintText: 'Enter a descriptive title for the feedback forum...',
+                  border: OutlineInputBorder(),
+                  suffixIcon: IconButton(
+                    icon: Icon(Icons.save),
+                    onPressed: () async {
+                      if (_titleController.text.trim().isNotEmpty) {
+                        await _apiService.updateFeedbackAdminData(
+                          feedbackId: feedback['id'],
+                          adminTitle: _titleController.text.trim(),
+                        );
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Title updated')),
+                        );
+                      }
+                    },
                   ),
-                  child: Text(message),
                 ),
-                
-                // Admin Response
-                if (adminResponse != null) ...[
-                  SizedBox(height: 12),
-                  Text(
-                    'Admin Response:',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+              ),
+              
+              SizedBox(height: 12),
+              
+              // Message
+              Text(
+                'User Message:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 4),
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(message),
+              ),
+              
+              // Admin Response
+              SizedBox(height: 12),
+              Text(
+                'Admin Response:',
+                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+              ),
+              SizedBox(height: 4),
+              TextField(
+                controller: _responseController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: adminResponse != null 
+                      ? 'Update existing response...' 
+                      : 'Enter your response...',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              
+              SizedBox(height: 16),
+              
+              // Enhanced Action Buttons
+              _buildEnhancedActionButtons(feedback, _responseController, _titleController),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+// Add this new method for enhanced action buttons
+Widget _buildEnhancedActionButtons(
+  Map<String, dynamic> feedback, 
+  TextEditingController responseController,
+  TextEditingController titleController,
+) {
+  final isPublic = feedback['isPublic'] ?? false;
+  
+  return Column(
+    children: [
+      Row(
+        children: [
+          // Status Update
+          Expanded(
+            flex: 2,
+            child: DropdownButton<String>(
+              value: feedback['status'] ?? 'new',
+              isExpanded: true,
+              items: ['new', 'reviewed', 'responded', 'received', 'planned', 'in_progress', 'completed'].map((status) {
+                return DropdownMenuItem(
+                  value: status,
+                  child: Text(
+                    status.toUpperCase(),
+                    style: TextStyle(color: _getStatusColor(status)),
                   ),
-                  SizedBox(height: 4),
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.green.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.green.shade100),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          adminResponse['response'],
-                          style: TextStyle(color: Colors.green.shade800),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'By ${adminResponse['responderEmail']} on ${DateFormat('MMM dd, yyyy - HH:mm').format(adminResponse['timestamp']?.toDate() ?? DateTime.now())}',
-                          style: TextStyle(fontSize: 12, color: Colors.green.shade600),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-                
-                SizedBox(height: 16),
-                
-                // Action Buttons
-                _buildActionButtons(feedback),
-              ],
+                );
+              }).toList(),
+              onChanged: (newStatus) {
+                if (newStatus != null) {
+                  _updateFeedbackStatus(feedback['id'], newStatus);
+                }
+              },
+            ),
+          ),
+          
+          SizedBox(width: 8),
+          
+          // Public/Private Toggle
+          Expanded(
+            flex: 1,
+            child: OutlinedButton.icon(
+              onPressed: () => _toggleFeedbackVisibility(feedback),
+              icon: Icon(
+                isPublic ? Icons.visibility : Icons.visibility_off,
+                size: 16,
+              ),
+              label: Text(isPublic ? 'Public' : 'Private'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: isPublic ? Colors.green : Colors.grey,
+                side: BorderSide(color: isPublic ? Colors.green : Colors.grey),
+              ),
             ),
           ),
         ],
       ),
+      
+      SizedBox(height: 8),
+      
+      Row(
+        children: [
+          // Respond Button
+          if (feedback['status'] != 'responded')
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  if (responseController.text.trim().isNotEmpty) {
+                    _addFeedbackResponse(feedback['id'], responseController.text.trim());
+                    responseController.clear();
+                  }
+                },
+                icon: Icon(Icons.reply, size: 16, color: Colors.white),
+                label: Text('Send Response'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ),
+          
+          if (feedback['status'] != 'responded') SizedBox(width: 8),
+          
+          // Save Title Button
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: () async {
+                if (titleController.text.trim().isNotEmpty) {
+                  await _apiService.updateFeedbackAdminData(
+                    feedbackId: feedback['id'],
+                    adminTitle: titleController.text.trim(),
+                  );
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Title saved')),
+                  );
+                }
+              },
+              icon: Icon(Icons.title, size: 16),
+              label: Text('Save Title'),
+            ),
+          ),
+          
+          SizedBox(width: 8),
+          
+          // Delete Button
+          IconButton(
+            onPressed: () => _deleteFeedback(feedback),
+            icon: Icon(Icons.delete, color: Colors.red),
+            tooltip: 'Delete',
+          ),
+        ],
+      ),
+    ],
+  );
+}
+
+Future<void> _addFeedbackResponse(String feedbackId, String response) async {
+  FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  FirebaseAuth _auth = FirebaseAuth.instance;
+  final user = _auth.currentUser;
+  if (user == null) throw Exception('User not logged in');
+
+  final responseData = {
+    'response': response,
+    'responderEmail': user.email,
+    'timestamp': DateTime.now(),
+  };
+
+  await _firestore.collection('feedbacks').doc(feedbackId).update({
+    'adminResponse': responseData,
+    'status': 'responded',
+    'updatedAt': DateTime.now(),
+  });
+}
+
+// Add this helper method
+String _getSectionName(String section) {
+  final sectionMap = {
+    '/dashboard': 'Dashboard',
+    '/contacts': 'Contacts',
+    '/groups': 'Groups',
+    '/analytics': 'Analytics',
+    '/notifications': 'Notifications',
+    '/settings': 'Settings',
+    '/welcome': 'Welcome Screen',
+    '/login': 'Login Screen',
+    '/register': 'Register Screen',
+    'unknown': 'Unknown Section',
+  };
+  
+  return sectionMap[section] ?? section;
+}
+
+// Add this method to toggle visibility
+void _toggleFeedbackVisibility(Map<String, dynamic> feedback) async {
+  try {
+    final currentVisibility = feedback['isPublic'] ?? false;
+    await _apiService.updateFeedbackAdminData(
+      feedbackId: feedback['id'],
+      isPublic: !currentVisibility,
+    );
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Feedback marked as ${!currentVisibility ? 'public' : 'private'}')),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error updating visibility: $e')),
     );
   }
+}
+
+// Update the status color method to include new statuses
+Color _getStatusColor(String status) {
+  switch (status) {
+    case 'new': return Colors.orange;
+    case 'reviewed': return Colors.blue;
+    case 'responded': return Colors.green;
+    case 'received': return Colors.orange;
+    case 'planned': return Colors.blue;
+    case 'in_progress': return Colors.purple;
+    case 'completed': return Colors.green;
+    default: return Colors.grey;
+  }
+}
 
   Widget _buildInfoRow(String label, String value) {
     return Padding(
@@ -415,65 +645,56 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
     );
   }
 
-  Widget _buildActionButtons(Map<String, dynamic> feedback) {
-    return Row(
-      children: [
-        // Status Update
-        Expanded(
-          child: DropdownButton<String>(
-            value: feedback['status'] ?? 'new',
-            isExpanded: true,
-            items: ['new', 'reviewed', 'responded'].map((status) {
-              return DropdownMenuItem(
-                value: status,
-                child: Text(
-                  status.toUpperCase(),
-                  style: TextStyle(color: _getStatusColor(status)),
-                ),
-              );
-            }).toList(),
-            onChanged: (newStatus) {
-              if (newStatus != null) {
-                _updateFeedbackStatus(feedback['id'], newStatus);
-              }
-            },
-          ),
-        ),
+  // Widget _buildActionButtons(Map<String, dynamic> feedback) {
+  //   return Row(
+  //     children: [
+  //       // Status Update
+  //       Expanded(
+  //         child: DropdownButton<String>(
+  //           value: feedback['status'] ?? 'new',
+  //           isExpanded: true,
+  //           items: ['new', 'reviewed', 'responded'].map((status) {
+  //             return DropdownMenuItem(
+  //               value: status,
+  //               child: Text(
+  //                 status.toUpperCase(),
+  //                 style: TextStyle(color: _getStatusColor(status)),
+  //               ),
+  //             );
+  //           }).toList(),
+  //           onChanged: (newStatus) {
+  //             if (newStatus != null) {
+  //               _updateFeedbackStatus(feedback['id'], newStatus);
+  //             }
+  //           },
+  //         ),
+  //       ),
         
-        SizedBox(width: 8),
+  //       SizedBox(width: 8),
         
-        // Respond Button
-        if (feedback['status'] != 'responded')
-          ElevatedButton.icon(
-            onPressed: () => _showResponseDialog(feedback),
-            icon: Icon(Icons.reply, size: 16, color: Colors.white,),
-            label: Text('Respond'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-              foregroundColor: Colors.white,
-            ),
-          ),
+  //       // Respond Button
+  //       if (feedback['status'] != 'responded')
+  //         ElevatedButton.icon(
+  //           onPressed: () => _showResponseDialog(feedback),
+  //           icon: Icon(Icons.reply, size: 16, color: Colors.white,),
+  //           label: Text('Respond'),
+  //           style: ElevatedButton.styleFrom(
+  //             backgroundColor: Colors.green,
+  //             foregroundColor: Colors.white,
+  //           ),
+  //         ),
         
-        SizedBox(width: 8),
+  //       SizedBox(width: 8),
         
-        // Delete Button
-        IconButton(
-          onPressed: () => _deleteFeedback(feedback),
-          icon: Icon(Icons.delete, color: Colors.red),
-          tooltip: 'Delete',
-        ),
-      ],
-    );
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'new': return Colors.orange;
-      case 'reviewed': return Colors.blue;
-      case 'responded': return Colors.green;
-      default: return Colors.grey;
-    }
-  }
+  //       // Delete Button
+  //       IconButton(
+  //         onPressed: () => _deleteFeedback(feedback),
+  //         icon: Icon(Icons.delete, color: Colors.red),
+  //         tooltip: 'Delete',
+  //       ),
+  //     ],
+  //   );
+  // }
 
   IconData _getTypeIcon(String type) {
     switch (type) {
@@ -498,62 +719,62 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
     }
   }
 
-  void _showResponseDialog(Map<String, dynamic> feedback) {
-    final TextEditingController responseController = TextEditingController();
+  // void _showResponseDialog(Map<String, dynamic> feedback) {
+  //   final TextEditingController responseController = TextEditingController();
     
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Respond to Feedback'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('User: ${feedback['user']['email']}'),
-            SizedBox(height: 8),
-            Text('Type: ${feedback['type']}'),
-            SizedBox(height: 16),
-            Text('Response:'),
-            TextField(
-              controller: responseController,
-              maxLines: 4,
-              decoration: InputDecoration(
-                hintText: 'Enter your response...',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (responseController.text.trim().isNotEmpty) {
-                try {
-                  await _apiService.addFeedbackResponse(
-                    feedback['id'], 
-                    responseController.text.trim()
-                  );
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Response sent successfully')),
-                  );
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error sending response: $e')),
-                  );
-                }
-              }
-            },
-            child: Text('Send Response'),
-          ),
-        ],
-      ),
-    );
-  }
+  //   showDialog(
+  //     context: context,
+  //     builder: (context) => AlertDialog(
+  //       title: Text('Respond to Feedback'),
+  //       content: Column(
+  //         mainAxisSize: MainAxisSize.min,
+  //         crossAxisAlignment: CrossAxisAlignment.start,
+  //         children: [
+  //           Text('User: ${feedback['user']['email']}'),
+  //           SizedBox(height: 8),
+  //           Text('Type: ${feedback['type']}'),
+  //           SizedBox(height: 16),
+  //           Text('Response:'),
+  //           TextField(
+  //             controller: responseController,
+  //             maxLines: 4,
+  //             decoration: InputDecoration(
+  //               hintText: 'Enter your response...',
+  //               border: OutlineInputBorder(),
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //       actions: [
+  //         TextButton(
+  //           onPressed: () => Navigator.pop(context),
+  //           child: Text('Cancel'),
+  //         ),
+  //         ElevatedButton(
+  //           onPressed: () async {
+  //             if (responseController.text.trim().isNotEmpty) {
+  //               try {
+  //                 await _apiService.addFeedbackResponse(
+  //                   feedback['id'], 
+  //                   responseController.text.trim()
+  //                 );
+  //                 Navigator.pop(context);
+  //                 ScaffoldMessenger.of(context).showSnackBar(
+  //                   SnackBar(content: Text('Response sent successfully')),
+  //                 );
+  //               } catch (e) {
+  //                 ScaffoldMessenger.of(context).showSnackBar(
+  //                   SnackBar(content: Text('Error sending response: $e')),
+  //                 );
+  //               }
+  //             }
+  //           },
+  //           child: Text('Send Response'),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   void _deleteFeedback(Map<String, dynamic> feedback) async {
     final confirmed = await showDialog<bool>(

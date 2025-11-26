@@ -11,10 +11,12 @@ import 'package:nudge/firebase_options.dart';
 import 'package:nudge/screens/analytics/analytics_screen.dart';
 import 'package:nudge/screens/auth/complete_profile_screen.dart';
 import 'package:nudge/screens/contacts/edit_contact_screen.dart';
+import 'package:nudge/screens/feedback/feedback_forum_screen.dart';
 import 'package:nudge/screens/splash_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/theme/text_styles.dart';
+import 'package:nudge/widgets/feedback_floating_button.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -406,6 +408,20 @@ class NudgeApp extends StatelessWidget {
             final contactId = ModalRoute.of(context)!.settings.arguments as String;
             return EditContactScreen(contactId: contactId);
           },
+           '/feedback_forum': (context) => const FeedbackForumScreen(),
+        },
+          builder: (context, child) {
+          return Stack(
+            children: [
+              child!,
+              // Global feedback button (only show when user is logged in)
+              const Positioned(
+                right: 16,
+                bottom: 16,
+                child: FeedbackFloatingButton(),
+              ),
+            ],
+          );
         },
         onGenerateRoute: (settings) {
           return MaterialPageRoute(

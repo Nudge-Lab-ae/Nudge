@@ -278,69 +278,67 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                       ],
                     ),
                   ),
-                  Expanded(
-                    child: StreamBuilder<List<SocialGroup>>(
-                      stream: _groupsStream,
-                      builder: (context, groupsSnapshot) {
-                        if (groupsSnapshot.hasError) {
-                          return _buildErrorState(groupsSnapshot.error.toString());
-                        }
+                Expanded(
+                  child: StreamBuilder<List<SocialGroup>>(
+                    stream: _groupsStream,
+                    builder: (context, groupsSnapshot) {
+                      if (groupsSnapshot.hasError) {
+                        return _buildErrorState(groupsSnapshot.error.toString());
+                      }
 
-                        if (!groupsSnapshot.hasData) {
-                          return _buildLoadingState();
-                        }
+                      if (!groupsSnapshot.hasData) {
+                        return _buildLoadingState();
+                      }
 
-                        final groups = groupsSnapshot.data!;
-                        
-                        return Consumer<List<Contact>>(
-                          builder: (context, contacts, child) {
-                            return Consumer<List<Nudge>>(
-                              builder: (context, nudges, child) {
-                                final sortedGroups = _sortGroups(groups);
-                                final filteredGroups = sortedGroups.where((group) {
-                                  return group.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                                      group.description.toLowerCase().contains(_searchQuery.toLowerCase());
-                                }).toList();
-                                
-                                if (groups.isEmpty) {
-                                  return _buildEmptyState(apiService);
-                                }
+                      final groups = groupsSnapshot.data!;
+                      
+                      return Consumer<List<Contact>>(
+                        builder: (context, contacts, child) {
+                          return Consumer<List<Nudge>>(
+                            builder: (context, nudges, child) {
+                              final sortedGroups = _sortGroups(groups);
+                              final filteredGroups = sortedGroups.where((group) {
+                                return group.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                                    group.description.toLowerCase().contains(_searchQuery.toLowerCase());
+                              }).toList();
+                              
+                              if (groups.isEmpty) {
+                                return _buildEmptyState(apiService);
+                              }
 
-                                return RefreshIndicator(
-                                  onRefresh: () async {
-                                    setState(() => _initializeStreams());
-                                    await Future.delayed(const Duration(seconds: 1));
-                                  },
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(bottom: 80.0), // Add bottom padding for FAB
-                                    child: GridView.builder(
-                                      padding: const EdgeInsets.all(16),
-                                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: 2,
-                                        crossAxisSpacing: 16,
-                                        mainAxisSpacing: 16,
-                                        childAspectRatio: 0.8, // Slightly increased for toggle
-                                      ),
-                                      itemCount: filteredGroups.length,
-                                      itemBuilder: (context, index) {
-                                        final group = filteredGroups[index];
-                                        final groupMembers = contacts.where((contact) => 
-                                          contact.connectionType == group.id).toList();
-                                        
-                                        final progress = _calculateGroupProgress(groupMembers, nudges);
-                                        
-                                        return _buildGroupCard(context, group, groupMembers, progress, apiService);
-                                      },
-                                    ),
+                              return RefreshIndicator(
+                                onRefresh: () async {
+                                  setState(() => _initializeStreams());
+                                  await Future.delayed(const Duration(seconds: 1));
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.only(bottom: 80.0), // Add bottom padding for FAB
+                                  child: ListView.builder(
+                                    padding: const EdgeInsets.all(16),
+                                    itemCount: filteredGroups.length,
+                                    itemBuilder: (context, index) {
+                                      final group = filteredGroups[index];
+                                      final groupMembers = contacts.where((contact) => 
+                                        contact.connectionType == group.name || contact.connectionType == group.id
+                                        ).toList();
+                                      
+                                      final progress = _calculateGroupProgress(groupMembers, nudges);
+                                      
+                                      return Padding(
+                                        padding: const EdgeInsets.only(bottom: 12),
+                                        child: _buildGroupCard(context, group, groupMembers, progress, apiService),
+                                      );
+                                    },
                                   ),
-                                );
-                              },
-                            );
-                          },
-                        );
-                      },
-                    ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      );
+                    },
                   ),
+                ),
                 ],
               ),
               
@@ -399,32 +397,28 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
       ),
     );
   }
-
-  Widget _buildLoadingState() {
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 0.85,
-      ),
-      itemCount: 6,
-      itemBuilder: (context, index) {
-        return Shimmer.fromColors(
+Widget _buildLoadingState() {
+  return ListView.builder(
+    padding: const EdgeInsets.all(16),
+    itemCount: 6,
+    itemBuilder: (context, index) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Shimmer.fromColors(
           baseColor: Colors.grey[300]!,
           highlightColor: Colors.grey[100]!,
           child: Container(
+            height: 100,
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
             ),
           ),
-        );
-      },
-    );
-  }
-
+        ),
+      );
+    },
+  );
+}
   Widget _buildEmptyState(ApiService apiService) {
     return Center(
       child: Column(
@@ -456,166 +450,123 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
     );
   }
 
-    Widget _buildGroupCard(BuildContext context, SocialGroup group, List<Contact> members, double progress, ApiService apiService) {
-      // Add safety check for color code
-      Color cardColor;
-      try {
-        cardColor = Color(int.parse(group.colorCode.replaceFirst('#', ''), radix: 16) + 0xFF000000);
-      } catch (e) {
-        cardColor = const Color(0xff3CB3E9); // Default color
-      }
-      
-      final Color textColor = cardColor.computeLuminance() > 0.5 ? Colors.black : Colors.white;
-      
-      return Container(
-        margin: const EdgeInsets.only(bottom: 8), // Add spacing between cards
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.8),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-              spreadRadius: 1,
+Widget _buildGroupCard(BuildContext context, SocialGroup group, List<Contact> members, double progress, ApiService apiService) {
+  // Add safety check for color code
+  Color cardColor;
+  try {
+    cardColor = Color(int.parse(group.colorCode.replaceFirst('#', ''), radix: 16) + 0xFF000000);
+  } catch (e) {
+    cardColor = const Color(0xff3CB3E9); // Default color
+  }
+  
+  // final Color textColor = cardColor.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+  
+  return GestureDetector(
+    onTap: () => _showGroupDetails(context, group, members, apiService),
+    onLongPress: () => _showDeleteConfirmation(context, group, apiService),
+    child: Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            // Color indicator circle
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: cardColor,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                _getGroupIcon(group.name),
+                color: Colors.white,
+                size: 24,
+              ),
             ),
-          ],
-        ),
-        child: GestureDetector(
-          onTap: () => _showGroupDetails(context, group, members, apiService),
-          onLongPress: () => _showDeleteConfirmation(context, group, apiService),
-          child: Container(
-            decoration: BoxDecoration(
-              color: cardColor,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Stack(
-              children: [
-                Positioned(
-                  top: -20,
-                  right: -20,
-                  child: Icon(
-                    _getGroupIcon(group.name),
-                    size: 100,
-                    color: Colors.white.withOpacity(0.1),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(width: 16),
+            
+            // Group info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Group name and member count
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              group.name,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: textColor,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: textColor.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                      Flexible(
                         child: Text(
-                          '${group.frequency}x/${group.period.toLowerCase()}',
-                          style: TextStyle(
-                            fontSize: 12,
+                          group.name,
+                          style: const TextStyle(
+                            fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: textColor,
+                            color: Colors.black,
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        group.description,
-                        style: TextStyle(color: textColor.withOpacity(0.8), fontSize: 12),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      
-                      const Spacer(),
-                      
-                      // Date Nudges Toggle
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Date Nudges',
-                              style: TextStyle(
-                                color: textColor,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                          Transform.scale(
-                            scale: 0.5,
-                            child: Switch(
-                              value: group.dateNudgesEnabled,
-                              onChanged: (value) async {
-                                final updatedGroup = group.copyWith(
-                                  dateNudgesEnabled: value,
-                                );
-                                try {
-                                  final currentGroups = await apiService.getGroupsStream().first;
-                                  final updatedGroups = currentGroups.map((g) => 
-                                    g.id == group.id ? updatedGroup : g
-                                  ).toList();
-                                  
-                                  await apiService.updateGroups(updatedGroups);
-                                  setState(() {});
-                                } catch (e) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Error updating date nudges: $e')),
-                                  );
-                                }
-                              },
-                              activeColor: textColor,
-                              inactiveTrackColor: textColor.withOpacity(0.3),
-                            ),
-                          ),
-                        ],
-                      ),
-                      
-                      // Members section
                       Text(
                         '${members.length} members',
                         style: TextStyle(
-                          color: textColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
                         ),
-                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 8),
-                      
-                      // Progress bar for interaction frequency - only show if group has members
-                      // if (members.isNotEmpty)
-                      //   _buildInteractionProgress(progress, textColor)
-                      // else
-                      //   _buildEmptyProgress(textColor),
                     ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  
+                  // Frequency badge
+                 Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: cardColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      FrequencyPeriodMapper.getConversationalChoice(group.frequency, group.period),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: cardColor,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  
+                  // Description
+                  Text(
+                    group.description.isEmpty ? 'No description' : group.description,
+                    style: const TextStyle(color: Colors.grey, fontSize: 14),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
-          ),
+            
+            // Chevron icon
+            const Icon(Icons.chevron_right, color: Colors.grey),
+          ],
         ),
-      );
-    }
-
+      ),
+    ),
+  );
+}
+ 
   // Widget _buildInteractionProgress(double progress, Color textColor) {
   //   return Column(
   //     crossAxisAlignment: CrossAxisAlignment.start,
@@ -759,325 +710,427 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
         );
       }
 
-  void _showCreateGroupDialog(BuildContext context, ApiService apiService) {
-    final nameController = TextEditingController();
-    final descriptionController = TextEditingController();
-    String period = 'Monthly';
-    int frequency = 4;
-    String selectedColor = '#2596BE';
+void _showCreateGroupDialog(BuildContext context, ApiService apiService) {
+  final nameController = TextEditingController();
+  final descriptionController = TextEditingController();
+  String _selectedFrequencyChoice = 'Monthly'; // Default value
+  String period = 'Monthly';
+  int frequency = 1;
+  String selectedColor = '#2596BE';
 
-    // Predefined color options
-    final List<String> colorOptions = [
-      '#2596BE', // Primary blue
-      '#FF6B6B', // Red
-      '#4ECDC4', // Teal
-      '#45B7D1', // Light blue
-      '#F9A826', // Orange
-      '#6C5CE7', // Purple
-    ];
+  // Frequency options
+  // final List<String> frequencyOptions = [
+  //   'Every few days',
+  //   'Weekly',
+  //   'Every 2 weeks', 
+  //   'Monthly',
+  //   'Quarterly',
+  //   'Twice a year',
+  //   'Once a year'
+  // ];
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Create New Group', style: TextStyle(fontWeight: FontWeight.bold)),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Group Name',
-                        border: OutlineInputBorder(),
-                      ),
+  // Predefined color options
+  final List<String> colorOptions = [
+    '#2596BE', // Primary blue
+    '#FF6B6B', // Red
+    '#4ECDC4', // Teal
+    '#45B7D1', // Light blue
+    '#F9A826', // Orange
+    '#6C5CE7', // Purple
+  ];
+
+  showDialog(
+    context: context,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Create New Group', style: TextStyle(fontWeight: FontWeight.bold)),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Group Name',
+                      border: OutlineInputBorder(),
                     ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: descriptionController,
-                      decoration: const InputDecoration(
-                        labelText: 'Description',
-                        border: OutlineInputBorder(),
-                      ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: descriptionController,
+                    decoration: const InputDecoration(
+                      labelText: 'Description',
+                      border: OutlineInputBorder(),
                     ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      value: period,
-                      onChanged: (String? newValue) {
-                        setState(() => period = newValue!);
-                      },
-                      items: <String>['Weekly', 'Monthly', 'Quarterly', 'Annually']
-                          .map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                      decoration: const InputDecoration(
-                        labelText: 'Contact Period',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                   
-                      DropdownButtonFormField<String>(
-                      value: frequency.toString(),
-                       onChanged: (value) {
-                        frequency = int.tryParse(value!) ?? 4;
-                      },
-                      items: <String>['1', '2', '3', '4', '5', '6', '7']
-                          .map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                      decoration: const InputDecoration(
-                        labelText: 'Contact Period',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text('Group Color', style: TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      children: colorOptions.map((color) {
-                        return GestureDetector(
-                          onTap: () => setState(() => selectedColor = color),
-                          child: Container(
-                            width: 30,
-                            height: 30,
-                            decoration: BoxDecoration(
-                              color: Color(int.parse(color.substring(1, 7), radix: 16) + 0xFF000000),
-                              shape: BoxShape.circle,
-                              border: selectedColor == color 
-                                ? Border.all(color: Colors.black, width: 2) 
-                                : null,
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (nameController.text.isNotEmpty) {
-                      final newGroup = SocialGroup(
-                        id: DateTime.now().millisecondsSinceEpoch.toString(),
-                        name: nameController.text,
-                        description: descriptionController.text,
-                        period: period,
-                        frequency: frequency,
-                        memberIds: [],
-                        memberCount: 0,
-                        lastInteraction: DateTime.now(),
-                        colorCode: selectedColor,
-                        dateNudgesEnabled: false,
-                      );
-                      
-                      try {
-                        await apiService.addGroup(newGroup);
-                        _confettiController.play(); // Play confetti animation
-                        Navigator.of(context).pop();
-                      } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Error creating group: $e')),
-                        );
-                      }
+                  ),
+                  const SizedBox(height: 16),
+               DropdownButtonFormField<String>(
+                  value: _selectedFrequencyChoice,
+                  onChanged: (String? newValue) {
+                    if (newValue != null) {
+                      final frequencyData = FrequencyPeriodMapper.getFrequencyPeriod(newValue);
+                      setState(() {
+                        frequency = frequencyData['frequency'] as int;
+                        period = frequencyData['period'] as String;
+                      });
                     }
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xff3CB3E9),
+                  items: FrequencyPeriodMapper.frequencyMapping.keys.map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                  decoration: const InputDecoration(
+                    labelText: 'Contact Frequency',
+                    border: OutlineInputBorder(),
                   ),
-                  child: const Text('Create', style: TextStyle(color: Colors.white)),
                 ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-    void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService apiService, VoidCallback onUpdate) {
-
-        final nameController = TextEditingController(text: group.name);
-        final descriptionController = TextEditingController(text: group.description);
-        String period = group.period;
-        int frequency = group.frequency;
-        String selectedColor = group.colorCode;
-
-        // Predefined color options
-        final List<String> colorOptions = [
-          '#2596BE', // Primary blue
-          '#FF6B6B', // Red
-          '#4ECDC4', // Teal
-          '#45B7D1', // Light blue
-          '#F9A826', // Orange
-          '#6C5CE7', // Purple
-        ];
-
-        showDialog(
-          context: context,
-          builder: (context) {
-            return StatefulBuilder(
-              builder: (context, setState) {
-                return AlertDialog(
-                  title: const Text('Edit Group', style: TextStyle(fontWeight: FontWeight.bold)),
-                  content: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        TextField(
-                          controller: nameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Group Name',
-                            border: OutlineInputBorder(),
+                  const SizedBox(height: 16),
+                  const Text('Group Color', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: colorOptions.map((color) {
+                      return GestureDetector(
+                        onTap: () => setState(() => selectedColor = color),
+                        child: Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: Color(int.parse(color.substring(1, 7), radix: 16) + 0xFF000000),
+                            shape: BoxShape.circle,
+                            border: selectedColor == color 
+                              ? Border.all(color: Colors.black, width: 2) 
+                              : null,
                           ),
                         ),
-                        const SizedBox(height: 16),
-                        TextField(
-                          controller: descriptionController,
-                          decoration: const InputDecoration(
-                            labelText: 'Description',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        DropdownButtonFormField<String>(
-                          value: period,
-                          onChanged: (String? newValue) {
-                            setState(() => period = newValue!);
-                          },
-                          items: <String>['Weekly', 'Monthly', 'Quarterly', 'Annually']
-                              .map<DropdownMenuItem<String>>((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(value),
-                            );
-                          }).toList(),
-                          decoration: const InputDecoration(
-                            labelText: 'Contact Period',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        // TextFormField(
-                        //   initialValue: frequency.toString(),
-                        //   decoration: const InputDecoration(
-                        //     labelText: 'Frequency (times per period)',
-                        //     border: OutlineInputBorder(),
-                        //   ),
-                        //   keyboardType: TextInputType.number,
-                        //   onChanged: (value) {
-                        //     frequency = int.tryParse(value) ?? group.frequency;
-                        //   },
-                        // ),
-                         DropdownButtonFormField<String>(
-                          value: '4',
-                          onChanged: (String? value) {
-                            frequency = int.tryParse(value!) ?? group.frequency;
-                          },
-                          items: <String>['1', '2', '3', '4', '5', '6', '7']
-                              .map<DropdownMenuItem<String>>((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(value),
-                            );
-                          }).toList(),
-                          decoration: const InputDecoration(
-                            labelText: 'Contact Period',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        const Text('Group Color', style: TextStyle(fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          children: colorOptions.map((color) {
-                            return GestureDetector(
-                              onTap: () => setState(() => selectedColor = color),
-                              child: Container(
-                                width: 30,
-                                height: 30,
-                                decoration: BoxDecoration(
-                                  color: Color(int.parse(color.substring(1, 7), radix: 16) + 0xFF000000),
-                                  shape: BoxShape.circle,
-                                  border: selectedColor == color 
-                                    ? Border.all(color: Colors.black, width: 2) 
-                                    : null,
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ],
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  if (nameController.text.isNotEmpty) {
+                    final newGroup = SocialGroup(
+                      id: DateTime.now().millisecondsSinceEpoch.toString(),
+                      name: nameController.text,
+                      description: descriptionController.text,
+                      period: period,
+                      frequency: frequency,
+                      memberIds: [],
+                      memberCount: 0,
+                      lastInteraction: DateTime.now(),
+                      colorCode: selectedColor,
+                      birthdayNudgesEnabled: true, // Default enabled
+                      anniversaryNudgesEnabled: true, // Default enabled
+                    );
+                    
+                    try {
+                      await apiService.addGroup(newGroup);
+                      _confettiController.play();
+                      Navigator.of(context).pop();
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error creating group: $e')),
+                      );
+                    }
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xff3CB3E9),
+                ),
+                child: const Text('Create', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
+
+void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService apiService, VoidCallback onUpdate) {
+  final nameController = TextEditingController(text: group.name);
+  final descriptionController = TextEditingController(text: group.description);
+  String period = group.period;
+  int frequency = group.frequency;
+  String selectedColor = group.colorCode;
+  bool birthdayNudgesEnabled = group.birthdayNudgesEnabled;
+  bool anniversaryNudgesEnabled = group.anniversaryNudgesEnabled;
+  String _selectedFrequencyChoice = FrequencyPeriodMapper.getConversationalChoice(group.frequency, group.period);
+
+  // Frequency options
+  // final List<String> frequencyOptions = [
+  //   'Every few days',
+  //   'Weekly',
+  //   'Every 2 weeks', 
+  //   'Monthly',
+  //   'Quarterly',
+  //   'Twice a year',
+  //   'Once a year'
+  // ];
+
+  // Predefined color options
+  final List<String> colorOptions = [
+    '#2596BE', // Primary blue
+    '#FF6B6B', // Red
+    '#4ECDC4', // Teal
+    '#45B7D1', // Light blue
+    '#F9A826', // Orange
+    '#6C5CE7', // Purple
+  ];
+
+  showDialog(
+    context: context,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Edit Group', style: TextStyle(fontWeight: FontWeight.bold)),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    decoration:  InputDecoration(
+                      labelText: 'Group Name',
+                      border: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                      ),
+                       enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                // Optional: to show border even when there's an error
+                errorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
                     ),
                   ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancel'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () async {
-                        if (nameController.text.isNotEmpty) {
-                          final updatedGroup = group.copyWith(
-                            id: group.id,
-                            name: nameController.text,
-                            description: descriptionController.text,
-                            period: period,
-                            frequency: frequency,
-                            colorCode: selectedColor,
-                          );
-                          updatedGroup.id = group.id;
-
-                          // print('group is'); print(updatedGroup.toMap());
-                          
-                          try {
-                            // Get current groups
-                            final currentGroups = await apiService.getGroupsStream().first;
-                            final updatedGroups = currentGroups.map((g) => 
-                              g.id == group.id ? updatedGroup : g
-                            ).toList();
-                            
-                            await apiService.updateGroups(updatedGroups);
-                            onUpdate();
-                            Navigator.of(context).pop();
-                            
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Updated "${updatedGroup.name}" group')),
-                            );
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Error updating group: $e')),
-                            );
-                          }
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xff3CB3E9),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: descriptionController,
+                    decoration: InputDecoration(
+                      labelText: 'Description',
+                      border: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(10)
                       ),
-                      child: const Text('Save', style: TextStyle(color: Colors.white)),
+                       enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                // Optional: to show border even when there's an error
+                errorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
                     ),
-                  ],
-                );
-              },
-            );
-          },
-        );
-      }
+                  ),
+                  const SizedBox(height: 16),
+                 DropdownButtonFormField<String>(
+                    value: _selectedFrequencyChoice,
+                    onChanged: (String? newValue) {
+                      if (newValue != null) {
+                        final frequencyData = FrequencyPeriodMapper.getFrequencyPeriod(newValue);
+                        setState(() {
+                          frequency = frequencyData['frequency'] as int;
+                          period = frequencyData['period'] as String;
+                        });
+                      }
+                    },
+                    items: FrequencyPeriodMapper.frequencyMapping.keys.map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                    decoration: InputDecoration(
+                      labelText: 'Contact Frequency',
+                      border: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                      ),
+                        enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                // Optional: to show border even when there's an error
+                errorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Date Nudges Section
+                  const SizedBox(height: 16),
+                  const Text('Date Nudges:', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16)),
+                  const SizedBox(height: 8),
+                  
+                  // Birthday Nudges Toggle
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Send a nudge for birthdays',
+                          style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                        ),
+                      ),
+                     Transform.scale(
+                      scale: 0.5,
+                      child:  Switch(
+                         inactiveThumbColor: Colors.white,
+                        inactiveTrackColor: Colors.grey,
+                        value: birthdayNudgesEnabled,
+                        onChanged: (value) {
+                          setState(() {
+                            birthdayNudgesEnabled = value;
+                          });
+                        },
+                      ),
+                     )
+                    ],
+                  ),
+                  
+                  // Anniversary Nudges Toggle
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Send a nudge for anniversaries',
+                          style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                        ),
+                      ),
+                      Transform.scale(
+                      scale: 0.5,
+                      child: Switch(
+                        inactiveThumbColor: Colors.white,
+                        inactiveTrackColor: Colors.grey,
+                        value: anniversaryNudgesEnabled,
+                        onChanged: (value) {
+                          setState(() {
+                            anniversaryNudgesEnabled = value;
+                          });
+                        },
+                      )),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  const Text('Group Color', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: colorOptions.map((color) {
+                      return GestureDetector(
+                        onTap: () => setState(() => selectedColor = color),
+                        child: Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: Color(int.parse(color.substring(1, 7), radix: 16) + 0xFF000000),
+                            shape: BoxShape.circle,
+                            border: selectedColor == color 
+                              ? Border.all(color: Colors.black, width: 2) 
+                              : null,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  if (nameController.text.isNotEmpty) {
+                    final updatedGroup = group.copyWith(
+                      name: nameController.text,
+                      description: descriptionController.text,
+                      period: period,
+                      frequency: frequency,
+                      colorCode: selectedColor,
+                      birthdayNudgesEnabled: birthdayNudgesEnabled,
+                      anniversaryNudgesEnabled: anniversaryNudgesEnabled,
+                    );
+
+                    try {
+                      // Get current groups
+                      final currentGroups = await apiService.getGroupsStream().first;
+                      final updatedGroups = currentGroups.map((g) => 
+                        g.id == group.id ? updatedGroup : g
+                      ).toList();
+                      
+                      await apiService.updateGroups(updatedGroups);
+                      onUpdate();
+                      Navigator.of(context).pop();
+                      
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Updated "${updatedGroup.name}" group')),
+                      );
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error updating group: $e')),
+                      );
+                    }
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xff3CB3E9),
+                ),
+                child: const Text('Save', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
 
   void _showGroupDetails(BuildContext context, SocialGroup group, List<Contact> members, ApiService apiService) {
       showModalBottomSheet(
@@ -1137,7 +1190,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     _buildStatItem('Members', '${members.length}'),
-                    _buildStatItem('Frequency', '${group.frequency}x/${group.period.toLowerCase()}'),
+                   _buildStatItem('Frequency', FrequencyPeriodMapper.getConversationalChoice(group.frequency, group.period)),
                     _buildStatItem('Last Engaged', _formatDate(group.lastInteraction)),
                   ],
                 ),
@@ -1147,26 +1200,27 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                   children: [
                     const Text('Group Members', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     if (members.isNotEmpty)
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          Navigator.pushNamed(context, '/contacts', arguments: {
-                            'action': 'add_to_group',
-                            'contacts': allContacts, 
-                            'groupId': group.id,
-                            'groupName': group.name,
-                            'groupPeriod': group.period,
-                            'groupFrequency': group.frequency
-                          });
-                        },
-                        child: const Row(
-                          children: [
-                            Icon(Icons.add, size: 16),
-                            SizedBox(width: 4),
-                            Text('Add More'),
-                          ],
-                        ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Navigator.pushNamed(context, '/contacts', arguments: {
+                          'action': 'add_to_group',
+                          'contacts': allContacts, 
+                          'groupId': group.id,
+                          'groupName': group.name,
+                          'groupPeriod': group.period,
+                          'groupFrequency': group.frequency,
+                          'groupFrequencyDisplay': FrequencyPeriodMapper.getConversationalChoice(group.frequency, group.period),
+                        });
+                    },
+                      child: const Row(
+                        children: [
+                          Icon(Icons.add, size: 16),
+                          SizedBox(width: 4),
+                          Text('Add More'),
+                        ],
                       ),
+                  ),
                   ],
                 ),
                 const SizedBox(height: 16),

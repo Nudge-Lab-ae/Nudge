@@ -31,6 +31,15 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
   String? _selectionMode; // 'add_to_group' or 'delete'
   List<Contact> totalContacts = [];
   String _currentFilter = 'all'; // 'all', 'vip', 'needs_attention'
+  bool _isDeletingInProgress = false;
+  int _deletionSuccessCount = 0;
+  int _deletionTotalCount = 0;
+  int _deletionErrorCount = 0;
+  bool _isAddingToGroupInProgress = false;
+  int _addingSuccessCount = 0;
+  int _addingTotalCount = 0;
+  int _addingErrorCount = 0;
+  String? _currentGroupName;
 
   @override
   void initState() {
@@ -65,89 +74,119 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
       /* :_isSelecting
           ? _buildSelectionAppBar(context, groupName)
            */: _buildNormalAppBar(context, isAddToGroupMode, groupName),
-      body: GestureDetector(
-    onTap: _isSelecting ? _exitSelectionMode : null,
-    behavior: HitTestBehavior.opaque,
-    child: Column(
+      body: Stack(
         children: [
-          // Add selection controls here
-          isAddToGroupMode
-          ?Text('Add to $groupName', style: AppTextStyles.title3.copyWith(color: Colors.black))
-          :Center(),
-          isAddToGroupMode
-          ?SizedBox(
-            height: 10,
-          ):Center(),
-          _buildSelectionControls(),
-          Expanded(
-            child: StreamProvider<List<Contact>>(
-        create: (context) => apiService.getContactsStream(),
-        initialData: const [],
-        child: Consumer<List<Contact>>(
-          builder: (context, contacts, child) {
-            // Apply filter if provided
-            totalContacts = contacts;
-            final filteredContacts = _applyFilter(contacts, _currentFilter);
-
-            
-            // Show empty state if no contacts
-            if (filteredContacts.isEmpty) {
-              return _buildEmptyState(filter: _currentFilter);
-            }
-            
-            // Filter contacts based on search query
-            final searchedContacts = filteredContacts.where((contact) {
-              return contact.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                  contact.connectionType.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                  contact.socialGroups.any((group) => group.toLowerCase().contains(_searchQuery.toLowerCase()));
-            }).toList();
-            
-            // Show empty state if no contacts match search
-            if (searchedContacts.isEmpty) {
-              return Column(
-                children: [
-                  _buildSearchAndFilterBar(),
-                  if (_currentFilter != 'all' && _currentFilter!='') _buildFilterTitleRow(),
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        'No contacts found for "$_searchQuery"',
-                        style: const TextStyle(fontSize: 16),
-                      ),
+          GestureDetector(
+            onTap: _isSelecting ? _exitSelectionMode : null,
+            behavior: HitTestBehavior.opaque,
+            child: Column(
+              children: [
+                // Add selection controls here
+                isAddToGroupMode
+                ?Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: EdgeInsets.only(left: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Add to $groupName', style: AppTextStyles.title3.copyWith(color: Colors.black)),
+                        SizedBox(height: 4),
+                        Text(
+                          'Long press on contacts to select multiple',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              );
-            }
-            
-            return Column(
-              children: [
-                _buildSearchAndFilterBar(),
-                if (_currentFilter != 'all' && _currentFilter!='') _buildFilterTitleRow(),
+                )
+                :Center(),
+                isAddToGroupMode
+                ?SizedBox(
+                  height: 10,
+                ):Center(),
+                _buildSelectionControls(),
                 Expanded(
-                  child: ListView.builder(
-                    itemCount: searchedContacts.length,
-                    itemBuilder: (context, index) {
-                      final contact = searchedContacts[index];
-                      final isSelected = _selectedContacts.contains(contact.id);
-                      
-                      return _isSelecting
-                          ? _buildSelectableContactTile(contact, isSelected)
-                          : _buildNormalContactTile(
-                              contact, 
-                              isAddToGroupMode, 
-                              groupName, 
-                              groupPeriod, 
-                              groupFrequency
-                            );
-                    },
+                  child: StreamProvider<List<Contact>>(
+                    create: (context) => apiService.getContactsStream(),
+                    initialData: const [],
+                    child: Consumer<List<Contact>>(
+                      builder: (context, contacts, child) {
+                        // Apply filter if provided
+                        totalContacts = contacts;
+                        final filteredContacts = _applyFilter(contacts, _currentFilter);
+
+                        
+                        // Show empty state if no contacts
+                        if (filteredContacts.isEmpty) {
+                          return _buildEmptyState(filter: _currentFilter);
+                        }
+                        
+                        // Filter contacts based on search query
+                        final searchedContacts = filteredContacts.where((contact) {
+                          return contact.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                              contact.connectionType.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                              contact.socialGroups.any((group) => group.toLowerCase().contains(_searchQuery.toLowerCase()));
+                        }).toList();
+                        
+                        // Show empty state if no contacts match search
+                        if (searchedContacts.isEmpty) {
+                          return Column(
+                            children: [
+                              _buildSearchAndFilterBar(),
+                              if (_currentFilter != 'all' && _currentFilter!='') _buildFilterTitleRow(),
+                              Expanded(
+                                child: Center(
+                                  child: Text(
+                                    'No contacts found for "$_searchQuery"',
+                                    style: const TextStyle(fontSize: 16),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        }
+                        
+                        return Column(
+                          children: [
+                            _buildSearchAndFilterBar(),
+                            if (_currentFilter != 'all' && _currentFilter!='') _buildFilterTitleRow(),
+                            Expanded(
+                              child: ListView.builder(
+                                itemCount: searchedContacts.length,
+                                itemBuilder: (context, index) {
+                                  final contact = searchedContacts[index];
+                                  final isSelected = _selectedContacts.contains(contact.id);
+                                  
+                                  return _isSelecting
+                                      ? _buildSelectableContactTile(contact, isSelected)
+                                      : _buildNormalContactTile(
+                                          contact, 
+                                          isAddToGroupMode, 
+                                          groupName, 
+                                          groupPeriod, 
+                                          groupFrequency
+                                        );
+                                },
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
                   ),
                 ),
               ],
-            );
-          },
-        ),
-      ))])),
+            ),
+          ),
+          _buildDeletionProgressOverlay(),
+          _buildAddingToGroupProgressOverlay(),
+        ],
+      ),
       floatingActionButton: _selectedContacts.isNotEmpty
       ?_buildFloatingActionButton(
         isAddToGroupMode, 
@@ -159,54 +198,54 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     );
   }
 
-    Widget _buildSelectionControls() {
-      if (!_isSelecting) return const SizedBox.shrink();
-      
-      return Container(
-        padding: const EdgeInsets.all(16.0),
-        color: const Color.fromRGBO(45, 161, 175, 0.1),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // Select All / Deselect All
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: _toggleSelectAll,
-                icon: Icon(
-                  _selectedContacts.length == _getVisibleContactsCount() 
-                    ? Icons.deselect 
-                    : Icons.select_all,
-                  color: const Color(0xff3CB3E9),
-                ),
-                label: Text(
-                  _selectedContacts.length == _getVisibleContactsCount() 
-                    ? 'Deselect All' 
-                    : 'Select All',
-                  style: const TextStyle(color: Color(0xff3CB3E9)),
-                ),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xff3CB3E9)),
-                ),
+  Widget _buildSelectionControls() {
+    if (!_isSelecting) return const SizedBox.shrink();
+    
+    return Container(
+      padding: const EdgeInsets.all(16.0),
+      color: const Color.fromRGBO(45, 161, 175, 0.1),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Select All / Deselect All
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: _toggleSelectAll,
+              icon: Icon(
+                _selectedContacts.length == _getVisibleContactsCount() 
+                  ? Icons.deselect 
+                  : Icons.select_all,
+                color: const Color(0xff3CB3E9),
+              ),
+              label: Text(
+                _selectedContacts.length == _getVisibleContactsCount() 
+                  ? 'Deselect All' 
+                  : 'Select All',
+                style: const TextStyle(color: Color(0xff3CB3E9)),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xff3CB3E9)),
               ),
             ),
-            
-            const SizedBox(width: 12),
-            
-            // Cancel Selection
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: _exitSelectionMode,
-                icon: const Icon(Icons.cancel, color: Colors.red),
-                label: const Text('Cancel', style: TextStyle(color: Colors.red)),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.red),
-                ),
+          ),
+          
+          const SizedBox(width: 12),
+          
+          // Cancel Selection
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: _exitSelectionMode,
+              icon: const Icon(Icons.cancel, color: Colors.red),
+              label: const Text('Cancel', style: TextStyle(color: Colors.red)),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.red),
               ),
             ),
-          ],
-        ),
-      );
-    }
+          ),
+        ],
+      ),
+    );
+  }
 
   AppBar _buildNormalAppBar(BuildContext context, bool isAddToGroupMode, String? groupName) {
     return AppBar(
@@ -224,6 +263,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
           // Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Color(0xff3CB3E9), fontFamily: 'RobotoMono'))
           : Text(_getTitle(_currentFilter), style: AppTextStyles.button.copyWith(color: Color(0xff3CB3E9))),
       backgroundColor: Colors.white,
+      centerTitle: true,
       surfaceTintColor: Colors.transparent,
       actions: [
         if (!isAddToGroupMode) // Only show bulk actions in normal mode
@@ -265,94 +305,49 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     );
   }
 
-  // PreferredSizeWidget _buildSelectionAppBar(BuildContext context, String? groupName) {
-  //   String title;
-  //   if (_selectionMode == 'add_to_group') {
-  //     title = '${_selectedContacts.length} selected${groupName != null ? ' for $groupName' : ''}';
-  //   } else {
-  //     title = '${_selectedContacts.length} selected for deletion';
-  //   }
+  void _exitSelectionMode() {
+    setState(() {
+      _isSelecting = false;
+      _selectedContacts.clear();
+      _selectionMode = null;
+    });
+    widget.hideButton();
+  }
 
-  //   return AppBar(
-  //     backgroundColor: _selectionMode == 'delete' ? Colors.red : const Color(0xff3CB3E9),
-  //     iconTheme: const IconThemeData(color: Colors.white),
-  //     title: Text(
-  //       title,
-  //       style: AppTextStyles.button.copyWith(color: Colors.white),
-  //     ),
-  //     leading: IconButton(
-  //       icon: const Icon(Icons.arrow_back),
-  //       onPressed: _exitSelectionMode,
-  //     ),
-  //     actions: [
-  //       // Select All / Deselect All button
-  //       IconButton(
-  //         icon: Icon(_selectedContacts.length == _getVisibleContactsCount() ? Icons.deselect : Icons.select_all),
-  //         onPressed: _toggleSelectAll,
-  //         tooltip: _selectedContacts.length == _getVisibleContactsCount() ? 'Deselect All' : 'Select All',
-  //       ),
-        
-  //       // Cancel selection button
-  //       IconButton(
-  //         icon: const Icon(Icons.close),
-  //         onPressed: _exitSelectionMode,
-  //         tooltip: 'Cancel Selection',
-  //       ),
-        
-  //       if (_selectionMode == 'delete' && _selectedContacts.isNotEmpty)
-  //         IconButton(
-  //           icon: const Icon(Icons.delete),
-  //           onPressed: () => _deleteSelectedContacts(context),
-  //           tooltip: 'Delete Selected',
-  //         ),
-  //     ],
-  //   );
-  // }
-
-      void _exitSelectionMode() {
-      setState(() {
-        _isSelecting = false;
+  void _toggleSelectAll() {
+    final visibleContacts = _getVisibleContacts();
+    
+    setState(() {
+      if (_selectedContacts.length == visibleContacts.length) {
+        // Deselect all
         _selectedContacts.clear();
-        _selectionMode = null;
-      });
-      widget.hideButton();
-    }
-
-    void _toggleSelectAll() {
-      final visibleContacts = _getVisibleContacts();
-      
-      setState(() {
-        if (_selectedContacts.length == visibleContacts.length) {
-          // Deselect all
-          _selectedContacts.clear();
-        } else {
-          // Select all visible contacts
-          _selectedContacts = Set<String>.from(visibleContacts.map((c) => c.id));
-        }
-      });
-    }
-
-    List<Contact> _getVisibleContacts() {
-      List<Contact> contacts = [];
-      if (widget.mode == 'add_to_group') {
-        contacts = totalContacts;
       } else {
-        contacts = Provider.of<List<Contact>>(context, listen: false);
+        // Select all visible contacts
+        _selectedContacts = Set<String>.from(visibleContacts.map((c) => c.id));
       }
-       
-      final filteredContacts = _applyFilter(contacts, _currentFilter);
-      
-      return filteredContacts.where((contact) {
-        return contact.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-            contact.connectionType.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-            contact.socialGroups.any((group) => group.toLowerCase().contains(_searchQuery.toLowerCase()));
-      }).toList();
-    }
+    });
+  }
 
-    int _getVisibleContactsCount() {
-      return _getVisibleContacts().length;
+  List<Contact> _getVisibleContacts() {
+    List<Contact> contacts = [];
+    if (widget.mode == 'add_to_group') {
+      contacts = totalContacts;
+    } else {
+      contacts = Provider.of<List<Contact>>(context, listen: false);
     }
+     
+    final filteredContacts = _applyFilter(contacts, _currentFilter);
+    
+    return filteredContacts.where((contact) {
+      return contact.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          contact.connectionType.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          contact.socialGroups.any((group) => group.toLowerCase().contains(_searchQuery.toLowerCase()));
+    }).toList();
+  }
 
+  int _getVisibleContactsCount() {
+    return _getVisibleContacts().length;
+  }
 
   Widget _buildSelectableContactTile(Contact contact, bool isSelected) {
     return ListTile(
@@ -592,17 +587,6 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     );
   }
 
-  // String _getFilterEquivalent(String filter) {
-  //    switch (filter) {
-  //     case 'vip':
-  //       return 'vip';
-  //     case 'needs_attention':
-  //       return 'needs_attention';
-  //     default:
-  //       return 'all';
-  //   }
-  // }
-
   String _getFilterLabel(String filter) {
     switch (filter) {
       case 'vip':
@@ -625,6 +609,104 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     }
   }
 
+  Widget _buildDeletionProgressOverlay() {
+    if (!_isDeletingInProgress) return const SizedBox.shrink();
+    
+    return Positioned(
+      bottom: 16,
+      left: 16,
+      right: 16,
+      child: Material(
+        elevation: 8,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Deleting Contacts',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red,
+                ),
+              ),
+              const SizedBox(height: 12),
+              LinearProgressIndicator(
+                value: _deletionTotalCount > 0 
+                    ? _deletionSuccessCount / _deletionTotalCount 
+                    : 0,
+                backgroundColor: Colors.grey.shade300,
+                valueColor: const AlwaysStoppedAnimation<Color>(Colors.red),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '$_deletionSuccessCount of $_deletionTotalCount contacts deleted'
+                '${_deletionErrorCount > 0 ? ' ($_deletionErrorCount errors)' : ''}',
+                style: const TextStyle(fontSize: 14),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAddingToGroupProgressOverlay() {
+    if (!_isAddingToGroupInProgress) return const SizedBox.shrink();
+    
+    return Positioned(
+      bottom: 16,
+      left: 16,
+      right: 16,
+      child: Material(
+        elevation: 8,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Adding to $_currentGroupName',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xff3CB3E9),
+                ),
+              ),
+              const SizedBox(height: 12),
+              LinearProgressIndicator(
+                value: _addingTotalCount > 0 
+                    ? _addingSuccessCount / _addingTotalCount 
+                    : 0,
+                backgroundColor: Colors.grey.shade300,
+                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xff3CB3E9)),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '$_addingSuccessCount of $_addingTotalCount contacts added'
+                '${_addingErrorCount > 0 ? ' ($_addingErrorCount errors)' : ''}',
+                style: const TextStyle(fontSize: 14),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _deleteSelectedContacts(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -645,60 +727,52 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     );
     
     if (confirmed == true) {
-      final apiService = Provider.of<ApiService>(context, listen: false);
-      int successCount = 0;
-      int errorCount = 0;
-      
-      // Show progress dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) {
-          return AlertDialog(
-            title: const Text('Deleting Contacts'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const CircularProgressIndicator(),
-                const SizedBox(height: 16),
-                Text('Deleting $successCount of ${_selectedContacts.length} contacts...'),
-              ],
-            ),
-          );
-        },
-      );
-      
-      // Process each selected contact
-      for (String contactId in _selectedContacts) {
-        try {
-          await apiService.deleteContact(contactId);
-          successCount++;
-        } catch (e) {
-          errorCount++;
-          print('Error deleting contact $contactId: $e');
-        }
-      }
-      
-      // Close progress dialog
-      Navigator.of(context).pop();
-      
-      // Show result
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Deleted $successCount contacts${errorCount > 0 ? '. $errorCount failed' : ''}',
-          ),
-          duration: const Duration(seconds: 3),
-        ),
-      );
-      
-      // Reset selection
-      setState(() {
-        _isSelecting = false;
-        _selectedContacts.clear();
-        _selectionMode = null;
-      });
+      _startDeletionProcess();
     }
+  }
+
+  void _startDeletionProcess() async {
+    final apiService = Provider.of<ApiService>(context, listen: false);
+    
+    setState(() {
+      _isDeletingInProgress = true;
+      _deletionSuccessCount = 0;
+      _deletionErrorCount = 0;
+      _deletionTotalCount = _selectedContacts.length;
+    });
+    
+    // Process each selected contact
+    for (String contactId in _selectedContacts) {
+      try {
+        await apiService.deleteContact(contactId);
+        setState(() {
+          _deletionSuccessCount++;
+        });
+      } catch (e) {
+        setState(() {
+          _deletionErrorCount++;
+        });
+        print('Error deleting contact $contactId: $e');
+      }
+    }
+    
+    // Show result and clean up
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Deleted $_deletionSuccessCount contacts${_deletionErrorCount > 0 ? '. $_deletionErrorCount failed' : ''}',
+        ),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+    
+    // Reset everything
+    setState(() {
+      _isDeletingInProgress = false;
+      _isSelecting = false;
+      _selectedContacts.clear();
+      _selectionMode = null;
+    });
   }
 
   Future<void> _deleteAllContacts(BuildContext context) async {
@@ -730,79 +804,61 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     );
     
     if (confirmed == true) {
-      final apiService = Provider.of<ApiService>(context, listen: false);
-      int successCount = 0;
-      int errorCount = 0;
-      
-      // Show progress dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) {
-          return AlertDialog(
-            title: const Text('Deleting All Contacts'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const CircularProgressIndicator(),
-                const SizedBox(height: 16),
-                Text('Deleting $successCount of ${contacts.length} contacts...'),
-              ],
-            ),
-          );
-        },
-      );
-      
-      // Process all contacts
-      for (Contact contact in contacts) {
-        try {
-          await apiService.deleteContact(contact.id);
-          successCount++;
-        } catch (e) {
-          errorCount++;
-          print('Error deleting contact ${contact.id}: $e');
-        }
-      }
-      
-      // Close progress dialog
-      Navigator.of(context).pop();
-      
-      // Show result
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Deleted $successCount contacts${errorCount > 0 ? '. $errorCount failed' : ''}',
-          ),
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      _startBulkDeletionProcess(contacts);
     }
   }
 
-  Future<void> _addMultipleContactsToGroup(BuildContext context, String groupName, String groupPeriod, int groupFrequency, List<Contact> contacts) async {
-    
+  void _startBulkDeletionProcess(List<Contact> contacts) async {
     final apiService = Provider.of<ApiService>(context, listen: false);
-    int successCount = 0;
-    int errorCount = 0;
     
-    // Show progress dialog
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Adding Contacts'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const CircularProgressIndicator(),
-              const SizedBox(height: 16),
-              Text('Processing $successCount of ${_selectedContacts.length} contacts...'),
-            ],
-          ),
-        );
-      },
+    setState(() {
+      _isDeletingInProgress = true;
+      _deletionSuccessCount = 0;
+      _deletionErrorCount = 0;
+      _deletionTotalCount = contacts.length;
+    });
+    
+    // Process all contacts
+    for (Contact contact in contacts) {
+      try {
+        await apiService.deleteContact(contact.id);
+        setState(() {
+          _deletionSuccessCount++;
+        });
+      } catch (e) {
+        setState(() {
+          _deletionErrorCount++;
+        });
+        print('Error deleting contact ${contact.id}: $e');
+    }
+    }
+    
+    // Show result and clean up
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Deleted $_deletionSuccessCount contacts${_deletionErrorCount > 0 ? '. $_deletionErrorCount failed' : ''}',
+        ),
+        duration: const Duration(seconds: 3),
+      ),
     );
+    
+    // Reset
+    setState(() {
+      _isDeletingInProgress = false;
+    });
+  }
+
+  Future<void> _addMultipleContactsToGroup(BuildContext context, String groupName, String groupPeriod, int groupFrequency, List<Contact> contacts) async {
+    final apiService = Provider.of<ApiService>(context, listen: false);
+    
+    setState(() {
+      _isAddingToGroupInProgress = true;
+      _addingSuccessCount = 0;
+      _addingErrorCount = 0;
+      _addingTotalCount = _selectedContacts.length;
+      _currentGroupName = groupName;
+    });
     
     // Process each selected contact
     for (String contactId in _selectedContacts) {
@@ -817,31 +873,34 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
         );
         
         await apiService.updateContact(updatedContact);
-        successCount++;
+        setState(() {
+          _addingSuccessCount++;
+        });
       } catch (e) {
-        errorCount++;
+        setState(() {
+          _addingErrorCount++;
+        });
         print('Error adding contact $contactId to group: $e');
       }
     }
-    
-    // Close progress dialog
-    Navigator.of(context).pop();
     
     // Show result
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Added $successCount contacts to $groupName${errorCount > 0 ? '. $errorCount failed' : ''}',
+          'Added $_addingSuccessCount contacts to $groupName${_addingErrorCount > 0 ? '. $_addingErrorCount failed' : ''}',
         ),
         duration: const Duration(seconds: 3),
       ),
     );
     
-    // Reset selection
+    // Reset selection and progress
     setState(() {
+      _isAddingToGroupInProgress = false;
       _isSelecting = false;
       _selectedContacts.clear();
       _selectionMode = null;
+      _currentGroupName = null;
     });
   }
 
@@ -855,7 +914,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: const Text('Override Group Assignment'),
+            title: const Text('Override Group Assignment', style: AppTextStyles.title3,),
             content: Text(
               '${contact.name} is already in the "${contact.connectionType}" group. '
               'Do you want to override this and assign them to "$groupName" instead?'
@@ -901,152 +960,153 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     }
   }
 
-    Widget _buildEmptyState({String? filter}) {
-      String title;
-      String description;
-      
-      switch (filter) {
-        case 'vip':
-          title = 'No Close Circle Contacts yet';
-          description = 'Mark contacts as Close Circle to see them here';
-          break;
-        case 'needs_attention':
-          title = 'No contacts need care';
-          description = 'All your contacts have been contacted recently';
-          break;
-        default:
-          title = 'No contacts yet';
-          description = 'Add your first contact to get started';
-      }
-      
-      return Scaffold(
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.contacts,
-                  size: 64,
+  Widget _buildEmptyState({String? filter}) {
+    String title;
+    String description;
+    
+    switch (filter) {
+      case 'vip':
+        title = 'No Close Circle Contacts yet';
+        description = 'Mark contacts as Close Circle to see them here';
+        break;
+      case 'needs_attention':
+        title = 'No contacts need care';
+        description = 'All your contacts have been contacted recently';
+        break;
+      default:
+        title = 'No contacts yet';
+        description = 'Add your first contact to get started';
+    }
+    
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.contacts,
+                size: 64,
+                color: Colors.grey,
+              ),
+              const SizedBox(height: 24),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
                   color: Colors.grey,
                 ),
-                const SizedBox(height: 24),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                description,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey,
+                ), 
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 30),
+              
+              // Multiple Add Options
+              Column(
+                children: [
+                  // Manual Add
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const AddContactScreen(),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xff3CB3E9),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      icon: const Icon(Icons.person_add, color: Colors.white),
+                      label: const Text('Add Contact Manually', style: TextStyle(color: Colors.white)),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  description,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey,
-                  ), 
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 30),
-                
-                // Multiple Add Options
-                Column(
-                  children: [
-                    // Manual Add
+                  const SizedBox(height: 12),
+                  
+                  // Smart Import (Android only)
+                  if (Theme.of(context).platform == TargetPlatform.android)
                     SizedBox(
                       width: double.infinity,
-                      child: ElevatedButton.icon(
+                      child: OutlinedButton.icon(
                         onPressed: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const AddContactScreen(),
+                              builder: (context) => const ImportContactsScreen(),
                             ),
                           );
                         },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xff3CB3E9),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                        icon: const Icon(Icons.person_add, color: Colors.white),
-                        label: const Text('Add Contact Manually', style: TextStyle(color: Colors.white)),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    
-                    // Smart Import (Android only)
-                    if (Theme.of(context).platform == TargetPlatform.android)
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const ImportContactsScreen(),
-                              ),
-                            );
-                          },
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xff3CB3E9),
-                            side: const BorderSide(color: Color(0xff3CB3E9)),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                          icon: const Icon(Icons.smart_button),
-                          label: const Text('Smart Import (Android)'),
-                        ),
-                      ),
-                    
-                    if (Theme.of(context).platform == TargetPlatform.android) const SizedBox(height: 12),
-                    
-                    // Contact Picker
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: _importFromContactPicker,
                         style: OutlinedButton.styleFrom(
                           foregroundColor: const Color(0xff3CB3E9),
                           side: const BorderSide(color: Color(0xff3CB3E9)),
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
-                        icon: const Icon(Icons.import_contacts),
-                        label: const Text('Import from Contacts'),
+                        icon: const Icon(Icons.smart_button),
+                        label: const Text('Smart Import (Android)'),
                       ),
                     ),
-                  ],
-                ),
-                
-                const SizedBox(height: 20),
-                
-                if (filter != null && filter != 'all')
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        _currentFilter = 'all';
-                      });
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color.fromARGB(255, 145, 209, 216),
+                  
+                  if (Theme.of(context).platform == TargetPlatform.android) const SizedBox(height: 12),
+                  
+                  // Contact Picker
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _importFromContactPicker,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xff3CB3E9),
+                        side: const BorderSide(color: Color(0xff3CB3E9)),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      icon: const Icon(Icons.import_contacts),
+                      label: const Text('Import from Contacts'),
                     ),
-                    child: Text('Clear Filter', style: AppTextStyles.button.copyWith(color: Colors.black)),
                   ),
-              ],
-            ),
+                ],
+              ),
+              
+              const SizedBox(height: 20),
+              
+              if (filter != null && filter != 'all')
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _currentFilter = 'all';
+                    });
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color.fromARGB(255, 145, 209, 216),
+                  ),
+                  child: Text('Clear Filter', style: AppTextStyles.button.copyWith(color: Colors.black)),
+                ),
+            ],
           ),
         ),
-      );
-    }
+      ),
+    );
+  }
 
-    // Add contact picker method
-    Future<void> _importFromContactPicker() async {
-      // This would integrate with the device's contact picker
-      // For now, we'll show a placeholder
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Contact picker integration coming soon')),
-      );
-    }
+  // Add contact picker method
+  Future<void> _importFromContactPicker() async {
+    // This would integrate with the device's contact picker
+    // For now, we'll show a placeholder
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Contact picker integration coming soon')),
+    );
+  }
+
   String _getTitle(String? filter) {
     switch (filter) {
       case 'vip':

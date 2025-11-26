@@ -123,7 +123,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               SizedBox(
                 height: 300,
                 child: SfCircularChart(
-                  title: ChartTitle(text: 'Contacts by Category'),
+                  // title: ChartTitle(text: 'Contacts by Category'),
                   legend: Legend(
                     isVisible: true,
                     overflowMode: LegendItemOverflowMode.wrap,
@@ -168,7 +168,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         const SizedBox(height: 8),
         Column(
           children: distributionData.map((data) {
-            final percentage = (data['count'] / distributionData.fold(0, (sum, item) => (sum + item['count']).toInt())) * 100;
+            // final percentage = (data['count'] / distributionData.fold(0, (sum, item) => (sum + item['count']).toInt())) * 100;
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 4.0),
               child: Row(
@@ -189,7 +189,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     ),
                   ),
                   Text(
-                    '${data['count']} (${percentage.toStringAsFixed(1)}%)',
+                    '${data['count']}',
                     style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                   ),
                 ],

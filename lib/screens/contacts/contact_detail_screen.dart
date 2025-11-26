@@ -236,17 +236,17 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
               subtitle: Text(_currentContact.connectionType),
             ),
 
-            ListTile(
-              leading: const Icon(Icons.schedule),
-              title: const Text('Contact Period', style: TextStyle(fontWeight: FontWeight.w600),),
-              subtitle: Text(_currentContact.period.toString()),
-            ),
+            // ListTile(
+            //   leading: const Icon(Icons.schedule),
+            //   title: const Text('Contact Period', style: TextStyle(fontWeight: FontWeight.w600),),
+            //   subtitle: Text(_currentContact.period.toString()),
+            // ),
             
-            ListTile(
-              leading: const Icon(Icons.schedule),
-              title: const Text('Contact Frequency', style: TextStyle(fontWeight: FontWeight.w600),),
-              subtitle: Text('${_currentContact.frequency} times per ${_currentContact.period.toLowerCase()}'),
-            ),
+          ListTile(
+            leading: const Icon(Icons.schedule),
+            title: const Text('Contact Frequency', style: TextStyle(fontWeight: FontWeight.w600),),
+            subtitle: Text(FrequencyPeriodMapper.getConversationalChoice(_currentContact.frequency, _currentContact.period)),
+          ),
             
             if (_currentContact.socialGroups.isNotEmpty)
               ListTile(
@@ -369,8 +369,8 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                'Frequency: ${_currentContact.frequency}x/${_currentContact.period.toLowerCase()}',
+                             Text(
+                                'Frequency: ${FrequencyPeriodMapper.getConversationalChoice(_currentContact.frequency, _currentContact.period)}',
                                 style: TextStyle(fontWeight: FontWeight.w600),
                               ),
                               Text(
@@ -400,7 +400,8 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
   }
 }
 
-// Dialog for editing next nudge schedule
+// Replace the entire _NextNudgeDialog class with this updated version:
+
 class _NextNudgeDialog extends StatefulWidget {
   final Contact contact;
   
@@ -411,61 +412,75 @@ class _NextNudgeDialog extends StatefulWidget {
 }
 
 class __NextNudgeDialogState extends State<_NextNudgeDialog> {
-  late String _selectedPeriod;
-  late int _selectedFrequency;
+  late String _selectedFrequencyChoice;
 
   @override
   void initState() {
     super.initState();
-    _selectedPeriod = widget.contact.period;
-    _selectedFrequency = widget.contact.frequency;
+    _selectedFrequencyChoice = FrequencyPeriodMapper.getConversationalChoice(
+      widget.contact.frequency, 
+      widget.contact.period
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Edit Nudge Schedule', style: TextStyle(fontWeight: FontWeight.bold)),
+      title: const Text('Edit Nudge Schedule', style: TextStyle(fontWeight: FontWeight.bold)),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text('Adjust how often you want to be reminded to contact ${widget.contact.name}'),
           const SizedBox(height: 20),
           
-          // Period Selection
-          const Text('Contact Period:', style: TextStyle(fontWeight: FontWeight.w600)),
-          DropdownButton<String>(
-            value: _selectedPeriod,
-            onChanged: (String? newValue) {
-              setState(() {
-                _selectedPeriod = newValue!;
-              });
-            },
-            items: <String>['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Annually']
-                .map<DropdownMenuItem<String>>((String value) {
+          // Frequency Selection with Conversational Options
+          const Text('Contact Frequency:', style: TextStyle(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<String>(
+            value: _selectedFrequencyChoice,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+            ),
+            items: FrequencyPeriodMapper.frequencyMapping.keys.map((String value) {
               return DropdownMenuItem<String>(
                 value: value,
                 child: Text(value),
               );
             }).toList(),
-          ),
-          
-          const SizedBox(height: 20),
-          
-          // Frequency Selection
-          const Text('Times per period:', style: TextStyle(fontWeight: FontWeight.w600)),
-          Slider(
-            value: _selectedFrequency.toDouble(),
-            min: 1,
-            max: 10,
-            divisions: 9,
-            label: _selectedFrequency.toString(),
-            onChanged: (double value) {
-              setState(() {
-                _selectedFrequency = value.toInt();
-              });
+            onChanged: (String? newValue) {
+              if (newValue != null) {
+                setState(() {
+                  _selectedFrequencyChoice = newValue;
+                });
+              }
             },
           ),
-          Text('$_selectedFrequency times', textAlign: TextAlign.center),
+          
+          const SizedBox(height: 16),
+          
+          // Show what the selection means
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.info, color: Color(0xff3CB3E9), size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _getFrequencyDescription(_selectedFrequencyChoice),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
       actions: [
@@ -477,9 +492,11 @@ class __NextNudgeDialogState extends State<_NextNudgeDialog> {
           onPressed: () async {
             try {
               final apiService = Provider.of<ApiService>(context, listen: false);
+              final frequencyData = FrequencyPeriodMapper.getFrequencyPeriod(_selectedFrequencyChoice);
+              
               final updatedContact = widget.contact.copyWith(
-                period: _selectedPeriod,
-                frequency: _selectedFrequency,
+                period: frequencyData['period'] as String,
+                frequency: frequencyData['frequency'] as int,
               );
               
               await apiService.updateContact(updatedContact);
@@ -501,5 +518,30 @@ class __NextNudgeDialogState extends State<_NextNudgeDialog> {
         ),
       ],
     );
+  }
+
+  String _getFrequencyDescription(String frequencyChoice) {
+    final data = FrequencyPeriodMapper.getFrequencyPeriod(frequencyChoice);
+    final frequency = data['frequency'];
+    final period = data['period'];
+    
+    switch (frequencyChoice) {
+      case 'Every few days':
+        return 'You\'ll be reminded to contact ${widget.contact.name} multiple times per week';
+      case 'Weekly':
+        return 'You\'ll be reminded to contact ${widget.contact.name} once per week';
+      case 'Every 2 weeks':
+        return 'You\'ll be reminded to contact ${widget.contact.name} twice per month';
+      case 'Monthly':
+        return 'You\'ll be reminded to contact ${widget.contact.name} once per month';
+      case 'Quarterly':
+        return 'You\'ll be reminded to contact ${widget.contact.name} once every 3 months';
+      case 'Twice a year':
+        return 'You\'ll be reminded to contact ${widget.contact.name} twice per year';
+      case 'Once a year':
+        return 'You\'ll be reminded to contact ${widget.contact.name} once per year';
+      default:
+        return 'You\'ll be reminded to contact ${widget.contact.name} $frequency times per $period';
+    }
   }
 }

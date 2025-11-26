@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_contacts/flutter_contacts.dart' as fContacts;
+// import 'package:flutter_contacts/properties/event.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:call_log/call_log.dart';
 import '../models/contact.dart';
@@ -185,7 +186,7 @@ class ContactSyncService {
 
       return {
         'success': true,
-        'message': 'Successfully imported $importedCount contacts',
+        'message': 'Successfully imported contacts',
         'importedCount': importedCount
       };
     } catch (e, stack) {
@@ -280,8 +281,8 @@ Future<Map<String, dynamic>> importContactsWithGroup({
       final displayName = _getDisplayName(deviceContact);
 
       // Extract important dates
-      final birthday = _extractBirthday(deviceContact);
-      final anniversary = _extractAnniversary(deviceContact);
+      // final birthday = _extractBirthday(deviceContact);
+      // final anniversary = _extractAnniversary(deviceContact);
       Contact nudgeContact = Contact(
         id: '',
         name: displayName,
@@ -291,7 +292,7 @@ Future<Map<String, dynamic>> importContactsWithGroup({
         email: deviceContact.emails.isNotEmpty
             ? deviceContact.emails.first.address
             : '',
-        connectionType: 'Contact',
+        connectionType: groupId,
         frequency: 2,
         period: 'Monthly',
         socialGroups: [groupId], // Assign to the selected group
@@ -304,8 +305,8 @@ Future<Map<String, dynamic>> importContactsWithGroup({
         priority: 3,
         tags: [],
         interactionHistory: {},
-        birthday: birthday,
-        anniversary: anniversary,
+        // birthday: birthday,
+        // anniversary: anniversary,
       );
 
       await contactsRef.add(nudgeContact.toMap());
@@ -314,7 +315,7 @@ Future<Map<String, dynamic>> importContactsWithGroup({
 
     return {
       'success': true,
-      'message': 'Successfully imported $importedCount contacts to group',
+      'message': 'Successfully imported contacts to group',
       'importedCount': importedCount
     };
   } catch (e, stack) {
@@ -418,7 +419,7 @@ Future<Map<String, dynamic>> importFromContactPicker({
 
     return {
       'success': true,
-      'message': 'Successfully imported $importedCount contacts from picker',
+      'message': 'Successfully imported contacts from picker',
       'importedCount': importedCount
     };
   } catch (e, stack) {
