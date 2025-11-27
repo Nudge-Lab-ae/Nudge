@@ -108,7 +108,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           TextButton(
             onPressed: () {
               setState(() {
-                _selectedFilter = 0; // Switch to Today view
+                _selectedFilter = 3; // Switch to Today view
               });
             },
             child: Text(
@@ -291,6 +291,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           return nudge.scheduledTime.isAfter(startOfMonth.subtract(const Duration(days: 1))) && 
                  nudge.scheduledTime.isBefore(endOfMonth.add(const Duration(days: 1)));
         }).toList();
+
+      case 3: // This Month
+       return _getOverdueNudges(allNudges);
         
       default:
         return allNudges;

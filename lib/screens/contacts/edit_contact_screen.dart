@@ -332,6 +332,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
   @override
   Widget build(BuildContext context) {
     final apiService = Provider.of<ApiService>(context, listen: false);
+    var size = MediaQuery.of(context).size;
       if (_isCropping) {
         return _buildCropScreen();
       }
@@ -353,7 +354,10 @@ class _EditContactScreenState extends State<EditContactScreen> {
           iconTheme: IconThemeData(color: Color(0xff3CB3E9)),
           backgroundColor: Colors.white,
         ),
-        floatingActionButton: FeedbackFloatingButton(),
+        floatingActionButton: Padding(
+        padding: EdgeInsets.only(bottom: size.height*0.4),
+        child: FeedbackFloatingButton(),
+      ),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -387,7 +391,10 @@ class _EditContactScreenState extends State<EditContactScreen> {
           ),
         ],
       ),
-      floatingActionButton: FeedbackFloatingButton(),
+      floatingActionButton: Padding(
+        padding: EdgeInsets.only(bottom: size.height*0.4),
+        child: FeedbackFloatingButton(),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Form(

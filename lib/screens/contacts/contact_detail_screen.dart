@@ -82,7 +82,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     // final authService = Provider.of<AuthService>(context);
     final apiService = Provider.of<ApiService>(context);
     // final user = authService.currentUser;
-    // var size = MediaQuery.of(context).size;
+    var size = MediaQuery.of(context).size;
     
     bool isLocalImage = _currentContact.imageUrl.isNotEmpty && 
         (_currentContact.imageUrl.startsWith('/') || 
@@ -132,7 +132,10 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
           ),
         ],
       ),
-      floatingActionButton: FeedbackFloatingButton(),
+      floatingActionButton: Padding(
+        padding: EdgeInsets.only(bottom: size.height*0.4),
+        child: FeedbackFloatingButton(),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(

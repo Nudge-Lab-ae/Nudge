@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nudge/screens/contacts/contact_detail_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/theme/text_styles.dart';
+import 'package:nudge/widgets/feedback_floating_button.dart';
 import 'package:provider/provider.dart';
 import 'package:confetti/confetti.dart';
 import 'package:shimmer/shimmer.dart';
@@ -1137,10 +1138,16 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
         context: context,
         isScrollControlled: true,
         builder: (context) {
+          // var size = MediaQuery.of(context).size;
           return Container(
             padding: const EdgeInsets.all(16),
             height: MediaQuery.of(context).size.height * 0.85,
-            child: Column(
+            child: Scaffold(
+            // floatingActionButton: Padding(
+            //   padding: EdgeInsets.only(bottom: size.height*0.2),
+            //   child: FeedbackFloatingButton(),
+            // ),
+            body:  Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Center(
@@ -1306,7 +1313,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                 ),
               ],
             ),
-          );
+          ));
         },
       );
     }

@@ -450,6 +450,7 @@ void _showNudgeScheduledMessage(int scheduledCount) {
 
   @override
   Widget build(BuildContext context) {
+    var size = MediaQuery.of(context).size;
     return Scaffold(
       appBar: AppBar(
         title: GradientText( text: 'NUDGE', style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
@@ -473,7 +474,10 @@ void _showNudgeScheduledMessage(int scheduledCount) {
         iconTheme: const IconThemeData(color: Color(0xff3CB3E9)),
         backgroundColor: Colors.white,
       ),
-      floatingActionButton: FeedbackFloatingButton(),
+      floatingActionButton: Padding(
+        padding: EdgeInsets.only(bottom: size.height*0.4),
+        child: FeedbackFloatingButton(),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: ListView(

@@ -312,6 +312,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
     final authService = Provider.of<AuthService>(context);
     final apiService = Provider.of<ApiService>(context);
     final user = authService.currentUser;
+    var size = MediaQuery.of(context).size;
     
     return StreamProvider<List<SocialGroup>>(
         create: (context) => apiService.getGroupsStream(),
@@ -335,8 +336,8 @@ class _AddContactScreenState extends State<AddContactScreen> {
                   surfaceTintColor: Colors.transparent,
                   backgroundColor: Colors.white
                 ),
-                 floatingActionButton: Padding(
-                  padding: const EdgeInsets.only(bottom: 80.0), // Position above other FABs
+                floatingActionButton: Padding(
+                  padding: EdgeInsets.only(bottom: size.height*0.4),
                   child: FeedbackFloatingButton(),
                 ),
                 body: SingleChildScrollView(

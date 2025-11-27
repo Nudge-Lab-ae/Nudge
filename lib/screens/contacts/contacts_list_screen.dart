@@ -199,7 +199,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
         groupFrequency,
         totalContacts
       ), // Your existing FAB
-        FeedbackFloatingButton(),
+        // FeedbackFloatingButton(),
       ],
     ),
 
