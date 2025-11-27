@@ -8,7 +8,7 @@ class FeedbackForumPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<Map<String, dynamic>>>(
-      stream: ApiService().getPublicFeedbacksStream(limit: 5),
+      stream: ApiService().getFeedbacksStream(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -89,10 +89,13 @@ class FeedbackForumPreview extends StatelessWidget {
     );
   }
 
+  // In feedback_forum_preview.dart - Update _buildPreviewItem method
   Widget _buildPreviewItem(Map<String, dynamic> feedback) {
     final title = feedback['adminTitle'] ?? 'No Title';
+    final message = feedback['message'] ?? '';
     final status = feedback['status'] ?? 'received';
-    final votes = feedback['votes'] ?? 0;
+    // final votes = feedback['votes'] ?? 0;
+    final screen = feedback['screen'] ?? 'Unknown Screen';
     
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -119,15 +122,31 @@ class FeedbackForumPreview extends StatelessWidget {
                     ),
                   ),
                 ),
+                const SizedBox(width: 8),
+                // Screen
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    screen,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: Colors.blue,
+                    ),
+                  ),
+                ),
                 const Spacer(),
                 // Votes
-                Row(
-                  children: [
-                    Icon(Icons.thumb_up, size: 14, color: Colors.grey.shade600),
-                    const SizedBox(width: 4),
-                    Text('$votes', style: const TextStyle(fontSize: 12)),
-                  ],
-                ),
+                // Row(
+                //   children: [
+                //     Icon(Icons.thumb_up, size: 14, color: Colors.grey.shade600),
+                //     const SizedBox(width: 4),
+                //     Text('$votes', style: const TextStyle(fontSize: 12)),
+                //   ],
+                // ),
               ],
             ),
             const SizedBox(height: 8),
@@ -136,9 +155,21 @@ class FeedbackForumPreview extends StatelessWidget {
               style: const TextStyle(
                 fontWeight: FontWeight.w500,
               ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
             ),
+            if (message.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                message.length > 100 
+                  ? '${message.substring(0, 100)}...' 
+                  : message,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade700,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ],
         ),
       ),

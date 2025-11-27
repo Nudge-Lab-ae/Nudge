@@ -650,44 +650,46 @@ Future<Map<String, dynamic>> register(String email, String password) async {
 }
 
 Future<void> submitFeedback({
-    required String message,
-    String type = 'Feedback',
-    Map<String, dynamic>? additionalData,
-  }) async {
-    try {
-      final currentUser = _auth.currentUser;
-      if (currentUser == null) throw Exception('No user logged in');
-      
-      // Get current user data
-      final userDoc = await _usersCollection.doc(currentUser.uid).get();
-      final userData = userDoc.data() as Map<String, dynamic>?;
-      
-      // Prepare feedback data
-      final feedbackData = {
-        'user': {
-          'userId': currentUser.uid,
-          'email': currentUser.email,
-          'username': userData?['username'] ?? '',
-          'photoUrl': userData?['photoUrl'] ?? '',
-        },
-        'message': message,
-        'type': type,
-        'timestamp': FieldValue.serverTimestamp(),
-        'appVersion': '1.0.0', // You can make this dynamic if needed
-        'platform': _getPlatform(),
-        'additionalData': additionalData ?? {},
-        'status': 'new', // new, reviewed, resolved, etc.
-      };
-      
-      // Add to feedbacks collection
-      await _firestore.collection('feedbacks').add(feedbackData);
-      
-      print('Feedback submitted successfully');
-    } catch (e) {
-      print('Error submitting feedback: $e');
-      throw Exception('Failed to submit feedback: $e');
-    }
+  required String message,
+  String type = 'Feedback',
+  Map<String, dynamic>? additionalData,
+  required String screenName, // Add this parameter
+}) async {
+  try {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) throw Exception('No user logged in');
+    
+    // Get current user data
+    final userDoc = await _usersCollection.doc(currentUser.uid).get();
+    final userData = userDoc.data() as Map<String, dynamic>?;
+    
+    // Prepare feedback data with screen info
+    final feedbackData = {
+      'user': {
+        'userId': currentUser.uid,
+        'email': currentUser.email,
+        'username': userData?['username'] ?? '',
+        'photoUrl': userData?['photoUrl'] ?? '',
+      },
+      'message': message,
+      'type': type,
+      'screen': screenName, // Add screen tracking
+      'timestamp': FieldValue.serverTimestamp(),
+      'appVersion': '1.0.0',
+      'platform': _getPlatform(),
+      'additionalData': additionalData ?? {},
+      'status': 'new',
+    };
+    
+    // Add to feedbacks collection
+    await _firestore.collection('feedbacks').add(feedbackData);
+    
+    print('Feedback submitted from screen: $screenName');
+  } catch (e) {
+    print('Error submitting feedback: $e');
+    throw Exception('Failed to submit feedback: $e');
   }
+}
 
   String _getPlatform() {
     if (Platform.isAndroid) return 'Android';

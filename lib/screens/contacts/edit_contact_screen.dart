@@ -6,6 +6,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:nudge/services/api_service.dart';
+import 'package:nudge/widgets/feedback_floating_button.dart';
 import 'package:nudge/widgets/gradient_text.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -352,6 +353,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
           iconTheme: IconThemeData(color: Color(0xff3CB3E9)),
           backgroundColor: Colors.white,
         ),
+        floatingActionButton: FeedbackFloatingButton(),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -385,6 +387,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
           ),
         ],
       ),
+      floatingActionButton: FeedbackFloatingButton(),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Form(

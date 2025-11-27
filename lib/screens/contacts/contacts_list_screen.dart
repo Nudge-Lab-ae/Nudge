@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:nudge/screens/contacts/import_contacts_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/theme/text_styles.dart';
+import 'package:nudge/widgets/feedback_floating_button.dart';
 import 'package:nudge/widgets/gradient_text.dart';
 import 'package:provider/provider.dart';
 // import '../notifications/notifications_screen.dart';
@@ -187,14 +188,29 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
           _buildAddingToGroupProgressOverlay(),
         ],
       ),
-      floatingActionButton: _selectedContacts.isNotEmpty
+      floatingActionButton: Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        if (_selectedContacts.isNotEmpty) 
+          _buildFloatingActionButton(
+        isAddToGroupMode, 
+        groupName, 
+        groupPeriod, 
+        groupFrequency,
+        totalContacts
+      ), // Your existing FAB
+        FeedbackFloatingButton(),
+      ],
+    ),
+
+      /* floatingActionButton: _selectedContacts.isNotEmpty
       ?_buildFloatingActionButton(
         isAddToGroupMode, 
         groupName, 
         groupPeriod, 
         groupFrequency,
         totalContacts
-      ):Center(),
+      ):Center(), */
     );
   }
 
@@ -979,6 +995,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     }
     
     return Scaffold(
+      floatingActionButton: FeedbackFloatingButton(),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(20.0),

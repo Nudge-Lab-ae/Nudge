@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nudge/services/api_service.dart';
 // import 'package:nudge/screens/feedback/feedback_forum_screen.dart';
 import 'package:nudge/widgets/feedback_forum_preview.dart';
+import 'package:nudge/widgets/screen_tracker.dart';
 
 class FeedbackBottomSheet extends StatefulWidget {
   final String currentSection;
@@ -57,14 +58,16 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> with SingleTi
     setState(() => _isSubmitting = true);
 
     try {
+      final screenName = ScreenTracker.getCurrentScreen(context);
+    
       await _apiService.submitFeedback(
         message: _messageController.text,
         type: _selectedType,
         additionalData: {
-          'section': widget.currentSection,
-          'screen': widget.currentSection,
-          'timestamp': DateTime.now(),
+          'currentSection': widget.currentSection,
+          // 'userFlow': _userFlow,
         },
+        screenName: screenName, // Add screen tracking
       );
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -87,7 +90,7 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> with SingleTi
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Select Feedback Type'),
+        title: const Text('Select Feedback Type', style: TextStyle(fontWeight: FontWeight.w700),),
         content: SizedBox(
           width: double.maxFinite,
           child: ListView.builder(
@@ -96,7 +99,7 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> with SingleTi
             itemBuilder: (context, index) {
               final type = _feedbackTypes[index];
               return ListTile(
-                title: Text(type),
+                title: Text(type, style: TextStyle(fontWeight: FontWeight.w500),),
                 onTap: () {
                   setState(() => _selectedType = type);
                   Navigator.of(context).pop();
@@ -164,6 +167,23 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> with SingleTi
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
+                              enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.grey, width: 1),
+                            borderRadius: BorderRadius.circular(10)
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.blue, width: 2),
+                            borderRadius: BorderRadius.circular(10)
+                          ),
+                          // Optional: to show border even when there's an error
+                          errorBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.red, width: 1),
+                            borderRadius: BorderRadius.circular(10)
+                          ),
+                          focusedErrorBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.red, width: 2),
+                            borderRadius: BorderRadius.circular(10)
+                          ),
                             ),
                           ),
                         ),
@@ -182,6 +202,23 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> with SingleTi
                           hintText: 'Share your thoughts, suggestions, or issues...',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.grey, width: 1),
+                            borderRadius: BorderRadius.circular(10)
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.blue, width: 2),
+                            borderRadius: BorderRadius.circular(10)
+                          ),
+                          // Optional: to show border even when there's an error
+                          errorBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.red, width: 1),
+                            borderRadius: BorderRadius.circular(10)
+                          ),
+                          focusedErrorBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.red, width: 2),
+                            borderRadius: BorderRadius.circular(10)
                           ),
                         ),
                       ),

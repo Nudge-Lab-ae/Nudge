@@ -3,7 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:nudge/services/api_service.dart';
-import 'package:nudge/theme/text_styles.dart';
+// import 'package:nudge/theme/text_styles.dart';
+import 'package:nudge/widgets/gradient_text.dart';
 // import 'package:provider/provider.dart';
 
 class FeedbackManagementScreen extends StatefulWidget {
@@ -28,10 +29,15 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('NUDGE', style: AppTextStyles.title3.copyWith(
-          color: Color(0xff3CB3E9), 
-          fontFamily: 'RobotoMono'
-        )),
+        title: GradientText( text: 'NUDGE', style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF5CDEE5), // #5CDEE5
+                  Color(0xFF2D85F6), // #2D85F6
+                  Color(0xFF7A4BFF), // #7A4BFF
+                ], stops: [0.0, 0.6, 1.0], begin: Alignment.topCenter, end: Alignment.bottomCenter,
+          ),
+        ),
         centerTitle: true,
         iconTheme: IconThemeData(color: Color(0xff3CB3E9)),
         backgroundColor: Colors.white,
@@ -447,7 +453,7 @@ Widget _buildEnhancedActionButtons(
   TextEditingController responseController,
   TextEditingController titleController,
 ) {
-  final isPublic = feedback['isPublic'] ?? false;
+  // final isPublic = feedback['isPublic'] ?? false;
   
   return Column(
     children: [
@@ -481,7 +487,7 @@ Widget _buildEnhancedActionButtons(
           // Public/Private Toggle
           Expanded(
             flex: 1,
-            child: OutlinedButton.icon(
+            child: Center()/* OutlinedButton.icon(
               onPressed: () => _toggleFeedbackVisibility(feedback),
               icon: Icon(
                 isPublic ? Icons.visibility : Icons.visibility_off,
@@ -492,7 +498,7 @@ Widget _buildEnhancedActionButtons(
                 foregroundColor: isPublic ? Colors.green : Colors.grey,
                 side: BorderSide(color: isPublic ? Colors.green : Colors.grey),
               ),
-            ),
+            ) */,
           ),
         ],
       ),
@@ -504,19 +510,25 @@ Widget _buildEnhancedActionButtons(
           // Respond Button
           if (feedback['status'] != 'responded')
             Expanded(
-              child: ElevatedButton.icon(
+              child: MaterialButton(
+                padding: EdgeInsets.zero,
                 onPressed: () {
                   if (responseController.text.trim().isNotEmpty) {
                     _addFeedbackResponse(feedback['id'], responseController.text.trim());
                     responseController.clear();
                   }
                 },
-                icon: Icon(Icons.reply, size: 16, color: Colors.white),
-                label: Text('Send Response'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
+                child: Container(
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.green,
+                    borderRadius: BorderRadius.circular(20)
+                  ),
+                  child: Center(
+                    child: Text('Send Response', style: TextStyle(fontSize: 14, color: Colors.white),),
+                  ),
                 ),
+                // icon: Icon(Icons.reply, size: 16, color: Colors.white),
               ),
             ),
           
@@ -536,8 +548,12 @@ Widget _buildEnhancedActionButtons(
                   );
                 }
               },
-              icon: Icon(Icons.title, size: 16),
-              label: Text('Save Title'),
+              // icon: Icon(Icons.title, size: 16),
+              label: Text('Save Title', style: TextStyle(fontSize: 13),),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  ),
             ),
           ),
           
@@ -593,22 +609,22 @@ String _getSectionName(String section) {
 }
 
 // Add this method to toggle visibility
-void _toggleFeedbackVisibility(Map<String, dynamic> feedback) async {
-  try {
-    final currentVisibility = feedback['isPublic'] ?? false;
-    await _apiService.updateFeedbackAdminData(
-      feedbackId: feedback['id'],
-      isPublic: !currentVisibility,
-    );
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Feedback marked as ${!currentVisibility ? 'public' : 'private'}')),
-    );
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error updating visibility: $e')),
-    );
-  }
-}
+// void _toggleFeedbackVisibility(Map<String, dynamic> feedback) async {
+//   try {
+//     final currentVisibility = feedback['isPublic'] ?? false;
+//     await _apiService.updateFeedbackAdminData(
+//       feedbackId: feedback['id'],
+//       isPublic: !currentVisibility,
+//     );
+//     ScaffoldMessenger.of(context).showSnackBar(
+//       SnackBar(content: Text('Feedback marked as ${!currentVisibility ? 'public' : 'private'}')),
+//     );
+//   } catch (e) {
+//     ScaffoldMessenger.of(context).showSnackBar(
+//       SnackBar(content: Text('Error updating visibility: $e')),
+//     );
+//   }
+// }
 
 // Update the status color method to include new statuses
 Color _getStatusColor(String status) {

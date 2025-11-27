@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/theme/text_styles.dart';
+import 'package:nudge/widgets/feedback_floating_button.dart';
 import 'package:nudge/widgets/gradient_text.dart';
 import 'package:provider/provider.dart';
 // import '../../services/database_service.dart';
@@ -333,6 +334,10 @@ class _AddContactScreenState extends State<AddContactScreen> {
                   iconTheme: IconThemeData(color: Color(0xff3CB3E9)),
                   surfaceTintColor: Colors.transparent,
                   backgroundColor: Colors.white
+                ),
+                 floatingActionButton: Padding(
+                  padding: const EdgeInsets.only(bottom: 80.0), // Position above other FABs
+                  child: FeedbackFloatingButton(),
                 ),
                 body: SingleChildScrollView(
                   padding: const EdgeInsets.all(20),

@@ -13,6 +13,7 @@ import 'package:nudge/screens/admin/feedback_management_screen.dart';
 import 'package:nudge/services/auth_service.dart';
 // import 'package:nudge/theme/text_styles.dart';
 import 'package:nudge/widgets/gradient_text.dart';
+import 'package:nudge/widgets/screen_tracker.dart';
 import 'package:provider/provider.dart';
 import '../../services/api_service.dart';
 import 'package:nudge/models/user.dart' as user;
@@ -240,6 +241,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       });
 
       try {
+        final screenName = ScreenTracker.getCurrentScreen(context);
         await ApiService().submitFeedback(
           message: _feedbackMessageController.text,
           type: _feedbackTypeController.text,
@@ -247,6 +249,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             'screen': 'SettingsScreen',
             'appSection': 'feedback_form',
           },
+          screenName: screenName, // Add screen tracking
         );
 
         ScaffoldMessenger.of(context).showSnackBar(

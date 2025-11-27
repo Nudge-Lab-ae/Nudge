@@ -8,7 +8,9 @@ import 'package:nudge/screens/groups/groups_list_screen.dart';
 import 'package:nudge/screens/notifications/notifications_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/theme/text_styles.dart';
+import 'package:nudge/widgets/feedback_floating_button.dart';
 import 'package:nudge/widgets/gradient_text.dart';
+import 'package:nudge/widgets/screen_tracker.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -43,6 +45,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     await nudgeService.initialize();
   }
 
+  String getCurrentSection() {
+    return ScreenTracker.getDashboardSection(_currentIndex);
+  }
+
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
@@ -64,12 +70,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Scaffold(
           appBar: _buildAppBar(context),
           drawer: _buildNavigationDrawer(context, authService),
-          body: Consumer2<List<Contact>, List<SocialGroup>>(
+          body: Stack( // Wrap body in Stack
+          children: [
+            Consumer2<List<Contact>, List<SocialGroup>>(
             builder: (context, contacts, groups, child) {
               totalContacts = contacts;
               return _buildCurrentView(context, contacts, groups, apiService);
             },
           ),
+           Positioned(
+              right: 16,
+              bottom: MediaQuery.of(context).size.height * 0.4, // Center vertically
+              child: FeedbackFloatingButton(
+                currentSection: getCurrentSection(),
+              ),
+            ),
+          ]),
           floatingActionButton: hideFloatingActionButton?Center():_buildFloatingActionButton(context),
           bottomNavigationBar: _buildBottomNavigationBar(),
         ),

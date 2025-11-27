@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:nudge/screens/contacts/edit_contact_screen.dart';
 import 'package:nudge/services/api_service.dart';
+import 'package:nudge/widgets/feedback_floating_button.dart';
 // import 'package:nudge/theme/text_styles.dart';
 import 'package:nudge/widgets/gradient_text.dart';
 import 'package:provider/provider.dart';
@@ -131,6 +132,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
           ),
         ],
       ),
+      floatingActionButton: FeedbackFloatingButton(),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(

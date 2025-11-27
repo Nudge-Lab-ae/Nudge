@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:nudge/services/nudge_service.dart';
+import 'package:nudge/widgets/feedback_floating_button.dart';
 // import 'package:nudge/theme/text_styles.dart';
 import 'package:nudge/widgets/gradient_text.dart';
 import 'package:provider/provider.dart';
@@ -472,6 +473,7 @@ void _showNudgeScheduledMessage(int scheduledCount) {
         iconTheme: const IconThemeData(color: Color(0xff3CB3E9)),
         backgroundColor: Colors.white,
       ),
+      floatingActionButton: FeedbackFloatingButton(),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: ListView(

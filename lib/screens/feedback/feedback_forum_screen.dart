@@ -107,7 +107,8 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
           // Feedback List
           Expanded(
             child: StreamBuilder<List<Map<String, dynamic>>>(
-              stream: _apiService.getPublicFeedbacksStream(statusFilter: _filterStatus == 'all' ? null : _filterStatus),
+              // stream: _apiService.getPublicFeedbacksStream(statusFilter: _filterStatus == 'all' ? null : _filterStatus),
+              stream: _apiService.getFeedbacksStream(statusFilter: _filterStatus == 'all' ? null : _filterStatus),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -172,7 +173,7 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
     final status = feedback['status'] ?? 'received';
     final type = feedback['type'] ?? 'Feedback';
     final section = feedback['section'] ?? 'General';
-    final votes = feedback['votes'] ?? 0;
+    // final votes = feedback['votes'] ?? 0;
     final user = feedback['user'] ?? {};
     final adminResponse = feedback['adminResponse'];
     
@@ -223,13 +224,13 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
                 ),
                 const Spacer(),
                 // Votes
-                Row(
-                  children: [
-                    Icon(Icons.thumb_up, size: 16, color: Colors.grey.shade600),
-                    const SizedBox(width: 4),
-                    Text('$votes'),
-                  ],
-                ),
+                // Row(
+                //   children: [
+                //     Icon(Icons.thumb_up, size: 16, color: Colors.grey.shade600),
+                //     const SizedBox(width: 4),
+                //     Text('$votes'),
+                //   ],
+                // ),
               ],
             ),
             
