@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nudge/screens/contacts/contact_detail_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/theme/text_styles.dart';
-import 'package:nudge/widgets/feedback_floating_button.dart';
+// import 'package:nudge/widgets/feedback_floating_button.dart';
 import 'package:provider/provider.dart';
 import 'package:confetti/confetti.dart';
 import 'package:shimmer/shimmer.dart';
