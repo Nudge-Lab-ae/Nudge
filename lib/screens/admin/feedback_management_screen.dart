@@ -223,9 +223,26 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
     );
   }
 
+  List<Map<String, dynamic>> _filterFeedbacks(List<Map<String, dynamic>> feedbacks) {
+    List<Map<String, dynamic>> filtered = feedbacks;
+
+    // Apply status filter
+    if (_statusFilter != 'all') {
+      filtered = filtered.where((f) => f['status'] == _statusFilter).toList();
+    }
+
+    // Apply type filter
+    if (_typeFilter != 'all') {
+      filtered = filtered.where((f) => f['type'] == _typeFilter).toList();
+    }
+
+    return filtered;
+  }
+
+
   Widget _buildFeedbackList() {
     return StreamBuilder<List<Map<String, dynamic>>>(
-      stream: _apiService.getFeedbacksStream(statusFilter: _statusFilter == 'all' ? null : _statusFilter),
+      stream: _apiService.getFeedbacksStream(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(child: CircularProgressIndicator());
@@ -235,12 +252,10 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
           return Center(child: Text('Error loading feedbacks: ${snapshot.error}'));
         }
         
-        final feedbacks = snapshot.data ?? [];
+         final allFeedbacks = snapshot.data ?? [];
         
-        // Apply type filter
-        final filteredFeedbacks = _typeFilter == 'all' 
-            ? feedbacks 
-            : feedbacks.where((f) => f['type'] == _typeFilter).toList();
+        // Apply client-side filtering
+        final filteredFeedbacks = _filterFeedbacks(allFeedbacks);
         
         if (filteredFeedbacks.isEmpty) {
           return Center(

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:nudge/services/api_service.dart';
-// import 'package:nudge/theme/text_styles.dart';
 import 'package:nudge/widgets/gradient_text.dart';
 
 class FeedbackForumScreen extends StatefulWidget {
@@ -14,6 +13,21 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
   final ApiService _apiService = ApiService();
   String _filterStatus = 'all';
   final List<String> _statusOptions = ['all', 'received', 'planned', 'in_progress', 'completed'];
+
+  // Client-side filtering function
+  List<Map<String, dynamic>> _filterFeedbacks(List<Map<String, dynamic>> feedbacks) {
+    List<Map<String, dynamic>> filtered = feedbacks;
+
+    // Apply status filter
+    if (_filterStatus != 'all') {
+      filtered = filtered.where((f) => f['status'] == _filterStatus).toList();
+    }
+
+    // Only show public feedbacks in the forum
+    filtered = filtered;
+
+    return filtered;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -107,8 +121,8 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
           // Feedback List
           Expanded(
             child: StreamBuilder<List<Map<String, dynamic>>>(
-              // stream: _apiService.getPublicFeedbacksStream(statusFilter: _filterStatus == 'all' ? null : _filterStatus),
-              stream: _apiService.getFeedbacksStream(statusFilter: _filterStatus == 'all' ? null : _filterStatus),
+              // Now using getFeedbacksStream without filters
+              stream: _apiService.getFeedbacksStream(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -127,9 +141,12 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
                   );
                 }
                 
-                final feedbacks = snapshot.data ?? [];
+                final allFeedbacks = snapshot.data ?? [];
                 
-                if (feedbacks.isEmpty) {
+                // Apply client-side filtering
+                final filteredFeedbacks = _filterFeedbacks(allFeedbacks);
+                
+                if (filteredFeedbacks.isEmpty) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -154,9 +171,9 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
                 
                 return ListView.builder(
                   padding: const EdgeInsets.all(16),
-                  itemCount: feedbacks.length,
+                  itemCount: filteredFeedbacks.length,
                   itemBuilder: (context, index) {
-                    return _buildFeedbackItem(feedbacks[index]);
+                    return _buildFeedbackItem(filteredFeedbacks[index]);
                   },
                 );
               },
@@ -173,7 +190,6 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
     final status = feedback['status'] ?? 'received';
     final type = feedback['type'] ?? 'Feedback';
     final section = feedback['section'] ?? 'General';
-    // final votes = feedback['votes'] ?? 0;
     final user = feedback['user'] ?? {};
     final adminResponse = feedback['adminResponse'];
     
@@ -223,14 +239,6 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
                   ),
                 ),
                 const Spacer(),
-                // Votes
-                // Row(
-                //   children: [
-                //     Icon(Icons.thumb_up, size: 16, color: Colors.grey.shade600),
-                //     const SizedBox(width: 4),
-                //     Text('$votes'),
-                //   ],
-                // ),
               ],
             ),
             

@@ -753,17 +753,57 @@ void _showCreateGroupDialog(BuildContext context, ApiService apiService) {
                 children: [
                   TextField(
                     controller: nameController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Group Name',
-                      border: OutlineInputBorder(),
+                       border: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                      ),
+                       enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                // Optional: to show border even when there's an error
+                errorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
                     ),
                   ),
                   const SizedBox(height: 16),
                   TextField(
                     controller: descriptionController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Description',
-                      border: OutlineInputBorder(),
+                        border: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                      ),
+                       enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                // Optional: to show border even when there's an error
+                errorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -784,9 +824,29 @@ void _showCreateGroupDialog(BuildContext context, ApiService apiService) {
                       child: Text(value),
                     );
                   }).toList(),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Contact Frequency',
-                    border: OutlineInputBorder(),
+                      border: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                      ),
+                       enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                // Optional: to show border even when there's an error
+                errorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 1),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.red, width: 2),
+                  borderRadius: BorderRadius.circular(10)
+                ),
                   ),
                 ),
                   const SizedBox(height: 16),

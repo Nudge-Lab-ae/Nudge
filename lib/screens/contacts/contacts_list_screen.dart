@@ -446,7 +446,10 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
   }
 
   Widget _buildFloatingActionButton(bool isAddToGroupMode, String? groupName, String? groupPeriod, int? groupFrequency, List<Contact> contacts) {
-    if (_isSelecting) {
+    
+    if (_isDeletingInProgress) {
+      return Center();
+    } else if (_isSelecting) {
       if (_selectionMode == 'add_to_group') {
         return FloatingActionButton.extended(
           onPressed: () async{

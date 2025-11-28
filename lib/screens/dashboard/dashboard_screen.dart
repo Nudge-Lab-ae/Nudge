@@ -485,7 +485,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ? const Icon(Icons.person, color: Colors.white,) 
                             : null,
                       ),
-                      title: Text(contact.name),
+                      title: Text(contact.name, style: TextStyle(fontWeight: FontWeight.w600),),
                       subtitle: Text(
                         'Last contacted: ${DateFormat('MMM d, y').format(contact.lastContacted)}',
                       ),
@@ -599,7 +599,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                         labelPosition: ChartDataLabelPosition.inside,
                       ),
-                      pointColorMapper: (Map<String, dynamic> data, _) => _getCategoryColor(data['category']),
+                      pointColorMapper: (Map<String, dynamic> data, _) => _getCategoryColor(data['category'], distributionData.indexOf(data)),
                       innerRadius: '60%',
                     )
                   ],
@@ -630,6 +630,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Column(
           children: distributionData.map((data) {
             // final percentage = ((data['count'] as int) / total * 100).round();
+            final index = distributionData.indexOf(data);
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 4.0),
               child: Row(
@@ -638,7 +639,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     width: 12,
                     height: 12,
                     decoration: BoxDecoration(
-                      color: _getCategoryColor(data['category']),
+                      color: _getCategoryColor(data['category'], index),
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -745,23 +746,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return distributionList;
   }
 
-  Color _getCategoryColor(String category) {
-    // Generate consistent colors based on category
-    final colors = [
-      const Color(0xff3CB3E9), // Primary teal
-      Colors.green[600]!,
-      Colors.purple[600]!,
-      Colors.amber[700]!,
-      Colors.pink[600]!,
-      // Colors.brown[600]!,
-      Colors.indigo[600]!,
-      Colors.orange[600]!,
-      Colors.blue[600]!,
-    ];
-    
-    final index = category.hashCode % colors.length;
-    return colors[index];
-  }
+  Color _getCategoryColor(String category, int index) {
+  // Extended color palette with 20 distinct colors
+  final List<Color> distinctColors = [
+    const Color(0xff3CB3E9), // Primary teal
+    const Color(0xFF4CAF50), // Green
+    const Color(0xFF9C27B0), // Purple
+    const Color(0xFFFF9800), // Orange
+    const Color(0xFFF44336), // Red
+    const Color(0xFF2196F3), // Blue
+    const Color(0xFFFFC107), // Amber
+    const Color(0xFF795548), // Brown
+    const Color(0xFF607D8B), // Blue Grey
+    const Color(0xFFE91E63), // Pink
+    const Color(0xFF00BCD4), // Cyan
+    const Color(0xFF8BC34A), // Light Green
+    const Color(0xFF673AB7), // Deep Purple
+    const Color(0xFFFF5722), // Deep Orange
+    const Color(0xFF009688), // Teal
+    const Color(0xFF3F51B5), // Indigo
+    const Color(0xFFCDDC39), // Lime
+    const Color(0xFFFFEB3B), // Yellow
+    const Color(0xFF9E9E9E), // Grey
+    const Color(0xFF00E676), // Green Accent
+  ];
+
+  // Use a combination of category hash and index for consistent but varied coloring
+  final int colorIndex = (index) % distinctColors.length;
+  return distinctColors[colorIndex];
+}
 
   // Updated Quick Actions with better styling
   Widget _buildQuickActions(BuildContext context, List<Contact> contacts, List<SocialGroup> groups) {
@@ -985,7 +998,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         Text(
           title,
-          style: const TextStyle(fontSize: 12),
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
         ),
       ],
     );

@@ -703,32 +703,27 @@ Future<void> submitFeedback({
   // Add these methods to your existing ApiService class
 
 // Feedback management methods
-  Stream<List<Map<String, dynamic>>> getFeedbacksStream({String? statusFilter}) {
-    try {
-      Query query = _firestore
-          .collection('feedbacks')
-          .orderBy('timestamp', descending: true);
-      
-      // Apply status filter if provided
-      if (statusFilter != null && statusFilter.isNotEmpty && statusFilter != 'all') {
-        query = query.where('status', isEqualTo: statusFilter);
-      }
-      
-      return query.snapshots().map((snapshot) => snapshot.docs
-          .map((doc) {
-            final data = doc.data() as Map<String, dynamic>;
-            return {
-              'id': doc.id,
-              ...data,
-              'timestamp': data['timestamp']?.toDate() ?? DateTime.now(),
-            };
-          })
-          .toList());
-    } catch (e) {
-      print('Error getting feedbacks stream: $e');
-      return Stream.value([]);
-    }
+Stream<List<Map<String, dynamic>>> getFeedbacksStream() {
+  try {
+    Query query = _firestore
+        .collection('feedbacks')
+        .orderBy('timestamp', descending: true);
+    
+    return query.snapshots().map((snapshot) => snapshot.docs
+        .map((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          return {
+            'id': doc.id,
+            ...data,
+            'timestamp': data['timestamp']?.toDate() ?? DateTime.now(),
+          };
+        })
+        .toList());
+  } catch (e) {
+    print('Error getting feedbacks stream: $e');
+    return Stream.value([]);
   }
+}
 
   Future<void> updateFeedbackStatus(String feedbackId, String newStatus) async {
     try {
