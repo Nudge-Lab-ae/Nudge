@@ -38,7 +38,7 @@ class ConnectionTypeChip extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? Colors.white : Colors.black,
+                color: isSelected ? Colors.white : Color(0xff555555),
               ),
             ),
             if (count != null)
@@ -47,7 +47,7 @@ class ConnectionTypeChip extends StatelessWidget {
                 child: Text(
                   count!,
                   style: TextStyle(
-                    color: isSelected ? Colors.white : Colors.black,
+                    color: isSelected ? Colors.white : Color(0xff555555),
                     fontSize: 12,
                   ),
                 ),

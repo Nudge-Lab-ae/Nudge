@@ -41,12 +41,7 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
             fontWeight: FontWeight.bold,
           ),
           gradient: const LinearGradient(
-            colors: [
-              Color(0xFF5CDEE5),
-              Color(0xFF2D85F6),
-              Color(0xFF7A4BFF),
-            ],
-            stops: [0.0, 0.6, 1.0],
+            colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),

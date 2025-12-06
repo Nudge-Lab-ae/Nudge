@@ -277,7 +277,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Select Feedback Type'),
+          title: const Text('SELECT FEEDBACK TYPE', style: TextStyle(color: Color(0xff555555)),),
           content: SizedBox(
             width: double.maxFinite,
             child: ListView.builder(
@@ -286,7 +286,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               itemBuilder: (context, index) {
                 final type = _feedbackTypes[index];
                 return ListTile(
-                  title: Text(type, style: TextStyle(fontWeight: FontWeight.w600),),
+                  title: Text(type, style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555)),),
                   onTap: () {
                     setState(() {
                       _feedbackTypeController.text = type;
@@ -319,7 +319,7 @@ void _showDeleteAccountConfirmation(AuthService authService) {
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
-      title: const Text('Delete Account', style: TextStyle(fontWeight: FontWeight.w800),),
+      title: const Text('DELETE ACCOUNT', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555)),),
       content: const Text(
         'This action cannot be undone. All your data, contacts, groups, and settings will be permanently deleted.',
       ),
@@ -343,50 +343,216 @@ void _showDeleteAccountConfirmation(AuthService authService) {
   );
 }
 
-Future<bool> deleteUser(AuthService authService) async {
-  FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  FirebaseAuth _auth = FirebaseAuth.instance;
-  // final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
-  String uid = _auth.currentUser!.uid;
-  
-  setState(() {
-    deleting = true;
-  });
-  
-  try {
-    User thisUser = _auth.currentUser!;
-    await _firestore.collection('users').doc(uid).delete();
-    await thisUser.delete();
+    void showDeletedMessage() {
+  // Show success message before navigation
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Deleted Account!',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                Text(
+                  'You have successfully deleted your account. Any data previously recorded has been removed.',
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: Colors.green,
+      duration: const Duration(seconds: 4),
+    ),
+  );
+
+}
+  // Future<void> _logoutUser(AuthService authService) async {
+  //   try {
+  //     await authService.signOut();
+  //     await FirebaseAuth.instance.signOut();
+      
+  //     // Clear navigation stack and go to welcome screen
+  //     WidgetsBinding.instance.addPostFrameCallback((_) {
+  //       Navigator.pushNamedAndRemoveUntil(
+  //         context, 
+  //         '/welcome', 
+  //         (route) => false
+  //       );
+  //     });
+  //   } catch (e) {
+  //     print('Error logging out: $e');
+  //     // Still try to navigate even if signout fails
+  //     WidgetsBinding.instance.addPostFrameCallback((_) {
+  //       Navigator.pushNamedAndRemoveUntil(
+  //         context, 
+  //         '/welcome', 
+  //         (route) => false
+  //       );
+  //     });
+  //   }
+  // }
+
+  Future<bool> deleteUser(AuthService authService) async {
+    FirebaseFirestore _firestore = FirebaseFirestore.instance;
+    FirebaseAuth _auth = FirebaseAuth.instance;
+    User? currentUser = _auth.currentUser;
     
-    // Sign out and navigate to welcome screen
-    await authService.signOut();
-    await _auth.signOut();
+    if (currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No user logged in')),
+      );
+      return false;
+    }
     
-    // Navigate to welcome screen and remove all routes
-    Navigator.pushNamedAndRemoveUntil(context, '/welcome', (route) => false);
+    String uid = currentUser.uid;
+    
     setState(() {
       deleting = true;
     });
     
-    return true;
-  } catch (error) {
-    print('Error deleting user');
-    print(error);
-    
-    // Show error message
-    // ScaffoldMessenger.of(context).showSnackBar(
-    //   SnackBar(
-    //     content: Text('Error deleting account: $error'),
-    //     backgroundColor: Colors.red,
-    //   ),
-    // );
-    
-    setState(() {
-      deleting = false;
-    });
-    return false;
+    try {
+      // First delete Firestore data
+      
+      await currentUser.getIdToken(true);
+      
+      // Try to delete
+      await _firestore.collection('users').doc(uid).delete();
+      
+      // Then delete the auth user account
+      await currentUser.delete();
+      
+      // Clear any cached data
+      await _auth.signOut();
+      
+      // Navigate to welcome screen and remove all routes
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.pushNamedAndRemoveUntil(
+          context, 
+          '/welcome', 
+          (route) => false
+        );
+      });
+
+      showDeletedMessage();
+      
+      return true;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'requires-recent-login') {
+        // Handle re-authentication needed
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please log in again to delete account'),
+          ),
+        );
+        
+        // Force logout and go to login screen
+        await authService.signOut();
+        await _auth.signOut();
+        
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Navigator.pushNamedAndRemoveUntil(
+            context, 
+            '/welcome', 
+            (route) => false
+          );
+        });
+      } else {
+        print('Error deleting user: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.message}')),
+        );
+      }
+      return false;
+    } catch (error) {
+      print('Error deleting user: $error');
+      
+      // Fallback: Force logout on any error
+      try {
+        await authService.signOut();
+        await _auth.signOut();
+      } catch (e) {
+        print('Error during signout: $e');
+      }
+      
+      // Always navigate to welcome screen on error
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.pushNamedAndRemoveUntil(
+          context, 
+          '/welcome', 
+          (route) => false
+        );
+      });
+      
+      return false;
+    } finally {
+      setState(() {
+        deleting = false;
+      });
+    }
   }
-}
+
+    // Add this widget inside _SettingsScreenState class
+  Widget _buildDeletionOverlay() {
+    if (!deleting) return const SizedBox.shrink();
+    
+    return Container(
+      color: Colors.black.withOpacity(0.5),
+      child: Center(
+        child: Container(
+          width: 300,
+          height: 200,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 50,
+                height: 50,
+                child: CircularProgressIndicator(
+                  strokeWidth: 4,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Deleting Account',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red,
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  'This may take a moment. Please wait while we delete your account and all associated data.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
  Widget _buildProfilePictureSection() {
     return Column(
@@ -528,14 +694,12 @@ Future<bool> deleteUser(AuthService authService) async {
     return Scaffold(
       appBar: AppBar(
         title: GradientText( text: 'NUDGE', style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
-                gradient: LinearGradient(
-                  colors: [
-                    Color(0xFF5CDEE5), // #5CDEE5
-                    Color(0xFF2D85F6), // #2D85F6
-                    Color(0xFF7A4BFF), // #7A4BFF
-                  ], stops: [0.0, 0.6, 1.0], begin: Alignment.topCenter, end: Alignment.bottomCenter,
-            ),
-          ),
+               gradient: const LinearGradient(
+                  colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
         // Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Color(0xff3CB3E9), fontFamily: 'RobotoMono'),),
                   centerTitle: true,
                   iconTheme: IconThemeData(color: Color(0xff3CB3E9)),
@@ -546,7 +710,9 @@ Future<bool> deleteUser(AuthService authService) async {
         // ),
         surfaceTintColor: Colors.transparent,
       ),
-      body: _isCropping 
+      body: Stack(
+      children: [
+        _isCropping 
           ? _buildProfilePictureSection()
           : SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -564,41 +730,43 @@ Future<bool> deleteUser(AuthService authService) async {
                  Padding(
                   padding: EdgeInsets.only(left: 50),
                   child:  const Text(
-                    'Adjust Settings',
+                    'ADJUST SETTINGS',
                     style: TextStyle(
-                      fontSize: 25,
+                      fontSize: 20,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xff000000),
+                      color: Color(0xff555555),
                     ),
                   ),
                   ),
                   const SizedBox(height: 35),
                   const Text(
-                    'Subscription',
+                    'SUBSCRIPTION',
                     style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Color(0xff6e6e6e),
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                   const SizedBox(height: 15),
                   const Text(
                     'You are on an exclusive access subscription.',
-                    style: TextStyle(fontSize: 16),
+                    style: TextStyle(fontSize: 16, color: Color(0xff555555)),
                   ),
                   const SizedBox(height: 30),
                   
                   const Text(
-                    'General',
+                    'GENERAL',
                     style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Color(0xff6e6e6e),
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                   const SizedBox(height: 15),
                   
                   const Text(
                     'Username',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(fontWeight: FontWeight.w500, color: Color(0xff555555)),
                   ),
                   const SizedBox(height: 8),
                   TextFormField(
@@ -633,7 +801,7 @@ Future<bool> deleteUser(AuthService authService) async {
                   
                   const Text(
                     'Email',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(fontWeight: FontWeight.w500, color: Color(0xff555555)),
                   ),
                   const SizedBox(height: 8),
                   TextFormField(
@@ -660,14 +828,15 @@ Future<bool> deleteUser(AuthService authService) async {
                       'Change Password',
                       style: TextStyle(
                         fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        color: Color(0xff555555),
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                     const SizedBox(height: 15),
                     
                     const Text(
                       'Current Password',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      style: TextStyle(fontWeight: FontWeight.w500, color: Color(0xff555555)),
                     ),
                     const SizedBox(height: 8),
                     TextFormField(
@@ -675,6 +844,7 @@ Future<bool> deleteUser(AuthService authService) async {
                       obscureText: true,
                       decoration: InputDecoration(
                         hintText: 'Enter your current password',
+                        hintStyle: TextStyle(color: Color(0xff555555)),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                       validator: (value) {
@@ -689,7 +859,7 @@ Future<bool> deleteUser(AuthService authService) async {
                     
                     const Text(
                       'New Password',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      style: TextStyle(fontWeight: FontWeight.w500, color: Color(0xff555555)),
                     ),
                     const SizedBox(height: 8),
                     TextFormField(
@@ -697,6 +867,7 @@ Future<bool> deleteUser(AuthService authService) async {
                       obscureText: true,
                       decoration: InputDecoration(
                         hintText: 'Enter your new password',
+                        hintStyle: TextStyle(color: Color(0xff555555)),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                       validator: (value) {
@@ -711,8 +882,8 @@ Future<bool> deleteUser(AuthService authService) async {
                    // Weekly Digest Section
             const SizedBox(height: 30),
             const Text(
-              'Notifications',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              'NOTIFICATIONS',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xff6e6e6e)),
             ),
             const SizedBox(height: 15),
             Row(
@@ -724,7 +895,7 @@ Future<bool> deleteUser(AuthService authService) async {
                     children: [
                       Text(
                         'Weekly Digest',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        style: TextStyle(fontWeight: FontWeight.w500, color: Color(0xff555555)),
                       ),
                       Text(
                         'Receive weekly summary of relationships needing attention',
@@ -765,7 +936,7 @@ Future<bool> deleteUser(AuthService authService) async {
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
                             child: const Text(
-                              'Confirm Changes',
+                              'CONFIRM CHANGES',
                               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
                             ),
                           ),
@@ -807,8 +978,8 @@ Future<bool> deleteUser(AuthService authService) async {
             // Delete Account Section
             const SizedBox(height: 40),
             const Text(
-              'Account Actions',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              'ACCOUNT ACTIONS',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xff6e6e6e)),
             ),
             const SizedBox(height: 15),
             SizedBox(
@@ -824,7 +995,7 @@ Future<bool> deleteUser(AuthService authService) async {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
                 child: const Text(
-                  'Delete Account',
+                  'DELETE ACCOUNT',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
@@ -840,11 +1011,11 @@ Future<bool> deleteUser(AuthService authService) async {
                 children: [
                   const Text(
                     'Help / Feedback',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: Color(0xff555555)),
                   ),
                   const SizedBox(height: 15),
                   
-                  const Text('Type', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text('Type', style: TextStyle(fontWeight: FontWeight.w500, color: Color(0xff555555))),
                   const SizedBox(height: 8),
                   GestureDetector(
                     onTap: () {
@@ -853,6 +1024,7 @@ Future<bool> deleteUser(AuthService authService) async {
                     child: AbsorbPointer(
                       child: TextFormField(
                         controller: _feedbackTypeController,
+                        style: TextStyle(color: Color(0xff555555)),
                         decoration: InputDecoration(
                           suffixIcon: const Icon(Icons.arrow_drop_down),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -868,13 +1040,14 @@ Future<bool> deleteUser(AuthService authService) async {
                   ),
                   const SizedBox(height: 20),
                   
-                  const Text('Comments', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text('Comments', style: TextStyle(fontWeight: FontWeight.w500, color: Color(0xff555555))),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _feedbackMessageController,
                     maxLines: 3,
                     decoration: InputDecoration(
                       hintText: 'Please share your feedback, suggestions, or issues...',
+                      hintStyle: TextStyle(color: Color(0xff555555)),
                        enabledBorder: OutlineInputBorder(
                   borderSide: BorderSide(color: Colors.grey, width: 1),
                   borderRadius: BorderRadius.circular(10)
@@ -917,8 +1090,8 @@ Future<bool> deleteUser(AuthService authService) async {
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
                             child: const Text(
-                              'Submit Feedback',
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                              'SUBMIT FEEDBACK',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                             ),
                           ),
                   ),
@@ -938,8 +1111,8 @@ Future<bool> deleteUser(AuthService authService) async {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Feedback Management',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          'FEEDBACK MANAGEMENT',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xff6e6e6e)),
                         ),
                         SizedBox(height: 8),
                         Text(
@@ -966,7 +1139,7 @@ Future<bool> deleteUser(AuthService authService) async {
                               ),
                             ),
                             child: const Text(
-                              'Manage Feedback',
+                              'MANAGE FEEDBACK',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -984,7 +1157,9 @@ Future<bool> deleteUser(AuthService authService) async {
           ],
         ),
       ),
-    );
+      _buildDeletionOverlay(),
+      ]
+    ));
   }
 
   @override

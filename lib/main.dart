@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:nudge/firebase_options.dart';
+import 'package:nudge/helpers/auth_refresh_helper.dart';
 import 'package:nudge/screens/analytics/analytics_screen.dart';
 import 'package:nudge/screens/auth/complete_profile_screen.dart';
 import 'package:nudge/screens/contacts/edit_contact_screen.dart';
@@ -367,13 +368,13 @@ class NudgeApp extends StatelessWidget {
         title: 'NUDGE',
         navigatorKey: navigatorKey,
         theme: ThemeData(
-          primaryColor: Colors.white,
+          primaryColor: Color(0xFFF9FAFB),
           colorScheme: ColorScheme.fromSwatch(
             primarySwatch: Colors.blue,
           ).copyWith(
-            secondary: Colors.white
+            secondary: Color(0xFFF9FAFB)
           ),
-          fontFamily: 'Quicksand',
+          fontFamily: 'OpenSans',
           textTheme: const TextTheme(
             displayLarge: AppTextStyles.title1,
             displayMedium: AppTextStyles.title2,
@@ -440,14 +441,27 @@ class AuthWrapper extends StatefulWidget {
 // Update the _AuthWrapperState in lib/main.dart
 
 class _AuthWrapperState extends State<AuthWrapper> {
-  bool _isCheckingUserData = false;
+  // bool _isCheckingUserData = false;
   String _checkingStatus = '';
+  bool _initialized = false;
 
   @override
   void initState() {
     super.initState();
-    _storeFCMTokenIfNeeded();
-    checkUser();
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    try {
+      await _storeFCMTokenIfNeeded();
+      await _checkUserData();
+    } catch (e) {
+      print('Error initializing AuthWrapper: $e');
+    } finally {
+      setState(() {
+        _initialized = true;
+      });
+    }
   }
 
   Future<void> _storeFCMTokenIfNeeded() async {
@@ -462,86 +476,90 @@ class _AuthWrapperState extends State<AuthWrapper> {
     }
   }
 
-  checkUser() async{
-    final apiService = ApiService();
-    user.User thisUser = await apiService.getUser();
-    _ensureUserDataCompleteness(thisUser.id);
-  }
-
-  Future<void> _ensureUserDataCompleteness(String userId) async {
-    if (_isCheckingUserData) return;
-    
-    setState(() {
-      _isCheckingUserData = true;
-      _checkingStatus = 'Checking user data...';
-    });
-
-    try {
-      final apiService = ApiService();
-      
+  Future<void> _checkUserData() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
       setState(() {
-        _checkingStatus = 'Ensuring data completeness...';
+        // _isCheckingUserData = true;
+        _checkingStatus = 'Checking user data...';
       });
       
-      // This will check and update any missing fields in the user document
-      await apiService.ensureUserDocumentCompleteness(userId);
-      print('finished checking');
-      setState(() {
-        _isCheckingUserData = false;
-        _checkingStatus = '';
-      });
-      
-    } catch (e) {
-      print('Error ensuring user data completeness: $e');
-      setState(() {
-        _isCheckingUserData = false;
-        _checkingStatus = 'Data check completed with warnings';
-      });
+      try {
+        final apiService = ApiService();
+        await apiService.ensureUserDocumentCompleteness(user.uid);
+        print('User data check completed');
+      } catch (e) {
+        print('Error checking user data: $e');
+      } finally {
+        setState(() {
+          // _isCheckingUserData = false;
+          _checkingStatus = '';
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final firebaseUser = context.watch<User?>();
+    
+    // Show loading screen until initialized
+    if (!_initialized) {
+      return _buildLoadingScreen();
+    }
+    
     if (firebaseUser != null) {
-      return FutureBuilder<user.User>(
-        future: _getUserProfile(firebaseUser.uid),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return _buildLoadingScreen();
-          }
-          
-          if (snapshot.hasError) {
-            return Scaffold(
-              body: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('Error: ${snapshot.error}'),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: () => setState(() {}),
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-          
-          final userData = snapshot.data;
-          
-          // Check if profile is completed
-          if (userData == null || !userData.profileCompleted) {
-            return const CompleteProfileScreen();
-          } else {
-            return const DashboardScreen();
-          }
-        },
-      );
+      return _buildAuthenticatedScreen(firebaseUser);
     } else {
+      // User is not authenticated, go to welcome screen
       return const WelcomeScreen();
     }
+  }
+
+  Widget _buildAuthenticatedScreen(User firebaseUser) {
+    // Always refresh auth state when building authenticated screen
+    Future.microtask(() async {
+      await AuthRefreshHelper.refreshAuthState();
+    });
+    
+    return FutureBuilder<user.User>(
+      future: _getUserProfile(firebaseUser.uid),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return _buildLoadingScreen();
+        }
+        
+        if (snapshot.hasError) {
+          return Scaffold(
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('Error loading profile: ${snapshot.error}'),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Force reload
+                      setState(() {});
+                    },
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+        
+        final userData = snapshot.data;
+        
+        // Check if profile is completed
+        if (userData == null || !userData.profileCompleted) {
+          return const CompleteProfileScreen();
+        } else {
+          return const DashboardScreen();
+        }
+      },
+    );
   }
 
   Widget _buildLoadingScreen() {
@@ -562,16 +580,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
                 fontSize: 16,
               ),
             ),
-            if (_isCheckingUserData) ...[
-              const SizedBox(height: 10),
-              const Text(
-                'This may take a moment...',
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 12,
-                ),
-              ),
-            ],
           ],
         ),
       ),
@@ -580,11 +588,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
   Future<user.User> _getUserProfile(String userId) async {
     final apiService = ApiService();
-    
-    // First ensure the user document has all required fields
-    
-    // Then get the user data
-    user.User thisUser = await apiService.getUser();
-    return thisUser;
+    return await apiService.getUser();
   }
 }

@@ -2,6 +2,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:nudge/models/social_group.dart';
 import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
 // import 'package:nudge/theme/text_styles.dart';
@@ -54,285 +55,38 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   }
 
   Future<void> _importDeviceContacts() async {
-    setState(() {
-      _isImporting = true;
-      _processedCount = 0;
-      _totalCount = 0;
-      _statusMessage = 'Checking for existing contacts...';
-    });
+  setState(() {
+    _isImporting = true;
+    _processedCount = 0;
+    _totalCount = 0;
+    _statusMessage = 'Checking for existing contacts...';
+  });
 
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final apiService = Provider.of<ApiService>(context, listen: false);
-    final user = authService.currentUser;
-    if (user == null) return;
-
-    final syncService = ContactSyncService(apiService: apiService);
-
-    try {
-      final result = await syncService.importDeviceContacts(
-        limit: _selectedQuantity,
-        useSmartFilter: _useSmartFilter,
-        onProgress: (processed, total) {
-          setState(() {
-            _processedCount = processed;
-            _totalCount = total;
-            _statusMessage = 'Processing $processed of $total contacts...';
-          });
-        },
-      );
-
-      setState(() => _isImporting = false);
-
-      if (result['needsSettings'] == true) {
-        _showSettingsDialog(result['message']);
-        return;
-      }
-
-      if (result['success'] == true) {
-        if (result['importedCount'] == 0) {
-          setState(() {
-            _statusMessage =
-                'No new contacts to import - all contacts already exist in Nudge';
-          });
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('All contacts already imported')),
-          );
-        } else {
-          setState(() {
-            _statusMessage =
-                'Successfully imported ${result['importedCount']} contacts!';
-          });
-
-          // _scheduleNudgesForImportedContacts(result['importedCount']);
-          _showImportSuccessAndScheduleNudges(result['importedCount'], user.uid);
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Contacts imported successfully')),
-          );
-        }
-
-        await Future.delayed(const Duration(seconds: 2));
-      } else {
-        setState(() {
-          _statusMessage = 'Import failed: ${result['message']}';
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to import contacts: ${result['message']}')),
-        );
-      }
-    } catch (e) {
-      setState(() {
-        _isImporting = false;
-        _statusMessage = 'Error: $e';
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to import contacts: $e')),
-      );
-    }
+  final authService = Provider.of<AuthService>(context, listen: false);
+  final apiService = Provider.of<ApiService>(context, listen: false);
+  final user = authService.currentUser;
+  if (user == null) {
+    setState(() => _isImporting = false);
+    return;
   }
 
-  void _showImportSuccessAndScheduleNudges(int importedCount, String userId) async {
-  // Show initial success message
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Row(
-        children: [
-          const Icon(Icons.check_circle, color: Colors.white),
-          const SizedBox(width: 8),
-          Text('Imported $importedCount contacts successfully!'),
-        ],
-      ),
-      backgroundColor: Colors.green,
-    ),
-  );
+  final syncService = ContactSyncService(apiService: apiService);
 
-  // Schedule nudges in background
-  await _scheduleNudgesForImportedContacts(importedCount, userId);
-}
-
-  /// Multi-select picker UI embedded in the screen.
-  /// This fetches contacts, shows a checkbox list, and imports the selected ones.
-  Future<void> _pickContactsAndImport() async {
-    final permissionOk = await fContacts.FlutterContacts.requestPermission();
-    if (!permissionOk) {
-      _showSettingsDialog('Contacts permission is required to pick contacts');
-      return;
+  try {
+    // Get passed groups from route arguments (if any)
+    final passedGroups = ModalRoute.of(context)?.settings.arguments as List<SocialGroup>?;
+    
+    // Show group selection dialog with passed groups (if available)
+    final SocialGroup? selectedGroup = await _showGroupSelectionDialog(passedGroups);
+    if (selectedGroup == null) {
+      setState(() => _isImporting = false);
+      return; // User cancelled group selection
     }
 
-    final contacts = await fContacts.FlutterContacts.getContacts(withProperties: true);
-
-    final selectedContacts = await showDialog<List<fContacts.Contact>>(
-      context: context,
-      builder: (context) {
-        final tempSelected = <fContacts.Contact>[];
-        final searchController = TextEditingController();
-        List<fContacts.Contact> filtered = List.of(contacts);
-
-        void applyFilter(String query) {
-          final q = query.trim().toLowerCase();
-          filtered = q.isEmpty
-              ? List.of(contacts)
-              : contacts.where((c) {
-                  final name = c.displayName.toLowerCase();
-                  final phones = c.phones.map((p) => p.number.toLowerCase()).join(' ');
-                  final emails = c.emails.map((e) => e.address.toLowerCase()).join(' ');
-                  return name.contains(q) || phones.contains(q) || emails.contains(q);
-                }).toList();
-        }
-
-        return StatefulBuilder(
-          builder: (context, setStateDialog) {
-            return AlertDialog(
-              title: const Text('Select Contacts'),
-              content: SizedBox(
-                width: double.maxFinite,
-                height: 520,
-                child: Column(
-                  children: [
-                    // Search bar
-                    TextField(
-                      controller: searchController,
-                      decoration: const InputDecoration(
-                        prefixIcon: Icon(Icons.search),
-                        hintText: 'Search by name, phone, or email',
-                        border: OutlineInputBorder(),
-                        isDense: true,
-                      ),
-                      onChanged: (val) {
-                        setStateDialog(() {
-                          applyFilter(val);
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    // Info + select all
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'Showing ${filtered.length} of ${contacts.length}',
-                            style: const TextStyle(fontSize: 12, color: Colors.grey),
-                          ),
-                        ),
-                        TextButton.icon(
-                          onPressed: () {
-                            setStateDialog(() {
-                              // Select all filtered
-                              for (final c in filtered) {
-                                if (!tempSelected.contains(c)) {
-                                  tempSelected.add(c);
-                                }
-                              }
-                            });
-                          },
-                          icon: const Icon(Icons.select_all),
-                          label: const Text('Select all'),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            setStateDialog(() {
-                              // Clear only filtered from selection
-                              tempSelected.removeWhere((c) => filtered.contains(c));
-                            });
-                          },
-                          child: const Text('Clear'),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    // List of contacts
-                    Expanded(
-                      child: filtered.isEmpty
-                          ? const Center(child: Text('No contacts found'))
-                          : ListView.separated(
-                              itemCount: filtered.length,
-                              separatorBuilder: (_, __) => const Divider(height: 1),
-                              itemBuilder: (context, index) {
-                                final contact = filtered[index];
-                                final isSelected = tempSelected.contains(contact);
-                                final primaryPhone = contact.phones.isNotEmpty
-                                    ? contact.phones.first.number
-                                    : '';
-                                final primaryEmail = contact.emails.isNotEmpty
-                                    ? contact.emails.first.address
-                                    : '';
-                                return CheckboxListTile(
-                                  title: Text(contact.displayName),
-                                  subtitle: Text(
-                                    [primaryPhone, primaryEmail]
-                                        .where((s) => s.isNotEmpty)
-                                        .join(' • '),
-                                  ),
-                                  value: isSelected,
-                                  onChanged: (checked) {
-                                    setStateDialog(() {
-                                      if (checked == true) {
-                                        tempSelected.add(contact);
-                                      } else {
-                                        tempSelected.remove(contact);
-                                      }
-                                    });
-                                  },
-                                  controlAffinity: ListTileControlAffinity.leading,
-                                );
-                              },
-                            ),
-                    ),
-                    // Selection count
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Text(
-                        'Selected: ${tempSelected.length}',
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton.icon(
-                  onPressed: () => Navigator.pop(context, tempSelected),
-                  icon: const Icon(Icons.download),
-                  label: const Text('Import'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-
-    if (selectedContacts == null || selectedContacts.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No contacts selected')),
-      );
-      return;
-    }
-
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final apiService = Provider.of<ApiService>(context, listen: false);
-    final user = authService.currentUser;
-    if (user == null) return;
-
-    final syncService = ContactSyncService(apiService: apiService);
-
-    setState(() {
-      _isImporting = true;
-      _processedCount = 0;
-      _totalCount = selectedContacts.length;
-      _statusMessage = 'Importing selected contacts...';
-    });
-
-    // Note: ContactSyncService.importFromContactPicker should be refactored to accept pickedContacts
-    final result = await syncService.importFromContactPicker(
-      pickedContacts: selectedContacts,
+    final result = await syncService.importDeviceContacts(
+      limit: _selectedQuantity,
+      useSmartFilter: _useSmartFilter,
+      groupId: selectedGroup.name, // Pass the group ID
       onProgress: (processed, total) {
         setState(() {
           _processedCount = processed;
@@ -343,25 +97,300 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
     );
 
     setState(() => _isImporting = false);
+    final importedContacts = await apiService.getAllContacts();
+
+    if (result['needsSettings'] == true) {
+      _showSettingsDialog(result['message']);
+      return;
+    }
 
     if (result['success'] == true) {
-      setState(() {
-        _statusMessage =
-            'Successfully imported ${result['importedCount']} contacts from picker!';
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Contacts imported successfully')),
-      );
-      _scheduleNudgesForImportedContacts(result['importedCount'], user.uid);
+      if (result['importedCount'] == 0) {
+        setState(() {
+          _statusMessage =
+              'No new contacts to import - all contacts already exist in Nudge';
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('All contacts already imported')),
+        );
+        
+        // Return empty list to parent screen
+        Navigator.pop(context, importedContacts);
+      } else {
+        setState(() {
+          _statusMessage =
+              'Successfully imported ${result['importedCount']} contacts to ${selectedGroup.name}!';
+        });
+
+        // Get the actual imported contacts from API
+        final importedContacts = await apiService.getAllContacts();
+        // final recentlyImportedContacts = importedContacts
+        //     .where((contact) => contact.socialGroups.contains(selectedGroup.name))
+        //     .toList();
+
+        // _scheduleNudgesForImportedContacts(result['importedCount'], user.uid);
+        
+        // Return the imported contacts to parent screen
+        Navigator.pop(context, importedContacts);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Successfully imported ${result['importedCount']} contacts to ${selectedGroup.name}!'),
+          ),
+        );
+      }
     } else {
       setState(() {
         _statusMessage = 'Import failed: ${result['message']}';
       });
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to import contacts: ${result['message']}')),
       );
+      
+      // Return empty list on failure
+      Navigator.pop(context, []);
+    }
+  } catch (e) {
+    setState(() {
+      _isImporting = false;
+      _statusMessage = 'Error: $e';
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Failed to import contacts: $e')),
+    );
+    
+    // Return empty list on error
+    Navigator.pop(context, []);
+  }
+}
+
+  Future<SocialGroup?> _showGroupSelectionDialog(List<SocialGroup>? passedGroups) async {
+  List<SocialGroup> availableGroups = [];
+  
+  // If groups are passed in (from onboarding), use them
+  if (passedGroups != null && passedGroups.isNotEmpty) {
+    availableGroups = passedGroups;
+  } else {
+    // Otherwise, try to get groups from API
+    try {
+      final apiService = Provider.of<ApiService>(context, listen: false);
+      // final authService = Provider.of<AuthService>(context, listen: false);
+      final user = await apiService.getUser();
+      
+      if (user.username != '') {
+        final groups = user.groups;
+        groups!.map((e){
+          availableGroups.add(SocialGroup.fromMap(e));
+        });
+      }
+    } catch (e) {
+      print('Error getting groups: $e');
     }
   }
+  
+  // If still no groups, create default ones
+  if (availableGroups.isEmpty) {
+    availableGroups = [
+      SocialGroup(
+        id: 'family', 
+        name: 'Family', 
+        frequency: 4,
+        period: 'Monthly',
+        colorCode: '#4FC3F7', 
+        description: '', 
+        memberCount: 0, 
+        memberIds: [], 
+        lastInteraction: DateTime.now(), 
+        birthdayNudgesEnabled: true,
+        anniversaryNudgesEnabled: true,
+      ),
+      SocialGroup(
+        id: 'friend', 
+        name: 'Friend', 
+        frequency: 2,
+        period: 'Weekly',
+        colorCode: '#FF6F61', 
+        description: '', 
+        memberCount: 0, 
+        memberIds: [], 
+        lastInteraction: DateTime.now(), 
+        birthdayNudgesEnabled: true,
+        anniversaryNudgesEnabled: true,
+      ),
+      SocialGroup(
+        id: 'colleague', 
+        name: 'Colleague', 
+        frequency: 2,
+        period: 'Monthly',
+        colorCode: '#81C784', 
+        description: '', 
+        memberCount: 0, 
+        memberIds: [], 
+        lastInteraction: DateTime.now(), 
+        birthdayNudgesEnabled: true,
+        anniversaryNudgesEnabled: true,
+      ),
+    ];
+  }
+  
+  // Show dialog for group selection
+  return await showDialog<SocialGroup>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Select Group'),
+      content: Container(
+        width: double.maxFinite,
+        height: 300,
+        child: ListView.builder(
+          itemCount: availableGroups.length,
+          itemBuilder: (context, index) {
+            final group = availableGroups[index];
+            return Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              child: ListTile(
+                leading: Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: Color(int.parse(group.colorCode.replaceAll('#', '0xFF'))),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                title: Text(group.name),
+                subtitle: Text('${group.frequency} times ${group.period.toLowerCase()}'),
+                onTap: () => Navigator.pop(context, group),
+              ),
+            );
+          },
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+      ],
+    ),
+  );
+}  
+
+//   void _showImportSuccessAndScheduleNudges(int importedCount, String userId) async {
+//   // Show initial success message
+//   ScaffoldMessenger.of(context).showSnackBar(
+//     SnackBar(
+//       content: Row(
+//         children: [
+//           const Icon(Icons.check_circle, color: Colors.white),
+//           const SizedBox(width: 8),
+//           Text('Imported $importedCount contacts successfully!'),
+//         ],
+//       ),
+//       backgroundColor: Colors.green,
+//     ),
+//   );
+
+//   // Schedule nudges in background
+//   await _scheduleNudgesForImportedContacts(importedCount, userId);
+// }
+
+  /// Full-screen multi-select picker UI.
+  /// This fetches contacts, shows a checkbox list in full screen, and imports the selected ones.
+Future<void> _pickContactsAndImport() async {
+  final permissionOk = await fContacts.FlutterContacts.requestPermission();
+  if (!permissionOk) {
+    _showSettingsDialog('Contacts permission is required to pick contacts');
+    return;
+  }
+
+  final contacts = await fContacts.FlutterContacts.getContacts(withProperties: true);
+
+  final selectedContacts = await Navigator.of(context).push<List<fContacts.Contact>>(
+    MaterialPageRoute(
+      builder: (context) => _FullScreenContactPicker(contacts: contacts),
+      fullscreenDialog: true,
+    ),
+  );
+
+  if (selectedContacts == null || selectedContacts.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('No contacts selected')),
+    );
+    return;
+  }
+
+  // Get passed groups from route arguments (if any)
+  final passedGroups = ModalRoute.of(context)?.settings.arguments as List<SocialGroup>?;
+  
+  // Show group selection dialog with passed groups (if available)
+  final SocialGroup? selectedGroup = await _showGroupSelectionDialog(passedGroups);
+  if (selectedGroup == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Group selection cancelled')),
+    );
+    return;
+  }
+
+  final authService = Provider.of<AuthService>(context, listen: false);
+  final apiService = Provider.of<ApiService>(context, listen: false);
+  final user = authService.currentUser;
+  if (user == null) return;
+
+  final syncService = ContactSyncService(apiService: apiService);
+
+  setState(() {
+    _isImporting = true;
+    _processedCount = 0;
+    _totalCount = selectedContacts.length;
+    _statusMessage = 'Importing selected contacts to ${selectedGroup.name}...';
+  });
+
+  final result = await syncService.importFromContactPicker(
+    pickedContacts: selectedContacts,
+    groupId: selectedGroup.name, // Pass group ID
+    onProgress: (processed, total) {
+      setState(() {
+        _processedCount = processed;
+        _totalCount = total;
+        _statusMessage = 'Processing $processed of $total contacts...';
+      });
+    },
+  );
+
+  setState(() => _isImporting = false);
+
+  if (result['success'] == true) {
+    setState(() {
+      _statusMessage =
+          'Successfully imported ${result['importedCount']} contacts to ${selectedGroup.name}!';
+    });
+    
+    // Get the actual imported contacts
+    final importedContacts = await apiService.getAllContacts();
+    final recentlyImportedContacts = importedContacts
+        .where((contact) => contact.socialGroups.contains(selectedGroup.name))
+        .toList();
+    
+    // Return contacts to parent screen
+    Navigator.pop(context, recentlyImportedContacts);
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Successfully imported ${result['importedCount']} contacts to ${selectedGroup.name}!'),
+      ),
+    );
+    _scheduleNudgesForImportedContacts(result['importedCount'], user.uid);
+  } else {
+    setState(() {
+      _statusMessage = 'Import failed: ${result['message']}';
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Failed to import contacts: ${result['message']}')),
+    );
+  }
+}
 
   String _getQuantityLabel(int quantity) {
     return quantity == 0 ? 'All Contacts' : 'First $quantity Contacts';
@@ -454,13 +483,11 @@ void _showNudgeScheduledMessage(int scheduledCount) {
     return Scaffold(
       appBar: AppBar(
         title: GradientText( text: 'NUDGE', style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF5CDEE5), // #5CDEE5
-                  Color(0xFF2D85F6), // #2D85F6
-                  Color(0xFF7A4BFF), // #7A4BFF
-                ], stops: [0.0, 0.6, 1.0], begin: Alignment.topCenter, end: Alignment.bottomCenter,
-          ),
+              gradient: const LinearGradient(
+                colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
         ),
         // Text(
         //   'NUDGE',
@@ -483,13 +510,13 @@ void _showNudgeScheduledMessage(int scheduledCount) {
         child: ListView(
           children: [
             const Text(
-              'Import Your Contacts',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              'IMPORT YOUR CONTACTS',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xff555555)),
             ),
             const SizedBox(height: 8),
             const Text(
               'Easily import your existing contacts to get started with Nudge',
-              style: TextStyle(fontSize: 16, color: Colors.black, fontWeight: FontWeight.w500),
+              style: TextStyle(fontSize: 16, color: Color(0xff555555), fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 30),
 
@@ -505,15 +532,15 @@ void _showNudgeScheduledMessage(int scheduledCount) {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Import Options',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      'IMPORT OPTIONS',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xff6e6e6e)),
                     ),
                     const SizedBox(height: 16),
 
                     // Quantity Selection
                     const Text(
                       'How many contacts would you like to import?',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xff555555)),
                     ),
                     const SizedBox(height: 12),
 
@@ -535,7 +562,7 @@ void _showNudgeScheduledMessage(int scheduledCount) {
                           labelStyle: TextStyle(
                             color: _selectedQuantity == quantity
                                 ? const Color(0xff3CB3E9)
-                                : Colors.black,
+                                : Color(0xff555555),
                             fontWeight: _selectedQuantity == quantity
                                 ? FontWeight.bold
                                 : FontWeight.normal,
@@ -567,8 +594,8 @@ void _showNudgeScheduledMessage(int scheduledCount) {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Text(
-                                'Smart Filter',
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                                'SMART FILTER',
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xff6e6e6e)),
                               ),
                               Text(
                                 'Prioritize contacts you interact with most',
@@ -621,7 +648,6 @@ void _showNudgeScheduledMessage(int scheduledCount) {
                         Expanded(
                           child: OutlinedButton.icon(
                             onPressed: _isImporting ? null : _pickContactsAndImport,
-                            // iconAlignment: IconAlignment.end,
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
@@ -765,30 +791,339 @@ void _showNudgeScheduledMessage(int scheduledCount) {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'How It Works',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      'HOW IT WORKS',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xff6e6e6e)),
                     ),
                     SizedBox(height: 12),
                     ListTile(
                       leading: Icon(Icons.filter_list, color: Color(0xff3CB3E9)),
-                      title: Text('Smart Filter', style: TextStyle(fontWeight: FontWeight.w800)),
-                      subtitle: Text('Prioritizes contacts based on your interaction frequency'),
+                      title: Text('Smart Filter', style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xff555555))),
+                      subtitle: Text('Prioritizes contacts based on your interaction frequency', style: TextStyle(color: Color(0xff555555)),),
                     ),
                     ListTile(
                       leading: Icon(Icons.group, color: Color(0xff3CB3E9)),
-                      title: Text('Customizable Quantity', style: TextStyle(fontWeight: FontWeight.w800)),
-                      subtitle: Text('Choose how many contacts to import based on your needs'),
+                      title: Text('Customizable Quantity', style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xff555555))),
+                      subtitle: Text('Choose how many contacts to import based on your needs', style: TextStyle(color: Color(0xff555555)),),
                     ),
                     ListTile(
                       leading: Icon(Icons.security, color: Color(0xff3CB3E9)),
-                      title: Text('Privacy First', style: TextStyle(fontWeight: FontWeight.w800)),
-                      subtitle: Text('Your contacts are only stored on your device and our secure servers'),
+                      title: Text('Privacy First', style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xff555555))),
+                      subtitle: Text('Your contacts are only stored on your device and our secure servers', style: TextStyle(color: Color(0xff555555)),),
                     ),
                   ],
                 ),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Full-screen contact picker widget for selecting contacts to import
+class _FullScreenContactPicker extends StatefulWidget {
+  final List<fContacts.Contact> contacts;
+
+  const _FullScreenContactPicker({required this.contacts});
+
+  @override
+  __FullScreenContactPickerState createState() => __FullScreenContactPickerState();
+}
+
+class __FullScreenContactPickerState extends State<_FullScreenContactPicker> {
+  final List<fContacts.Contact> _tempSelected = [];
+  final TextEditingController _searchController = TextEditingController();
+  List<fContacts.Contact> _filteredContacts = [];
+  
+  // Cache for avatar indices to maintain consistency
+  final Map<String, int> _avatarIndexCache = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _filteredContacts = List.of(widget.contacts);
+  }
+
+  void _applyFilter(String query) {
+    final q = query.trim().toLowerCase();
+    setState(() {
+      _filteredContacts = q.isEmpty
+          ? List.of(widget.contacts)
+          : widget.contacts.where((c) {
+              final name = c.displayName.toLowerCase();
+              final phones = c.phones.map((p) => p.number.toLowerCase()).join(' ');
+              final emails = c.emails.map((e) => e.address.toLowerCase()).join(' ');
+              return name.contains(q) || phones.contains(q) || emails.contains(q);
+            }).toList();
+    });
+  }
+
+  // Get cached or new random index for avatar
+  int _getAvatarIndex(fContacts.Contact contact) {
+    // Use contact ID as cache key if available, otherwise use display name
+    final cacheKey = contact.id;
+    
+    if (_avatarIndexCache.containsKey(cacheKey)) {
+      return _avatarIndexCache[cacheKey]!;
+    }
+    
+    // Generate random index (1-6) using the same logic as contacts list
+    final seed = cacheKey.isEmpty ? 'default' : cacheKey;
+    var hash = 0;
+    for (var i = 0; i < seed.length; i++) {
+      hash = seed.codeUnitAt(i) + ((hash << 5) - hash);
+    }
+    final index = (hash.abs() % 6) + 1;
+    
+    // Cache the result
+    _avatarIndexCache[cacheKey] = index;
+    return index;
+  }
+
+  void _selectAllFiltered() {
+    setState(() {
+      for (final c in _filteredContacts) {
+        if (!_tempSelected.contains(c)) {
+          _tempSelected.add(c);
+        }
+      }
+    });
+  }
+
+  String _getContactInitials(String name) {
+    if (name.isEmpty) return '?';
+    
+    // Trim and split the name by spaces
+    final parts = name.trim().split(' ').where((part) => part.isNotEmpty).toList();
+    
+    if (parts.length >= 2) {
+      // Has at least first and last name - get first letter of first and last name
+      return '${parts.first[0].toUpperCase()}${parts.last[0].toUpperCase()}';
+    } else if (parts.length == 1) {
+      // Only first name available
+      return parts.first[0].toUpperCase();
+    }
+    
+    return '?';
+  }
+
+  void _clearFilteredSelection() {
+    setState(() {
+      _tempSelected.removeWhere((c) => _filteredContacts.contains(c));
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('SELECT CONTACTS', style: TextStyle(color: Color(0xff555555), fontSize: 16, fontWeight: FontWeight.w600),),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.select_all),
+            tooltip: 'Select all',
+            onPressed: _selectAllFiltered,
+          ),
+          IconButton(
+            icon: const Icon(Icons.clear),
+            tooltip: 'Clear selection',
+            onPressed: _clearFilteredSelection,
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: Text(
+              '${_tempSelected.length}',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // Search bar
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.search),
+                hintText: 'Search by name, phone, or email',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                filled: true,
+                fillColor: Colors.grey[100],
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              ),
+              onChanged: _applyFilter,
+            ),
+          ),
+          
+          // Info bar
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Showing ${_filteredContacts.length} of ${widget.contacts.length} contacts',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                ),
+                Text(
+                  'Selected: ${_tempSelected.length}',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: 8),
+          
+          // Divider
+          const Divider(height: 1),
+          
+          // Contacts list
+          Expanded(
+            child: _filteredContacts.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.group_off, size: 64, color: Colors.grey),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'No contacts found',
+                          style: TextStyle(fontSize: 18, color: Colors.grey),
+                        ),
+                        if (_searchController.text.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(
+                              'Try a different search term',
+                              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                            ),
+                          ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: _filteredContacts.length,
+                    itemBuilder: (context, index) {
+                      final contact = _filteredContacts[index];
+                      final isSelected = _tempSelected.contains(contact);
+                      final primaryPhone = contact.phones.isNotEmpty
+                          ? contact.phones.first.number
+                          : '';
+                      final primaryEmail = contact.emails.isNotEmpty
+                          ? contact.emails.first.address
+                          : '';
+                      
+                      // Get the cached avatar index
+                      final avatarIndex = _getAvatarIndex(contact);
+                      
+                      return ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: Colors.transparent,
+                          radius: 22,
+                          backgroundImage: AssetImage('assets/contact-icons/$avatarIndex.png'),
+                          child: contact.displayName.isNotEmpty
+                              ? Text(
+                                  _getContactInitials(contact.displayName).toUpperCase(),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                )
+                              : null,
+                        ),
+                        title: Text(
+                          contact.displayName,
+                          style: TextStyle(
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            color: isSelected ? const Color(0xff3CB3E9) : Colors.black,
+                          ),
+                        ),
+                        subtitle: Text(
+                          [primaryPhone, primaryEmail]
+                              .where((s) => s.isNotEmpty)
+                              .join(' • '),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: isSelected 
+                                ? const Color(0xff3CB3E9).withOpacity(0.8)
+                                : Colors.grey[600],
+                          ),
+                        ),
+                        trailing: isSelected
+                            ? const Icon(Icons.check_circle, color: Color(0xff3CB3E9))
+                            : null,
+                        onTap: () {
+                          setState(() {
+                            if (isSelected) {
+                              _tempSelected.remove(contact);
+                            } else {
+                              _tempSelected.add(contact);
+                            }
+                          });
+                        },
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: BottomAppBar(
+        child: Padding(
+          padding: const EdgeInsets.all(0.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    side: const BorderSide(color: Colors.grey),
+                  ),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: _tempSelected.isEmpty
+                      ? null
+                      : () => Navigator.pop(context, _tempSelected),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xff3CB3E9),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.download, color: Colors.white),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Import (${_tempSelected.length})',
+                        style: const TextStyle(fontSize: 16, color: Colors.white),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

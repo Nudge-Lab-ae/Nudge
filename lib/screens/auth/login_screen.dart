@@ -5,7 +5,7 @@ import 'package:nudge/theme/text_styles.dart';
 import 'package:nudge/widgets/gradient_text.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
-import '../../services/api_service.dart';
+// import '../../services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -22,18 +22,16 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context, listen: false);
-    final apiService = Provider.of<ApiService>(context, listen: false);
+    // final apiService = Provider.of<ApiService>(context, listen: false);
 
     return Scaffold(
       appBar: AppBar(
          title: GradientText( text: 'NUDGE', style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF5CDEE5), // #5CDEE5
-                  Color(0xFF2D85F6), // #2D85F6
-                  Color(0xFF7A4BFF), // #7A4BFF
-                ], stops: [0.0, 0.6, 1.0], begin: Alignment.topCenter, end: Alignment.bottomCenter,
-          ),
+              gradient: const LinearGradient(
+                colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
         ),
         //  Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Color(0xff3CB3E9), fontFamily: 'RobotoMono'),),
         centerTitle: true,
@@ -49,18 +47,20 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 20),
             const Center(
               child: Text(
-                'Crafting Closer Communities',
+                'CRAFTING CLOSER COMMUNITIES',
                 style: TextStyle(
                   fontSize: 20,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xff555555)
                 ),
               ),
             ),
             const SizedBox(height: 30),
             const Text(
-              'Email',
+              'EMAIL',
               style: TextStyle(
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w600,
+                color: Color(0xff555555),
                 fontSize: 16,
               ),
             ),
@@ -90,10 +90,11 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: 20),
             const Text(
-              'Password',
+              'PASSWORD',
               style: TextStyle(
-                fontWeight: FontWeight.bold,
                 fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Color(0xff555555)
               ),
             ),
             const SizedBox(height: 8),
@@ -150,15 +151,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           );
                           
                           if (user != null) {
-                            // Check if profile is completed
-                            final userData = await apiService.getUser();
-                            if (userData.profileCompleted) {
-                              // Navigation is handled automatically by AuthWrapper
-                              completeNavigation();
-                            } else {
-                              // Navigate to complete profile
-                              completeProfile();
-                            }
+                            // Let AuthWrapper handle the navigation
+                            // It will automatically check profile completion and navigate appropriately
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -203,20 +197,17 @@ class _LoginScreenState extends State<LoginScreen> {
               width: double.infinity,
               height: 50,
               child: OutlinedButton.icon(
-                onPressed: () async {
+               onPressed: () async {
                   setState(() => _isLoading = true);
                   print('logging in with google');
                   try {
                     final user = await authService.signInWithGoogle();
                     if (user != null) {
-                      // Check if profile is completed
-                      final userData = await apiService.getUser();
-                      if (userData.profileCompleted) {
-                        // Navigation handled by AuthWrapper
+                      // Let AuthWrapper handle the navigation
+                      if (user.email !=null && user.phoneNumber!=null && user.phoneNumber!='') {
                         completeNavigation();
                       } else {
-                        // Navigate to complete profile
-                       completeProfile();
+                        completeProfile();
                       }
                     }
                   } catch (e) {
@@ -250,23 +241,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 onPressed: () async {
                   setState(() => _isLoading = true);
                   try {
-                    // final user = await authService.signInWithApple();
                     await authService.modifiedAppleSignIn();
-                    final userData = await apiService.getUser();
-                    if (userData.email.isNotEmpty) {
-                      // Check if profile is completed
-                      
-                      if (userData.profileCompleted) {
-                        // Navigation handled by AuthWrapper
-                        completeNavigation();
-                      } else {
-                        // Navigate to complete profile
-                        // Navigator.pushReplacementNamed(context, '/complete_profile');
-                        completeProfile();
-                      }
-                    } else {
-                      print('returning empty user');
-                    }
+                    // Let AuthWrapper handle the navigation
                   } catch (e) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
@@ -310,13 +286,19 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  completeNavigation() {
-     Navigator.pop(context);
-  }
+  void completeNavigation() {
+  // Don't navigate here - let AuthWrapper handle it
+  // The AuthWrapper will automatically redirect to dashboard
+    // Future.delayed(Duration(seconds: 1)).then((value) {
+    //   Navigator.pop(context);
+    // });
+    Navigator.pushReplacementNamed(context, '/dashboard');
+}
 
-  completeProfile() {
-     Navigator.pushReplacementNamed(context, '/complete_profile');
-  }
+void completeProfile() {
+  // Navigate to complete profile screen
+  Navigator.pushReplacementNamed(context, '/complete_profile');
+}
 
   // Add this method to your LoginScreen class
   Future<void> _resetPassword(String email) async {

@@ -64,6 +64,8 @@ dependencies:
   reorderables: 
   country_code_picker:
   table_calendar:
+  flutter_svg:
+  restart_app:
   # firebase_app_check: 0.4.1
   # device_info_plus: ^8.0.0
 
@@ -95,6 +97,12 @@ flutter:
 
   assets:
     - assets/
+    - assets/navbar-icons/
+    - assets/card-backgrounds/
+    - assets/contact-icons/
+    - assets/performance-icons/
+    - assets/quick-insights/
+    - assets/quick-actions/
 
   fonts:
     - family: Roboto
@@ -133,6 +141,28 @@ flutter:
         - asset: assets/fonts/Quicksand-SemiBold.ttf
           weight: 700
         - asset: assets/fonts/Quicksand-Bold.ttf
+          weight: 900
+    - family: OpenSans
+      fonts:
+        - asset: assets/fonts/OpenSans-Light.ttf
+          weight: 100
+        - asset: assets/fonts/OpenSans-Medium.ttf
+          weight: 300
+        - asset: assets/fonts/OpenSans-Regular.ttf
+          weight: 500
+        - asset: assets/fonts/OpenSans-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/OpenSans-ExtraBold.ttf
+          weight: 900
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+          weight: 300
+        - asset: assets/fonts/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 700
+        - asset: assets/fonts/Inter-Bold.ttf
           weight: 900
 
   # To add assets to your application, add an assets section, like this:

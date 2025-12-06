@@ -51,7 +51,7 @@ class ApiService {
 
     // Call Cloud Function to trigger scheduled notifications
   Future<Map<String, dynamic>> scheduleRegularNotifications() async {
-    var contactId = 'c4oM05jGqPzi9PPnKYOp';
+    String contactId = _auth.currentUser!.uid;
     print('sending scheduled nudges');
     try {
       print('phase 1');
@@ -320,6 +320,7 @@ class ApiService {
   Future<void> updateUser(Map<String, dynamic> updates) async {
     try {
       String userId = _auth.currentUser!.uid;
+      print(userId); print(' is the id');
       await _usersCollection.doc(userId).update(updates);
     } catch (e) {
       throw Exception('Failed to update user: $e');

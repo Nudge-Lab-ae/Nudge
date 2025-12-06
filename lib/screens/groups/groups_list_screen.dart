@@ -191,7 +191,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
           appBar: !widget.showAppBar
           ? null
           :AppBar(
-            title: Text('Social Groups', style: AppTextStyles.title3.copyWith(color: Colors.white)),
+            title: Text('SOCIAL GROUPS', style: AppTextStyles.title3.copyWith(color: Colors.white, fontFamily: 'Inter')),
             iconTheme: const IconThemeData(color: Colors.white),
             leading: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -233,7 +233,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                          SizedBox(
                           height: 10,
                         ),
-                        Text('Social Groups', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20)),
+                        Text('SOCIAL GROUPS', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20, color: Color(0xff555555), fontFamily: 'Inter')),
                         SizedBox(
                           height: 10,
                         ),
@@ -251,7 +251,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                                     controller: _searchController,
                                     decoration: InputDecoration(
                                       hintText: 'Search groups...',
-                                      hintStyle: TextStyle(fontWeight: FontWeight.w600),
+                                      hintStyle: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff60A7CF)),
                                       prefixIcon: const Icon(Icons.search, color: Colors.blue),
                                       border: InputBorder.none,
                                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -365,7 +365,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
             onPressed: () => _showCreateGroupDialog(context, apiService),
             backgroundColor: const Color(0xff3CB3E9),
             icon: const Icon(Icons.group_add, color: Colors.white),
-            label: const Text('New Group', style: TextStyle(color: Colors.white)),
+            label: const Text('NEW GROUP', style: TextStyle(color: Colors.white)),
           ),
         ),
       ),
@@ -509,11 +509,11 @@ Widget _buildGroupCard(BuildContext context, SocialGroup group, List<Contact> me
                     children: [
                       Flexible(
                         child: Text(
-                          group.name,
+                          (group.name).toUpperCase(),
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black,
+                            color: Color(0xff555555),
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -746,7 +746,7 @@ void _showCreateGroupDialog(BuildContext context, ApiService apiService) {
       return StatefulBuilder(
         builder: (context, setState) {
           return AlertDialog(
-            title: const Text('Create New Group', style: TextStyle(fontWeight: FontWeight.bold)),
+            title: const Text('CREATE NEW GROUP', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555), fontSize: 16)),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -755,6 +755,7 @@ void _showCreateGroupDialog(BuildContext context, ApiService apiService) {
                     controller: nameController,
                     decoration: InputDecoration(
                       labelText: 'Group Name',
+                      labelStyle: TextStyle(color: Color(0xff555555)),
                        border: OutlineInputBorder(
                         borderSide: BorderSide(color: Colors.grey, width: 1),
                   borderRadius: BorderRadius.circular(10)
@@ -783,6 +784,7 @@ void _showCreateGroupDialog(BuildContext context, ApiService apiService) {
                     controller: descriptionController,
                     decoration: InputDecoration(
                       labelText: 'Description',
+                      labelStyle: TextStyle(color: Color(0xff555555)),
                         border: OutlineInputBorder(
                         borderSide: BorderSide(color: Colors.grey, width: 1),
                   borderRadius: BorderRadius.circular(10)
@@ -809,6 +811,7 @@ void _showCreateGroupDialog(BuildContext context, ApiService apiService) {
                   const SizedBox(height: 16),
                DropdownButtonFormField<String>(
                   value: _selectedFrequencyChoice,
+                  style: TextStyle(color: Color(0xff555555)),
                   onChanged: (String? newValue) {
                     if (newValue != null) {
                       final frequencyData = FrequencyPeriodMapper.getFrequencyPeriod(newValue);
@@ -826,6 +829,7 @@ void _showCreateGroupDialog(BuildContext context, ApiService apiService) {
                   }).toList(),
                   decoration: InputDecoration(
                     labelText: 'Contact Frequency',
+                    labelStyle: TextStyle(color: Color(0xff555555)),
                       border: OutlineInputBorder(
                         borderSide: BorderSide(color: Colors.grey, width: 1),
                   borderRadius: BorderRadius.circular(10)
@@ -850,7 +854,7 @@ void _showCreateGroupDialog(BuildContext context, ApiService apiService) {
                   ),
                 ),
                   const SizedBox(height: 16),
-                  const Text('Group Color', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text('Group Color', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xff555555))),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
@@ -957,7 +961,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
       return StatefulBuilder(
         builder: (context, setState) {
           return AlertDialog(
-            title: const Text('Edit Group', style: TextStyle(fontWeight: FontWeight.bold)),
+            title: const Text('EDIT GROUP', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555))),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -966,6 +970,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                     controller: nameController,
                     decoration:  InputDecoration(
                       labelText: 'Group Name',
+                      labelStyle: TextStyle(color: Color(0xff555555)),
                       border: OutlineInputBorder(
                         borderSide: BorderSide(color: Colors.grey, width: 1),
                   borderRadius: BorderRadius.circular(10)
@@ -994,6 +999,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                     controller: descriptionController,
                     decoration: InputDecoration(
                       labelText: 'Description',
+                      labelStyle: TextStyle(color: Color(0xff555555)),
                       border: OutlineInputBorder(
                         borderSide: BorderSide(color: Colors.grey, width: 1),
                   borderRadius: BorderRadius.circular(10)
@@ -1020,6 +1026,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                   const SizedBox(height: 16),
                  DropdownButtonFormField<String>(
                     value: _selectedFrequencyChoice,
+                    style: TextStyle(color: Color(0xff555555)),
                     onChanged: (String? newValue) {
                       if (newValue != null) {
                         final frequencyData = FrequencyPeriodMapper.getFrequencyPeriod(newValue);
@@ -1037,6 +1044,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                     }).toList(),
                     decoration: InputDecoration(
                       labelText: 'Contact Frequency',
+                      labelStyle: TextStyle(color: Color(0xff555555)),
                       border: OutlineInputBorder(
                         borderSide: BorderSide(color: Colors.grey, width: 1),
                   borderRadius: BorderRadius.circular(10)
@@ -1117,7 +1125,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                   ),
                   
                   const SizedBox(height: 16),
-                  const Text('Group Color', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text('Group Color', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xff555555))),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
@@ -1232,13 +1240,13 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(group.name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                          Text((group.name).toUpperCase(), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xff555555))),
                           Text(group.description, style: const TextStyle(color: Colors.grey)),
                         ],
                       ),
                     ),
                     IconButton(
-                        icon: Icon(Icons.edit),
+                        icon: Icon(Icons.edit, color: Color(0xff555555),),
                         onPressed: () => _showEditGroupDialog(context, group, apiService, () {
                           // Refresh the details after editing
                           setState(() {});
@@ -1265,7 +1273,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Group Members', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const Text('GROUP MEMBERS', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xff6e6e6e))),
                     if (members.isNotEmpty)
                     TextButton(
                       onPressed: () {
@@ -1284,7 +1292,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                         children: [
                           Icon(Icons.add, size: 16),
                           SizedBox(width: 4),
-                          Text('Add More'),
+                          Text('ADD MORE'),
                         ],
                       ),
                   ),
@@ -1312,7 +1320,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                                   'groupFrequency': group.frequency
                                 });
                               },
-                              child: const Text('Add Members', style: TextStyle(color: Color(0xff3CB3E9))),
+                              child: const Text('ADD MEMBERS', style: TextStyle(color: Color(0xff3CB3E9))),
                             ),
                           ],
                         ),
@@ -1328,8 +1336,8 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                                   : null,
                               child: contact.imageUrl.isEmpty ? const Icon(Icons.person) : null,
                             ),
-                            title: Text(contact.name, style: TextStyle(fontWeight: FontWeight.w600),),
-                            subtitle: Text(contact.connectionType),
+                            title: Text((contact.name).toUpperCase(), style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555)),),
+                            subtitle: Text(contact.connectionType, style: TextStyle(color: Color(0xff555555)),),
                             trailing: IconButton(
                               icon: const Icon(Icons.remove_circle, color: Colors.red),
                               onPressed: () async {
@@ -1381,7 +1389,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
   Widget _buildStatItem(String label, String value) {
     return Column(
       children: [
-        Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xff555555))),
         const SizedBox(height: 4),
         Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w600)),
       ],

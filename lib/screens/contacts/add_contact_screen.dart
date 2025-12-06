@@ -124,6 +124,15 @@ class _AddContactScreenState extends State<AddContactScreen> {
     }
   }
 
+  int getRandomIndex(String seed) {
+  if (seed.isEmpty) return 1;
+  var hash = 0;
+  for (var i = 0; i < seed.length; i++) {
+    hash = seed.codeUnitAt(i) + ((hash << 5) - hash);
+  }
+  return (hash.abs() % 6) + 1;
+}
+
   // Add the crop image method
   Future<void> _cropImage() async {
     if (_imageBytes == null) return;
@@ -186,9 +195,9 @@ class _AddContactScreenState extends State<AddContactScreen> {
       children: [
         const SizedBox(height: 100),
         Text(
-          'Crop Contact Picture',
+          'CROP CONTACT PICTURE',
           style: AppTextStyles.title2.copyWith(
-            color: Colors.black, fontFamily: 'QuickSand',
+            color: Color(0XFF555555),
             fontWeight: FontWeight.w600, textBaseline: null,
             decorationColor: Colors.black, decorationThickness: 0
           ),
@@ -322,13 +331,11 @@ class _AddContactScreenState extends State<AddContactScreen> {
             return Scaffold(
                 appBar: AppBar(
                   title: GradientText( text: 'NUDGE', style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
-                      gradient: LinearGradient(
-                        colors: [
-                          Color(0xFF5CDEE5), // #5CDEE5
-                          Color(0xFF2D85F6), // #2D85F6
-                          Color(0xFF7A4BFF), // #7A4BFF
-                        ], stops: [0.0, 0.6, 1.0], begin: Alignment.topCenter, end: Alignment.bottomCenter,
-                  ),
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
                 ),
                   // Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Color(0xff3CB3E9), fontFamily: 'RobotoMono'),),
                   centerTitle: true,
@@ -348,11 +355,12 @@ class _AddContactScreenState extends State<AddContactScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'New Contact',
+                          'NEW CONTACT',
                           style: TextStyle(
-                            fontSize: 24,
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
-                          ),
+                            color: Color(0xff6e6e6e),
+                            ),
                         ),
                         const SizedBox(height: 10),
                         Center(
@@ -360,17 +368,50 @@ class _AddContactScreenState extends State<AddContactScreen> {
                             children: [
                               GestureDetector(
                                 onTap: _pickImage,
-                                child: CircleAvatar(
-                                  radius: 80,
-                                  backgroundColor: Color(0xff3CB3E9),
-                                  backgroundImage: _imageBytes != null
-                                      ? MemoryImage(_imageBytes!)
-                                      : (_imageUrl.isNotEmpty
-                                          ? NetworkImage(_imageUrl)
-                                          : null),
-                                  child: _imageBytes == null && _imageUrl.isEmpty
-                                      ? const Icon(Icons.camera_alt, size: 40)
-                                      : null,
+                                child: Container(
+                                  width: 160,
+                                  height: 160,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.01),
+                                        blurRadius: 8,
+                                        spreadRadius: 2,
+                                      ),
+                                    ],
+                                  ),
+                                  child: CircleAvatar(
+                                    radius: 50,
+                                    backgroundColor: Colors.transparent, // Removed blue background
+                                    backgroundImage: _imageBytes != null
+                                        ? MemoryImage(_imageBytes!)
+                                        : (_imageUrl.isNotEmpty
+                                            ? NetworkImage(_imageUrl)
+                                            : AssetImage('assets/contact-icons/${getRandomIndex(_nameController.text)}.png') as ImageProvider),
+                                    child: _imageBytes == null && _imageUrl.isEmpty
+                                        ? Container(
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              image: DecorationImage(
+                                                image: AssetImage('assets/contact-icons/${getRandomIndex(_nameController.text)}.png'),
+                                                fit: BoxFit.cover,
+                                              ),
+                                            ),
+                                            child: Center(
+                                              child: _nameController.text.isNotEmpty 
+                                              ?Text(
+                                                 _nameController.text[0].toUpperCase(),
+                                                style: TextStyle(
+                                                  fontSize: 40,
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ):Icon(Icons.person, size: 50, color: Colors.white),
+                                            ),
+                                          )
+                                        : null,
+                                  ),
                                 ),
                               ),
                               if (_selectedImage != null || _imageUrl.isNotEmpty)
@@ -404,7 +445,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                         
                         // Name field
                         const Text(
-                          'Name *',
+                          'NAME *',
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
@@ -442,7 +483,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                         
                         // Connection Type - Now dynamically loaded from user groups
                         const Text(
-                          'Connection Type *',
+                          'CONNECTION TYPE *',
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
@@ -506,7 +547,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                         
                         // Profession
                         const Text(
-                          'Profession',
+                          'PROFESSION',
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
@@ -538,7 +579,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                         
                         // Important Dates Section
                         const Text(
-                          'Important Dates',
+                          'IMPORTANT DATES',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -592,7 +633,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                         
                         // Tags
                         const Text(
-                          'Social Groups',
+                          'SOCIAL GROUPS',
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
@@ -679,7 +720,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                         
                         // Phone Number
                         const Text(
-                          'Phone Number',
+                          'PHONE NUMBER',
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
@@ -712,7 +753,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                         
                         // Email
                         const Text(
-                          'Email',
+                          'EMAIL',
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
@@ -763,7 +804,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                         
                         // Notes
                         const Text(
-                          'Notes',
+                          'NOTES',
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
@@ -885,7 +926,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                               ),
                             ),
                             child: const Text(
-                              'Save Contact',
+                              'SAVE CONTACT',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,

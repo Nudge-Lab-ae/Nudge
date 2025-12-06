@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_contacts/flutter_contacts.dart' as fContacts;
+// import 'package:nudge/models/social_group.dart';
+// import 'package:flutter_contacts/properties/event.dart';
 // import 'package:flutter_contacts/properties/event.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:call_log/call_log.dart';
@@ -16,6 +18,7 @@ class ContactSyncService {
 
   Future<Map<String, dynamic>> importDeviceContacts({
     required Function(int processed, int total) onProgress,
+    required String groupId,
     int limit = 0,
     bool useSmartFilter = true,
   }) async {
@@ -149,7 +152,7 @@ class ContactSyncService {
           email: deviceContact.emails.isNotEmpty 
               ? deviceContact.emails.first.address 
               : '',
-          connectionType: 'Contact',
+          connectionType: groupId,
           frequency: 2,
           period: 'Annually',
           socialGroups: [],
@@ -201,18 +204,25 @@ class ContactSyncService {
   }
 
   DateTime? _extractBirthday(fContacts.Contact contact) {
-  final birthdayEvent = contact.events.firstWhere(
-    (e) => e.label.name.toLowerCase().contains('birthday'),
-  );
-  return DateTime(birthdayEvent.year!, birthdayEvent.month, birthdayEvent.day);
+  try {
+    final birthdayEvent = contact.events.firstWhere(
+      (e) => e.label.name.toLowerCase().contains('birthday'),
+    );
+    return DateTime(birthdayEvent.year!, birthdayEvent.month, birthdayEvent.day);
+  } catch (e) {
+    return null;
+  }
 }
 
 DateTime? _extractAnniversary(fContacts.Contact contact) {
-  final anniversaryEvent = contact.events.firstWhere(
-    (e) => e.label.name.toLowerCase().contains('anniversary'),
-    // orElse: () => fContacts.Event('', ''),
-  );
-  return DateTime(anniversaryEvent.year!, anniversaryEvent.month, anniversaryEvent.day);
+  try {
+    final anniversaryEvent = contact.events.firstWhere(
+      (e) => e.label.name.toLowerCase().contains('anniversary'),
+    );
+    return DateTime(anniversaryEvent.year!, anniversaryEvent.month, anniversaryEvent.day);
+  } catch (e) {
+    return null;
+  }
 }
 
 // List<DateTime> _extractImportantDates(fContacts.Contact contact) {
@@ -331,6 +341,7 @@ Future<Map<String, dynamic>> importContactsWithGroup({
 
 Future<Map<String, dynamic>> importFromContactPicker({
   required List<fContacts.Contact> pickedContacts,
+  required String groupId, 
   required Function(int processed, int total) onProgress,
 }) async {
   try {
@@ -398,7 +409,7 @@ Future<Map<String, dynamic>> importFromContactPicker({
         email: deviceContact.emails.isNotEmpty
             ? deviceContact.emails.first.address
             : '',
-        connectionType: 'Contact',
+        connectionType: groupId,
         frequency: 2,
         period: 'Monthly',
         socialGroups: [],

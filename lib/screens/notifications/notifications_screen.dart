@@ -3,11 +3,11 @@ import 'package:nudge/models/contact.dart';
 import 'package:nudge/models/nudge.dart';
 import 'package:nudge/models/social_group.dart';
 import 'package:nudge/screens/contacts/contact_detail_screen.dart';
-// import 'package:nudge/services/api_service.dart';
 import 'package:nudge/services/auth_service.dart';
 import 'package:nudge/services/nudge_service.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 class NotificationsScreen extends StatefulWidget {
   final bool showAppBar;
@@ -19,8 +19,18 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  int _selectedFilter = 0; // 0: Today, 1: This Week, 2: This Month
+   int _selectedFilter = 0; // 0: Today, 1: This Week, 2: This Month
   final NudgeService _nudgeService = NudgeService();
+  CalendarFormat _calendarFormat = CalendarFormat.month;
+  DateTime _focusedDay = DateTime.now();
+  DateTime? _selectedDay;
+  bool _showCalendar = false;
+
+   @override
+  void initState() {
+    super.initState();
+    _selectedDay = DateTime.now();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,18 +42,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             )
           : null,
       floatingActionButton: FloatingActionButton(
-      onPressed: () {
-        // Get contacts and groups from context
-        final contacts = Provider.of<List<Contact>>(context, listen: false);
-        final groups = Provider.of<List<SocialGroup>>(context, listen: false);
-        final authService = Provider.of<AuthService>(context, listen: false);
-        
-        // Call the existing nudge scheduling function
-        _nudgeService.showNudgeScheduleDialog(context, contacts, groups, authService.currentUser!.uid);
-      },
-      backgroundColor: const Color(0xff3CB3E9),
-      child: const Icon(Icons.add, color: Colors.white),
-    ),
+        onPressed: () {
+          final contacts = Provider.of<List<Contact>>(context, listen: false);
+          final groups = Provider.of<List<SocialGroup>>(context, listen: false);
+          final authService = Provider.of<AuthService>(context, listen: false);
+          
+          _nudgeService.showNudgeScheduleDialog(context, contacts, groups, authService.currentUser!.uid);
+        },
+        backgroundColor: const Color(0xff3CB3E9),
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
       body: StreamBuilder<List<Nudge>>(
         stream: _nudgeService.getNudgesStream(Provider.of<AuthService>(context).currentUser!.uid),
         builder: (context, snapshot) {
@@ -57,25 +65,31 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           
           final allNudges = snapshot.data ?? [];
           final filteredNudges = _getFilteredNudges(allNudges, _selectedFilter);
-          final overdueNudges = _getOverdueNudges(allNudges);
           
           return Column(
             children: [
-              // Warning Banner for Overdue Nudges
-              if (overdueNudges.isNotEmpty) _buildWarningBanner(overdueNudges),
+              // Header with title and view toggle
+              _buildHeader(),
               
-              // Header with Stats and Filters
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: _buildFilterHeader(filteredNudges),
-              ),
-              
-              // Nudge List
-              Expanded(
-                child: filteredNudges.isEmpty
-                    ? _buildEmptyState()
-                    : _buildNudgeList(filteredNudges),
-              ),
+              if (_showCalendar) ...[
+                // Calendar View
+                _buildCalendarView(allNudges),
+                const SizedBox(height: 16),
+                if (_selectedDay != null)
+                  _buildDayNudges(_getNudgesForDay(allNudges, _selectedDay!), context),
+              ] else ...[
+                // List View (Original)
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: _buildFilterHeader(filteredNudges),
+                ),
+                
+                Expanded(
+                  child: filteredNudges.isEmpty
+                      ? _buildEmptyState()
+                      : _buildNudgeList(filteredNudges),
+                ),
+              ],
             ],
           );
         },
@@ -83,40 +97,97 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  // Warning Banner for Overdue Nudges
-  Widget _buildWarningBanner(List<Nudge> overdueNudges) {
+  Widget _buildHeader() {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.orange[50],
-        border: Border.all(color: Colors.orange),
+        color: Colors.white,
+        border: Border(
+          bottom: BorderSide(color: Colors.grey.shade300, width: 1),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 3,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Icon(Icons.warning, color: Colors.orange[800]),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              '${overdueNudges.length} overdue nudge${overdueNudges.length > 1 ? 's' : ''} need${overdueNudges.length > 1 ? '' : 's'} attention',
-              style: TextStyle(
-                color: Colors.orange[800],
-                fontWeight: FontWeight.w600,
-              ),
+          const Text(
+            'NUDGES',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: Color(0xff555555),
             ),
           ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                _selectedFilter = 3; // Switch to Today view
-              });
-            },
-            child: Text(
-              'View',
-              style: TextStyle(
-                color: Colors.orange[800],
-                fontWeight: FontWeight.bold,
-              ),
+          
+          // View Toggle
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.grey.shade300, width: 1),
+            ),
+            child: Row(
+              children: [
+                // List View Button
+                GestureDetector(
+                  onTap: () {
+                    if (_showCalendar) {
+                      setState(() {
+                        _showCalendar = false;
+                      });
+                    }
+                  },
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: !_showCalendar ? const Color(0xff3CB3E9) : Colors.transparent,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(20),
+                        bottomLeft: Radius.circular(20),
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.list,
+                      color: !_showCalendar ? Colors.white : Colors.grey[600],
+                      size: 20,
+                    ),
+                  ),
+                ),
+                
+                // Calendar View Button
+                GestureDetector(
+                  onTap: () {
+                    if (!_showCalendar) {
+                      setState(() {
+                        _showCalendar = true;
+                      });
+                    }
+                  },
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: _showCalendar ? const Color(0xff3CB3E9) : Colors.transparent,
+                      borderRadius: const BorderRadius.only(
+                        topRight: Radius.circular(20),
+                        bottomRight: Radius.circular(20),
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.calendar_today,
+                      color: _showCalendar ? Colors.white : Colors.grey[600],
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -124,95 +195,268 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Widget _buildFilterHeader(List<Nudge> filteredNudges) {
-    final completedCount = filteredNudges.where((n) => n.isCompleted).length;
-    final pendingCount = filteredNudges.where((n) => !n.isCompleted).length;
-    final overdueCount = _getOverdueNudges(filteredNudges).length;
-
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              const Color(0xff3CB3E9).withOpacity(0.9),
-              const Color.fromRGBO(45, 161, 175, 0.7),
-            ],
+  Widget _buildCalendarView(List<Nudge> allNudges) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-          borderRadius: BorderRadius.circular(16),
+        ],
+      ),
+      child: TableCalendar<Nudge>(
+        firstDay: DateTime.utc(2023, 1, 1),
+        lastDay: DateTime.utc(2025, 12, 31),
+        focusedDay: _focusedDay,
+        selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+        onDaySelected: (selectedDay, focusedDay) {
+          setState(() {
+            _selectedDay = selectedDay;
+            _focusedDay = focusedDay;
+          });
+        },
+        onPageChanged: (focusedDay) {
+          setState(() {
+            _focusedDay = focusedDay;
+          });
+        },
+        calendarFormat: _calendarFormat,
+        onFormatChanged: (format) {
+          setState(() {
+            _calendarFormat = format;
+          });
+        },
+        eventLoader: (day) => _getNudgesForDay(allNudges, day),
+        calendarStyle: CalendarStyle(
+          todayDecoration: BoxDecoration(
+            color: const Color(0xff3CB3E9).withOpacity(0.3),
+            shape: BoxShape.circle,
+          ),
+          selectedDecoration: const BoxDecoration(
+            color: Color(0xff3CB3E9),
+            shape: BoxShape.circle,
+          ),
+          todayTextStyle: const TextStyle(
+            color: Color(0xff3CB3E9),
+            fontWeight: FontWeight.bold,
+          ),
+          selectedTextStyle: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+          markerDecoration: BoxDecoration(
+            color: Colors.orange,
+            shape: BoxShape.circle,
+          ),
+          markerMargin: const EdgeInsets.symmetric(horizontal: 1),
+          outsideDaysVisible: false,
         ),
-        child: Column(
-          children: [
-            // Statistics Row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildStatItem(
-                  'Total',
-                  filteredNudges.length.toString(),
-                  Icons.schedule,
-                ),
-                _buildStatItem(
-                  'Completed',
-                  completedCount.toString(),
-                  Icons.check_circle,
-                ),
-                _buildStatItem(
-                  'Pending',
-                  pendingCount.toString(),
-                  Icons.pending_actions,
-                ),
-                if (overdueCount > 0) 
-                  _buildStatItem(
-                    'Overdue',
-                    overdueCount.toString(),
-                    Icons.warning,
-                  ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            
-            // Filter Toggle Buttons
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  _buildFilterToggle('Today', 0),
-                  _buildFilterToggle('This Week', 1),
-                  _buildFilterToggle('This Month', 2),
-                ],
-              ),
-            ),
-          ],
+        headerStyle: HeaderStyle(
+          formatButtonVisible: false,
+          titleCentered: true,
+          titleTextStyle: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Color(0xff555555),
+          ),
+          leftChevronIcon: const Icon(
+            Icons.chevron_left,
+            color: Color(0xff3CB3E9),
+          ),
+          rightChevronIcon: const Icon(
+            Icons.chevron_right,
+            color: Color(0xff3CB3E9),
+          ),
+        ),
+        daysOfWeekStyle: const DaysOfWeekStyle(
+          weekdayStyle: TextStyle(
+            color: Color(0xff555555),
+            fontWeight: FontWeight.w600,
+          ),
+          weekendStyle: TextStyle(
+            color: Color(0xff555555),
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildStatItem(String label, String value, IconData icon) {
+   Widget _buildDayNudges(List<Nudge> dayNudges, BuildContext context) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Text(
+              DateFormat('EEEE, MMMM d, y').format(_selectedDay!),
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xff555555),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          dayNudges.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.notifications_off,
+                        size: 64,
+                        color: Colors.grey[400],
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'No nudges scheduled',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: dayNudges.length,
+                    itemBuilder: (context, index) {
+                      return _buildNudgeItem(dayNudges[index], context);
+                    },
+                  ),
+                ),
+        ],
+      ),
+    );
+  }
+
+  List<Nudge> _getNudgesForDay(List<Nudge> allNudges, DateTime day) {
+    return allNudges.where((nudge) {
+      final nudgeDate = DateTime(
+        nudge.scheduledTime.year,
+        nudge.scheduledTime.month,
+        nudge.scheduledTime.day,
+      );
+      final targetDate = DateTime(day.year, day.month, day.day);
+      return nudgeDate == targetDate;
+    }).toList();
+  }
+
+  Widget _buildFilterHeader(List<Nudge> filteredNudges) {
+    final completedCount = filteredNudges.where((n) => n.isCompleted).length;
+    final pendingCount = filteredNudges.where((n) => !n.isCompleted).length;
+    final overdueCount = _getOverdueNudges(filteredNudges).length;
+
+    return Column(
+      children: [
+        // Compact Stats Card
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color(0xff3CB3E9).withOpacity(0.9),
+                const Color.fromRGBO(45, 161, 175, 0.7),
+            ],
+          ),
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Column(
+              children: [
+                // Statistics in a compact row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildCompactStatItem(
+                      icon: Icons.schedule,
+                      value: filteredNudges.length.toString(),
+                      label: 'Total',
+                    ),
+                    _buildCompactStatItem(
+                      icon: Icons.check_circle,
+                      value: completedCount.toString(),
+                      label: 'Completed',
+                    ),
+                    _buildCompactStatItem(
+                      icon: Icons.pending_actions,
+                      value: pendingCount.toString(),
+                      label: 'Pending',
+                    ),
+                    if (overdueCount > 0) 
+                      _buildCompactStatItem(
+                        icon: Icons.warning,
+                        value: overdueCount.toString(),
+                        label: 'Overdue',
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                
+                // Compact filter buttons
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      _buildCompactFilterToggle('TODAY', 0),
+                      Container(width: 1, height: 30, color: Colors.white.withOpacity(0.3)),
+                      _buildCompactFilterToggle('THIS WEEK', 1),
+                      Container(width: 1, height: 30, color: Colors.white.withOpacity(0.3)),
+                      _buildCompactFilterToggle('THIS MONTH', 2),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCompactStatItem({
+    required IconData icon,
+    required String value,
+    required String label,
+  }) {
     return Column(
       children: [
         Container(
-          width: 50,
-          height: 50,
+          width: 36,
+          height: 36,
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.2),
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, color: Colors.white, size: 24),
+          child: Icon(icon, color: Colors.white, size: 18),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
         Text(
           value,
           style: const TextStyle(
-            fontSize: 18,
+            fontSize: 16,
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
@@ -220,16 +464,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         Text(
           label,
           style: TextStyle(
-            fontSize: 12,
+            fontSize: 10,
             color: Colors.white.withOpacity(0.9),
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildFilterToggle(String text, int index) {
+  Widget _buildCompactFilterToggle(String text, int index) {
     bool isSelected = _selectedFilter == index;
     return Expanded(
       child: GestureDetector(
@@ -239,21 +483,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           });
         },
         child: Container(
-          margin: const EdgeInsets.all(4),
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
             color: isSelected ? Colors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(6),
           ),
           child: Text(
             text,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: isSelected 
-                  ? const Color(0xff3CB3E9)
-                  : Colors.white,
+              color: isSelected ? const Color(0xff3CB3E9) : Colors.white,
             ),
           ),
         ),
@@ -292,7 +533,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                  nudge.scheduledTime.isBefore(endOfMonth.add(const Duration(days: 1)));
         }).toList();
 
-      case 3: // This Month
+      case 3: // Overdue
        return _getOverdueNudges(allNudges);
         
       default:
@@ -385,7 +626,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }).toList();
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 80.0), // Add bottom padding for FAB
+      padding: const EdgeInsets.only(bottom: 80.0),
       child: ListView(
         children: [
           if (overdueNudges.isNotEmpty) ...[
@@ -400,60 +641,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             _buildSectionHeader('Upcoming', upcomingNudges.length),
             ...upcomingNudges.map((nudge) => _buildNudgeItem(nudge, context)),
           ],
-          const SizedBox(height: 20), // Extra space at the bottom
+          const SizedBox(height: 20),
         ],
       ),
     );
   }
-  // Widget _buildNudgeList(List<Nudge> nudges) {
-  //   // Separate overdue, today, and upcoming nudges for better organization
-  //   final now = DateTime.now();
-  //   final today = DateTime(now.year, now.month, now.day);
-    
-  //   final overdueNudges = nudges.where((nudge) {
-  //     final nudgeDate = DateTime(
-  //       nudge.scheduledTime.year,
-  //       nudge.scheduledTime.month,
-  //       nudge.scheduledTime.day,
-  //     );
-  //     return !nudge.isCompleted && nudgeDate.isBefore(today);
-  //   }).toList();
-    
-  //   final todayNudges = nudges.where((nudge) {
-  //     final nudgeDate = DateTime(
-  //       nudge.scheduledTime.year,
-  //       nudge.scheduledTime.month,
-  //       nudge.scheduledTime.day,
-  //     );
-  //     return nudgeDate == today;
-  //   }).toList();
-    
-  //   final upcomingNudges = nudges.where((nudge) {
-  //     final nudgeDate = DateTime(
-  //       nudge.scheduledTime.year,
-  //       nudge.scheduledTime.month,
-  //       nudge.scheduledTime.day,
-  //     );
-  //     return nudgeDate.isAfter(today);
-  //   }).toList();
-
-  //   return ListView(
-  //     children: [
-  //       if (overdueNudges.isNotEmpty) ...[
-  //         _buildSectionHeader('Overdue', overdueNudges.length),
-  //         ...overdueNudges.map((nudge) => _buildNudgeItem(nudge, context, isOverdue: true)),
-  //       ],
-  //       if (todayNudges.isNotEmpty) ...[
-  //         _buildSectionHeader('Today', todayNudges.length),
-  //         ...todayNudges.map((nudge) => _buildNudgeItem(nudge, context)),
-  //       ],
-  //       if (upcomingNudges.isNotEmpty) ...[
-  //         _buildSectionHeader('Upcoming', upcomingNudges.length),
-  //         ...upcomingNudges.map((nudge) => _buildNudgeItem(nudge, context)),
-  //       ],
-  //     ],
-  //   );
-  // }
 
   Widget _buildSectionHeader(String title, int count) {
     return Padding(
@@ -485,8 +677,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ),
           ),
         ],
-      ),
-    );
+      ));
   }
 
   Widget _buildNudgeItem(Nudge nudge, BuildContext context, {bool isOverdue = false}) {
@@ -544,7 +735,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   nudge.contactName,
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
-                    color: isOverdue ? Colors.orange[800] : null,
+                    color: isOverdue ? Colors.orange[800] :  Color(0xff555555),
                   ),
                 ),
               ),
@@ -653,16 +844,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget _buildSwipeBackground(String action, BuildContext context) {
     Color color;
     IconData icon;
-    // Alignment alignment;
 
     if (action == 'complete') {
       color = Colors.green;
       icon = Icons.check;
-      // alignment = Alignment.centerLeft;
     } else {
       color = Colors.orange;
       icon = Icons.snooze;
-      // alignment = Alignment.centerRight;
     }
 
     return Container(
@@ -766,7 +954,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final contacts = Provider.of<List<Contact>>(context, listen: false);
     final contact = contacts.firstWhere(
       (contact) => contact.id == contactId,
-      // orElse: () => Contact.empty(),
     );
     
     if (contact.id.isNotEmpty) {
@@ -876,7 +1063,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       final contacts = Provider.of<List<Contact>>(context, listen: false);
                       final contact = contacts.firstWhere(
                         (contact) => contact.id == nudge.contactId,
-                        // orElse: () => Contact.empty(),
                       );
                       
                       if (contact.id.isEmpty) {

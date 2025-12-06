@@ -1,5 +1,8 @@
 // lib/screens/splash_screen.dart
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:nudge/helpers/restart_helper.dart';
+// import '../helpers/app_restart_helper.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -12,10 +15,22 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
   late Animation<double> _fadeAnimation;
+  bool _skipAnimation = false;
 
   @override
   void initState() {
     super.initState();
+    
+    // Check if we should skip the splash
+    _skipAnimation = AppRestartHelper.shouldSkipSplash;
+    
+    if (_skipAnimation) {
+      // Skip animation and navigate immediately
+      Timer(const Duration(milliseconds: 50), () {
+        _navigateToMain();
+      });
+      return;
+    }
     
     _controller = AnimationController(
       vsync: this,
@@ -38,7 +53,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       curve: const Interval(0.6, 1.0, curve: Curves.easeOut),
     ));
 
-    // Start animation after a brief delay to ensure native splash is visible
+    // Start animation after a brief delay
     Future.delayed(const Duration(milliseconds: 300), () {
       if (mounted) {
         _controller.forward().then((_) {
@@ -49,6 +64,12 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   }
 
   void _navigateToMain() {
+    // Clear the flag after using it
+    if (_skipAnimation) {
+      AppRestartHelper.clearSkipSplashFlag();
+    }
+    
+    // Navigate to main auth wrapper
     Navigator.of(context).pushReplacementNamed('/');
   }
 
@@ -60,6 +81,11 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
+    if (_skipAnimation) {
+      // Return empty container during brief delay
+      return Container(color: Colors.white);
+    }
+    
     return Scaffold(
       backgroundColor: Colors.white,
       body: AnimatedBuilder(

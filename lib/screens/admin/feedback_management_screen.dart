@@ -30,13 +30,11 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
     return Scaffold(
       appBar: AppBar(
         title: GradientText( text: 'NUDGE', style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF5CDEE5), // #5CDEE5
-                  Color(0xFF2D85F6), // #2D85F6
-                  Color(0xFF7A4BFF), // #7A4BFF
-                ], stops: [0.0, 0.6, 1.0], begin: Alignment.topCenter, end: Alignment.bottomCenter,
-          ),
+             gradient: const LinearGradient(
+              colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
         ),
         centerTitle: true,
         iconTheme: IconThemeData(color: Color(0xff3CB3E9)),
@@ -168,7 +166,7 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Status', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text('STATUS', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff6e6e6e))),
                     DropdownButton<String>(
                       value: _statusFilter,
                       isExpanded: true,
@@ -197,10 +195,11 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Type', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text('TYPE', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xff6e6e6e))),
                     DropdownButton<String>(
                       value: _typeFilter,
                       isExpanded: true,
+                      style: TextStyle(color: Color(0xff555555)),
                       items: _typeOptions.map((type) {
                         return DropdownMenuItem(
                           value: type,
@@ -304,7 +303,7 @@ Widget _buildFeedbackItem(Map<String, dynamic> feedback) {
   final message = feedback['message'] ?? '';
   final adminResponse = feedback['adminResponse'];
   final section = feedback['section'] ?? 'unknown';
-  final adminTitle = feedback['adminTitle'];
+  String? adminTitle = (feedback['adminTitle']);
   final isPublic = feedback['isPublic'] ?? false;
   // final votes = feedback['votes'] ?? 0;
   
@@ -327,8 +326,8 @@ Widget _buildFeedbackItem(Map<String, dynamic> feedback) {
         ),
       ),
       title: Text(
-        adminTitle ?? 'No Title Set',
-        style: TextStyle(fontWeight: FontWeight.bold),
+        adminTitle!=null? (adminTitle).toUpperCase(): 'NO TITLE SET',
+        style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xff555555)),
       ),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

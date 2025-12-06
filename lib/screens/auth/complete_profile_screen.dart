@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:crop_your_image/crop_your_image.dart';
 import 'package:country_code_picker/country_code_picker.dart';
@@ -12,13 +13,14 @@ import 'package:nudge/services/nudge_service.dart';
 // import 'package:nudge/models/user.dart';
 // import 'package:nudge/theme/text_styles.dart';
 import 'package:nudge/widgets/gradient_text.dart';
+import 'package:nudge/helpers/restart_helper.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
 // import 'dart:ui' as ui;
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
 import '../contacts/import_contacts_screen.dart';
-import '../dashboard/dashboard_screen.dart';
+// import '../dashboard/dashboard_screen.dart';
 
 // Add these imports for contact picking functionality
 import 'package:permission_handler/permission_handler.dart';
@@ -212,7 +214,9 @@ void _initializeDefaultGroups() {
   bool _isStepValid(int step) {
     switch (step) {
       case 0: // Profile
-        return myUsername.isNotEmpty && myPhone.isNotEmpty;
+        return myUsername.isNotEmpty && 
+              myPhone.isNotEmpty && 
+              _isValidPhoneNumber(myPhone);
       case 1: // Groups
         return _userGroups.isNotEmpty;
       case 2: // Contacts
@@ -262,10 +266,11 @@ void _initializeDefaultGroups() {
         // Upload image if selected
         String imageUrl = '';
         if (_imageBytes != null) {
-          // Implement image upload logic here
           String uniqueID = _usernameController.text + (DateTime.now().millisecondsSinceEpoch).toString();
           imageUrl = await uploadImageToFirebase(_imageBytes!, uniqueID);
         }
+
+        print('Final Stage 1');
         
         // Update user profile
         await apiService.updateUser({
@@ -277,7 +282,8 @@ void _initializeDefaultGroups() {
           'onboardingCompleted': true,
           'updatedAt': DateTime.now(),
         });
-
+        
+        print('Final Stage 2');
         // Save groups
         await apiService.updateGroups(_userGroups);
 
@@ -285,70 +291,68 @@ void _initializeDefaultGroups() {
           await apiService.updateCloseCircleContacts(_closeCircleContacts);
         }
 
+        print('Final Stage 3');
+
         if (_selectedContacts.isNotEmpty) {
           // Schedule nudges in background without waiting
           _scheduleNudgesForImportedContacts();
         }
-        // Navigate to dashboard
-        // Navigator.pushReplacement(
-        //   context, 
-        //   MaterialPageRoute(builder: (context) => const DashboardScreen()),
-        // );
-         _navigateToDashboardWithSuccess();
+        
+        print('Final Stage 4');
+        
+        // Navigate to dashboard using restart approach
+        _navigateToDashboardWithSuccess();
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: ${e.toString()}')),
       );
-    } finally {
       setState(() => _isLoading = false);
     }
   }
 
   void _navigateToDashboardWithSuccess() {
-  // Show success message before navigation
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Row(
-        children: [
-          const Icon(Icons.celebration, color: Colors.white),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Onboarding Complete!',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+    // Show success message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.celebration, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Onboarding Complete!',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
-                ),
-                Text(
-                  _selectedContacts.isNotEmpty 
-                      ? 'Your first nudges have been scheduled'
-                      : 'You can add contacts and schedule nudges anytime',
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
-                ),
-              ],
+                  Text(
+                    _selectedContacts.isNotEmpty 
+                        ? 'Your first nudges have been scheduled'
+                        : 'You can add contacts and schedule nudges anytime',
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 4),
       ),
-      backgroundColor: Colors.green,
-      duration: const Duration(seconds: 4),
-    ),
-  );
-
-  // Navigate after showing the message
-  Future.delayed(const Duration(milliseconds: 1500), () {
-    Navigator.pushReplacement(
-      context, 
-      MaterialPageRoute(builder: (context) => const DashboardScreen()),
     );
-  });
-}
+
+    // Force app restart after a delay to show the snackbar
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      AppRestartHelper.setSkipSplashFlag();
+      AppRestartHelper.forceAppRestart(context);
+    });
+  }
 
   // void _reorderGroups(int oldIndex, int newIndex) {
   //   setState(() {
@@ -884,7 +888,7 @@ Future<void> _pickContactsManually() async {
             const SizedBox(height: 30),
             
             // Username
-            const Text('Username *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Text('USERNAME *', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555), fontSize: 16)),
             const SizedBox(height: 8),
             TextFormField(
               controller: _usernameController,
@@ -914,32 +918,32 @@ Future<void> _pickContactsManually() async {
             const SizedBox(height: 20),
             
             // Phone Number with Country Code
-            const Text('Phone Number *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Text('PHONE NUMBER *', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555), fontSize: 16)),
             const SizedBox(height: 8),
             Row(
               children: [
                 Padding(
-                  padding: EdgeInsets.only(bottom: 20),
+                  padding: EdgeInsets.only(bottom: 0),
                   child: Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey, width: 1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: CountryCodePicker(
-                   onChanged: (CountryCode country) {
-                    setState(() {
-                      _selectedCountry = country;
-                    });
-                  },
-                  initialSelection: _selectedCountry.code, // Use current selection
-                  favorite: [_selectedCountry.code!, 'US'], // Preserve current as favorite
-                  showCountryOnly: false,
-                  showOnlyCountryWhenClosed: false,
-                  alignLeft: false,
-                  // Key to force rebuild when selection changes
-                  key: Key(_selectedCountry.code!), 
-                  ),
-                )
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey, width: 1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: CountryCodePicker(
+                      onChanged: (CountryCode country) {
+                        setState(() {
+                          _selectedCountry = country;
+                        });
+                      },
+                      initialSelection: _selectedCountry.code, // Use current selection
+                      favorite: [_selectedCountry.code!, 'US'], // Preserve current as favorite
+                      showCountryOnly: false,
+                      showOnlyCountryWhenClosed: false,
+                      alignLeft: false,
+                      // Key to force rebuild when selection changes
+                      key: Key(_selectedCountry.code!), 
+                    ),
+                  )
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -947,14 +951,18 @@ Future<void> _pickContactsManually() async {
                     controller: _phoneController,
                     keyboardType: TextInputType.phone,
                     maxLength: 9,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly, // Only allow digits
+                    ],
                     decoration: InputDecoration(
                       hintText: 'Phone number',
+                      counterText: '',
                       enabledBorder: OutlineInputBorder(
                         borderSide: const BorderSide(color: Colors.grey, width: 1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.blue, width: 2),
+                        borderSide: const BorderSide(color: Color(0xff3CB3E9), width: 2),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       errorBorder: OutlineInputBorder(
@@ -965,17 +973,32 @@ Future<void> _pickContactsManually() async {
                         borderSide: const BorderSide(color: Colors.red, width: 2),
                         borderRadius: BorderRadius.circular(10),
                       ),
+                      errorStyle: const TextStyle(fontSize: 12),
                     ),
-                    validator: (value) => value == null || value.isEmpty ? 'Please enter a phone number' : null,
-                    onChanged: onPhoneChange,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a phone number';
+                      } else if (!_isValidPhoneNumber(value)) {
+                        return 'Please enter a valid 9-digit phone number';
+                      }
+                      return null;
+                    },
+                    onChanged: (value) {
+                      onPhoneChange(value);
+                      // Validate on the fly
+                      if (_formKey.currentState != null) {
+                        _formKey.currentState!.validate();
+                      }
+                    },
                   ),
                 ),
               ],
             ),
+            _buildPhoneValidationMessage(),
             const SizedBox(height: 20),
             
             // Bio
-            const Text('Bio', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Text('BIO', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555), fontSize: 16)),
             const SizedBox(height: 8),
             TextFormField(
               controller: _bioController,
@@ -1012,7 +1035,7 @@ Widget _buildGroupsStep() {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 20),
-        const Text('Customize Your Social Groups', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const Text('CURSTOMIZE YOUR SOCIAL GROUPS', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 10),
         const Text('Drag to reorder groups by priority. Add, edit, or remove groups.', 
           style: TextStyle(fontSize: 14, color: Colors.grey)),
@@ -1101,7 +1124,8 @@ Widget _buildGroupsStep() {
                 child: TextFormField(
                   initialValue: group.name,
                   decoration: const InputDecoration(
-                    labelText: 'Group Name',
+                    labelText: 'GROUP NAME',
+                    labelStyle: TextStyle(color: Color(0xff555555)),
                     border: OutlineInputBorder(),
                     isDense: true,
                   ),
@@ -1122,7 +1146,7 @@ Widget _buildGroupsStep() {
           const SizedBox(height: 15),
           
           // Frequency Dropdown
-          const Text('Contact Frequency:', style: TextStyle(fontWeight: FontWeight.w500)),
+          const Text('CONTACT FREQUENCY:', style: TextStyle(fontWeight: FontWeight.w500, color: Color(0xff555555))),
           const SizedBox(height: 8),
          DropdownButtonFormField<String>(
             value: _getCurrentFrequencyChoice(group),
@@ -1133,7 +1157,7 @@ Widget _buildGroupsStep() {
             items: FrequencyPeriodMapper.frequencyMapping.keys.map((String value) {
               return DropdownMenuItem<String>(
                 value: value,
-                child: Text(value),
+                child: Text(value, style: TextStyle(color: Color(0xff555555)),),
               );
             }).toList(),
             onChanged: (String? newValue) {
@@ -1152,7 +1176,7 @@ Widget _buildGroupsStep() {
           const SizedBox(height: 20),
           
           // Date Nudges Section
-          const Text('Date Nudges:', style: TextStyle(fontWeight: FontWeight.w500)),
+          const Text('Date Nudges:', style: TextStyle(fontWeight: FontWeight.w500, color: Color(0xff555555))),
           const SizedBox(height: 8),
           
           // Birthday Nudges Toggle
@@ -1214,6 +1238,83 @@ Widget _buildGroupsStep() {
   String _getCurrentFrequencyChoice(SocialGroup group) {
   return FrequencyPeriodMapper.getConversationalChoice(group.frequency, group.period);
 }
+
+  bool _isValidPhoneNumber(String phone) {
+    // Remove any spaces, dashes, or parentheses
+    String cleanedPhone = phone.replaceAll(RegExp(r'[^\d]'), '');
+    
+    // Check if it's exactly 9 digits and only numbers
+    if (cleanedPhone.length != 9) {
+      return false;
+    }
+    
+    // Check if all characters are digits
+    if (!RegExp(r'^[0-9]{9}$').hasMatch(cleanedPhone)) {
+      return false;
+    }
+    
+    return true;
+  }
+
+    Widget _buildPhoneValidationMessage() {
+    if (myPhone.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    
+    if (!_isValidPhoneNumber(myPhone)) {
+      return Container(
+        margin: const EdgeInsets.only(top: 8),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF5F5),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.red.shade100),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.info_outline, color: Colors.red.shade600, size: 16),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                myPhone.length < 9 
+                  ? 'Phone number too short. Must be exactly 9 digits.' 
+                  : 'Please use only numbers (0-9) for the phone number.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.red.shade600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0F9FF),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xff3CB3E9).withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.check_circle, color: Colors.green.shade600, size: 16),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Valid phone number: ${_selectedCountry.dialCode} ${myPhone}',
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xff3CB3E9),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   // Widget _buildPeriodButton(String period, bool isSelected, int groupIndex) {
   //   return Expanded(
@@ -1310,7 +1411,7 @@ Widget _buildGroupsStep() {
       child: Column(
         children: [
           const SizedBox(height: 20),
-          const Text('Add Your Contacts', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text('ADD YOUR CONTACTS', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xff555555))),
           const SizedBox(height: 10),
           const Text('Import your contacts or add them manually. You can skip this and do it later.', 
             style: TextStyle(fontSize: 14, color: Colors.grey), textAlign: TextAlign.center),
@@ -1328,7 +1429,7 @@ Widget _buildGroupsStep() {
                       children: [
                         const Icon(Icons.import_contacts, size: 60, color: Color(0xff3CB3E9)),
                         const SizedBox(height: 16),
-                        const Text('Quick Import', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                        const Text('QUICK IMPORT', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 8),
                         const Text('Import your existing contacts', 
                           textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
@@ -1338,13 +1439,31 @@ Widget _buildGroupsStep() {
                             FocusScope.of(context).unfocus();
                             final result = await Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => const ImportContactsScreen()),
+                              MaterialPageRoute(
+                                builder: (context) => const ImportContactsScreen(),
+                                settings: RouteSettings(arguments: _userGroups), // Pass groups here
+                              ),
                             );
+
+                            print('hey there'); print(result);
                             
                             if (result != null && result is List<Contact>) {
+                              // Merge the newly imported contacts with existing ones
+                              final Set<String> existingIds = _selectedContacts.map((c) => c.id).toSet();
+                              final List<Contact> newContacts = result.where((c) => !existingIds.contains(c.id)).toList();
+                              
                               setState(() {
-                                _selectedContacts = result;
+                                _selectedContacts.addAll(newContacts);
                               });
+                              
+                              if (newContacts.isNotEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Added ${newContacts.length} contacts to ${result.isNotEmpty && result.first.socialGroups.isNotEmpty ? result.first.socialGroups.first : 'selected group'}'),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                              }
                             }
                           },
                           style: ElevatedButton.styleFrom(
@@ -1368,7 +1487,7 @@ Widget _buildGroupsStep() {
                       children: [
                         const Icon(Icons.person_add, size: 60, color: Colors.grey),
                         const SizedBox(height: 16),
-                        const Text('Add Manually', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                        const Text('ADD  MANUALLY', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 8),
                         const Text('Select specific contacts to import', 
                           textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
@@ -1575,13 +1694,11 @@ Widget _buildGroupsStep() {
     child: Scaffold(
       appBar: AppBar(
         title: GradientText( text: 'NUDGE', style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF5CDEE5), // #5CDEE5
-                  Color(0xFF2D85F6), // #2D85F6
-                  Color(0xFF7A4BFF), // #7A4BFF
-                ], stops: [0.0, 0.6, 1.0], begin: Alignment.topCenter, end: Alignment.bottomCenter,
-          ),
+               gradient: const LinearGradient(
+                  colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+            ),
         ),
         // Text('NUDGE', style: AppTextStyles.title2.copyWith(color: const Color(0xff3CB3E9), fontFamily: 'RobotoMono')),
         centerTitle: true,
@@ -1616,7 +1733,16 @@ Widget _buildGroupsStep() {
             Expanded(
               child: ElevatedButton(
                 autofocus: true,
-                onPressed: _isStepValid(_currentStep) ? _nextStep : null,
+                onPressed: () {
+                  if (_currentStep == 0) {
+                    // Validate form for profile step
+                    if (_formKey.currentState!.validate()) {
+                      _nextStep();
+                    }
+                  } else if (_isStepValid(_currentStep)) {
+                    _nextStep();
+                  }
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xff3CB3E9),
                   padding: const EdgeInsets.symmetric(vertical: 12),
@@ -1693,7 +1819,7 @@ class _ContactPickerDialogState extends State<ContactPickerDialog> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Select Contacts'),
+        title: const Text('SELECT CONTACTS', style: TextStyle(color: Color(0xff555555)),),
         actions: [
           // Selection info
           Padding(

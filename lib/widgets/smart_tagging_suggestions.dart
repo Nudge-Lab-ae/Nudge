@@ -184,6 +184,7 @@ Future<void> _loadSuggestions() async {
         const Text(
           'Relationship Insight',
           style: TextStyle(
+            color: Color(0xff555555),
             fontWeight: FontWeight.bold,
             fontSize: 16,
           ),
@@ -201,7 +202,7 @@ Future<void> _loadSuggestions() async {
                     const SizedBox(width: 8),
                    Text(
                       'Suggested Tag: $_suggestedRelationship',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xff555555)),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
@@ -248,8 +249,9 @@ Future<void> _loadSuggestions() async {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Tag Suggestions',
+          'TAG SUGGESTIONS',
           style: TextStyle(
+            color: Color(0xff6e6e6e),
             fontWeight: FontWeight.bold,
             fontSize: 16,
           ),
@@ -260,7 +262,7 @@ Future<void> _loadSuggestions() async {
           runSpacing: 8,
           children: _suggestedTags.map((tag) {
             return FilterChip(
-              label: Text(tag),
+              label: Text(tag, style: TextStyle(color: Color(0xff555555)),),
               onSelected: (selected) async {
                 if (selected) {
                   // Add tag to contact

@@ -77,12 +77,30 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     );
   }
 
+  String _getContactInitials(String name) {
+    if (name.isEmpty) return '?';
+    
+    // Trim and split the name by spaces
+    final parts = name.trim().split(' ').where((part) => part.isNotEmpty).toList();
+    
+    if (parts.length >= 2) {
+      // Has at least first and last name - get first letter of first and last name
+      return '${parts.first[0].toUpperCase()}${parts.last[0].toUpperCase()}';
+    } else if (parts.length == 1) {
+      // Only first name available
+      return parts.first[0].toUpperCase();
+    }
+    
+    return '?';
+  }
+
   @override
   Widget build(BuildContext context) {
     // final authService = Provider.of<AuthService>(context);
     final apiService = Provider.of<ApiService>(context);
     // final user = authService.currentUser;
     var size = MediaQuery.of(context).size;
+    final initials = _getContactInitials(_currentContact.name);
     
     bool isLocalImage = _currentContact.imageUrl.isNotEmpty && 
         (_currentContact.imageUrl.startsWith('/') || 
@@ -98,13 +116,11 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: GradientText( text: 'NUDGE', style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF5CDEE5), // #5CDEE5
-                  Color(0xFF2D85F6), // #2D85F6
-                  Color(0xFF7A4BFF), // #7A4BFF
-                ], stops: [0.0, 0.6, 1.0], begin: Alignment.topCenter, end: Alignment.bottomCenter,
-          ),
+              gradient: const LinearGradient(
+          colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
         ),
         // Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Color(0xff3CB3E9), fontFamily: 'RobotoMono'),),
         centerTitle: true,
@@ -144,24 +160,57 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
             Center(
               child: Column(
                 children: [
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundColor: Color(0xff3CB3E9),
-                    backgroundImage: _currentContact.imageUrl.isNotEmpty
-                        ? isLocalImage
-                            ? FileImage(File(_currentContact.imageUrl.replaceFirst('file://', '')))
-                            : NetworkImage(_currentContact.imageUrl) as ImageProvider
-                        : null,
-                    child: _currentContact.imageUrl.isEmpty 
-                        ? const Icon(Icons.person, size: 40) 
-                        : null,
+                 Container(
+        width: 120,
+        height: 120,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.01),
+              blurRadius: 8,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: CircleAvatar(
+          radius: 80,
+          backgroundColor: Colors.transparent, // Removed blue background
+          backgroundImage: _currentContact.imageUrl.isNotEmpty
+              ? isLocalImage
+                  ? FileImage(File(_currentContact.imageUrl.replaceFirst('file://', '')))
+                  : NetworkImage(_currentContact.imageUrl) as ImageProvider
+              : AssetImage('assets/contact-icons/${getRandomIndex(_currentContact.id)}.png') as ImageProvider,
+          child: _currentContact.imageUrl.isEmpty
+              ? Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    image: DecorationImage(
+                      image: AssetImage('assets/contact-icons/${getRandomIndex(_currentContact.id)}.png'),
+                      fit: BoxFit.cover,
+                    ),
                   ),
+                  child: Center(
+                    child: Text(
+                      _currentContact.name.isNotEmpty ?initials.toUpperCase() : '?',
+                      style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                )
+              : null,
+        ),
+      ),
                   const SizedBox(height: 15),
                   Text(
-                    _currentContact.name,
+                    (_currentContact.name).toUpperCase(),
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
+                      color: Color(0xff555555)
                     ),
                   ),
                   const SizedBox(height: 5),
@@ -182,7 +231,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
             Card(
               child: ListTile(
                 leading: Icon(Icons.star, color: _currentContact.isVIP ? Colors.amber : Colors.grey),
-                title: Text('Close Circle', style: TextStyle(fontWeight: FontWeight.w600)),
+                title: Text('Close Circle', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555))),
                 subtitle: Text(_currentContact.isVIP 
                     ? 'This contact is in your Close Circle' 
                     : 'Add to your Close Circle for special attention'),
@@ -201,18 +250,20 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
             // Contact Information Section
             if (_currentContact.phoneNumber.isNotEmpty || _currentContact.email.isNotEmpty) ...[
               const Text(
-                'Contact Information',
+                'CONTACT INFORMATION',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
+                  color: Color(0xff6e6e6e),
+                  letterSpacing: 1.0,
                 ),
               ),
               const SizedBox(height: 10),
               
               if (_currentContact.phoneNumber.isNotEmpty)
                 ListTile(
-                  leading: const Icon(Icons.phone),
-                  title: const Text('Phone', style: TextStyle(fontWeight: FontWeight.w600),),
+                  leading: const Icon(Icons.phone, color: Color(0xff555555),),
+                  title: const Text('Phone', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555)),),
                   subtitle: Text(_currentContact.phoneNumber),
                 ),
               
@@ -227,17 +278,20 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
             
             // Connection Details Section
             const Text(
-              'Connection Details',
+              'CONNECTION DETAILS',
               style: TextStyle(
                 fontSize: 18,
-                fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.bold,
+              color: Color(0xff6e6e6e),
+              letterSpacing: 1.0,
+
               ),
             ),
             const SizedBox(height: 10),
             
             ListTile(
-              leading: const Icon(Icons.category),
-              title: const Text('Connection Type', style: TextStyle(fontWeight: FontWeight.w600),),
+              leading: const Icon(Icons.category, color: Color(0xff555555)),
+              title: const Text('Connection Type', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555)),),
               subtitle: Text(_currentContact.connectionType),
             ),
 
@@ -249,24 +303,26 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
             
           ListTile(
             leading: const Icon(Icons.schedule),
-            title: const Text('Contact Frequency', style: TextStyle(fontWeight: FontWeight.w600),),
+            title: const Text('Contact Frequency', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555)),),
             subtitle: Text(FrequencyPeriodMapper.getConversationalChoice(_currentContact.frequency, _currentContact.period)),
           ),
             
             if (_currentContact.socialGroups.isNotEmpty)
               ListTile(
                 leading: const Icon(Icons.group),
-                title: const Text('Social Groups', style: TextStyle(fontWeight: FontWeight.w600),),
+                title: const Text('Social Groups', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555)),),
                 subtitle: Text(_currentContact.socialGroups.join(', ')),
               ),
             
             // Social Tags Section (Renamed from Tag Suggestions)
             const SizedBox(height: 24),
             const Text(
-              'Social Tags',
+              'SOCIAL TAGS',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: FontWeight.bold,
+                color: Color(0xff6e6e6e),
+                letterSpacing: 1.0,
               ),
             ),
             const SizedBox(height: 8),
@@ -276,7 +332,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
             if (_currentContact.birthday != null || _currentContact.anniversary != null || _currentContact.workAnniversary != null) ...[
               const SizedBox(height: 20),
               const Text(
-                'Important Dates',
+                'IMPORTANT DATES',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -287,21 +343,21 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
               if (_currentContact.birthday != null)
                 ListTile(
                   leading: const Icon(Icons.cake),
-                  title: const Text('Birthday'),
+                  title: const Text('Birthday', style: TextStyle(color: Color(0xff555555)),),
                   subtitle: Text(DateFormat('MMMM d, y').format(_currentContact.birthday!)),
                 ),
               
               if (_currentContact.anniversary != null)
                 ListTile(
                   leading: const Icon(Icons.favorite),
-                  title: const Text('Anniversary'),
+                  title: const Text('Anniversary', style: TextStyle(color: Color(0xff555555)),),
                   subtitle: Text(DateFormat('MMMM d, y').format(_currentContact.anniversary!)),
                 ),
               
               if (_currentContact.workAnniversary != null)
                 ListTile(
                   leading: const Icon(Icons.work),
-                  title: const Text('Work Anniversary'),
+                  title: const Text('Work Anniversary', style: TextStyle(color: Color(0xff555555)),),
                   subtitle: Text(DateFormat('MMMM d, y').format(_currentContact.workAnniversary!)),
                 ),
             ],
@@ -312,6 +368,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
               const Text(
                 'Notes',
                 style: TextStyle(
+                  color: Color(0xff555555),
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -356,8 +413,9 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Scheduled Nudges',
+                      'SCHEDULED NUDGES',
                       style: TextStyle(
+                        color: Color(0xff6e6e6e),
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -376,11 +434,11 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                             children: [
                              Text(
                                 'Frequency: ${FrequencyPeriodMapper.getConversationalChoice(_currentContact.frequency, _currentContact.period)}',
-                                style: TextStyle(fontWeight: FontWeight.w600),
+                                style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555)),
                               ),
                               Text(
                                 'Connection Type: ${_currentContact.connectionType}',
-                                style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                                style: TextStyle(color: Colors.grey[600], fontSize: 14,),
                               ),
                             ],
                           ),
@@ -403,6 +461,16 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
       ),
     );
   }
+
+  int getRandomIndex(String seed) {
+  if (seed.isEmpty) return 1;
+  var hash = 0;
+  for (var i = 0; i < seed.length; i++) {
+    hash = seed.codeUnitAt(i) + ((hash << 5) - hash);
+  }
+  return (hash.abs() % 6) + 1;
+}
+
 }
 
 // Replace the entire _NextNudgeDialog class with this updated version:

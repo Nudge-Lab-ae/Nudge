@@ -210,9 +210,9 @@ class _EditContactScreenState extends State<EditContactScreen> {
         children: [
           const SizedBox(height: 100),
           Text(
-            'Crop Contact Picture',
+            'CROP CONTACT PICTURE',
             style: AppTextStyles.title2.copyWith(
-              color: Colors.black, fontFamily: 'QuickSand',
+              color: Color(0xff555555),
               fontWeight: FontWeight.w600, textBaseline: null,
               decorationColor: Colors.black, decorationThickness: 0
             ),
@@ -328,6 +328,32 @@ class _EditContactScreenState extends State<EditContactScreen> {
     }
   }
 
+   int getRandomIndex(String seed) {
+    if (seed.isEmpty) return 1;
+    var hash = 0;
+    for (var i = 0; i < seed.length; i++) {
+      hash = seed.codeUnitAt(i) + ((hash << 5) - hash);
+    }
+    return (hash.abs() % 6) + 1;
+  }
+
+  String _getContactInitials(String name) {
+    if (name.isEmpty) return '?';
+    
+    // Trim and split the name by spaces
+    final parts = name.trim().split(' ').where((part) => part.isNotEmpty).toList();
+    
+    if (parts.length >= 2) {
+      // Has at least first and last name - get first letter of first and last name
+      return '${parts.first[0].toUpperCase()}${parts.last[0].toUpperCase()}';
+    } else if (parts.length == 1) {
+      // Only first name available
+      return parts.first[0].toUpperCase();
+    }
+    
+    return '?';
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -370,13 +396,11 @@ class _EditContactScreenState extends State<EditContactScreen> {
             return Scaffold(
       appBar: AppBar(
         title: GradientText( text: 'NUDGE', style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF5CDEE5), // #5CDEE5
-                  Color(0xFF2D85F6), // #2D85F6
-                  Color(0xFF7A4BFF), // #7A4BFF
-                ], stops: [0.0, 0.6, 1.0], begin: Alignment.topCenter, end: Alignment.bottomCenter,
-          ),
+              gradient: const LinearGradient(
+                colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
         ),
         // Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Color(0xff3CB3E9), fontFamily: 'RobotoMono'),),
         centerTitle: true,
@@ -404,7 +428,11 @@ class _EditContactScreenState extends State<EditContactScreen> {
             children: [
               Padding(
                 padding: EdgeInsets.only(left: 10),
-                child:  Text('Edit Contact', style: AppTextStyles.primaryBold.copyWith(fontSize: 22)),),
+                child:  Text('EDIT CONTACT', style: AppTextStyles.primaryBold.copyWith(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xff555555),
+                  )),),
               const SizedBox(height: 30),
 
               Center(
@@ -412,17 +440,49 @@ class _EditContactScreenState extends State<EditContactScreen> {
                   children: [
                     GestureDetector(
                       onTap: _pickImage,
-                      child: CircleAvatar(
-                          radius: 80,
-                          backgroundColor: Color(0xff3CB3E9),
+                      child: Container(
+                        width: 200,
+                        height: 200,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.01),
+                              blurRadius: 8,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                        child: CircleAvatar(
+                          radius: 50,
+                          backgroundColor: Colors.transparent, // Removed blue background
                           backgroundImage: _imageBytes != null
                               ? MemoryImage(_imageBytes!)
                               : (_imageUrl.isNotEmpty
                                   ? NetworkImage(_imageUrl)
-                                  : null),
+                                  : AssetImage('assets/contact-icons/${getRandomIndex(_nameController.text)}.png') as ImageProvider),
                           child: _imageBytes == null && _imageUrl.isEmpty
-                            ? const Icon(Icons.camera_alt, size: 40)
-                            : null,
+                              ? Container(
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    image: DecorationImage(
+                                      image: AssetImage('assets/contact-icons/${getRandomIndex(_nameController.text)}.png'),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      _nameController.text.isNotEmpty ? _getContactInitials(_nameController.text).toUpperCase() : '?',
+                                      style: TextStyle(
+                                        fontSize: 40,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              : null,
+                        ),
                       ),
                     ),
                     if (_selectedImage != null || _imageUrl.isNotEmpty)
@@ -446,7 +506,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
               const SizedBox(height: 20),
 
               // Name field
-              Text('Name', style: AppTextStyles.primaryBold),
+              Text('NAME', style: AppTextStyles.primaryBold.copyWith(color: Color(0xff555555))),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _nameController,
@@ -482,7 +542,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
               const SizedBox(height: 20),
 
               // Connection Type - Now dynamically loaded from user groups
-              Text('Connection Type', style: AppTextStyles.primaryBold),
+              Text('CONNECTION TYPE', style: AppTextStyles.primaryBold.copyWith(color: Color(0xff555555))),
               const SizedBox(height: 8),
               _userGroups.isEmpty
                   ? const Text('No groups available. Create groups first.', style: TextStyle(color: Colors.grey))
@@ -510,7 +570,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
                       setState(() => _isVIP = value ?? false);
                     },
                   ),
-                  Text('Close Circle', style: AppTextStyles.primary),
+                  Text('Close Circle', style: AppTextStyles.primary.copyWith(color: Color(0xff555555))),
                   
                   const SizedBox(width: 20),
                   
@@ -533,7 +593,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
               const SizedBox(height: 20),
 
               // Phone Number
-              Text('Phone Number', style: AppTextStyles.primaryBold),
+              Text('PHONE NUMBER', style: AppTextStyles.primaryBold.copyWith(color: Color(0xff555555))),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _phoneController,
@@ -564,7 +624,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
               const SizedBox(height: 20),
 
               // Email
-              Text('Email', style: AppTextStyles.primaryBold),
+              Text('EMAIL', style: AppTextStyles.primaryBold.copyWith(color: Color(0xff555555))),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _emailController,
@@ -595,7 +655,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
               const SizedBox(height: 20),
 
               // Profession
-              Text('Profession', style: AppTextStyles.primaryBold),
+              Text('PROFESSION', style: AppTextStyles.primaryBold.copyWith(color: Color(0xff555555))),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _professionController,
@@ -625,7 +685,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
               const SizedBox(height: 20),
 
               // Social Groups
-              Text('Social Groups', style: AppTextStyles.primaryBold),
+              Text('SOCIAL GROUPS', style: AppTextStyles.primaryBold.copyWith(color: Color(0xff555555))),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _socialGroupsController,
@@ -655,57 +715,57 @@ class _EditContactScreenState extends State<EditContactScreen> {
               const SizedBox(height: 20),
 
               // Important Dates
-              Text('Important Dates', style: AppTextStyles.title3),
+              Text('IMPORTANT DATES', style: AppTextStyles.title3.copyWith(color: Color(0xff6e6e6e))),
               const SizedBox(height: 10),
 
               // Birthday
               ListTile(
-                leading: const Icon(Icons.cake),
+                leading: const Icon(Icons.cake, color: Color(0xff555555)),
                 title: Text(
                   _birthday != null
                       ? 'Birthday: ${DateFormat('MMM d, y').format(_birthday!)}'
                       : 'Add Birthday',
-                  style: AppTextStyles.primary,
+                  style: AppTextStyles.primary.copyWith(color: Color(0xff555555)),
                 ),
                 trailing: IconButton(
-                  icon: const Icon(Icons.calendar_today),
+                  icon: const Icon(Icons.calendar_today, color: Color(0xff555555)),
                   onPressed: () => _selectDate(context, isBirthday: true),
                 ),
               ),
 
               // Anniversary
               ListTile(
-                leading: const Icon(Icons.favorite),
+                leading: const Icon(Icons.favorite, color: Color(0xff555555)),
                 title: Text(
                   _anniversary != null
                       ? 'Anniversary: ${DateFormat('MMM d, y').format(_anniversary!)}'
                       : 'Add Anniversary',
-                  style: AppTextStyles.primary,
+                  style: AppTextStyles.primary.copyWith(color: Color(0xff555555)),
                 ),
                 trailing: IconButton(
-                  icon: const Icon(Icons.calendar_today),
+                  icon: const Icon(Icons.calendar_today, color: Color(0xff555555)),
                   onPressed: () => _selectDate(context, isAnniversary: true),
                 ),
               ),
 
               // Work Anniversary
               ListTile(
-                leading: const Icon(Icons.work),
+                leading: const Icon(Icons.work, color: Color(0xff555555)),
                 title: Text(
                   _workAnniversary != null
                       ? 'Work Anniversary: ${DateFormat('MMM d, y').format(_workAnniversary!)}'
                       : 'Add Work Anniversary',
-                  style: AppTextStyles.primary,
+                  style: AppTextStyles.primary.copyWith(color: Color(0xff555555)),
                 ),
                 trailing: IconButton(
-                  icon: const Icon(Icons.calendar_today),
+                  icon: const Icon(Icons.calendar_today, color: Color(0xff555555)),
                   onPressed: () => _selectDate(context, isWorkAnniversary: true),
                 ),
               ),
               const SizedBox(height: 20),
 
               // Notes
-              Text('Notes', style: AppTextStyles.primaryBold),
+              Text('NOTES', style: AppTextStyles.primaryBold.copyWith(color: Color(0xff555555))),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _notesController,
@@ -747,7 +807,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: Text(saving?'Saving Changes...':'Save Changes', style: AppTextStyles.button),
+                  child: Text(saving?'SAVING CHANGES...':'SAVE CHANGES', style: AppTextStyles.button),
                 ),
               ),
               const SizedBox(height: 20),
@@ -766,7 +826,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    child: Text('Delete Contact', style: AppTextStyles.buttonSecondary.copyWith(color: Colors.red)),
+                    child: Text('DELETE CONTACT', style: AppTextStyles.buttonSecondary.copyWith(color: Colors.red)),
                   ),
                 ),
             ],

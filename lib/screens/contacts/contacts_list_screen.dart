@@ -44,10 +44,23 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
 
   @override
   void initState() {
-    super.initState();
-    // Set initial filter from widget.filter if provided
-    _currentFilter = widget.filter ?? 'all';
-  }
+  super.initState();
+  // Set initial filter from widget.filter if provided
+  _currentFilter = widget.filter ?? 'all';
+  
+  // Check if we're in add-to-group mode and set selecting mode accordingly
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    final routeArgs = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final isAddToGroupMode = routeArgs?['action'] == 'add_to_group';
+    
+    if (isAddToGroupMode) {
+      setState(() {
+        _isSelecting = true;
+        _selectionMode = 'add_to_group';
+      });
+    }
+  });
+}
 
   @override
   Widget build(BuildContext context) {
@@ -91,7 +104,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Add to $groupName', style: AppTextStyles.title3.copyWith(color: Colors.black)),
+                        Text('Add to $groupName', style: AppTextStyles.title3.copyWith(color: Color(0xff555555))),
                         SizedBox(height: 4),
                         Text(
                           'Long press on contacts to select multiple',
@@ -216,6 +229,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
 
   Widget _buildSelectionControls() {
     if (!_isSelecting) return const SizedBox.shrink();
+    print('deselect mode'); print(_selectedContacts.length); print(_getVisibleContactsCount());
     
     return Container(
       padding: const EdgeInsets.all(16.0),
@@ -234,10 +248,10 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                 color: const Color(0xff3CB3E9),
               ),
               label: Text(
-                _selectedContacts.length == _getVisibleContactsCount() 
-                  ? 'Deselect All' 
-                  : 'Select All',
-                style: const TextStyle(color: Color(0xff3CB3E9)),
+                _selectedContacts.length == _getVisibleContactsCount() && _selectedContacts.isNotEmpty
+                  ? 'DESELECT ALL' 
+                  : 'SELECT ALL',
+                style: const TextStyle(color: Color(0xff3CB3E9), fontSize: 15),
               ),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: Color(0xff3CB3E9)),
@@ -252,7 +266,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
             child: OutlinedButton.icon(
               onPressed: _exitSelectionMode,
               icon: const Icon(Icons.cancel, color: Colors.red),
-              label: const Text('Cancel', style: TextStyle(color: Colors.red)),
+              label: const Text('CANCEL', style: TextStyle(color: Colors.red, fontSize: 15)),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: Colors.red),
               ),
@@ -268,13 +282,11 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
       iconTheme: const IconThemeData(color: Color(0xff3CB3E9)),
       title: isAddToGroupMode 
           ? GradientText( text: 'NUDGE', style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
-                  gradient: LinearGradient(
-                    colors: [
-                      Color(0xFF5CDEE5), // #5CDEE5
-                      Color(0xFF2D85F6), // #2D85F6
-                      Color(0xFF7A4BFF), // #7A4BFF
-                    ], stops: [0.0, 0.6, 1.0], begin: Alignment.topCenter, end: Alignment.bottomCenter,
-              ),
+                 gradient: const LinearGradient(
+                  colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
             )
           // Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Color(0xff3CB3E9), fontFamily: 'RobotoMono'))
           : Text(_getTitle(_currentFilter), style: AppTextStyles.button.copyWith(color: Color(0xff3CB3E9))),
@@ -311,7 +323,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                   children: [
                     Icon(Icons.delete_forever, color: Colors.red),
                     SizedBox(width: 8),
-                    Text('Delete All Contacts'),
+                    Text('DELETE ALL CONTACTS'),
                   ],
                 ),
               ),
@@ -379,7 +391,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
           });
         },
       ),
-      title: Text(contact.name, style: AppTextStyles.primaryBold,),
+      title: Text((contact.name).toUpperCase(), style: AppTextStyles.primaryBold.copyWith(color: Color(0xff555555)),),
       subtitle: Text(contact.connectionType),
       trailing: Text(
         'Last: ${contact.lastContacted.difference(DateTime.now()).inDays.abs()}d ago',
@@ -397,18 +409,44 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     );
   }
 
+  String _getContactInitials(String name) {
+    if (name.isEmpty) return '?';
+    
+    // Trim and split the name by spaces
+    final parts = name.trim().split(' ').where((part) => part.isNotEmpty).toList();
+    
+    if (parts.length >= 2) {
+      // Has at least first and last name - get first letter of first and last name
+      return '${parts.first[0].toUpperCase()}${parts.last[0].toUpperCase()}';
+    } else if (parts.length == 1) {
+      // Only first name available
+      return parts.first[0].toUpperCase();
+    }
+    
+    return '?';
+  }
+
   Widget _buildNormalContactTile(Contact contact, bool isAddToGroupMode, String? groupName, String? groupPeriod, int? groupFrequency) {
+    final initials = _getContactInitials(contact.name);
     return ListTile(
       leading: CircleAvatar(
-        backgroundColor: Color(0xff3CB3E9),
+        radius: 24, // Increased from default
+        backgroundColor: Colors.transparent,
         backgroundImage: contact.imageUrl.isNotEmpty
             ? NetworkImage(contact.imageUrl)
-            : null,
+            : AssetImage('assets/contact-icons/${getRandomIndex(contact.id)}.png') as ImageProvider,
         child: contact.imageUrl.isEmpty
-            ? const Icon(Icons.person)
+            ? Text(
+                contact.name.isNotEmpty ? initials.toUpperCase() : '?',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16, // Adjust font size accordingly
+                ),
+              )
             : null,
       ),
-      title: Text(contact.name, style: AppTextStyles.primarySemiBold,),
+      title: Text((contact.name).toUpperCase(), style: AppTextStyles.primarySemiBold.copyWith(color: Color(0xff555555), fontSize: 15)),
       subtitle: Text(contact.connectionType),
       trailing: Text(
         'Last: ${contact.lastContacted.difference(DateTime.now()).inDays.abs()}d ago',
@@ -459,14 +497,14 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
           },
           backgroundColor: const Color(0xff3CB3E9),
           icon: const Icon(Icons.group_add, color: Colors.white),
-          label: Text('Add ${_selectedContacts.length} Contacts', style: const TextStyle(color: Colors.white)),
+          label: Text('ADD ${_selectedContacts.length} CONTACTS', style: const TextStyle(color: Colors.white)),
         );
       } else if (_selectionMode == 'delete') {
         return FloatingActionButton.extended(
           onPressed: () => _deleteSelectedContacts(context),
           backgroundColor: Colors.red,
           icon: const Icon(Icons.delete, color: Colors.white),
-          label: Text('Delete ${_selectedContacts.length} contacts', style: const TextStyle(color: Colors.white)),
+          label: Text('DELETE ${_selectedContacts.length} CONTACTS', style: const TextStyle(color: Colors.white)),
         );
       }
     } else if (isAddToGroupMode) {
@@ -519,9 +557,11 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                     controller: _searchController,
                     decoration: InputDecoration(
                       hintText: 'Search contacts...',
-                      prefixIcon: const Icon(Icons.search),
+                      hintStyle: TextStyle(color: Color(0xff555555)),
+                      prefixIcon: const Icon(Icons.search, color: Color(0xff555555),),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10.0),
+                        borderSide: BorderSide(color: Colors.grey, width: 1),
                       ),
                       filled: true,
                       fillColor: Colors.white,
@@ -730,7 +770,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Contacts', style: TextStyle(fontWeight: FontWeight.w700),),
+        title: const Text('DELETE CONTACTS', style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xff555555)),),
         content: Text('Are you sure you want to delete ${_selectedContacts.length} contacts? This action cannot be undone.'),
         actions: [
           TextButton(
@@ -869,6 +909,29 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
   }
 
   Future<void> _addMultipleContactsToGroup(BuildContext context, String groupName, String groupPeriod, int groupFrequency, List<Contact> contacts) async {
+    final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Add to Group'),
+      content: Text('Are you sure you want to add ${_selectedContacts.length} contacts to "$groupName"?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(true),
+          child: const Text('Add to Group'),
+        ),
+      ],
+    ),
+  );
+  
+  if (confirmed != true) {
+    return;
+  }
+  
+    
     final apiService = Provider.of<ApiService>(context, listen: false);
     
     setState(() {
@@ -933,10 +996,10 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: const Text('Override Group Assignment', style: AppTextStyles.title3,),
+            title: Text('OVERRIDE GROUP ASSIGNMENT', style: AppTextStyles.title3.copyWith(color: Color(0xff555555))),
             content: Text(
               '${contact.name} is already in the "${contact.connectionType}" group. '
-              'Do you want to override this and assign them to "$groupName" instead?'
+              'Do you want to override this and assign them to "$groupName" instead?', style: TextStyle(color: Color(0xff555555)),
             ),
             actions: [
               TextButton(
@@ -1117,6 +1180,16 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
       ),
     );
   }
+
+  int getRandomIndex(String seed) {
+  if (seed.isEmpty) return 1;
+  var hash = 0;
+  for (var i = 0; i < seed.length; i++) {
+    hash = seed.codeUnitAt(i) + ((hash << 5) - hash);
+  }
+  return (hash.abs() % 6) + 1;
+}
+
 
   // Add contact picker method
   Future<void> _importFromContactPicker() async {
