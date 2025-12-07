@@ -1,6 +1,7 @@
 // import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:nudge/helpers/deletion_retry_helper.dart';
 import 'package:nudge/models/analytics.dart';
 import 'package:nudge/models/nudge.dart';
 import 'package:nudge/models/social_group.dart';
@@ -8,6 +9,7 @@ import 'package:nudge/screens/contacts/contact_detail_screen.dart';
 import 'package:nudge/screens/contacts/contacts_list_screen.dart';
 import 'package:nudge/screens/groups/groups_list_screen.dart';
 import 'package:nudge/screens/notifications/notifications_screen.dart';
+// import 'package:nudge/screens/settings/settings_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
 import 'package:nudge/widgets/gradient_text.dart';
@@ -36,6 +38,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<Contact> totalContacts = [];
   bool hideFloatingActionButton = false;
   final Map<String, int> _cachedAvatarIndices = {};
+  List<Nudge> allNudges = [];
+  List<Nudge> overDueNudges = [];
 
   int _selectedPieSegmentIndex = -1;
   String? _explodedCategory;
@@ -45,6 +49,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
+    getNudges();
+    _checkDeletionRetry();
     _initializeNotifications();
   }
 
@@ -52,8 +58,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
     await nudgeService.initialize();
   }
 
+  Future<void> getNudges () async {
+    ApiService apiService = ApiService();
+    var allOfNudges =  await apiService.getAllNudges();
+    print('all nudges are'); print(allOfNudges);
+    setState(() {
+      allNudges = allOfNudges;
+    });
+  }
+
   String getCurrentSection() {
     return ScreenTracker.getDashboardSection(_currentIndex);
+  }
+
+  List<Nudge> _getOverdueNudges(List<Nudge> nudges) {
+    var now = DateTime.now();
+    return nudges.where((nudge) {
+      return !nudge.isCompleted && nudge.scheduledTime.isBefore(now);
+    }).toList();
   }
 
   @override
@@ -61,7 +83,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final authService = Provider.of<AuthService>(context);
     final user = authService.currentUser;
     final apiService = Provider.of<ApiService>(context);
-
+    
     if (user == null) {
       return const Scaffold(
         body: Center(child: Text('Please log in to view dashboard')),
@@ -76,7 +98,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         create: (context) => apiService.getGroupsStream(),
         child: Scaffold(
           backgroundColor: const Color(0xFFF9FAFB),
-          appBar: _buildAppBar(),
+          appBar: _buildAppBar(apiService),
           drawer: _buildNavigationDrawer(context, authService),
           body: Stack(
             children: [
@@ -102,24 +124,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-    AppBar _buildAppBar() {
-    List<Widget> actions = [];
-    switch (_currentIndex) {
-      case 0: // Dashboard
-        actions = [
-          IconButton(
-            icon: const Icon(Icons.notifications),
-            onPressed: () {
-              setState(() => _currentIndex = 3); // Switch to nudges view
-            },
-            tooltip: 'Notifications',
-          ),
-        ];
-        break;
-     
-      default:
-        actions = [];
+  Future<void> _checkDeletionRetry() async {
+    final shouldShowPrompt = await DeletionRetryHelper.shouldShowRetryPrompt();
+    if (shouldShowPrompt && mounted) {
+      await DeletionRetryHelper.clearRetryPromptFlag();
+      
+      // Wait for dashboard to fully load
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) {
+          // Navigate to settings
+          Navigator.pushNamed(context, '/settings');
+        }
+      });
     }
+  }
+
+    AppBar _buildAppBar(ApiService apiService) {
+    // final hasOverdueNudges = _hasOverdueNudges();
+    
+    final overdueNudges = _getOverdueNudges(allNudges);
+    final hasOverdue = overdueNudges.isNotEmpty;
+   
     return AppBar(
       title: GradientText(
         text: 'NUDGE',
@@ -137,7 +162,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
       backgroundColor: Colors.white,
       iconTheme: const IconThemeData(color: Color(0xff3CB3E9)),
       elevation: 0,
-      actions: actions,
+      actions: _currentIndex == 0
+        ?[Stack(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.notifications),
+                  onPressed: () {
+                    setState(() => _currentIndex = 3); // Switch to nudges view
+                  },
+                  tooltip: 'Notifications',
+                ),
+                if (hasOverdue)
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: Container(
+                      width: 10,
+                      height: 10,
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
+            )
+      ]:null,
       surfaceTintColor: Colors.transparent,
       centerTitle: true,
     );
@@ -161,6 +211,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return _buildDashboardContent(context, contacts, groups, apiService);
     }
   }
+
+  // bool _hasOverdueNudges() {
+  //   final authService = Provider.of<AuthService>(context, listen: false);
+  //   final user = authService.currentUser;
+  //   if (user == null) return false;
+    
+  //   // This is a simplified check - in practice you'd want to use a stream or provider
+  //   return false;
+  // }
 
   Widget _buildFloatingActionButton(BuildContext context) {
     switch (_currentIndex) {
@@ -273,7 +332,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildBottomNavigationBar() {
-    return Container(
+    final overdueNudges = _getOverdueNudges(allNudges);
+    final hasOverdue = overdueNudges.isNotEmpty;
+        
+        return Container(
       decoration: BoxDecoration(
         color: const Color(0xF2FFFFFF),
         border: const Border(
@@ -345,20 +407,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
             label: '',
           ),
           BottomNavigationBarItem(
-            icon: SvgPicture.asset(
-              'assets/navbar-icons/notifications-icon.svg',
-              width: 24,
-              height: 24,
-              colorFilter: ColorFilter.mode(
-                _currentIndex == 3 ? const Color(0xFF3CB3E9) : const Color(0xFF8A8A8A),
-                BlendMode.srcIn,
+            icon: Stack(
+                  children: [
+                    SvgPicture.asset(
+                      'assets/navbar-icons/notifications-icon.svg',
+                      width: 24,
+                      height: 24,
+                      colorFilter: ColorFilter.mode(
+                        _currentIndex == 3 ? const Color(0xFF3CB3E9) : const Color(0xFF8A8A8A),
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                    if (hasOverdue)
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                label: '',
               ),
-            ),
-            label: '',
+            ],
           ),
-        ],
-      ),
-    );
+       );  
   }
 
   // DASHBOARD CONTENT

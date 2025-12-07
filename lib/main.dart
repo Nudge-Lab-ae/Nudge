@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:nudge/firebase_options.dart';
 import 'package:nudge/helpers/auth_refresh_helper.dart';
+import 'package:nudge/helpers/deletion_retry_helper.dart';
 import 'package:nudge/screens/analytics/analytics_screen.dart';
 import 'package:nudge/screens/auth/complete_profile_screen.dart';
 import 'package:nudge/screens/contacts/edit_contact_screen.dart';
@@ -454,6 +455,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
   Future<void> _initialize() async {
     try {
       await _storeFCMTokenIfNeeded();
+      await _checkDeletionRetry();
       await _checkUserData();
     } catch (e) {
       print('Error initializing AuthWrapper: $e');
@@ -513,6 +515,21 @@ class _AuthWrapperState extends State<AuthWrapper> {
     } else {
       // User is not authenticated, go to welcome screen
       return const WelcomeScreen();
+    }
+  }
+
+  Future<void> _checkDeletionRetry() async {
+    final hasRetry = await DeletionRetryHelper.hasPendingDeletionRetry();
+    if (hasRetry && mounted) {
+      await DeletionRetryHelper.clearDeletionRetryIntent();
+      await DeletionRetryHelper.setShowRetryPrompt(true);
+      
+      // Navigate to dashboard first to establish proper state
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          Navigator.pushNamed(context, '/dashboard');
+        }
+      });
     }
   }
 

@@ -736,14 +736,14 @@ void _showNudgeScheduledMessage(int scheduledCount) {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                color: _statusMessage.contains('Success') ? Colors.green[50] : Colors.red[50],
+                color: /* _statusMessage.contains('Success') ? */ Colors.green[50] /* : Colors.red[50] */,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Row(
                     children: [
                       Icon(
-                        _statusMessage.contains('Success') ? Icons.check_circle : Icons.error,
-                        color: _statusMessage.contains('Success') ? Colors.green : Colors.red,
+                        /* _statusMessage.contains('Success') ? */ Icons.check_circle /* : Icons.error */,
+                        color: /* _statusMessage.contains('Success') ?  */Colors.green /* : Colors.red */,
                         size: 32,
                       ),
                       const SizedBox(width: 12),
@@ -752,20 +752,20 @@ void _showNudgeScheduledMessage(int scheduledCount) {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              _statusMessage.contains('Success') ? 'Import Successful' : 'Import Failed',
+                              /* _statusMessage.contains('Success') ?  */'Import Successful' /* : 'Import Failed' */,
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: _statusMessage.contains('Success') ? Colors.green : Colors.red,
+                                color: /* _statusMessage.contains('Success') ? */ Colors.green /* : Colors.red */,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               _statusMessage,
                               style: TextStyle(
-                                color: _statusMessage.contains('Success')
-                                    ? Colors.green[800]
-                                    : Colors.red[800],
+                                color: /* _statusMessage.contains('Success')
+                                    ? */ Colors.green[800]
+                                   /*  : Colors.red[800] */,
                               ),
                             ),
                           ],

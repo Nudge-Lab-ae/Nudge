@@ -1,10 +1,12 @@
 // lib/screens/auth/login_screen.dart
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:nudge/services/api_service.dart';
 import 'package:nudge/theme/text_styles.dart';
 import 'package:nudge/widgets/gradient_text.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
+import 'package:nudge/models/user.dart' as thisUser;
 // import '../../services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -22,7 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context, listen: false);
-    // final apiService = Provider.of<ApiService>(context, listen: false);
+    final apiService = Provider.of<ApiService>(context, listen: false);
 
     return Scaffold(
       appBar: AppBar(
@@ -151,9 +153,30 @@ class _LoginScreenState extends State<LoginScreen> {
                           );
                           
                           if (user != null) {
-                            // Let AuthWrapper handle the navigation
-                            // It will automatically check profile completion and navigate appropriately
-                          } else {
+                      thisUser.User theUser = await apiService.getUser();
+
+                      if (theUser.phoneNumber !='' /* && user.phoneNumber!=null && user.phoneNumber!='' */) {
+                        completeNavigation();
+                      } else {
+                         await apiService.addUser(thisUser.User(
+                            admin: false,
+                            id: user.uid,
+                            email: user.email!,
+                            username: user.displayName ?? '',
+                            phoneNumber: '',
+                            bio: '',
+                            description: '',
+                            photoUrl: user.photoURL ?? '',
+                            createdAt: DateTime.now(),
+                            nudges: [],
+                            goals: {},
+                            groups: [],
+                            profileCompleted: false,
+                            weeklyDigestEnabled: false
+                          ));
+                        completeProfile();
+                      }
+                    } else {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text('Login failed. Please try again.'),
@@ -203,10 +226,27 @@ class _LoginScreenState extends State<LoginScreen> {
                   try {
                     final user = await authService.signInWithGoogle();
                     if (user != null) {
-                      // Let AuthWrapper handle the navigation
-                      if (user.email !=null && user.phoneNumber!=null && user.phoneNumber!='') {
+                      thisUser.User theUser = await apiService.getUser();
+
+                      if (theUser.phoneNumber !='' /* && user.phoneNumber!=null && user.phoneNumber!='' */) {
                         completeNavigation();
                       } else {
+                         await apiService.addUser(thisUser.User(
+                            admin: false,
+                            id: user.uid,
+                            email: user.email!,
+                            username: user.displayName ?? '',
+                            phoneNumber: '',
+                            bio: '',
+                            description: '',
+                            photoUrl: user.photoURL ?? '',
+                            createdAt: DateTime.now(),
+                            nudges: [],
+                            goals: {},
+                            groups: [],
+                            profileCompleted: false,
+                            weeklyDigestEnabled: false
+                          ));
                         completeProfile();
                       }
                     }
@@ -243,6 +283,33 @@ class _LoginScreenState extends State<LoginScreen> {
                   try {
                     await authService.modifiedAppleSignIn();
                     // Let AuthWrapper handle the navigation
+                    FirebaseAuth _auth = FirebaseAuth.instance;
+                    var user = _auth.currentUser;
+                    if (user != null) {
+                      thisUser.User theUser = await apiService.getUser();
+
+                      if (theUser.phoneNumber !='' /* && user.phoneNumber!=null && user.phoneNumber!='' */) {
+                        completeNavigation();
+                      } else {
+                         await apiService.addUser(thisUser.User(
+                            admin: false,
+                            id: user.uid,
+                            email: user.email!,
+                            username: user.displayName ?? '',
+                            phoneNumber: '',
+                            bio: '',
+                            description: '',
+                            photoUrl: user.photoURL ?? '',
+                            createdAt: DateTime.now(),
+                            nudges: [],
+                            goals: {},
+                            groups: [],
+                            profileCompleted: false,
+                            weeklyDigestEnabled: false
+                          ));
+                        completeProfile();
+                      }
+                    }
                   } catch (e) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(

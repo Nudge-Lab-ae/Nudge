@@ -9,6 +9,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 // import 'package:google_sign_in/google_sign_in.dart';
 // import 'package:http/http.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:nudge/helpers/auth_refresh_helper.dart';
+import 'package:nudge/helpers/deletion_retry_helper.dart';
+import 'package:nudge/helpers/restart_helper.dart';
 import 'package:nudge/screens/admin/feedback_management_screen.dart';
 import 'package:nudge/services/auth_service.dart';
 // import 'package:nudge/theme/text_styles.dart';
@@ -17,6 +20,7 @@ import 'package:nudge/widgets/screen_tracker.dart';
 import 'package:provider/provider.dart';
 import '../../services/api_service.dart';
 import 'package:nudge/models/user.dart' as user;
+// import 'package:shared_preferences/shared_preferences.dart';
 // import '../goals/set_goals_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -67,6 +71,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _newPasswordController = TextEditingController();
     _feedbackTypeController = TextEditingController(text: 'Feedback');
     _feedbackMessageController = TextEditingController();
+     _checkForRetryPrompt();
     _loadUserData();
   }
 
@@ -376,6 +381,35 @@ void _showDeleteAccountConfirmation(AuthService authService) {
   );
 
 }
+  Future<void> _checkForRetryPrompt() async {
+    if (await DeletionRetryHelper.shouldShowRetryPrompt()) {
+      await DeletionRetryHelper.clearRetryPromptFlag();
+      
+      // Wait a moment for the screen to build
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showRetryPrompt();
+      });
+    }
+  }
+
+  void _showRetryPrompt() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Try Again'),
+        content: const Text(
+          'Please try deleting your account again. The app state has been refreshed.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
   // Future<void> _logoutUser(AuthService authService) async {
   //   try {
   //     await authService.signOut();
@@ -402,9 +436,13 @@ void _showDeleteAccountConfirmation(AuthService authService) {
   //   }
   // }
 
+  // In _SettingsScreenState class
+
+  
   Future<bool> deleteUser(AuthService authService) async {
     FirebaseFirestore _firestore = FirebaseFirestore.instance;
     FirebaseAuth _auth = FirebaseAuth.instance;
+    ApiService apiService = ApiService();
     User? currentUser = _auth.currentUser;
     
     if (currentUser == null) {
@@ -424,6 +462,8 @@ void _showDeleteAccountConfirmation(AuthService authService) {
       // First delete Firestore data
       
       await currentUser.getIdToken(true);
+
+      apiService.cancelUserNotifications();
       
       // Try to delete
       await _firestore.collection('users').doc(uid).delete();
@@ -447,33 +487,42 @@ void _showDeleteAccountConfirmation(AuthService authService) {
       
       return true;
     } on FirebaseAuthException catch (e) {
-      if (e.code == 'requires-recent-login') {
-        // Handle re-authentication needed
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please log in again to delete account'),
-          ),
-        );
-        
-        // Force logout and go to login screen
-        await authService.signOut();
-        await _auth.signOut();
-        
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          Navigator.pushNamedAndRemoveUntil(
-            context, 
-            '/welcome', 
-            (route) => false
+        if (e.code == 'requires-recent-login') {
+          // Force Firebase auth state refresh
+          await AuthRefreshHelper.refreshAuthState();
+          
+          // Store deletion retry intent
+          await DeletionRetryHelper.storeDeletionRetryIntent();
+          
+          // Skip splash screen for instant refresh
+          AppRestartHelper.setSkipSplashFlag();
+          
+          // Show brief message
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Refreshing app state...'),
+              duration: Duration(seconds: 2),
+            ),
           );
-        });
-      } else {
-        print('Error deleting user: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.message}')),
-        );
-      }
-      return false;
-    } catch (error) {
+          
+          // Navigate to splash which will skip animation and go to AuthWrapper
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/splash',
+              (route) => false,
+            );
+          });
+          
+          return false;
+        } else {
+          print('Error deleting user: $e');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: ${e.message}')),
+          );
+          return false;
+        }
+      }catch (error) {
       print('Error deleting user: $error');
       
       // Fallback: Force logout on any error
@@ -846,6 +895,23 @@ void _showDeleteAccountConfirmation(AuthService authService) {
                         hintText: 'Enter your current password',
                         hintStyle: TextStyle(color: Color(0xff555555)),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                         enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.grey, width: 1),
+                          borderRadius: BorderRadius.circular(10)
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.blue, width: 2),
+                          borderRadius: BorderRadius.circular(10)
+                        ),
+                        // Optional: to show border even when there's an error
+                        errorBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.red, width: 1),
+                          borderRadius: BorderRadius.circular(10)
+                        ),
+                        focusedErrorBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.red, width: 2),
+                          borderRadius: BorderRadius.circular(10)
+                        ),
                       ),
                       validator: (value) {
                         if (_newPasswordController.text.isNotEmpty && 
@@ -869,6 +935,23 @@ void _showDeleteAccountConfirmation(AuthService authService) {
                         hintText: 'Enter your new password',
                         hintStyle: TextStyle(color: Color(0xff555555)),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                         enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.grey, width: 1),
+                          borderRadius: BorderRadius.circular(10)
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.blue, width: 2),
+                          borderRadius: BorderRadius.circular(10)
+                        ),
+                        // Optional: to show border even when there's an error
+                        errorBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.red, width: 1),
+                          borderRadius: BorderRadius.circular(10)
+                        ),
+                        focusedErrorBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.red, width: 2),
+                          borderRadius: BorderRadius.circular(10)
+                        ),
                       ),
                       validator: (value) {
                         if (value != null && value.isNotEmpty && value.length < 6) {

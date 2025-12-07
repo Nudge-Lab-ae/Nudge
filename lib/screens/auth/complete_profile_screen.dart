@@ -296,6 +296,7 @@ void _initializeDefaultGroups() {
         if (_selectedContacts.isNotEmpty) {
           // Schedule nudges in background without waiting
           _scheduleNudgesForImportedContacts();
+          apiService.scheduleRegularNotifications();
         }
         
         print('Final Stage 4');
@@ -1457,12 +1458,12 @@ Widget _buildGroupsStep() {
                               });
                               
                               if (newContacts.isNotEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Added ${newContacts.length} contacts to ${result.isNotEmpty && result.first.socialGroups.isNotEmpty ? result.first.socialGroups.first : 'selected group'}'),
-                                    backgroundColor: Colors.green,
-                                  ),
-                                );
+                                // ScaffoldMessenger.of(context).showSnackBar(
+                                //   SnackBar(
+                                //     content: Text('Added ${newContacts.length} contacts to ${result.isNotEmpty && result.first.socialGroups.isNotEmpty ? result.first.socialGroups.first : 'selected group'}'),
+                                //     backgroundColor: Colors.green,
+                                //   ),
+                                // );
                               }
                             }
                           },

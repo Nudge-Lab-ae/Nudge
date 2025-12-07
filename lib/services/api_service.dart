@@ -73,6 +73,29 @@ class ApiService {
     }
   }
 
+   Future<Map<String, dynamic>> cancelUserNotifications() async {
+    String contactId = _auth.currentUser!.uid;
+    print('sending scheduled nudges');
+    try {
+      print('phase 1');
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) throw Exception('No user logged in');
+      
+      final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('cancelUserNudges');
+      print('phase 2');
+      
+      final result = await callable.call({
+        'contactId': contactId,
+      });
+      print (result.data); print(' is the result');
+      
+      return result.data;
+    } catch (e) {
+      print('Error scheduling nudges: $e');
+      throw Exception('Failed to trigger nudge: $e');
+    }
+  }
+
   // Call Cloud Function to trigger manual nudge
   Future<Map<String, dynamic>> triggerManualNudge(String contactId) async {
     print('sending test nudge'); print(contactId);
@@ -108,6 +131,16 @@ class ApiService {
   CollectionReference _getUserContactsCollection(String userId) {
     return _usersCollection.doc(userId).collection('contacts');
   }
+
+  Future<bool> checkEmailExists(String email) async {
+  try {
+    final snapshot = await _firestore.collection('users').where('email', isEqualTo: email.toLowerCase()).limit(1).get();
+    return snapshot.docs.isNotEmpty;
+  } catch (e) {
+    print('Error checking email existence: $e');
+    return false;
+  }
+}
 
   // User methods
   Future<void> ensureUserDocumentCompleteness(String userId) async {
@@ -332,6 +365,19 @@ class ApiService {
     return userStream.map((user) {
       return user.nudges.map((nudgeData) => Nudge.fromMap(nudgeData)).toList();
     });
+  }
+
+  Future<List<Nudge>> getAllNudges () async{
+    var currentUser = _auth.currentUser;
+    QuerySnapshot snap = await _firestore.collection('users').doc(currentUser!.uid).collection('nudges').get();
+    if (snap.docs.isEmpty) {
+      print('dude nudges are empty');
+    }
+    List<Nudge> allNudges = [];
+    for (int i=0; i<snap.docs.length; i++) {
+      allNudges.add(Nudge.fromMap(snap.docs[i].data() as Map<String, dynamic>));
+    }
+    return allNudges;
   }
 
   Future<void> addNudge(Nudge nudge) async {
