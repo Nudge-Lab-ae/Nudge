@@ -7,7 +7,7 @@
         <item name="android:navigationBarColor">@color/splash_background</item>
         <!-- Android 12+ specific attributes -->
         <item name="android:windowSplashScreenBackground">@color/splash_background</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/splash</item>
         <item name="android:windowSplashScreenAnimationDuration">200</item>
     </style>
 </resources>

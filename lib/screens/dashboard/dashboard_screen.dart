@@ -11,11 +11,14 @@ import 'package:nudge/screens/groups/groups_list_screen.dart';
 import 'package:nudge/screens/notifications/notifications_screen.dart';
 // import 'package:nudge/screens/settings/settings_screen.dart';
 import 'package:nudge/services/api_service.dart';
+import 'package:nudge/widgets/contact_quick_panel.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
 import 'package:nudge/widgets/gradient_text.dart';
 import 'package:nudge/widgets/screen_tracker.dart';
+import 'package:nudge/widgets/social_universe.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 // import 'package:intl/intl.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import '../../services/auth_service.dart';
@@ -52,7 +55,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
     getNudges();
     _checkDeletionRetry();
     _initializeNotifications();
+     _runCDIBatchUpdate();
   }
+
+   Future<void> _runCDIBatchUpdate() async {
+    try {
+      final apiService = ApiService();
+      // Run batch update once per day
+      final lastUpdate = await _getLastCDIUpdate();
+      final now = DateTime.now();
+      
+      if (lastUpdate == null || 
+          now.difference(lastUpdate).inHours >= 24) {
+        await apiService.batchUpdateCDI();
+        await _saveLastCDIUpdate(now);
+      }
+    } catch (e) {
+      print('Error running CDI batch update: $e');
+    }
+  }
+
+  Future<DateTime?> _getLastCDIUpdate() async {
+    // Implement storage for last update time
+    final prefs = await SharedPreferences.getInstance();
+    final timestamp = prefs.getInt('last_cdi_update');
+    return timestamp != null 
+        ? DateTime.fromMillisecondsSinceEpoch(timestamp)
+        : null;
+  }
+
+  Future<void> _saveLastCDIUpdate(DateTime time) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('last_cdi_update', time.millisecondsSinceEpoch);
+  }
+
 
   Future<void> _initializeNotifications() async {
     await nudgeService.initialize();
@@ -280,16 +316,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Navigator.pushNamed(context, '/import_contacts');
                 },
               ),
-              if (Theme.of(context).platform == TargetPlatform.android)
-                ListTile(
-                  leading: const Icon(Icons.smartphone, color: Color(0xff3CB3E9)),
-                  title: const Text('SMART IMPORT', style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xff555555)),),
-                  subtitle: const Text('Automatically organize and categorize contacts', style: TextStyle(color: Color(0xff555555)),),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _showSmartImportDialog(context);
-                  },
-                ),
+              // if (Theme.of(context).platform == TargetPlatform.android)
+              //   ListTile(
+              //     leading: const Icon(Icons.smartphone, color: Color(0xff3CB3E9)),
+              //     title: const Text('SMART IMPORT', style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xff555555)),),
+              //     subtitle: const Text('Automatically organize and categorize contacts', style: TextStyle(color: Color(0xff555555)),),
+              //     onTap: () {
+              //       Navigator.pop(context);
+              //       _showSmartImportDialog(context);
+              //     },
+              //   ),
               const SizedBox(height: 20),
             ],
           ),
@@ -298,32 +334,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  void _showSmartImportDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Smart Import'),
-        content: const Text(
-          'Smart import will analyze your contacts and automatically categorize them based on communication patterns and social groups.',
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Smart import feature coming soon!'),
-                  backgroundColor: Color(0xff3CB3E9),
-                ),
-              );
-            },
-            child: const Text('Start Import'),
-          ),
-        ],
-      ),
-    );
-  }
+  // void _showSmartImportDialog(BuildContext context) {
+  //   showDialog(
+  //     context: context,
+  //     builder: (context) => AlertDialog(
+  //       title: const Text('Smart Import'),
+  //       content: const Text(
+  //         'Smart import will analyze your contacts and automatically categorize them based on communication patterns and social groups.',
+  //       ),
+  //       actions: [
+  //         TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+  //         TextButton(
+  //           onPressed: () {
+  //             Navigator.pop(context);
+  //             ScaffoldMessenger.of(context).showSnackBar(
+  //               const SnackBar(
+  //                 content: Text('Smart import feature coming soon!'),
+  //                 backgroundColor: Color(0xff3CB3E9),
+  //               ),
+  //             );
+  //           },
+  //           child: const Text('Start Import'),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   void hideButton() {
     setState(() {
@@ -440,6 +476,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
        );  
   }
 
+  void _showContactQuickPanel(BuildContext context, Contact contact, ApiService apiService) {
+  showModalBottomSheet(
+    context: context,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    isScrollControlled: true,
+    builder: (context) {
+      return ContactQuickPanel(
+        contact: contact,
+        apiService: apiService,
+      );
+    },
+  );
+}
+
   // DASHBOARD CONTENT
   Widget _buildDashboardContent(BuildContext context, List<Contact> contacts, List<SocialGroup> groups, ApiService apiService) {
     return StreamBuilder<List<Nudge>>(
@@ -460,7 +512,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: 10),
               const Text('DASHBOARD', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20, fontFamily: 'Inter', color: Color(0xff555555))),
               const SizedBox(height: 20),
-
+              SocialUniverseWidget(
+              contacts: contacts,
+              onContactTap: (contact) {
+                _showContactQuickPanel(context, contact, apiService);
+              },
+              size: MediaQuery.of(context).size.width - 32,
+            ),
               // Quick Insights (cards with icon + value + label)
               _buildQuickInsights(analytics, contacts.length),
               const SizedBox(height: 20),

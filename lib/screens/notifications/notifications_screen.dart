@@ -126,65 +126,35 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
           
           // View Toggle
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.grey.shade300, width: 1),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                _showCalendar = !_showCalendar;
+              });
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey[50],
+              foregroundColor: const Color(0xff3CB3E9),
+              side: BorderSide(color: Colors.grey.shade300, width: 1),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              elevation: 0,
             ),
             child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // List View Button
-                GestureDetector(
-                  onTap: () {
-                    if (_showCalendar) {
-                      setState(() {
-                        _showCalendar = false;
-                      });
-                    }
-                  },
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: !_showCalendar ? const Color(0xff3CB3E9) : Colors.transparent,
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(20),
-                        bottomLeft: Radius.circular(20),
-                      ),
-                    ),
-                    child: Icon(
-                      Icons.list,
-                      color: !_showCalendar ? Colors.white : Colors.grey[600],
-                      size: 20,
-                    ),
-                  ),
+                Icon(
+                  _showCalendar ? Icons.list : Icons.calendar_today,
+                  size: 20,
                 ),
-                
-                // Calendar View Button
-                GestureDetector(
-                  onTap: () {
-                    if (!_showCalendar) {
-                      setState(() {
-                        _showCalendar = true;
-                      });
-                    }
-                  },
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: _showCalendar ? const Color(0xff3CB3E9) : Colors.transparent,
-                      borderRadius: const BorderRadius.only(
-                        topRight: Radius.circular(20),
-                        bottomRight: Radius.circular(20),
-                      ),
-                    ),
-                    child: Icon(
-                      Icons.calendar_today,
-                      color: _showCalendar ? Colors.white : Colors.grey[600],
-                      size: 20,
-                    ),
+                const SizedBox(width: 8),
+                Text(
+                  _showCalendar ? 'View in List' : 'View in Calendar',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -784,9 +754,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       value: 'view_contact',
                       child: Row(
                         children: [
-                          Icon(Icons.person, size: 20),
+                          Icon(Icons.person, size: 20, color: Color(0xff555555)),
                           SizedBox(width: 8),
-                          Text('View Contact'),
+                          Text('View Contact', style: TextStyle(color: Color(0xff555555)),),
                         ],
                       ),
                     ),
@@ -794,9 +764,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       value: 'adjust_frequency',
                       child: Row(
                         children: [
-                          Icon(Icons.schedule, size: 20),
+                          Icon(Icons.schedule, size: 20, color: Color(0xff555555)),
                           SizedBox(width: 8),
-                          Text('Adjust Frequency'),
+                          Text('Adjust Frequency', style: TextStyle(color: Color(0xff555555)),),
                         ],
                       ),
                     ),
@@ -804,9 +774,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       value: 'snooze',
                       child: Row(
                         children: [
-                          Icon(Icons.snooze, size: 20),
+                          Icon(Icons.snooze, size: 20, color: Color(0xff555555)),
                           SizedBox(width: 8),
-                          Text('Snooze'),
+                          Text('Snooze', style: TextStyle(color: Color(0xff555555)),),
                         ],
                       ),
                     ),
@@ -814,9 +784,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       value: 'complete',
                       child: Row(
                         children: [
-                          Icon(Icons.check_circle, size: 20),
+                          Icon(Icons.check_circle, size: 20, color: Color(0xff555555)),
                           SizedBox(width: 8),
-                          Text('Mark Complete'),
+                          Text('Mark Complete', style: TextStyle(color: Color(0xff555555)),),
                         ],
                       ),
                     ),
@@ -824,9 +794,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       value: 'cancel',
                       child: Row(
                         children: [
-                          Icon(Icons.cancel, size: 20),
+                          Icon(Icons.cancel, size: 20, color: Color(0xff555555)),
                           SizedBox(width: 8),
-                          Text('Cancel Nudge'),
+                          Text('Cancel Nudge', style: TextStyle(color: Color(0xff555555)),),
                         ],
                       ),
                     ),

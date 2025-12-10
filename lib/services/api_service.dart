@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart' as auth;
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:nudge/services/social_universe_service.dart';
 import '../models/contact.dart';
 import '../models/nudge.dart';
 import '../models/social_group.dart';
@@ -96,6 +97,23 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> cancelNudgesForContacts(List<String> contactIds) async {
+    try {
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) throw Exception('No user logged in');
+      
+      final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('cancelNudgesForContacts');
+      final result = await callable.call({
+        'contactIds': contactIds,
+      });
+      
+      return result.data;
+    } catch (e) {
+      print('Error cancelling nudges for contacts: $e');
+      throw Exception('Failed to cancel nudges for contacts: $e');
+    }
+  }
+
   // Call Cloud Function to trigger manual nudge
   Future<Map<String, dynamic>> triggerManualNudge(String contactId) async {
     print('sending test nudge'); print(contactId);
@@ -116,6 +134,41 @@ class ApiService {
     } catch (e) {
       print('Error triggering manual nudge: $e');
       throw Exception('Failed to trigger nudge: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> scheduleTestNudges(List<String> contactIds, {String testMode = 'sequential'}) async {
+    try {
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) throw Exception('No user logged in');
+      
+      final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('scheduleTestNudges');
+      
+      final result = await callable.call({
+        'contactIds': contactIds,
+        'testMode': testMode,
+      });
+      
+      return result.data;
+    } catch (e) {
+      print('Error scheduling test nudges: $e');
+      throw Exception('Failed to schedule test nudges: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> cleanupTestNudges() async {
+    try {
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) throw Exception('No user logged in');
+      
+      final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('cleanupTestNudges');
+      
+      final result = await callable.call();
+      
+      return result.data;
+    } catch (e) {
+      print('Error cleaning up test nudges: $e');
+      throw Exception('Failed to clean up test nudges: $e');
     }
   }
 
@@ -222,7 +275,7 @@ class ApiService {
           weeklyDigestEnabled: true,
           groups: [
             {"name": "Family", "id": "Family", "period": "Monthly", "frequency": 4, "colorCode": "#4FC3F7"},
-            {"name": "Friend", "id": "Friend", "period": "Quarterly", "frequency": 7, "colorCode": "#FF6F61"},
+            {"name": "Friend", "id": "Friend", "period": "Quarterly", "frequency": 8, "colorCode": "#FF6F61"},
             {"name": "Client", "id": "Client", "period": "Monthly", "frequency": 2, "colorCode": "#81C784"},
             {"name": "Colleague", "id": "Colleague", "period": "Annually", "frequency": 4, "colorCode": "#FFC107"},
             {"name": "Mentor", "id": "Mentor", "period": "Annually", "frequency": 2, "colorCode": "#607D8B"},
@@ -672,7 +725,7 @@ Future<Map<String, dynamic>> register(String email, String password) async {
       createdAt: DateTime.now(),
       groups: [
        {"name": "Family", "id": "Family", "period": "Monthly", "frequency": 4, "colorCode": "#4FC3F7"},
-          {"name": "Friend",  "id": "Friend", "period": "Quarterly", "frequency": 7, "colorCode": "#FF6F61"},
+          {"name": "Friend",  "id": "Friend", "period": "Quarterly", "frequency": 8, "colorCode": "#FF6F61"},
           {"name": "Client",  "id": "Client", "period": "Monthly", "frequency": 2, "colorCode": "#81C784"},
           {"name": "Colleague",  "id": "Colleague", "period": "Annually", "frequency": 4, "colorCode": "#FFC107"},
           {"name": "Mentor",  "id": "Mentor", "period": "Annually", "frequency": 2, "colorCode": "#607D8B"},
@@ -878,6 +931,93 @@ Future<void> updateFeedbackAdminData({
       };
     } catch (e) {
       throw Exception('Failed to get feedback stats: $e');
+    }
+  }
+
+  Future<void> updateContactCDI(Contact contact) async {
+    try {
+      final socialUniverseService = SocialUniverseService();
+      final updatedContact = socialUniverseService.updateContactCDI(contact);
+      
+      await updateContact(updatedContact);
+    } catch (e) {
+      print('Error updating CDI: $e');
+      throw Exception('Failed to update CDI: $e');
+    }
+  }
+
+  Future<void> logInteraction({
+    required String contactId,
+    required String interactionType,
+    String? notes,
+  }) async {
+    try {
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) throw Exception('No user logged in');
+      
+      // Get the contact
+      final contactDoc = await _getUserContactsCollection(currentUser.uid)
+          .doc(contactId)
+          .get();
+      
+      if (!contactDoc.exists) throw Exception('Contact not found');
+      
+      var contact = Contact.fromMap(
+          contactDoc.data() as Map<String, dynamic>..['id'] = contactDoc.id);
+      
+      // Update interaction history
+      final now = DateTime.now();
+      final interactionHistory = Map<String, dynamic>.from(contact.interactionHistory);
+      interactionHistory[now.millisecondsSinceEpoch.toString()] = {
+        'type': interactionType,
+        'timestamp': now.millisecondsSinceEpoch,
+        'notes': notes,
+      };
+      
+      // Update last contacted and interaction count
+      final ninetyDaysAgo = now.subtract(const Duration(days: 90));
+      final recentInteractions = interactionHistory.entries
+          .where((entry) {
+            final timestamp = DateTime.fromMillisecondsSinceEpoch(
+                int.parse(entry.key));
+            return timestamp.isAfter(ninetyDaysAgo);
+          })
+          .length;
+      
+      final updatedContact = contact.copyWith(
+        lastContacted: now,
+        interactionHistory: interactionHistory,
+        interactionCountInWindow: recentInteractions,
+      );
+      
+      // Update CDI and save
+      await updateContactCDI(updatedContact);
+      
+      print('Interaction logged for ${contact.name}');
+    } catch (e) {
+      print('Error logging interaction: $e');
+      throw Exception('Failed to log interaction: $e');
+    }
+  }
+
+  // Batch update CDI for all contacts (call from daily job)
+  Future<void> batchUpdateCDI() async {
+    try {
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) throw Exception('No user logged in');
+      
+      final contacts = await getAllContacts();
+      final socialUniverseService = SocialUniverseService();
+      
+      for (var contact in contacts) {
+        final updatedContact = socialUniverseService.updateContactCDI(contact);
+        await updateContact(updatedContact);
+      }
+      
+      print('Batch CDI update completed for ${contacts.length} contacts');
+    } catch (e) {
+      print('Error in batch CDI update: $e');
+      throw Exception('Failed to batch update CDI: $e');
     }
   }
 

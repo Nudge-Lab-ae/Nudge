@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:nudge/screens/contacts/import_contacts_screen.dart';
 import 'package:nudge/services/api_service.dart';
+import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/theme/text_styles.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
 import 'package:nudge/widgets/gradient_text.dart';
@@ -787,7 +788,13 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     
     if (confirmed == true) {
       _startDeletionProcess();
+      // sendTestNudges();
     }
+  }
+
+  void sendTestNudges() async {
+    final apiService = Provider.of<ApiService>(context, listen: false);
+    apiService.scheduleTestNudges(_selectedContacts.toList());
   }
 
   void _startDeletionProcess() async {
@@ -803,6 +810,9 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     // Process each selected contact
     for (String contactId in _selectedContacts) {
       try {
+        // First, cancel any nudges for this contact
+        
+        // Then delete the contact
         await apiService.deleteContact(contactId);
         setState(() {
           _deletionSuccessCount++;
@@ -814,6 +824,8 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
         print('Error deleting contact $contactId: $e');
       }
     }
+
+    apiService.cancelNudgesForContacts(_selectedContacts.toList());
     
     // Show result and clean up
     ScaffoldMessenger.of(context).showSnackBar(
@@ -910,29 +922,38 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
 
   Future<void> _addMultipleContactsToGroup(BuildContext context, String groupName, String groupPeriod, int groupFrequency, List<Contact> contacts) async {
     final confirmed = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: const Text('Add to Group'),
-      content: Text('Are you sure you want to add ${_selectedContacts.length} contacts to "$groupName"?'),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Cancel'),
-        ),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(true),
-          child: const Text('Add to Group'),
-        ),
-      ],
-    ),
-  );
-  
-  if (confirmed != true) {
-    return;
-  }
-  
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('ADD TO GROUP', style: TextStyle(color: Color(0xff555555), fontWeight: FontWeight.w600),),
+        content: Text('Are you sure you want to add ${_selectedContacts.length} contacts to "$groupName"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Add to Group'),
+          ),
+        ],
+      ),
+    );
+    
+    if (confirmed != true) {
+      return;
+    }
     
     final apiService = Provider.of<ApiService>(context, listen: false);
+    final authService = Provider.of<AuthService>(context, listen: false);
+    // final nudgeService = NudgeService();
+    final user = authService.currentUser;
+    
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('User not authenticated')),
+      );
+      return;
+    }
     
     setState(() {
       _isAddingToGroupInProgress = true;
@@ -941,6 +962,8 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
       _addingTotalCount = _selectedContacts.length;
       _currentGroupName = groupName;
     });
+    
+    final List<Contact> successfullyAddedContacts = [];
     
     // Process each selected contact
     for (String contactId in _selectedContacts) {
@@ -955,6 +978,10 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
         );
         
         await apiService.updateContact(updatedContact);
+        
+        // Add to successfully added list for nudge scheduling
+        successfullyAddedContacts.add(updatedContact);
+        
         setState(() {
           _addingSuccessCount++;
         });
@@ -964,6 +991,11 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
         });
         print('Error adding contact $contactId to group: $e');
       }
+    }
+    
+    // Schedule nudges for successfully added contacts (in background)
+    if (successfullyAddedContacts.isNotEmpty) {
+      _scheduleNudgesForGroupContacts(successfullyAddedContacts, groupName, groupPeriod, groupFrequency, user.uid);
     }
     
     // Show result
@@ -984,6 +1016,35 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
       _selectionMode = null;
       _currentGroupName = null;
     });
+  }
+
+  Future<void> _scheduleNudgesForGroupContacts(List<Contact> contacts, String groupName, String period, int frequency, String userId) async {
+    final nudgeService = NudgeService();
+    
+    try {
+      int scheduledCount = 0;
+      
+      for (final contact in contacts) {
+        // Schedule nudge for this contact with group parameters
+        final success = await nudgeService.scheduleNudgeForContact(
+          contact,
+          userId,
+          period: period,
+          frequency: frequency,
+        );
+        
+        if (success) scheduledCount++;
+        
+        // Small delay to avoid overwhelming the system
+        await Future.delayed(const Duration(milliseconds: 50));
+      }
+      
+      print('Successfully scheduled nudges for $scheduledCount contacts in $groupName group');
+      
+    } catch (e) {
+      print('Error scheduling nudges for group contacts: $e');
+      // Don't show error to user as this is background process
+    }
   }
 
   void _addContactToGroup(BuildContext context, Contact contact, String groupName, String groupPeriod, int groupFrequency) async {
@@ -1195,9 +1256,10 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
   Future<void> _importFromContactPicker() async {
     // This would integrate with the device's contact picker
     // For now, we'll show a placeholder
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Contact picker integration coming soon')),
-    );
+    // ScaffoldMessenger.of(context).showSnackBar(
+    //   const SnackBar(content: Text('Contact picker integration coming soon')),
+    // );
+    Navigator.pushNamed(context, '/import_contacts');
   }
 
   String _getTitle(String? filter) {

@@ -1,4 +1,4 @@
-// lib/models/contact.dart
+// lib/models/contact.dart - UPDATED VERSION
 class Contact {
   String id;
   String name;
@@ -20,6 +20,14 @@ class Contact {
   DateTime? anniversary;
   DateTime? workAnniversary;
 
+  // NEW FIELDS FOR SOCIAL UNIVERSE
+  double cdi; // Connection Depth Index (15-100)
+  String computedRing; // 'inner', 'middle', 'outer'
+  String rawBand; // Current CDI band
+  DateTime rawBandSince; // When CDI entered current band
+  double angleDeg; // Fixed angle for layout (0-359)
+  int interactionCountInWindow; // Interactions in last 90 days
+
   Contact({
     required this.id,
     required this.name,
@@ -40,7 +48,14 @@ class Contact {
     this.birthday,
     this.anniversary,
     this.workAnniversary,
-  });
+    // New fields with defaults
+    this.cdi = 50.0, // Default middle
+    this.computedRing = 'middle',
+    this.rawBand = 'middle',
+    DateTime? rawBandSince,
+    this.angleDeg = 0.0,
+    this.interactionCountInWindow = 0,
+  }) : rawBandSince = rawBandSince ?? DateTime.now();
 
   Map<String, dynamic> toMap() {
     return {
@@ -63,6 +78,13 @@ class Contact {
       'birthday': birthday?.millisecondsSinceEpoch,
       'anniversary': anniversary?.millisecondsSinceEpoch,
       'workAnniversary': workAnniversary?.millisecondsSinceEpoch,
+      // New fields
+      'cdi': cdi,
+      'computedRing': computedRing,
+      'rawBand': rawBand,
+      'rawBandSince': rawBandSince.millisecondsSinceEpoch,
+      'angleDeg': angleDeg,
+      'interactionCountInWindow': interactionCountInWindow,
     };
   }
 
@@ -87,6 +109,15 @@ class Contact {
       birthday: map['birthday'] != null ? DateTime.fromMillisecondsSinceEpoch(map['birthday']) : null,
       anniversary: map['anniversary'] != null ? DateTime.fromMillisecondsSinceEpoch(map['anniversary']) : null,
       workAnniversary: map['workAnniversary'] != null ? DateTime.fromMillisecondsSinceEpoch(map['workAnniversary']) : null,
+      // New fields
+      cdi: (map['cdi'] ?? 50.0).toDouble(),
+      computedRing: map['computedRing'] ?? 'middle',
+      rawBand: map['rawBand'] ?? 'middle',
+      rawBandSince: map['rawBandSince'] != null 
+          ? DateTime.fromMillisecondsSinceEpoch(map['rawBandSince'])
+          : DateTime.now(),
+      angleDeg: (map['angleDeg'] ?? 0.0).toDouble(),
+      interactionCountInWindow: map['interactionCountInWindow'] ?? 0,
     );
   }
 
@@ -110,13 +141,20 @@ class Contact {
     DateTime? birthday,
     DateTime? anniversary,
     DateTime? workAnniversary,
+    // New fields
+    double? cdi,
+    String? computedRing,
+    String? rawBand,
+    DateTime? rawBandSince,
+    double? angleDeg,
+    int? interactionCountInWindow,
   }) {
     return Contact(
       id: id ?? this.id,
       name: name ?? this.name,
       connectionType: connectionType ?? this.connectionType,
       frequency: frequency ?? this.frequency,
-      period: period?? this.period,
+      period: period ?? this.period,
       socialGroups: socialGroups ?? this.socialGroups,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       email: email ?? this.email,
@@ -131,6 +169,30 @@ class Contact {
       birthday: birthday ?? this.birthday,
       anniversary: anniversary ?? this.anniversary,
       workAnniversary: workAnniversary ?? this.workAnniversary,
+      cdi: cdi ?? this.cdi,
+      computedRing: computedRing ?? this.computedRing,
+      rawBand: rawBand ?? this.rawBand,
+      rawBandSince: rawBandSince ?? this.rawBandSince,
+      angleDeg: angleDeg ?? this.angleDeg,
+      interactionCountInWindow: interactionCountInWindow ?? this.interactionCountInWindow,
     );
+  }
+
+  // Helper method to get target interval days for CDI calculation
+  double get targetIntervalDays {
+    switch (period) {
+      case 'Daily':
+        return 1.0;
+      case 'Weekly':
+        return 7.0;
+      case 'Monthly':
+        return 30.0;
+      case 'Quarterly':
+        return 90.0;
+      case 'Annually':
+        return 365.0;
+      default:
+        return 30.0; // Default to monthly
+    }
   }
 }

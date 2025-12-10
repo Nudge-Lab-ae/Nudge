@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:nudge/models/social_group.dart';
+import 'package:nudge/models/user.dart';
 import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
 // import 'package:nudge/theme/text_styles.dart';
@@ -74,10 +75,18 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
 
   try {
     // Get passed groups from route arguments (if any)
-    final passedGroups = ModalRoute.of(context)?.settings.arguments as List<SocialGroup>?;
+    final apiService = Provider.of<ApiService>(context, listen: false);
+    // final passedGroups = ModalRoute.of(context)?.settings.arguments as List<SocialGroup>?;
+    List<SocialGroup> allGroups = [];
+    User thisUser = await apiService.getUser();
+    var userGroups = thisUser.groups;
+    for (int i=0; i<userGroups!.length; i++) {
+      allGroups.add(SocialGroup.fromMap(userGroups[i]));
+    }
+    print('groups are'); print(userGroups); print(allGroups);
     
     // Show group selection dialog with passed groups (if available)
-    final SocialGroup? selectedGroup = await _showGroupSelectionDialog(passedGroups);
+    final SocialGroup? selectedGroup = await _showGroupSelectionDialog(allGroups);
     if (selectedGroup == null) {
       setState(() => _isImporting = false);
       return; // User cancelled group selection
@@ -195,7 +204,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   if (availableGroups.isEmpty) {
     availableGroups = [
       SocialGroup(
-        id: 'family', 
+        id: 'Family', 
         name: 'Family', 
         frequency: 4,
         period: 'Monthly',
@@ -208,10 +217,10 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
         anniversaryNudgesEnabled: true,
       ),
       SocialGroup(
-        id: 'friend', 
+        id: 'Friend', 
         name: 'Friend', 
-        frequency: 2,
-        period: 'Weekly',
+        frequency: 8,
+        period: 'Quarterly',
         colorCode: '#FF6F61', 
         description: '', 
         memberCount: 0, 
@@ -221,8 +230,34 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
         anniversaryNudgesEnabled: true,
       ),
       SocialGroup(
-        id: 'colleague', 
+        id: 'Colleague', 
         name: 'Colleague', 
+        frequency: 4,
+        period: 'Annually',
+        colorCode: '#81C784', 
+        description: '', 
+        memberCount: 0, 
+        memberIds: [], 
+        lastInteraction: DateTime.now(), 
+        birthdayNudgesEnabled: true,
+        anniversaryNudgesEnabled: true,
+      ),
+      SocialGroup(
+        id: 'Mentor', 
+        name: 'Mentor', 
+        frequency: 2,
+        period: 'Annually',
+        colorCode: '#607D8B', 
+        description: '', 
+        memberCount: 0, 
+        memberIds: [], 
+        lastInteraction: DateTime.now(), 
+        birthdayNudgesEnabled: true,
+        anniversaryNudgesEnabled: true,
+      ),
+      SocialGroup(
+        id: 'Client', 
+        name: 'Client', 
         frequency: 2,
         period: 'Monthly',
         colorCode: '#81C784', 
@@ -235,6 +270,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
       ),
     ];
   }
+  
   
   // Show dialog for group selection
   return await showDialog<SocialGroup>(
@@ -260,7 +296,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
                   ),
                 ),
                 title: Text(group.name),
-                subtitle: Text('${group.frequency} times ${group.period.toLowerCase()}'),
+                subtitle: Text(_getCurrentFrequencyChoice(group)),
                 onTap: () => Navigator.pop(context, group),
               ),
             );
@@ -276,6 +312,10 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
     ),
   );
 }  
+
+String _getCurrentFrequencyChoice(SocialGroup group) {
+  return FrequencyPeriodMapper.getConversationalChoice(group.frequency, group.period);
+}
 
 //   void _showImportSuccessAndScheduleNudges(int importedCount, String userId) async {
 //   // Show initial success message
@@ -322,10 +362,19 @@ Future<void> _pickContactsAndImport() async {
   }
 
   // Get passed groups from route arguments (if any)
-  final passedGroups = ModalRoute.of(context)?.settings.arguments as List<SocialGroup>?;
+  final apiService = Provider.of<ApiService>(context, listen: false);
+  final authService = Provider.of<AuthService>(context, listen: false);
+  // final passedGroups = ModalRoute.of(context)?.settings.arguments as List<SocialGroup>?;
+  List<SocialGroup> allGroups = [];
+  User thisUser = await apiService.getUser();
+  var userGroups = thisUser.groups;
+  for (int i=0; i<userGroups!.length; i++) {
+    allGroups.add(SocialGroup.fromMap(userGroups[i]));
+  }
+  print('groups are'); print(userGroups); print(allGroups);
   
   // Show group selection dialog with passed groups (if available)
-  final SocialGroup? selectedGroup = await _showGroupSelectionDialog(passedGroups);
+  final SocialGroup? selectedGroup = await _showGroupSelectionDialog(allGroups);
   if (selectedGroup == null) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Group selection cancelled')),
@@ -333,8 +382,8 @@ Future<void> _pickContactsAndImport() async {
     return;
   }
 
-  final authService = Provider.of<AuthService>(context, listen: false);
-  final apiService = Provider.of<ApiService>(context, listen: false);
+ 
+  
   final user = authService.currentUser;
   if (user == null) return;
 
@@ -476,33 +525,189 @@ void _showNudgeScheduledMessage(int scheduledCount) {
   );
 }
 
+@override
+  void initState() {
+    super.initState();
+    // For iOS, immediately open the contact picker
+  }
 
-  @override
+
+@override
   Widget build(BuildContext context) {
     var size = MediaQuery.of(context).size;
+    
+    // For iOS, show a simplified screen or directly open picker
+    if (Platform.isIOS) {
+      return _buildIOSVersion();
+    }
+    
+    // For Android, show the full import options
+    return _buildAndroidVersion(size);
+  }
+
+  Widget _buildIOSVersion() {
     return Scaffold(
       appBar: AppBar(
-        title: GradientText( text: 'NUDGE', style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
-              gradient: const LinearGradient(
-                colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
+        title: GradientText(
+          text: 'NUDGE',
+          style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
+          gradient: const LinearGradient(
+            colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
         ),
-        // Text(
-        //   'NUDGE',
-        //   style: AppTextStyles.title2.copyWith(
-        //     color: const Color(0xff3CB3E9),
-        //     fontFamily: 'RobotoMono',
-        //   ),
-        // ),
         centerTitle: true,
         surfaceTintColor: Colors.transparent,
         iconTheme: const IconThemeData(color: Color(0xff3CB3E9)),
         backgroundColor: Colors.white,
       ),
       floatingActionButton: Padding(
-        padding: EdgeInsets.only(bottom: size.height*0.4),
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).size.height * 0.4),
+        child: FeedbackFloatingButton(),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.contacts,
+              size: 80,
+              color: Color(0xff3CB3E9),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'IMPORT YOUR CONTACTS',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Color(0xff555555),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Select contacts from your device to import into Nudge',
+              style: TextStyle(
+                fontSize: 16,
+                color: Color(0xff555555),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            
+            // iOS-specific note
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color.fromRGBO(45, 161, 175, 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Column(
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.info, color: Color(0xff3CB3E9), size: 20),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'iOS Note',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xff3CB3E9),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'On iOS, you can manually select which contacts to import. '
+                    'Simply tap the button below to open your contacts list and make your selections.',
+                    style: TextStyle(fontSize: 14, color: Color(0xff555555)),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
+            
+            // Import button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _isImporting ? null : _pickContactsAndImport,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xff3CB3E9),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                icon: _isImporting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Icon(Icons.import_contacts, color: Colors.white),
+                label: _isImporting
+                    ? const Text('Importing...', style: TextStyle(color: Colors.white))
+                    : const Text('Select Contacts to Import', 
+                        style: TextStyle(fontSize: 16, color: Colors.white)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            // Cancel button
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () {
+                  Navigator.pop(context, []);
+                },
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  side: const BorderSide(color: Colors.grey),
+                ),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAndroidVersion(Size size) {
+    return Scaffold(
+      appBar: AppBar(
+        title: GradientText(
+          text: 'NUDGE',
+          style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
+          gradient: const LinearGradient(
+            colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        centerTitle: true,
+        surfaceTintColor: Colors.transparent,
+        iconTheme: const IconThemeData(color: Color(0xff3CB3E9)),
+        backgroundColor: Colors.white,
+      ),
+      floatingActionButton: Padding(
+        padding: EdgeInsets.only(bottom: size.height * 0.4),
         child: FeedbackFloatingButton(),
       ),
       body: Padding(
@@ -520,7 +725,7 @@ void _showNudgeScheduledMessage(int scheduledCount) {
             ),
             const SizedBox(height: 30),
 
-            // Import Options Card
+            // Import Options Card - Android only
             Card(
               elevation: 4,
               shape: RoundedRectangleBorder(
@@ -537,7 +742,7 @@ void _showNudgeScheduledMessage(int scheduledCount) {
                     ),
                     const SizedBox(height: 16),
 
-                    // Quantity Selection
+                    // Quantity Selection - Android only
                     const Text(
                       'How many contacts would you like to import?',
                       style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xff555555)),
@@ -573,10 +778,8 @@ void _showNudgeScheduledMessage(int scheduledCount) {
 
                     const SizedBox(height: 20),
 
-                    // Smart Filter Option
-                    Platform.isIOS
-                    ? Center()
-                    : Row(
+                    // Smart Filter Option - Android only
+                    Row(
                       children: [
                         Switch(
                           value: _useSmartFilter,
@@ -655,7 +858,7 @@ void _showNudgeScheduledMessage(int scheduledCount) {
                               ),
                               side: const BorderSide(color: Color(0xff3CB3E9)),
                             ),
-                            icon: Padding(
+                            icon: const Padding(
                               padding: EdgeInsets.only(left: 5),
                               child: Icon(Icons.group_add, color: Color(0xff3CB3E9)),
                             ),
@@ -736,14 +939,14 @@ void _showNudgeScheduledMessage(int scheduledCount) {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                color: /* _statusMessage.contains('Success') ? */ Colors.green[50] /* : Colors.red[50] */,
+                color: Colors.green[50],
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Row(
                     children: [
                       Icon(
-                        /* _statusMessage.contains('Success') ? */ Icons.check_circle /* : Icons.error */,
-                        color: /* _statusMessage.contains('Success') ?  */Colors.green /* : Colors.red */,
+                        Icons.check_circle,
+                        color: Colors.green,
                         size: 32,
                       ),
                       const SizedBox(width: 12),
@@ -752,20 +955,18 @@ void _showNudgeScheduledMessage(int scheduledCount) {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              /* _statusMessage.contains('Success') ?  */'Import Successful' /* : 'Import Failed' */,
+                              'Import Successful',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: /* _statusMessage.contains('Success') ? */ Colors.green /* : Colors.red */,
+                                color: Colors.green,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               _statusMessage,
                               style: TextStyle(
-                                color: /* _statusMessage.contains('Success')
-                                    ? */ Colors.green[800]
-                                   /*  : Colors.red[800] */,
+                                color: Colors.green[800],
                               ),
                             ),
                           ],
@@ -779,7 +980,7 @@ void _showNudgeScheduledMessage(int scheduledCount) {
 
             const SizedBox(height: 20),
 
-            // Information Section
+            // Information Section - Android only
             Card(
               elevation: 2,
               shape: RoundedRectangleBorder(

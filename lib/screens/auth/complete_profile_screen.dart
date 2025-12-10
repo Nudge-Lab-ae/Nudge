@@ -1036,7 +1036,7 @@ Widget _buildGroupsStep() {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 20),
-        const Text('CURSTOMIZE YOUR SOCIAL GROUPS', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const Text('CUSTOMIZE YOUR SOCIAL GROUPS', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 10),
         const Text('Drag to reorder groups by priority. Add, edit, or remove groups.', 
           style: TextStyle(fontSize: 14, color: Colors.grey)),
@@ -1177,50 +1177,50 @@ Widget _buildGroupsStep() {
           const SizedBox(height: 20),
           
           // Date Nudges Section
-          const Text('Date Nudges:', style: TextStyle(fontWeight: FontWeight.w500, color: Color(0xff555555))),
-          const SizedBox(height: 8),
+          // const Text('Date Nudges:', style: TextStyle(fontWeight: FontWeight.w500, color: Color(0xff555555))),
+          // const SizedBox(height: 8),
           
-          // Birthday Nudges Toggle
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Send a nudge for birthdays',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-                ),
-              ),
-              Switch(
-                value: group.birthdayNudgesEnabled,
-                onChanged: (value) {
-                  setState(() {
-                    _userGroups[index] = group.copyWith(birthdayNudgesEnabled: value);
-                  });
-                },
-              ),
-            ],
-          ),
+          // // Birthday Nudges Toggle
+          // Row(
+          //   children: [
+          //     Expanded(
+          //       child: Text(
+          //         'Send a nudge for birthdays',
+          //         style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+          //       ),
+          //     ),
+          //     Switch(
+          //       value: group.birthdayNudgesEnabled,
+          //       onChanged: (value) {
+          //         setState(() {
+          //           _userGroups[index] = group.copyWith(birthdayNudgesEnabled: value);
+          //         });
+          //       },
+          //     ),
+          //   ],
+          // ),
           
-          // Anniversary Nudges Toggle
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Send a nudge for anniversaries',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-                ),
-              ),
-              Switch(
-                value: group.anniversaryNudgesEnabled,
-                onChanged: (value) {
-                  setState(() {
-                    _userGroups[index] = group.copyWith(anniversaryNudgesEnabled: value);
-                  });
-                },
-              ),
-            ],
-          ),
+          // // Anniversary Nudges Toggle
+          // Row(
+          //   children: [
+          //     Expanded(
+          //       child: Text(
+          //         'Send a nudge for anniversaries',
+          //         style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+          //       ),
+          //     ),
+          //     Switch(
+          //       value: group.anniversaryNudgesEnabled,
+          //       onChanged: (value) {
+          //         setState(() {
+          //           _userGroups[index] = group.copyWith(anniversaryNudgesEnabled: value);
+          //         });
+          //       },
+          //     ),
+          //   ],
+          // ),
           
-          const SizedBox(height: 10),
+          // const SizedBox(height: 10),
           
           // Members section
           Text(
@@ -1407,6 +1407,7 @@ Widget _buildGroupsStep() {
   // }
 
   Widget _buildContactsStep() {
+    var size = MediaQuery.of(context).size;
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -1419,7 +1420,42 @@ Widget _buildGroupsStep() {
           const SizedBox(height: 40),
           
           // Import Options - Fixed layout
-          Row(
+          Platform.isIOS
+          ? Container(
+            width: size.width*0.7,
+            height: size.height*0.4,
+            child: Expanded(
+                child: Card(
+                  child: Padding(
+                     padding: const EdgeInsets.only(left: 5, right: 5, bottom: 20, top: 20),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.person_add, size: 60, color: Colors.grey),
+                        const SizedBox(height: 16),
+                        const Text('ADD MANUALLY', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        const Text('Select specific contacts to import', 
+                          textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+                        const SizedBox(height: 20),
+                        OutlinedButton(
+                          onPressed: () {
+                            FocusScope.of(context).unfocus();
+                            _pickContactsManually();
+                          },
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xff3CB3E9),
+                            side: const BorderSide(color: Color(0xff3CB3E9)),
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          ),
+                          child: const Text('Pick Contacts', style: TextStyle(fontSize: 14)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ))
+          : Row(
             children: [
               Expanded(
                 child: Card(
@@ -1430,7 +1466,7 @@ Widget _buildGroupsStep() {
                       children: [
                         const Icon(Icons.import_contacts, size: 60, color: Color(0xff3CB3E9)),
                         const SizedBox(height: 16),
-                        const Text('QUICK IMPORT', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                        const Text('QUICK IMPORT', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 8),
                         const Text('Import your existing contacts', 
                           textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
@@ -1488,7 +1524,7 @@ Widget _buildGroupsStep() {
                       children: [
                         const Icon(Icons.person_add, size: 60, color: Colors.grey),
                         const SizedBox(height: 16),
-                        const Text('ADD  MANUALLY', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                        const Text('ADD MANUALLY', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 8),
                         const Text('Select specific contacts to import', 
                           textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
