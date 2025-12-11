@@ -1,4 +1,4 @@
-// lib/widgets/simple_contact_panel.dart - CLEAN VERSION
+// lib/widgets/simple_contact_panel.dart - IMPROVED
 import 'package:flutter/material.dart';
 import '../models/contact.dart';
 import '../services/api_service.dart';
@@ -20,13 +20,18 @@ class SimpleContactPanel extends StatefulWidget {
 class _SimpleContactPanelState extends State<SimpleContactPanel> {
   String _selectedType = 'message';
   bool _isLogging = false;
+  Color? _ringColor;
+
+  @override
+  void initState() {
+    super.initState();
+    _ringColor = _getRingColor(widget.contact.computedRing);
+  }
 
   @override
   Widget build(BuildContext context) {
     final contact = widget.contact;
     final daysAgo = DateTime.now().difference(contact.lastContacted).inDays;
-    final ringColor = _getRingColor(contact.computedRing);
-    var contactFirst = contact.name.split(' ').first;
     
     return Container(
       padding: EdgeInsets.only(
@@ -36,225 +41,188 @@ class _SimpleContactPanelState extends State<SimpleContactPanel> {
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Header with close button
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: ringColor.withOpacity(0.1),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-              ),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundColor: ringColor,
-                    child: Text(
-                      contact.name.substring(0, 1).toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          contact.name,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xff333333),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: ringColor.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            _getRingLabel(contact.computedRing),
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: ringColor,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.grey),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-            ),
-            
-            const SizedBox(height: 20),
-            
-            // Info grid
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      _buildInfoItem(Icons.category, 'Category', contact.connectionType),
-                      const SizedBox(width: 16),
-                      _buildInfoItem(Icons.access_time, 'Last Connected', _getTimeAgo(daysAgo)),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      _buildInfoItem(Icons.star, 'VIP', contact.isVIP ? 'Yes' : 'No'),
-                      const SizedBox(width: 16),
-                      _buildInfoItem(Icons.timeline, 'CDI', '${contact.cdi.toInt()}%'),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            
-            const SizedBox(height: 24),
-            const Divider(height: 1),
-            const SizedBox(height: 20),
-            
-            // Interaction logging
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Log Interaction',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xff333333),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'How did you connect with $contactFirst ?',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Quick interaction buttons
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _buildQuickButton('message', 'Text', Icons.message),
-                      _buildQuickButton('call', 'Call', Icons.call),
-                      _buildQuickButton('meet', 'Meet', Icons.people),
-                      _buildQuickButton('email', 'Email', Icons.email),
-                      _buildQuickButton('social', 'Social', Icons.thumb_up),
-                      _buildQuickButton('other', 'Other', Icons.more_horiz),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  
-                  // Log button
-                  SizedBox(
-                    width: double.infinity,
-                    child: _isLogging
-                        ? const Center(
-                            child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Color(0xFF3CB3E9),
-                              ),
-                            ),
-                          )
-                        : ElevatedButton(
-                            onPressed: _logInteraction,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF3CB3E9),
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: const Text(
-                              'LOG INTERACTION',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                  ),
-                  const SizedBox(height: 12),
-                  
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text(
-                      'Cancel',
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoItem(IconData icon, String label, String value) {
-    return Expanded(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            children: [
-              Icon(icon, size: 16, color: Colors.grey),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey,
+          // Drag handle
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              color: Color(0xff333333),
             ),
           ),
+          
+          // Contact info
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              children: [
+                CircleAvatar(
+                  radius: 40,
+                  backgroundColor: _ringColor,
+                  child: Text(
+                    contact.name.substring(0, 1).toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  contact.name,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xff333333),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _ringColor!.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: _ringColor!.withOpacity(0.3)),
+                  ),
+                  child: Text(
+                    _getRingLabel(contact.computedRing),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: _ringColor,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Last connected: ${_getTimeAgo(daysAgo)}',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Category: ${contact.connectionType}',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: 24),
+          const Divider(height: 1),
+          const SizedBox(height: 20),
+          
+          // Interaction logging
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'How did you connect?',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xff333333),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // Quick interaction buttons
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _buildInteractionButton('message', 'Message', Icons.message),
+                    _buildInteractionButton('call', 'Call', Icons.call),
+                    _buildInteractionButton('meet', 'Meet', Icons.people),
+                    _buildInteractionButton('email', 'Email', Icons.email),
+                    _buildInteractionButton('social', 'Social', Icons.thumb_up),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                
+                // Action buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.grey,
+                          side: const BorderSide(color: Colors.grey),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text('CANCEL'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _isLogging
+                          ? Container(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                color: const Color(0xFF3CB3E9).withOpacity(0.7),
+                              ),
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            )
+                          : ElevatedButton(
+                              onPressed: _logInteraction,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF3CB3E9),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: const Text(
+                                'LOG CONNECTION',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: 20),
+          SizedBox(height: MediaQuery.of(context).viewInsets.bottom > 0 
+              ? MediaQuery.of(context).viewInsets.bottom 
+              : 20),
         ],
       ),
     );
   }
 
-  Widget _buildQuickButton(String type, String label, IconData icon) {
+  Widget _buildInteractionButton(String type, String label, IconData icon) {
     final isSelected = _selectedType == type;
     
     return GestureDetector(
@@ -264,7 +232,8 @@ class _SimpleContactPanelState extends State<SimpleContactPanel> {
         });
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        width: 70,
+        height: 70,
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFF3CB3E9) : Colors.grey[100],
           borderRadius: BorderRadius.circular(16),
@@ -272,11 +241,18 @@ class _SimpleContactPanelState extends State<SimpleContactPanel> {
             color: isSelected ? const Color(0xFF3CB3E9) : Colors.grey[300]!,
             width: isSelected ? 2 : 1,
           ),
+          boxShadow: isSelected ? [
+            BoxShadow(
+              color: const Color(0xFF3CB3E9).withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ] : null,
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 20, color: isSelected ? Colors.white : Colors.grey[700]),
+            Icon(icon, size: 24, color: isSelected ? Colors.white : Colors.grey[700]),
             const SizedBox(height: 4),
             Text(
               label,
@@ -301,7 +277,7 @@ class _SimpleContactPanelState extends State<SimpleContactPanel> {
       case 'outer':
         return Colors.redAccent;
       default:
-        return Colors.grey;
+        return const Color(0xFF3CB3E9);
     }
   }
 
@@ -340,10 +316,12 @@ class _SimpleContactPanelState extends State<SimpleContactPanel> {
         interactionType: _selectedType,
       );
       
+      // Show success and close
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('✓ Logged ${_selectedType} with ${widget.contact.name}'),
+          content: Text('✓ ${_selectedType} logged with ${widget.contact.name}'),
           backgroundColor: Colors.green,
+          duration: const Duration(seconds: 1),
         ),
       );
       
@@ -353,6 +331,7 @@ class _SimpleContactPanelState extends State<SimpleContactPanel> {
         SnackBar(
           content: Text('Failed to log: $e'),
           backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
         ),
       );
     } finally {

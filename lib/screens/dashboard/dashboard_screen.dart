@@ -504,19 +504,23 @@ Future<void> _runDailyCDIUpdate(ApiService apiService) async {
   }
 
   void _showContactQuickPanel(BuildContext context, Contact contact, ApiService apiService) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      isScrollControlled: true,
-      builder: (context) {
-        return SimpleContactPanel(
-          contact: contact,
-          apiService: apiService,
-        );
-      },
-    );
+    // Use a delayed Future to ensure smooth transition
+    Future.delayed(const Duration(milliseconds: 100), () {
+      showModalBottomSheet(
+        context: context,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        isScrollControlled: true,
+        backgroundColor: Colors.white,
+        builder: (context) {
+          return SimpleContactPanel(
+            contact: contact,
+            apiService: apiService,
+          );
+        },
+      );
+    });
   }
 
   // DASHBOARD CONTENT
@@ -544,7 +548,7 @@ Future<void> _runDailyCDIUpdate(ApiService apiService) async {
               onContactSelect: (contact) {
                 _showContactQuickPanel(context, contact, apiService);
               },
-              height: 400, // Increased height
+              height: 420, // Increased height for larger circle
             ),
             const SizedBox(height: 20),
               // Quick Insights (cards with icon + value + label)
