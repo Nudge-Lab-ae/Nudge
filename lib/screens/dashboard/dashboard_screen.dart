@@ -11,10 +11,12 @@ import 'package:nudge/screens/groups/groups_list_screen.dart';
 import 'package:nudge/screens/notifications/notifications_screen.dart';
 // import 'package:nudge/screens/settings/settings_screen.dart';
 import 'package:nudge/services/api_service.dart';
-import 'package:nudge/widgets/contact_quick_panel.dart';
+import 'package:nudge/services/social_universe_service.dart';
+// import 'package:nudge/widgets/contact_quick_panel.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
 import 'package:nudge/widgets/gradient_text.dart';
 import 'package:nudge/widgets/screen_tracker.dart';
+import 'package:nudge/widgets/simple_contact_panel.dart';
 import 'package:nudge/widgets/social_universe.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:provider/provider.dart';
@@ -55,39 +57,64 @@ class _DashboardScreenState extends State<DashboardScreen> {
     getNudges();
     _checkDeletionRetry();
     _initializeNotifications();
-     _runCDIBatchUpdate();
+     _initializeSocialUniverse();
   }
 
-   Future<void> _runCDIBatchUpdate() async {
-    try {
-      final apiService = ApiService();
-      // Run batch update once per day
-      final lastUpdate = await _getLastCDIUpdate();
-      final now = DateTime.now();
-      
-      if (lastUpdate == null || 
-          now.difference(lastUpdate).inHours >= 24) {
-        await apiService.batchUpdateCDI();
-        await _saveLastCDIUpdate(now);
+Future<void> _initializeSocialUniverse() async {
+  try {
+    final apiService = ApiService();
+    
+    // Get all contacts and assign initial angles if missing
+    final contacts = await apiService.getAllContacts();
+    
+    final socialUniverseService = SocialUniverseService();
+    for (var contact in contacts) {
+      if (contact.angleDeg == 0) {
+        final updatedContact = contact.copyWith(
+          angleDeg: socialUniverseService.generateStableAngle(contact.id),
+        );
+        await apiService.updateContact(updatedContact);
       }
+    }
+    
+    // Run batch CDI update if not done today
+    await _runDailyCDIUpdate(apiService);
+    
+  } catch (e) {
+    print('Error initializing Social Universe: $e');
+  }
+}
+
+Future<void> _runDailyCDIUpdate(ApiService apiService) async {
+  final prefs = await SharedPreferences.getInstance();
+  final lastUpdateKey = 'last_cdi_update_${DateTime.now().day}';
+  final shouldUpdate = prefs.getBool(lastUpdateKey) != true;
+  
+  if (shouldUpdate) {
+    try {
+      await apiService.batchUpdateCDI();
+      await prefs.setBool(lastUpdateKey, true);
+      print('Daily CDI update completed');
     } catch (e) {
-      print('Error running CDI batch update: $e');
+      print('Error in daily CDI update: $e');
     }
   }
+}
 
-  Future<DateTime?> _getLastCDIUpdate() async {
-    // Implement storage for last update time
-    final prefs = await SharedPreferences.getInstance();
-    final timestamp = prefs.getInt('last_cdi_update');
-    return timestamp != null 
-        ? DateTime.fromMillisecondsSinceEpoch(timestamp)
-        : null;
-  }
 
-  Future<void> _saveLastCDIUpdate(DateTime time) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('last_cdi_update', time.millisecondsSinceEpoch);
-  }
+  // Future<DateTime?> _getLastCDIUpdate() async {
+  //   // Implement storage for last update time
+  //   final prefs = await SharedPreferences.getInstance();
+  //   final timestamp = prefs.getInt('last_cdi_update');
+  //   return timestamp != null 
+  //       ? DateTime.fromMillisecondsSinceEpoch(timestamp)
+  //       : null;
+  // }
+
+  // Future<void> _saveLastCDIUpdate(DateTime time) async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   await prefs.setInt('last_cdi_update', time.millisecondsSinceEpoch);
+  // }
 
 
   Future<void> _initializeNotifications() async {
@@ -477,20 +504,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _showContactQuickPanel(BuildContext context, Contact contact, ApiService apiService) {
-  showModalBottomSheet(
-    context: context,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
-    isScrollControlled: true,
-    builder: (context) {
-      return ContactQuickPanel(
-        contact: contact,
-        apiService: apiService,
-      );
-    },
-  );
-}
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      isScrollControlled: true,
+      builder: (context) {
+        return SimpleContactPanel(
+          contact: contact,
+          apiService: apiService,
+        );
+      },
+    );
+  }
 
   // DASHBOARD CONTENT
   Widget _buildDashboardContent(BuildContext context, List<Contact> contacts, List<SocialGroup> groups, ApiService apiService) {
@@ -512,13 +539,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: 10),
               const Text('DASHBOARD', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20, fontFamily: 'Inter', color: Color(0xff555555))),
               const SizedBox(height: 20),
-              SocialUniverseWidget(
+            SocialUniverseWidget(
               contacts: contacts,
-              onContactTap: (contact) {
+              onContactSelect: (contact) {
                 _showContactQuickPanel(context, contact, apiService);
               },
-              size: MediaQuery.of(context).size.width - 32,
+              height: 400, // Increased height
             ),
+            const SizedBox(height: 20),
               // Quick Insights (cards with icon + value + label)
               _buildQuickInsights(analytics, contacts.length),
               const SizedBox(height: 20),

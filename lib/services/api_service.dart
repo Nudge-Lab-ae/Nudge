@@ -955,7 +955,7 @@ Future<void> updateFeedbackAdminData({
       final currentUser = _auth.currentUser;
       if (currentUser == null) throw Exception('No user logged in');
       
-      // Get the contact
+      // Get contact
       final contactDoc = await _getUserContactsCollection(currentUser.uid)
           .doc(contactId)
           .get();
@@ -963,37 +963,47 @@ Future<void> updateFeedbackAdminData({
       if (!contactDoc.exists) throw Exception('Contact not found');
       
       var contact = Contact.fromMap(
-          contactDoc.data() as Map<String, dynamic>..['id'] = contactDoc.id);
+        contactDoc.data() as Map<String, dynamic>..['id'] = contactDoc.id,
+      );
       
       // Update interaction history
       final now = DateTime.now();
       final interactionHistory = Map<String, dynamic>.from(contact.interactionHistory);
-      interactionHistory[now.millisecondsSinceEpoch.toString()] = {
+      final interactionKey = now.millisecondsSinceEpoch.toString();
+      
+      interactionHistory[interactionKey] = {
         'type': interactionType,
         'timestamp': now.millisecondsSinceEpoch,
         'notes': notes,
       };
       
-      // Update last contacted and interaction count
+      // Count interactions in last 90 days
       final ninetyDaysAgo = now.subtract(const Duration(days: 90));
-      final recentInteractions = interactionHistory.entries
-          .where((entry) {
+      final recentInteractions = interactionHistory.values
+          .where((interaction) {
             final timestamp = DateTime.fromMillisecondsSinceEpoch(
-                int.parse(entry.key));
+              interaction['timestamp'] as int,
+            );
             return timestamp.isAfter(ninetyDaysAgo);
           })
           .length;
       
+      // Update contact with new interaction
       final updatedContact = contact.copyWith(
         lastContacted: now,
         interactionHistory: interactionHistory,
         interactionCountInWindow: recentInteractions,
       );
       
-      // Update CDI and save
-      await updateContactCDI(updatedContact);
+      // Calculate new CDI
+      final socialUniverseService = SocialUniverseService();
+      final contactWithCDI = socialUniverseService.updateContactCDI(updatedContact);
       
-      print('Interaction logged for ${contact.name}');
+      // Save to Firestore
+      await updateContact(contactWithCDI);
+      
+      print('Interaction logged for ${contact.name}, new CDI: ${contactWithCDI.cdi}');
+      
     } catch (e) {
       print('Error logging interaction: $e');
       throw Exception('Failed to log interaction: $e');

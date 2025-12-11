@@ -1,5 +1,6 @@
 // lib/screens/contacts/import_contacts_screen.dart
 import 'dart:io';
+// import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:nudge/models/social_group.dart';
@@ -339,107 +340,104 @@ String _getCurrentFrequencyChoice(SocialGroup group) {
   /// Full-screen multi-select picker UI.
   /// This fetches contacts, shows a checkbox list in full screen, and imports the selected ones.
 Future<void> _pickContactsAndImport() async {
-  final permissionOk = await fContacts.FlutterContacts.requestPermission();
-  if (!permissionOk) {
-    _showSettingsDialog('Contacts permission is required to pick contacts');
-    return;
-  }
+    final permissionOk = await fContacts.FlutterContacts.requestPermission();
+    if (!permissionOk) {
+      _showSettingsDialog('Contacts permission is required to pick contacts');
+      return;
+    }
 
-  final contacts = await fContacts.FlutterContacts.getContacts(withProperties: true);
-
-  final selectedContacts = await Navigator.of(context).push<List<fContacts.Contact>>(
-    MaterialPageRoute(
-      builder: (context) => _FullScreenContactPicker(contacts: contacts),
-      fullscreenDialog: true,
-    ),
-  );
-
-  if (selectedContacts == null || selectedContacts.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('No contacts selected')),
+    final contacts = await fContacts.FlutterContacts.getContacts(
+      withProperties: true,
+      withPhoto: true, // ✅ request photos
     );
-    return;
-  }
 
-  // Get passed groups from route arguments (if any)
-  final apiService = Provider.of<ApiService>(context, listen: false);
-  final authService = Provider.of<AuthService>(context, listen: false);
-  // final passedGroups = ModalRoute.of(context)?.settings.arguments as List<SocialGroup>?;
-  List<SocialGroup> allGroups = [];
-  User thisUser = await apiService.getUser();
-  var userGroups = thisUser.groups;
-  for (int i=0; i<userGroups!.length; i++) {
-    allGroups.add(SocialGroup.fromMap(userGroups[i]));
-  }
-  print('groups are'); print(userGroups); print(allGroups);
-  
-  // Show group selection dialog with passed groups (if available)
-  final SocialGroup? selectedGroup = await _showGroupSelectionDialog(allGroups);
-  if (selectedGroup == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Group selection cancelled')),
-    );
-    return;
-  }
-
- 
-  
-  final user = authService.currentUser;
-  if (user == null) return;
-
-  final syncService = ContactSyncService(apiService: apiService);
-
-  setState(() {
-    _isImporting = true;
-    _processedCount = 0;
-    _totalCount = selectedContacts.length;
-    _statusMessage = 'Importing selected contacts to ${selectedGroup.name}...';
-  });
-
-  final result = await syncService.importFromContactPicker(
-    pickedContacts: selectedContacts,
-    groupId: selectedGroup.name, // Pass group ID
-    onProgress: (processed, total) {
-      setState(() {
-        _processedCount = processed;
-        _totalCount = total;
-        _statusMessage = 'Processing $processed of $total contacts...';
-      });
-    },
-  );
-
-  setState(() => _isImporting = false);
-
-  if (result['success'] == true) {
-    setState(() {
-      _statusMessage =
-          'Successfully imported ${result['importedCount']} contacts to ${selectedGroup.name}!';
-    });
-    
-    // Get the actual imported contacts
-    final importedContacts = await apiService.getAllContacts();
-    final recentlyImportedContacts = importedContacts
-        .where((contact) => contact.socialGroups.contains(selectedGroup.name))
-        .toList();
-    
-    // Return contacts to parent screen
-    Navigator.pop(context, recentlyImportedContacts);
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Successfully imported ${result['importedCount']} contacts to ${selectedGroup.name}!'),
+    final selectedContacts = await Navigator.of(context).push<List<fContacts.Contact>>(
+      MaterialPageRoute(
+        builder: (context) => _FullScreenContactPicker(contacts: contacts),
+        fullscreenDialog: true,
       ),
     );
-    _scheduleNudgesForImportedContacts(result['importedCount'], user.uid);
-  } else {
+
+    if (selectedContacts == null || selectedContacts.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No contacts selected')),
+      );
+      return;
+    }
+
+    final apiService = Provider.of<ApiService>(context, listen: false);
+    final authService = Provider.of<AuthService>(context, listen: false);
+
+    List<SocialGroup> allGroups = [];
+    User thisUser = await apiService.getUser();
+    var userGroups = thisUser.groups;
+    for (int i = 0; i < userGroups!.length; i++) {
+      allGroups.add(SocialGroup.fromMap(userGroups[i]));
+    }
+
+    final SocialGroup? selectedGroup = await _showGroupSelectionDialog(allGroups);
+    if (selectedGroup == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Group selection cancelled')),
+      );
+      return;
+    }
+
+    final user = authService.currentUser;
+    if (user == null) return;
+
+    final syncService = ContactSyncService(apiService: apiService);
+
     setState(() {
-      _statusMessage = 'Import failed: ${result['message']}';
+      _isImporting = true;
+      _processedCount = 0;
+      _totalCount = selectedContacts.length;
+      _statusMessage = 'Importing selected contacts to ${selectedGroup.name}...';
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Failed to import contacts: ${result['message']}')),
+
+    final result = await syncService.importFromContactPicker(
+      pickedContacts: selectedContacts,
+      groupId: selectedGroup.name,
+      onProgress: (processed, total) {
+        setState(() {
+          _processedCount = processed;
+          _totalCount = total;
+          _statusMessage = 'Processing $processed of $total contacts...';
+        });
+      },
     );
+
+    setState(() => _isImporting = false);
+
+    if (result['success'] == true) {
+      setState(() {
+        _statusMessage =
+            'Successfully imported ${result['importedCount']} contacts to ${selectedGroup.name}!';
+      });
+
+      final importedContacts = await apiService.getAllContacts();
+      final recentlyImportedContacts = importedContacts
+          .where((contact) => contact.socialGroups.contains(selectedGroup.name))
+          .toList();
+
+      Navigator.pop(context, recentlyImportedContacts);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Successfully imported ${result['importedCount']} contacts to ${selectedGroup.name}!'),
+        ),
+      );
+      _scheduleNudgesForImportedContacts(result['importedCount'], user.uid);
+    } else {
+      setState(() {
+        _statusMessage = 'Import failed: ${result['message']}';
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to import contacts: ${result['message']}')),
+      );
+    }
   }
-}
+
 
   String _getQuantityLabel(int quantity) {
     return quantity == 0 ? 'All Contacts' : 'First $quantity Contacts';
@@ -1222,23 +1220,31 @@ class __FullScreenContactPickerState extends State<_FullScreenContactPicker> {
                       
                       // Get the cached avatar index
                       final avatarIndex = _getAvatarIndex(contact);
-                      
-                      return ListTile(
-                        leading: CircleAvatar(
+
+                       Widget avatar;
+                      if (contact.photo != null && contact.photo!.isNotEmpty) {
+                        avatar = CircleAvatar(
+                          backgroundImage: MemoryImage(contact.photo!),
+                          radius: 24,
+                        );
+                      } else {
+                        avatar = CircleAvatar(
+                          radius: 24,
                           backgroundColor: Colors.transparent,
-                          radius: 22,
                           backgroundImage: AssetImage('assets/contact-icons/$avatarIndex.png'),
-                          child: contact.displayName.isNotEmpty
-                              ? Text(
-                                  _getContactInitials(contact.displayName).toUpperCase(),
+                          child: Text(
+                                  contact.displayName.isNotEmpty?_getContactInitials(contact.displayName).toUpperCase():'',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 14,
                                   ),
                                 )
-                              : null,
-                        ),
+                        );
+                      }
+                      
+                      return ListTile(
+                        leading: avatar,
                         title: Text(
                           contact.displayName,
                           style: TextStyle(
