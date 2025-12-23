@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:nudge/services/api_service.dart';
+import 'package:nudge/services/overdue_manager.dart';
+// import 'package:nudge/services/overdue_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:timezone/data/latest.dart' as tz;
 // import 'dart:io';
@@ -27,6 +29,8 @@ class NudgeService {
     tz.initializeTimeZones();
     await _notificationService.initialize();
   }
+
+  // final OverdueManager _overdueManager = OverdueManager();
 
   // Get all nudges for a user
   Stream<List<Nudge>> getNudgesStream(String userId) {
@@ -134,6 +138,81 @@ class NudgeService {
       default: // days
         return now.add(Duration(days: frequency));
     }
+  }
+
+  // Future<bool> scheduleNudgeForContactWithCheck(
+  //   Contact contact, 
+  //   String userId,
+  //   {String? period, 
+  //    int? frequency, 
+  //    DateTime? scheduledTime}
+  // ) async {
+  //   try {
+  //     // Check if contact already has an active nudge
+  //     final hasActiveNudge = await _overdueManager.hasActiveNudgeForContact(
+  //       contact.id, 
+  //       userId
+  //     );
+      
+  //     if (hasActiveNudge) {
+  //       // Cancel existing active nudges for this contact
+  //       await _cancelActiveNudgesForContact(contact.id, userId);
+  //     }
+      
+  //     // Get next available time slot
+  //     DateTime nextAvailableTime;
+  //     if (scheduledTime != null) {
+  //       nextAvailableTime = scheduledTime;
+  //     } else {
+  //       nextAvailableTime = await _overdueManager.getNextAvailableTimeSlot(
+  //         userId,
+  //         preferredDate: _calculateNextNudgeTime(
+  //           period ?? contact.period,
+  //           frequency ?? contact.frequency,
+  //         ),
+  //       );
+  //     }
+      
+  //     // Schedule the nudge
+  //     return await scheduleNudgeForContact(
+  //       contact,
+  //       userId,
+  //       period: period,
+  //       frequency: frequency,
+  //       scheduledTime: nextAvailableTime,
+  //     );
+      
+  //   } catch (e) {
+  //     print('Error scheduling nudge with check: $e');
+  //     return false;
+  //   }
+  // }
+  
+  // // Helper method to cancel active nudges for a contact
+  // Future<void> _cancelActiveNudgesForContact(String contactId, String userId) async {
+  //   try {
+  //     final snapshot = await _firestore
+  //         .collection('users')
+  //         .doc(userId)
+  //         .collection('nudges')
+  //         .where('contactId', isEqualTo: contactId)
+  //         .where('isCompleted', isEqualTo: false)
+  //         // .where('isCanceled', isEqualTo: false)
+  //         .get();
+      
+  //     for (final doc in snapshot.docs) {
+  //       await doc.reference.delete();
+        
+  //       await _notificationService.cancelNotification(doc.id.hashCode);
+  //     }
+  //   } catch (e) {
+  //     print('Error canceling active nudges: $e');
+  //   }
+  // }
+  
+  // // Add method to process overdue nudges (call this periodically)
+  Future<void> processOverdueNudges(String userId) async {
+    await OverdueManager().processOverdueNudges(userId);
   }
 
    Stream<List<Nudge>> getUpcomingNudgesStream(String userId, {int daysAhead = 7}) {

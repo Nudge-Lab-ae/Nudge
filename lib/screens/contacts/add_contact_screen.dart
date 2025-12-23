@@ -9,7 +9,7 @@ import 'package:nudge/services/api_service.dart';
 import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/theme/text_styles.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
-import 'package:nudge/widgets/gradient_text.dart';
+// import 'package:nudge/widgets/gradient_text.dart';
 import 'package:provider/provider.dart';
 // import '../../services/database_service.dart';
 import '../../services/auth_service.dart';
@@ -321,7 +321,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
     final authService = Provider.of<AuthService>(context);
     final apiService = Provider.of<ApiService>(context);
     final user = authService.currentUser;
-    var size = MediaQuery.of(context).size;
+    // var size = MediaQuery.of(context).size;
     
     return StreamProvider<List<SocialGroup>>(
         create: (context) => apiService.getGroupsStream(),
@@ -330,13 +330,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
           builder: (context, groups, child) {
             return Scaffold(
                 appBar: AppBar(
-                  title: GradientText( text: 'NUDGE', style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                      ),
-                ),
+                  title: Text('Add Contact', style: AppTextStyles.title2.copyWith(color: Color(0xff555555))),
                   // Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Color(0xff3CB3E9), fontFamily: 'RobotoMono'),),
                   centerTitle: true,
                   iconTheme: IconThemeData(color: Color(0xff3CB3E9)),
@@ -344,7 +338,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                   backgroundColor: Colors.white
                 ),
                 floatingActionButton: Padding(
-                  padding: EdgeInsets.only(bottom: size.height*0.4),
+                  padding: EdgeInsets.only(bottom: 50, right: 6),
                   child: FeedbackFloatingButton(),
                 ),
                 body: SingleChildScrollView(
@@ -354,15 +348,15 @@ class _AddContactScreenState extends State<AddContactScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'NEW CONTACT',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xff6e6e6e),
-                            ),
-                        ),
-                        const SizedBox(height: 10),
+                        // const Text(
+                        //   'NEW CONTACT',
+                        //   style: TextStyle(
+                        //     fontSize: 20,
+                        //     fontWeight: FontWeight.bold,
+                        //     color: Color(0xff6e6e6e),
+                        //     ),
+                        // ),
+                        // const SizedBox(height: 10),
                         Center(
                           child: Stack(
                             children: [

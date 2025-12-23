@@ -16,7 +16,7 @@ import 'package:nudge/screens/contacts/edit_contact_screen.dart';
 import 'package:nudge/screens/feedback/feedback_forum_screen.dart';
 import 'package:nudge/screens/splash_screen.dart';
 import 'package:nudge/services/api_service.dart';
-import 'package:nudge/services/background_service.dart';
+// import 'package:nudge/services/background_service.dart';
 import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/theme/text_styles.dart';
 // import 'package:nudge/widgets/app_warapper.dart';
@@ -94,7 +94,8 @@ Future<void> main() async {
       print('Fallback also failed: $e2');
     }
   }
-  BackgroundService.initialize();
+  // BackgroundService.initialize();
+  WidgetsBinding.instance.debugShowWidgetInspectorOverrideNotifier.value = false;
   runApp(const NudgeApp());
   _initializeInBackground();
 }

@@ -15,7 +15,7 @@ import 'package:nudge/helpers/deletion_retry_helper.dart';
 import 'package:nudge/screens/admin/feedback_management_screen.dart';
 import 'package:nudge/services/auth_service.dart';
 // import 'package:nudge/theme/text_styles.dart';
-import 'package:nudge/widgets/gradient_text.dart';
+// import 'package:nudge/widgets/gradient_text.dart';
 import 'package:nudge/widgets/screen_tracker.dart';
 import 'package:provider/provider.dart';
 import '../../services/api_service.dart';
@@ -851,6 +851,36 @@ void _showDeleteAccountConfirmation(AuthService authService) {
     );
   }
 
+    void _showLogoutConfirmation(AuthService authService) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('LOGGING OUT', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555))),
+        content: const Text('Are you sure you want to log out of your account?', style: TextStyle(fontWeight: FontWeight.w500)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context), 
+            child: const Text('Cancel')
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await authService.signOut();
+              // Force navigation to welcome screen
+              Navigator.pushNamedAndRemoveUntil(
+                context, 
+                '/welcome', 
+                (route) => false
+              );
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
+  }
+
 
 @override
   Widget build(BuildContext context) {
@@ -866,15 +896,14 @@ void _showDeleteAccountConfirmation(AuthService authService) {
       behavior: HitTestBehavior.translucent,
       child: Scaffold(
         appBar: AppBar(
-          title: GradientText(
-            text: 'NUDGE',
-            style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
-            gradient: const LinearGradient(
-              colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-          ),
+          title: const Text(
+                'Adjust Settings',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xff555555),
+                ),
+              ),
           centerTitle: true,
           iconTheme: const IconThemeData(color: Color(0xff3CB3E9)),
           backgroundColor: Colors.white,
@@ -897,18 +926,18 @@ void _showDeleteAccountConfirmation(AuthService authService) {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Padding(
-                              padding: const EdgeInsets.only(left: 50),
-                              child: const Text(
-                                'ADJUST SETTINGS',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xff555555),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 35),
+                            // Padding(
+                            //   padding: const EdgeInsets.only(left: 50),
+                            //   child: const Text(
+                            //     'ADJUST SETTINGS',
+                            //     style: TextStyle(
+                            //       fontSize: 20,
+                            //       fontWeight: FontWeight.w700,
+                            //       color: Color(0xff555555),
+                            //     ),
+                            //   ),
+                            // ),
+                            // const SizedBox(height: 35),
                             const Text(
                               'SUBSCRIPTION',
                               style: TextStyle(
@@ -1165,7 +1194,28 @@ void _showDeleteAccountConfirmation(AuthService authService) {
                         'ACCOUNT ACTIONS',
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xff6e6e6e)),
                       ),
-                      const SizedBox(height: 15),
+                      const SizedBox(height: 35),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: OutlinedButton(
+                          onPressed: () {
+                            _dismissKeyboard(); // Dismiss keyboard before showing dialog
+                            // _showDeleteAccountConfirmation(authService);
+                            _showLogoutConfirmation(authService);
+                          },
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Color(0xff3CB3E9),
+                            side: const BorderSide(color: Color(0xff3CB3E9)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          child: const Text(
+                            'LOG OUT',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 35),
                       SizedBox(
                         width: double.infinity,
                         height: 50,

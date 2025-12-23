@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
-import 'package:nudge/widgets/gradient_text.dart';
+// import 'package:nudge/widgets/gradient_text.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 // import '../../services/database_service.dart';
@@ -358,7 +358,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
   @override
   Widget build(BuildContext context) {
     final apiService = Provider.of<ApiService>(context, listen: false);
-    var size = MediaQuery.of(context).size;
+    // var size = MediaQuery.of(context).size;
       if (_isCropping) {
         return _buildCropScreen();
       }
@@ -366,20 +366,14 @@ class _EditContactScreenState extends State<EditContactScreen> {
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(
-          title: GradientText( text: 'NUDGE', style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
-                gradient: const LinearGradient(
-                colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-          ),
+          title: Text('Edit Contact', style: AppTextStyles.title2.copyWith(color: Color(0xff555555))),
           // Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Color(0xff3CB3E9), fontFamily: 'RobotoMono'),),
           centerTitle: true,
           iconTheme: IconThemeData(color: Color(0xff3CB3E9)),
           backgroundColor: Colors.white,
         ),
         floatingActionButton: Padding(
-        padding: EdgeInsets.only(bottom: size.height*0.4),
+        padding: EdgeInsets.only(bottom: 50, right: 6),
         child: FeedbackFloatingButton(),
       ),
         body: const Center(child: CircularProgressIndicator()),
@@ -393,13 +387,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
           builder: (context, groups, child) {
             return Scaffold(
       appBar: AppBar(
-        title: GradientText( text: 'NUDGE', style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
-              gradient: const LinearGradient(
-                colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-        ),
+        title: Text('Edit Contact', style: AppTextStyles.title2.copyWith(color: Color(0xff555555))),
         // Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Color(0xff3CB3E9), fontFamily: 'RobotoMono'),),
         centerTitle: true,
         iconTheme: IconThemeData(color: Color(0xff3CB3E9)),
@@ -414,7 +402,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
         ],
       ),
       floatingActionButton: Padding(
-        padding: EdgeInsets.only(bottom: size.height*0.4),
+        padding: EdgeInsets.only(bottom: 50, right: 6),
         child: FeedbackFloatingButton(),
       ),
       body: SingleChildScrollView(
@@ -424,14 +412,14 @@ class _EditContactScreenState extends State<EditContactScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Padding(
-                padding: EdgeInsets.only(left: 10),
-                child:  Text('EDIT CONTACT', style: AppTextStyles.primaryBold.copyWith(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xff555555),
-                  )),),
-              const SizedBox(height: 30),
+              // Padding(
+              //   padding: EdgeInsets.only(left: 10),
+              //   child:  Text('EDIT CONTACT', style: AppTextStyles.primaryBold.copyWith(
+              //     fontSize: 22,
+              //     fontWeight: FontWeight.bold,
+              //     color: Color(0xff555555),
+              //     )),),
+              // const SizedBox(height: 30),
 
               Center(
                 child: Stack(

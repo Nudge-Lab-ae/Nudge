@@ -4,9 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:nudge/screens/contacts/edit_contact_screen.dart';
 import 'package:nudge/services/api_service.dart';
+import 'package:nudge/theme/text_styles.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
 // import 'package:nudge/theme/text_styles.dart';
-import 'package:nudge/widgets/gradient_text.dart';
+// import 'package:nudge/widgets/gradient_text.dart';
 import 'package:provider/provider.dart';
 import '../../models/contact.dart';
 // import '../../services/database_service.dart';
@@ -97,9 +98,9 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
   @override
   Widget build(BuildContext context) {
     // final authService = Provider.of<AuthService>(context);
-    final apiService = Provider.of<ApiService>(context);
+    // final apiService = Provider.of<ApiService>(context);
     // final user = authService.currentUser;
-    var size = MediaQuery.of(context).size;
+    // var size = MediaQuery.of(context).size;
     final initials = _getContactInitials(_currentContact.name);
     
     bool isLocalImage = _currentContact.imageUrl.isNotEmpty && 
@@ -115,13 +116,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: GradientText( text: 'NUDGE', style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
-              gradient: const LinearGradient(
-          colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-        ),
+        title: Text('Contact Details', style: AppTextStyles.title2.copyWith(color: Color(0xff555555))),
         // Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Color(0xff3CB3E9), fontFamily: 'RobotoMono'),),
         centerTitle: true,
         iconTheme: IconThemeData(color: Color(0xff3CB3E9)),
@@ -139,17 +134,17 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
               );
             },
           ),
-          IconButton(
-            icon: Icon(Icons.notifications),
-            onPressed: () {
-              apiService.triggerManualNudge(_currentContact.id);
-            },
-            tooltip: 'Send test nudge',
-          ),
+          // IconButton(
+          //   icon: Icon(Icons.notifications),
+          //   onPressed: () {
+          //     apiService.triggerManualNudge(_currentContact.id);
+          //   },
+          //   tooltip: 'Send test nudge',
+          // ),
         ],
       ),
       floatingActionButton: Padding(
-        padding: EdgeInsets.only(bottom: size.height*0.4),
+        padding: EdgeInsets.only(bottom: 50, right: 6),
         child: FeedbackFloatingButton(),
       ),
       body: SingleChildScrollView(
@@ -206,7 +201,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
       ),
                   const SizedBox(height: 15),
                   Text(
-                    (_currentContact.name).toUpperCase(),
+                    (_currentContact.name),
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -241,6 +236,8 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                         value: _currentContact.isVIP,
                         onChanged: _toggleVIPStatus,
                         activeColor: Color(0xff3CB3E9),
+                        inactiveThumbColor: Color(0xff555555),
+                        inactiveTrackColor: Color(0xffaaaaaa),
                       ),
               ),
             ),

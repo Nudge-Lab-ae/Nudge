@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:nudge/screens/contacts/contact_detail_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/theme/text_styles.dart';
-// import 'package:nudge/widgets/feedback_floating_button.dart';
 import 'package:provider/provider.dart';
 import 'package:confetti/confetti.dart';
 import 'package:shimmer/shimmer.dart';
@@ -10,6 +9,7 @@ import '../../services/auth_service.dart';
 import '../../models/social_group.dart';
 import '../../models/contact.dart';
 import '../../models/nudge.dart';
+import '../../widgets/feedback_floating_button.dart';
 
 enum SortOption { name, memberCount, frequency }
 
@@ -22,7 +22,6 @@ class GroupsListScreen extends StatefulWidget {
 }
 
 class _GroupsListScreenState extends State<GroupsListScreen> {
-  final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   Stream<List<SocialGroup>>? _groupsStream;
   Stream<List<Nudge>>? _nudgesStream;
@@ -30,6 +29,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
   final ConfettiController _confettiController = ConfettiController(duration: const Duration(seconds: 3));
   SortOption _currentSortOption = SortOption.name;
   bool _sortAscending = true;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -59,10 +59,10 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
   @override
   void dispose() {
     _confettiController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
-  // Calculate interaction progress for a group
   double _calculateGroupProgress(List<Contact> groupMembers, List<Nudge> allNudges) {
     if (groupMembers.isEmpty) return 0.0;
 
@@ -70,7 +70,6 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
     int membersWithNudges = 0;
 
     for (final member in groupMembers) {
-      // Get nudges for this specific contact
       final memberNudges = allNudges.where((nudge) => nudge.contactId == member.id).toList();
       
       if (memberNudges.isNotEmpty) {
@@ -82,10 +81,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
       }
     }
 
-    // If no members have nudges, return 0
     if (membersWithNudges == 0) return 0.0;
-
-    // Return average progress across members
     return totalProgress / membersWithNudges;
   }
 
@@ -113,7 +109,6 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
     return sortedGroups;
   }
 
-  // Add this method to show delete confirmation
   void _showDeleteConfirmation(BuildContext context, SocialGroup group, ApiService apiService) {
     showDialog(
       context: context,
@@ -128,11 +123,9 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
           TextButton(
             onPressed: () async {
               try {
-                // Get all contacts in this group
                 final contacts = await apiService.getContactsStream().first;
                 final groupContacts = contacts.where((c) => c.connectionType == group.name).toList();
                 
-                // Update contacts to remove this group assignment
                 for (var contact in groupContacts) {
                   final updatedContact = contact.copyWith(
                     connectionType: '',
@@ -142,7 +135,6 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                   await apiService.updateContact(updatedContact);
                 }
                 
-                // Delete the group
                 final updatedGroups = await apiService.getGroupsStream().first;
                 updatedGroups.removeWhere((g) => g.id == group.id);
                 await apiService.updateGroups(updatedGroups);
@@ -186,142 +178,165 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
       child: StreamProvider<List<Nudge>>.value(
         value: _nudgesStream ?? Stream.value([]),
         initialData: const [],
-        child: Scaffold(
-          backgroundColor: Colors.grey[50],
-          appBar: !widget.showAppBar
-          ? null
-          :AppBar(
-            title: Text('SOCIAL GROUPS', style: AppTextStyles.title3.copyWith(color: Colors.white, fontFamily: 'Inter')),
-            iconTheme: const IconThemeData(color: Colors.white),
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => Navigator.pop(context),
-            ),
-            backgroundColor: const Color(0xff3CB3E9),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.add),
-                onPressed: () => _showCreateGroupDialog(context, apiService),
-              ),
-            ],
-          ),
-          body: Stack(
-            children: [
-              Column(
-                children: [
-                  // Sticky Header Section
-                  Container(
-                    padding: const EdgeInsets.only(left: 16, right: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: const BorderRadius.only(
-                        bottomLeft: Radius.circular(20),
-                        bottomRight: Radius.circular(20),
+        child: Consumer2<List<Contact>, List<Nudge>>(
+          builder: (context, contacts, nudges, child) {
+            return Scaffold(
+              backgroundColor: widget.showAppBar ? Colors.grey[50] : Colors.white,
+              appBar: widget.showAppBar 
+                  ? AppBar(
+                      title: const Text('Social Groups', style: TextStyle(color: Colors.white, fontFamily: 'Inter')),
+                      iconTheme: const IconThemeData(color: Colors.white),
+                      leading: IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        onPressed: () => Navigator.pop(context),
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.blue.withOpacity(0.2),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Search and Filter Row
-                         SizedBox(
-                          height: 10,
-                        ),
-                        Text('SOCIAL GROUPS', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20, color: Color(0xff555555), fontFamily: 'Inter')),
-                        SizedBox(
-                          height: 10,
-                        ),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Center(
-                                  child: TextField(
-                                    controller: _searchController,
-                                    decoration: InputDecoration(
-                                      hintText: 'Search groups...',
-                                      hintStyle: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff60A7CF)),
-                                      prefixIcon: const Icon(Icons.search, color: Colors.blue),
-                                      border: InputBorder.none,
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                    ),
-                                    onChanged: (value) => setState(() => _searchQuery = value),
+                      backgroundColor: const Color(0xff3CB3E9),
+                    )
+                  : null,
+              body: Stack(
+                children: [
+                  // For embedded mode (dashboard), use CustomScrollView with collapsible header
+                  if (!widget.showAppBar)
+                    StreamBuilder<List<SocialGroup>>(
+                      stream: _groupsStream,
+                      builder: (context, groupsSnapshot) {
+                        if (groupsSnapshot.hasError) {
+                          return _buildErrorState(groupsSnapshot.error.toString());
+                        }
+
+                        if (!groupsSnapshot.hasData) {
+                          return _buildLoadingState();
+                        }
+
+                        final groups = groupsSnapshot.data!;
+                        final sortedGroups = _sortGroups(groups);
+                        final filteredGroups = sortedGroups.where((group) {
+                          return group.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                              group.description.toLowerCase().contains(_searchQuery.toLowerCase());
+                        }).toList();
+                        
+                        if (groups.isEmpty) {
+                          return _buildEmptyState(apiService);
+                        }
+
+                        return Scaffold(
+                          appBar: AppBar(
+                            title: Text(
+                                  'Social Groups',
+                                  style: AppTextStyles.title2.copyWith(
+                                    color: const Color(0xff555555),
+                                    fontSize: 22,
                                   ),
                                 ),
+                            leading: Center(),
+                          ),
+                          body: CustomScrollView(
+                          physics: const BouncingScrollPhysics(),
+                          slivers: [
+                            // // Collapsible SliverAppBar
+                            // SliverAppBar(
+                            //   title: Padding(
+                            //     padding: const EdgeInsets.only(left: 8.0),
+                            //     child: Text(
+                            //       'Social Groups', 
+                            //       style: AppTextStyles.title2.copyWith(
+                            //         color: const Color(0xff555555), 
+                            //         fontSize: 22
+                            //       ),
+                            //     ),
+                            //   ),
+                            //   leading: Center(),
+                            //   centerTitle: false,
+                            //   backgroundColor: Colors.white,
+                            //   floating: true,
+                            //   snap: true,
+                            //   pinned: false,
+                            // ),
+                            // Groups List
+                            SliverFillRemaining(
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: ListView.builder(
+                                  physics: const BouncingScrollPhysics(),
+                                  itemCount: filteredGroups.length,
+                                  itemBuilder: (context, index) {
+                                    final group = filteredGroups[index];
+                                    final groupMembers = contacts.where((contact) => 
+                                      contact.connectionType == group.name || contact.connectionType == group.id
+                                    ).toList();
+                                    
+                                    final progress = _calculateGroupProgress(groupMembers, nudges);
+                                    
+                                    return Padding(
+                                      padding: const EdgeInsets.only(bottom: 12),
+                                      child: _buildGroupCard(context, group, groupMembers, progress, apiService),
+                                    );
+                                  },
+                                ),
                               ),
                             ),
-                            const SizedBox(width: 10),
-                            Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: IconButton(
-                                icon: const Icon(Icons.filter_list, color: Colors.blue),
-                                onPressed: () => _showFilterOptions(context),
-                              ),
+                            
+                            // Bottom padding for FAB
+                            const SliverToBoxAdapter(
+                              child: SizedBox(height: 80),
                             ),
                           ],
-                        ),
-                        const SizedBox(height: 8),
-                        // Optional: Add some summary stats or quick actions here
-                      ],
+                        ));
+                      },
                     ),
-                  ),
-                Expanded(
-                  child: StreamBuilder<List<SocialGroup>>(
-                    stream: _groupsStream,
-                    builder: (context, groupsSnapshot) {
-                      if (groupsSnapshot.hasError) {
-                        return _buildErrorState(groupsSnapshot.error.toString());
-                      }
+                  
+                  // For standalone mode, use CustomScrollView with collapsible header
+                  if (widget.showAppBar)
+                    StreamBuilder<List<SocialGroup>>(
+                      stream: _groupsStream,
+                      builder: (context, groupsSnapshot) {
+                        if (groupsSnapshot.hasError) {
+                          return _buildErrorState(groupsSnapshot.error.toString());
+                        }
 
-                      if (!groupsSnapshot.hasData) {
-                        return _buildLoadingState();
-                      }
+                        if (!groupsSnapshot.hasData) {
+                          return _buildLoadingState();
+                        }
 
-                      final groups = groupsSnapshot.data!;
-                      
-                      return Consumer<List<Contact>>(
-                        builder: (context, contacts, child) {
-                          return Consumer<List<Nudge>>(
-                            builder: (context, nudges, child) {
-                              final sortedGroups = _sortGroups(groups);
-                              final filteredGroups = sortedGroups.where((group) {
-                                return group.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                                    group.description.toLowerCase().contains(_searchQuery.toLowerCase());
-                              }).toList();
-                              
-                              if (groups.isEmpty) {
-                                return _buildEmptyState(apiService);
-                              }
+                        final groups = groupsSnapshot.data!;
+                        final sortedGroups = _sortGroups(groups);
+                        final filteredGroups = sortedGroups.where((group) {
+                          return group.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                              group.description.toLowerCase().contains(_searchQuery.toLowerCase());
+                        }).toList();
+                        
+                        if (groups.isEmpty) {
+                          return _buildEmptyState(apiService);
+                        }
 
-                              return RefreshIndicator(
-                                onRefresh: () async {
-                                  setState(() => _initializeStreams());
-                                  await Future.delayed(const Duration(seconds: 1));
-                                },
+                        return Scaffold(
+                          appBar: AppBar(
+                            title: Text(
+                                  'Social Groups',
+                                  style: AppTextStyles.title2.copyWith(
+                                    color: const Color(0xff555555),
+                                    fontSize: 16,
+                                  ),
+                                ),
+                          ),
+                          body: CustomScrollView(
+                          physics: const BouncingScrollPhysics(),
+                          slivers: [
+                            // Collapsible SliverAppBar for standalone mode
+                            
+                            
+                            // Groups List
+                            SliverFillRemaining(
                                 child: Padding(
-                                  padding: const EdgeInsets.only(bottom: 80.0), // Add bottom padding for FAB
+                                  padding: const EdgeInsets.all(16),
                                   child: ListView.builder(
-                                    padding: const EdgeInsets.all(16),
+                                    physics: const BouncingScrollPhysics(),
                                     itemCount: filteredGroups.length,
                                     itemBuilder: (context, index) {
                                       final group = filteredGroups[index];
                                       final groupMembers = contacts.where((contact) => 
                                         contact.connectionType == group.name || contact.connectionType == group.id
-                                        ).toList();
+                                      ).toList();
                                       
                                       final progress = _calculateGroupProgress(groupMembers, nudges);
                                       
@@ -332,41 +347,55 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                                     },
                                   ),
                                 ),
-                              );
-                            },
-                          );
-                        },
-                      );
-                    },
+                              ),
+                            
+                            // Bottom padding for FAB
+                            const SliverToBoxAdapter(
+                              child: SizedBox(height: 80),
+                            ),
+                          ],
+                        ));
+                      },
+                    ),
+                  
+                  // Confetti animation
+                  Align(
+                    alignment: Alignment.topCenter,
+                    child: ConfettiWidget(
+                      confettiController: _confettiController,
+                      blastDirectionality: BlastDirectionality.explosive,
+                      shouldLoop: false,
+                      colors: const [
+                        Colors.green,
+                        Colors.blue,
+                        Colors.pink,
+                        Colors.orange,
+                        Colors.purple
+                      ],
+                    ),
                   ),
-                ),
                 ],
               ),
-              
-              // Confetti animation
-              Align(
-                alignment: Alignment.topCenter,
-                child: ConfettiWidget(
-                  confettiController: _confettiController,
-                  blastDirectionality: BlastDirectionality.explosive,
-                  shouldLoop: false,
-                  colors: const [
-                    Colors.green,
-                    Colors.blue,
-                    Colors.pink,
-                    Colors.orange,
-                    Colors.purple
+              // Fixed FAB positioning for both modes
+              floatingActionButton: Padding(
+                padding: EdgeInsets.only(
+                  bottom: widget.showAppBar ? 30.0 : 30.0,
+                  right: 6.0,
+                ),
+                child: FeedbackFloatingButton(
+                  currentSection: 'groups',
+                  extraActions: [
+                    FeedbackAction(
+                      label: 'New Group',
+                      icon: Icons.group_add,
+                      onPressed: () => _showCreateGroupDialog(context, apiService),
+                    ),
                   ],
                 ),
               ),
-            ],
-          ),
-          floatingActionButton: FloatingActionButton.extended(
-            onPressed: () => _showCreateGroupDialog(context, apiService),
-            backgroundColor: const Color(0xff3CB3E9),
-            icon: const Icon(Icons.group_add, color: Colors.white),
-            label: const Text('NEW GROUP', style: TextStyle(color: Colors.white)),
-          ),
+              floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+            );
+          },
         ),
       ),
     );
@@ -398,28 +427,30 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
       ),
     );
   }
-Widget _buildLoadingState() {
-  return ListView.builder(
-    padding: const EdgeInsets.all(16),
-    itemCount: 6,
-    itemBuilder: (context, index) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: Shimmer.fromColors(
-          baseColor: Colors.grey[300]!,
-          highlightColor: Colors.grey[100]!,
-          child: Container(
-            height: 100,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
+
+  Widget _buildLoadingState() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: 6,
+      itemBuilder: (context, index) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Shimmer.fromColors(
+            baseColor: Colors.grey[300]!,
+            highlightColor: Colors.grey[100]!,
+            child: Container(
+              height: 100,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
             ),
           ),
-        ),
-      );
-    },
-  );
-}
+        );
+      },
+    );
+  }
+
   Widget _buildEmptyState(ApiService apiService) {
     return Center(
       child: Column(
@@ -451,172 +482,106 @@ Widget _buildLoadingState() {
     );
   }
 
-Widget _buildGroupCard(BuildContext context, SocialGroup group, List<Contact> members, double progress, ApiService apiService) {
-  // Add safety check for color code
-  Color cardColor;
-  try {
-    cardColor = Color(int.parse(group.colorCode.replaceFirst('#', ''), radix: 16) + 0xFF000000);
-  } catch (e) {
-    cardColor = const Color(0xff3CB3E9); // Default color
-  }
-  
-  // final Color textColor = cardColor.computeLuminance() > 0.5 ? Colors.black : Colors.white;
-  
-  return GestureDetector(
-    onTap: () => _showGroupDetails(context, group, members, apiService),
-    onLongPress: () => _showDeleteConfirmation(context, group, apiService),
-    child: Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            // Color indicator circle
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: cardColor,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                _getGroupIcon(group.name),
-                color: Colors.white,
-                size: 24,
-              ),
+  Widget _buildGroupCard(BuildContext context, SocialGroup group, List<Contact> members, double progress, ApiService apiService) {
+    Color cardColor;
+    try {
+      cardColor = Color(int.parse(group.colorCode.replaceFirst('#', ''), radix: 16) + 0xFF000000);
+    } catch (e) {
+      cardColor = const Color(0xff3CB3E9);
+    }
+    
+    return GestureDetector(
+      onTap: () => _showGroupDetails(context, group, members, apiService),
+      onLongPress: () => _showDeleteConfirmation(context, group, apiService),
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.2),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
-            const SizedBox(width: 16),
-            
-            // Group info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Group name and member count
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Flexible(
-                        child: Text(
-                          (group.name).toUpperCase(),
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xff555555),
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Text(
-                        '${members.length} members',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  
-                  // Frequency badge
-                 Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: cardColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      FrequencyPeriodMapper.getConversationalChoice(group.frequency, group.period),
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: cardColor,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  
-                  // Description
-                  Text(
-                    group.description.isEmpty ? 'No description' : group.description,
-                    style: const TextStyle(color: Colors.grey, fontSize: 14),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            
-            // Chevron icon
-            const Icon(Icons.chevron_right, color: Colors.grey),
           ],
         ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: cardColor,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  _getGroupIcon(group.name),
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            (group.name).toUpperCase(),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xff555555),
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Text(
+                          '${members.length} members',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    
+                   Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: cardColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        FrequencyPeriodMapper.getConversationalChoice(group.frequency, group.period),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: cardColor,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                ),
+              ),
+              
+              const Icon(Icons.chevron_right, color: Colors.grey),
+            ],
+          ),
+        ),
       ),
-    ),
-  );
-}
- 
-  // Widget _buildInteractionProgress(double progress, Color textColor) {
-  //   return Column(
-  //     crossAxisAlignment: CrossAxisAlignment.start,
-  //     children: [
-  //       Text(
-  //         'Interaction Progress',
-  //         style: TextStyle(fontSize: 10, color: textColor.withOpacity(0.8)),
-  //       ),
-  //       const SizedBox(height: 4),
-  //       LinearProgressIndicator(
-  //         value: progress,
-  //         backgroundColor: textColor.withOpacity(0.2),
-  //         valueColor: AlwaysStoppedAnimation<Color>(textColor),
-  //         borderRadius: BorderRadius.circular(4),
-  //       ),
-  //       const SizedBox(height: 4),
-  //       Text(
-  //         '${(progress * 100).toInt()}% complete',
-  //         style: TextStyle(fontSize: 10, color: textColor),
-  //       ),
-  //     ],
-  //   );
-  // }
-
-  // Widget _buildEmptyProgress(Color textColor) {
-  //   return Column(
-  //     crossAxisAlignment: CrossAxisAlignment.start,
-  //     children: [
-  //      Container(
-  //         height: 40,
-  //         decoration: BoxDecoration(
-  //           color: Colors.transparent,
-  //           borderRadius: BorderRadius.circular(4),
-  //         ),
-  //         child: Center(
-  //           child: Text(
-  //             'Add members to track progress',
-  //             style: TextStyle(
-  //               fontSize: 10,
-  //               color: textColor.withOpacity(0.6),
-  //               fontWeight: FontWeight.bold,
-  //             ),
-  //           ),
-  //         ),
-  //       ),
-       
-  //     ],
-  //   );
-  // }
+    );
+  }
 
   IconData _getGroupIcon(String groupName) {
     if (groupName.toLowerCase().contains('family')) return Icons.family_restroom;
@@ -632,112 +597,21 @@ Widget _buildGroupCard(BuildContext context, SocialGroup group, List<Contact> me
     await Future.delayed(const Duration(seconds: 1));
   }
 
-    void _showFilterOptions(BuildContext context) {
-        showModalBottomSheet(
-          context: context,
-          builder: (context) {
-            return StatefulBuilder(
-              builder: (context, setState) {
-                return Container(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('Sort Groups', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 16),
-                      ListTile(
-                        leading: const Icon(Icons.sort_by_alpha),
-                        title: const Text('Sort by Name'),
-                        trailing: _currentSortOption == SortOption.name
-                            ? Icon(_sortAscending ? Icons.arrow_upward : Icons.arrow_downward)
-                            : null,
-                        onTap: () async{
-                          setState(() {
-                            if (_currentSortOption == SortOption.name) {
-                              _sortAscending = !_sortAscending;
-                            } else {
-                              _currentSortOption = SortOption.name;
-                              _sortAscending = true;
-                            }
-                          });
-                          Navigator.pop(context);
-                          externalRefresh();
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.people),
-                        title: const Text('Sort by Member Count'),
-                        trailing: _currentSortOption == SortOption.memberCount
-                            ? Icon(_sortAscending ? Icons.arrow_upward : Icons.arrow_downward)
-                            : null,
-                        onTap: () async{
-                          setState(() {
-                            if (_currentSortOption == SortOption.memberCount) {
-                              _sortAscending = !_sortAscending;
-                            } else {
-                              _currentSortOption = SortOption.memberCount;
-                              _sortAscending = true;
-                            }
-                          });
-                          Navigator.pop(context);
-                          externalRefresh();
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.notifications_active),
-                        title: const Text('Sort by Interaction Frequency'),
-                        trailing: _currentSortOption == SortOption.frequency
-                            ? Icon(_sortAscending ? Icons.arrow_upward : Icons.arrow_downward)
-                            : null,
-                        onTap: () async{
-                          setState(() {
-                            if (_currentSortOption == SortOption.frequency) {
-                              _sortAscending = !_sortAscending;
-                            } else {
-                              _currentSortOption = SortOption.frequency;
-                              _sortAscending = true;
-                            }
-                          });
-                          Navigator.pop(context);
-                          externalRefresh();
-                        },
-                      ),
-                    ],
-                  ),
-                );
-              },
-            );
-          },
-        );
-      }
-
 void _showCreateGroupDialog(BuildContext context, ApiService apiService) {
   final nameController = TextEditingController();
   final descriptionController = TextEditingController();
-  String _selectedFrequencyChoice = 'Monthly'; // Default value
+  String _selectedFrequencyChoice = 'Monthly';
   String period = 'Monthly';
   int frequency = 1;
   String selectedColor = '#2596BE';
 
-  // Frequency options
-  // final List<String> frequencyOptions = [
-  //   'Every few days',
-  //   'Weekly',
-  //   'Every 2 weeks', 
-  //   'Monthly',
-  //   'Quarterly',
-  //   'Twice a year',
-  //   'Once a year'
-  // ];
-
-  // Predefined color options
   final List<String> colorOptions = [
-    '#2596BE', // Primary blue
-    '#FF6B6B', // Red
-    '#4ECDC4', // Teal
-    '#45B7D1', // Light blue
-    '#F9A826', // Orange
-    '#6C5CE7', // Purple
+    '#2596BE',
+    '#FF6B6B',
+    '#4ECDC4',
+    '#45B7D1',
+    '#F9A826',
+    '#6C5CE7',
   ];
 
   showDialog(
@@ -755,28 +629,27 @@ void _showCreateGroupDialog(BuildContext context, ApiService apiService) {
                     controller: nameController,
                     decoration: InputDecoration(
                       labelText: 'Group Name',
-                      labelStyle: TextStyle(color: Color(0xff555555)),
-                       border: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.grey, width: 1),
-                  borderRadius: BorderRadius.circular(10)
+                      labelStyle: const TextStyle(color: Color(0xff555555)),
+                      border: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.grey, width: 1),
+                        borderRadius: BorderRadius.circular(10)
                       ),
-                       enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey, width: 1),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blue, width: 2),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                // Optional: to show border even when there's an error
-                errorBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.red, width: 1),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                focusedErrorBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.red, width: 2),
-                  borderRadius: BorderRadius.circular(10)
-                ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.grey, width: 1),
+                        borderRadius: BorderRadius.circular(10)
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.blue, width: 2),
+                        borderRadius: BorderRadius.circular(10)
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.red, width: 1),
+                        borderRadius: BorderRadius.circular(10)
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.red, width: 2),
+                        borderRadius: BorderRadius.circular(10)
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -784,75 +657,73 @@ void _showCreateGroupDialog(BuildContext context, ApiService apiService) {
                     controller: descriptionController,
                     decoration: InputDecoration(
                       labelText: 'Description',
-                      labelStyle: TextStyle(color: Color(0xff555555)),
-                        border: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.grey, width: 1),
-                  borderRadius: BorderRadius.circular(10)
+                      labelStyle: const TextStyle(color: Color(0xff555555)),
+                      border: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.grey, width: 1),
+                        borderRadius: BorderRadius.circular(10)
                       ),
-                       enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey, width: 1),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blue, width: 2),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                // Optional: to show border even when there's an error
-                errorBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.red, width: 1),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                focusedErrorBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.red, width: 2),
-                  borderRadius: BorderRadius.circular(10)
-                ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.grey, width: 1),
+                        borderRadius: BorderRadius.circular(10)
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.blue, width: 2),
+                        borderRadius: BorderRadius.circular(10)
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.red, width: 1),
+                        borderRadius: BorderRadius.circular(10)
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.red, width: 2),
+                        borderRadius: BorderRadius.circular(10)
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
-               DropdownButtonFormField<String>(
-                  value: _selectedFrequencyChoice,
-                  style: TextStyle(color: Color(0xff555555)),
-                  onChanged: (String? newValue) {
-                    if (newValue != null) {
-                      final frequencyData = FrequencyPeriodMapper.getFrequencyPeriod(newValue);
-                      setState(() {
-                        frequency = frequencyData['frequency'] as int;
-                        period = frequencyData['period'] as String;
-                      });
-                    }
-                  },
-                  items: FrequencyPeriodMapper.frequencyMapping.keys.map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                  decoration: InputDecoration(
-                    labelText: 'Contact Frequency',
-                    labelStyle: TextStyle(color: Color(0xff555555)),
+                  DropdownButtonFormField<String>(
+                    value: _selectedFrequencyChoice,
+                    style: const TextStyle(color: Color(0xff555555)),
+                    onChanged: (String? newValue) {
+                      if (newValue != null) {
+                        final frequencyData = FrequencyPeriodMapper.getFrequencyPeriod(newValue);
+                        setState(() {
+                          frequency = frequencyData['frequency'] as int;
+                          period = frequencyData['period'] as String;
+                        });
+                      }
+                    },
+                    items: FrequencyPeriodMapper.frequencyMapping.keys.map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                    decoration: InputDecoration(
+                      labelText: 'Contact Frequency',
+                      labelStyle: const TextStyle(color: Color(0xff555555)),
                       border: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.grey, width: 1),
-                  borderRadius: BorderRadius.circular(10)
+                        borderSide: const BorderSide(color: Colors.grey, width: 1),
+                        borderRadius: BorderRadius.circular(10)
                       ),
-                       enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey, width: 1),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blue, width: 2),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                // Optional: to show border even when there's an error
-                errorBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.red, width: 1),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                focusedErrorBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.red, width: 2),
-                  borderRadius: BorderRadius.circular(10)
-                ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.grey, width: 1),
+                        borderRadius: BorderRadius.circular(10)
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.blue, width: 2),
+                        borderRadius: BorderRadius.circular(10)
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.red, width: 1),
+                        borderRadius: BorderRadius.circular(10)
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.red, width: 2),
+                        borderRadius: BorderRadius.circular(10)
+                      ),
+                    ),
                   ),
-                ),
                   const SizedBox(height: 16),
                   const Text('Group Color', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xff555555))),
                   const SizedBox(height: 8),
@@ -896,8 +767,8 @@ void _showCreateGroupDialog(BuildContext context, ApiService apiService) {
                       memberCount: 0,
                       lastInteraction: DateTime.now(),
                       colorCode: selectedColor,
-                      birthdayNudgesEnabled: true, // Default enabled
-                      anniversaryNudgesEnabled: true, // Default enabled
+                      birthdayNudgesEnabled: true,
+                      anniversaryNudgesEnabled: true,
                     );
                     
                     try {
@@ -934,25 +805,13 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
   bool anniversaryNudgesEnabled = group.anniversaryNudgesEnabled;
   String _selectedFrequencyChoice = FrequencyPeriodMapper.getConversationalChoice(group.frequency, group.period);
 
-  // Frequency options
-  // final List<String> frequencyOptions = [
-  //   'Every few days',
-  //   'Weekly',
-  //   'Every 2 weeks', 
-  //   'Monthly',
-  //   'Quarterly',
-  //   'Twice a year',
-  //   'Once a year'
-  // ];
-
-  // Predefined color options
   final List<String> colorOptions = [
-    '#2596BE', // Primary blue
-    '#FF6B6B', // Red
-    '#4ECDC4', // Teal
-    '#45B7D1', // Light blue
-    '#F9A826', // Orange
-    '#6C5CE7', // Purple
+    '#2596BE',
+    '#FF6B6B',
+    '#4ECDC4',
+    '#45B7D1',
+    '#F9A826',
+    '#6C5CE7',
   ];
 
   showDialog(
@@ -968,30 +827,29 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                 children: [
                   TextField(
                     controller: nameController,
-                    decoration:  InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Group Name',
-                      labelStyle: TextStyle(color: Color(0xff555555)),
+                      labelStyle: const TextStyle(color: Color(0xff555555)),
                       border: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.grey, width: 1),
-                  borderRadius: BorderRadius.circular(10)
+                        borderSide: const BorderSide(color: Colors.grey, width: 1),
+                        borderRadius: BorderRadius.circular(10)
                       ),
-                       enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey, width: 1),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blue, width: 2),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                // Optional: to show border even when there's an error
-                errorBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.red, width: 1),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                focusedErrorBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.red, width: 2),
-                  borderRadius: BorderRadius.circular(10)
-                ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.grey, width: 1),
+                        borderRadius: BorderRadius.circular(10)
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.blue, width: 2),
+                        borderRadius: BorderRadius.circular(10)
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.red, width: 1),
+                        borderRadius: BorderRadius.circular(10)
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.red, width: 2),
+                        borderRadius: BorderRadius.circular(10)
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -999,34 +857,33 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                     controller: descriptionController,
                     decoration: InputDecoration(
                       labelText: 'Description',
-                      labelStyle: TextStyle(color: Color(0xff555555)),
+                      labelStyle: const TextStyle(color: Color(0xff555555)),
                       border: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.grey, width: 1),
-                  borderRadius: BorderRadius.circular(10)
+                        borderSide: const BorderSide(color: Colors.grey, width: 1),
+                        borderRadius: BorderRadius.circular(10)
                       ),
-                       enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey, width: 1),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blue, width: 2),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                // Optional: to show border even when there's an error
-                errorBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.red, width: 1),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                focusedErrorBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.red, width: 2),
-                  borderRadius: BorderRadius.circular(10)
-                ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.grey, width: 1),
+                        borderRadius: BorderRadius.circular(10)
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.blue, width: 2),
+                        borderRadius: BorderRadius.circular(10)
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.red, width: 1),
+                        borderRadius: BorderRadius.circular(10)
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.red, width: 2),
+                        borderRadius: BorderRadius.circular(10)
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
-                 DropdownButtonFormField<String>(
+                  DropdownButtonFormField<String>(
                     value: _selectedFrequencyChoice,
-                    style: TextStyle(color: Color(0xff555555)),
+                    style: const TextStyle(color: Color(0xff555555)),
                     onChanged: (String? newValue) {
                       if (newValue != null) {
                         final frequencyData = FrequencyPeriodMapper.getFrequencyPeriod(newValue);
@@ -1044,38 +901,35 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                     }).toList(),
                     decoration: InputDecoration(
                       labelText: 'Contact Frequency',
-                      labelStyle: TextStyle(color: Color(0xff555555)),
+                      labelStyle: const TextStyle(color: Color(0xff555555)),
                       border: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.grey, width: 1),
-                  borderRadius: BorderRadius.circular(10)
+                        borderSide: const BorderSide(color: Colors.grey, width: 1),
+                        borderRadius: BorderRadius.circular(10)
                       ),
-                        enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey, width: 1),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blue, width: 2),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                // Optional: to show border even when there's an error
-                errorBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.red, width: 1),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                focusedErrorBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.red, width: 2),
-                  borderRadius: BorderRadius.circular(10)
-                ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.grey, width: 1),
+                        borderRadius: BorderRadius.circular(10)
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.blue, width: 2),
+                        borderRadius: BorderRadius.circular(10)
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.red, width: 1),
+                        borderRadius: BorderRadius.circular(10)
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.red, width: 2),
+                        borderRadius: BorderRadius.circular(10)
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
                   
-                  // Date Nudges Section
                   const SizedBox(height: 16),
                   const Text('Date Nudges:', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16)),
                   const SizedBox(height: 8),
                   
-                  // Birthday Nudges Toggle
                   Row(
                     children: [
                       Expanded(
@@ -1100,7 +954,6 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                     ],
                   ),
                   
-                  // Anniversary Nudges Toggle
                   Row(
                     children: [
                       Expanded(
@@ -1168,7 +1021,6 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                     );
 
                     try {
-                      // Get current groups
                       final currentGroups = await apiService.getGroupsStream().first;
                       final updatedGroups = currentGroups.map((g) => 
                         g.id == group.id ? updatedGroup : g
@@ -1206,15 +1058,10 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
         context: context,
         isScrollControlled: true,
         builder: (context) {
-          // var size = MediaQuery.of(context).size;
           return Container(
             padding: const EdgeInsets.all(16),
             height: MediaQuery.of(context).size.height * 0.85,
             child: Scaffold(
-            // floatingActionButton: Padding(
-            //   padding: EdgeInsets.only(bottom: size.height*0.2),
-            //   child: FeedbackFloatingButton(),
-            // ),
             body:  Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -1240,27 +1087,25 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text((group.name).toUpperCase(), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xff555555))),
+                          Text((group.name), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xff555555))),
                           Text(group.description, style: const TextStyle(color: Colors.grey)),
                         ],
                       ),
                     ),
                     IconButton(
-                        icon: Icon(Icons.edit, color: Color(0xff555555),),
+                        icon: const Icon(Icons.edit, color: Color(0xff555555)),
                         onPressed: () => _showEditGroupDialog(context, group, apiService, () {
-                          // Refresh the details after editing
                           setState(() {});
                         }),
                       ),
                       const SizedBox(width: 10),
                       IconButton(
-                        icon: Icon(Icons.delete, color: Colors.red,),
+                        icon: const Icon(Icons.delete, color: Colors.red),
                         onPressed: () => _showDeleteConfirmation(context, group, apiService),
                       ),
                   ],
                 ),
                 const SizedBox(height: 16),
-                // Group stats
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
@@ -1273,7 +1118,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('GROUP MEMBERS', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xff6e6e6e))),
+                    const Text('GROUP MEMBERS', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xff6e6e6e))),
                     if (members.isNotEmpty)
                     TextButton(
                       onPressed: () {
@@ -1292,7 +1137,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                         children: [
                           Icon(Icons.add, size: 16),
                           SizedBox(width: 4),
-                          Text('ADD MORE'),
+                          Text('Add More'),
                         ],
                       ),
                   ),
@@ -1336,12 +1181,11 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                                   : null,
                               child: contact.imageUrl.isEmpty ? const Icon(Icons.person) : null,
                             ),
-                            title: Text((contact.name).toUpperCase(), style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555)),),
-                            subtitle: Text(contact.connectionType, style: TextStyle(color: Color(0xff555555)),),
+                            title: Text((contact.name), style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555))),
+                            subtitle: Text(contact.connectionType, style: const TextStyle(color: Color(0xff555555))),
                             trailing: IconButton(
                               icon: const Icon(Icons.remove_circle, color: Colors.red),
                               onPressed: () async {
-                                // Remove member from group
                                 final updatedMemberIds = List<String>.from(group.memberIds)..remove(contact.id);
                                 final updatedGroup = group.copyWith(
                                   memberIds: updatedMemberIds,
@@ -1366,7 +1210,6 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                               },
                             ),
                             onTap: () {
-                              // Navigate to contact details
                               Navigator.pop(context);
                               Navigator.push(
                                 context,

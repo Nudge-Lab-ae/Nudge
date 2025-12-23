@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nudge/services/api_service.dart';
-import 'package:nudge/widgets/gradient_text.dart';
+// import 'package:nudge/widgets/gradient_text.dart';
 
 class FeedbackForumScreen extends StatefulWidget {
   const FeedbackForumScreen({super.key});
@@ -33,7 +33,15 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: GradientText(
+        title:  Text(
+                  'Feedback Forum',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xff555555),
+                  ),
+                ),
+        /* GradientText(
           text: 'NUDGE',
           style: const TextStyle(
             fontSize: 25,
@@ -45,7 +53,7 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
-        ),
+        ), */
         centerTitle: true,
         iconTheme: const IconThemeData(color: Color(0xff3CB3E9)),
         backgroundColor: Colors.white,
@@ -59,15 +67,15 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
             child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Feedback Forum',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xff3CB3E9),
-                  ),
-                ),
-                SizedBox(height: 8),
+                // Text(
+                //   'Feedback Forum',
+                //   style: TextStyle(
+                //     fontSize: 24,
+                //     fontWeight: FontWeight.bold,
+                //     color: Color(0xff3CB3E9),
+                //   ),
+                // ),
+                // SizedBox(height: 8),
                 Text(
                   'See what others are suggesting and track feature updates',
                   style: TextStyle(

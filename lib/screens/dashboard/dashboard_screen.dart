@@ -9,12 +9,13 @@ import 'package:nudge/screens/contacts/contact_detail_screen.dart';
 import 'package:nudge/screens/contacts/contacts_list_screen.dart';
 import 'package:nudge/screens/groups/groups_list_screen.dart';
 import 'package:nudge/screens/notifications/notifications_screen.dart';
+import 'package:nudge/screens/social_universe/social_universe_immersive.dart';
 // import 'package:nudge/screens/settings/settings_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/services/social_universe_service.dart';
 // import 'package:nudge/widgets/contact_quick_panel.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
-import 'package:nudge/widgets/gradient_text.dart';
+// import 'package:nudge/widgets/gradient_text.dart';
 import 'package:nudge/widgets/screen_tracker.dart';
 import 'package:nudge/widgets/simple_contact_panel.dart';
 import 'package:nudge/widgets/social_universe.dart';
@@ -45,6 +46,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final Map<String, int> _cachedAvatarIndices = {};
   List<Nudge> allNudges = [];
   List<Nudge> overDueNudges = [];
+  final ScrollController _scrollController = ScrollController();
+  bool _showAppBar = true;
+  double _lastOffset = 0.0;
 
   int _selectedPieSegmentIndex = -1;
   String? _explodedCategory;
@@ -58,63 +62,74 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _checkDeletionRetry();
     _initializeNotifications();
      _initializeSocialUniverse();
+    _scrollController.addListener(() {
+      _handleScroll();
+    });
   }
 
-Future<void> _initializeSocialUniverse() async {
-  try {
-    final apiService = ApiService();
+  Future<void> _initializeSocialUniverse() async {
+    try {
+      final apiService = ApiService();
+      
+      // Get all contacts and assign initial angles if missing
+      final contacts = await apiService.getAllContacts();
+      
+      final socialUniverseService = SocialUniverseService();
+      for (var contact in contacts) {
+        if (contact.angleDeg == 0) {
+          final updatedContact = contact.copyWith(
+            angleDeg: socialUniverseService.generateStableAngle(contact.id),
+          );
+          await apiService.updateContact(updatedContact);
+        }
+      }
+      
+      // Run batch CDI update if not done today
+      await _runDailyCDIUpdate(apiService);
+      
+    } catch (e) {
+      print('Error initializing Social Universe: $e');
+    }
+  }
+
+  Future<void> _runDailyCDIUpdate(ApiService apiService) async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastUpdateKey = 'last_cdi_update_${DateTime.now().day}';
+    final shouldUpdate = prefs.getBool(lastUpdateKey) != true;
     
-    // Get all contacts and assign initial angles if missing
-    final contacts = await apiService.getAllContacts();
+    if (shouldUpdate) {
+      try {
+        await apiService.batchUpdateCDI();
+        await prefs.setBool(lastUpdateKey, true);
+        print('Daily CDI update completed');
+      } catch (e) {
+        print('Error in daily CDI update: $e');
+      }
+    }
+  }
+
+  void _handleScroll() {
+    final currentOffset = _scrollController.offset;
     
-    final socialUniverseService = SocialUniverseService();
-    for (var contact in contacts) {
-      if (contact.angleDeg == 0) {
-        final updatedContact = contact.copyWith(
-          angleDeg: socialUniverseService.generateStableAngle(contact.id),
-        );
-        await apiService.updateContact(updatedContact);
+    // Show app bar when scrolling up, hide when scrolling down
+    if (currentOffset > _lastOffset && currentOffset > 50) {
+      // Scrolling down
+      if (_showAppBar) {
+        setState(() {
+          _showAppBar = false;
+        });
+      }
+    } else if (currentOffset < _lastOffset && _scrollController.offset <= 50) {
+      // Scrolling up or at top
+      if (!_showAppBar) {
+        setState(() {
+          _showAppBar = true;
+        });
       }
     }
     
-    // Run batch CDI update if not done today
-    await _runDailyCDIUpdate(apiService);
-    
-  } catch (e) {
-    print('Error initializing Social Universe: $e');
+    _lastOffset = currentOffset;
   }
-}
-
-Future<void> _runDailyCDIUpdate(ApiService apiService) async {
-  final prefs = await SharedPreferences.getInstance();
-  final lastUpdateKey = 'last_cdi_update_${DateTime.now().day}';
-  final shouldUpdate = prefs.getBool(lastUpdateKey) != true;
-  
-  if (shouldUpdate) {
-    try {
-      await apiService.batchUpdateCDI();
-      await prefs.setBool(lastUpdateKey, true);
-      print('Daily CDI update completed');
-    } catch (e) {
-      print('Error in daily CDI update: $e');
-    }
-  }
-}
-
-
-  // Future<DateTime?> _getLastCDIUpdate() async {
-  //   // Implement storage for last update time
-  //   final prefs = await SharedPreferences.getInstance();
-  //   final timestamp = prefs.getInt('last_cdi_update');
-  //   return timestamp != null 
-  //       ? DateTime.fromMillisecondsSinceEpoch(timestamp)
-  //       : null;
-  // }
-
-  // Future<void> _saveLastCDIUpdate(DateTime time) async {
-  //   final prefs = await SharedPreferences.getInstance();
-  //   await prefs.setInt('last_cdi_update', time.millisecondsSinceEpoch);
-  // }
 
 
   Future<void> _initializeNotifications() async {
@@ -141,6 +156,7 @@ Future<void> _runDailyCDIUpdate(ApiService apiService) async {
     }).toList();
   }
 
+  
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
@@ -153,37 +169,228 @@ Future<void> _runDailyCDIUpdate(ApiService apiService) async {
       );
     }
 
-    return StreamProvider<List<Contact>>(
-      create: (context) => apiService.getContactsStream(),
-      initialData: const [],
-      child: StreamProvider<List<SocialGroup>>(
+    return Scaffold(
+      backgroundColor: const Color(0xFFF9FAFB),
+      body: StreamProvider<List<Contact>>.value(
+        value: apiService.getContactsStream(),
         initialData: const [],
-        create: (context) => apiService.getGroupsStream(),
-        child: Scaffold(
-          backgroundColor: const Color(0xFFF9FAFB),
-          appBar: _buildAppBar(apiService),
-          drawer: _buildNavigationDrawer(context, authService),
-          body: Stack(
-            children: [
-              Consumer2<List<Contact>, List<SocialGroup>>(
-                builder: (context, contacts, groups, child) {
-                  totalContacts = contacts;
-                  return _buildCurrentView(context, contacts, groups, apiService);
-                },
+        child: StreamProvider<List<SocialGroup>>.value(
+          value: apiService.getGroupsStream(),
+          initialData: const [],
+          child: Consumer2<List<Contact>, List<SocialGroup>>(
+            builder: (context, contacts, groups, child) {
+              totalContacts = contacts;
+              
+              // Return different screens based on current index
+              switch (_currentIndex) {
+              case 0:
+                return _buildDashboardWithSliver(context, contacts, groups, apiService);
+              case 1:
+                return ContactsListScreen(
+                  showAppBar: false,
+                  filter: vipFilter ? 'vip' : attentionFilter ? 'needs_attention' : '',
+                  hideButton: hideButton,
+                );
+              case 2:
+                return const GroupsListScreen(showAppBar: false);
+              case 3:
+                return const NotificationsScreen(showAppBar: false);
+              case 4: // NEW: Immersive Social Universe
+                return const SocialUniverseImmersiveScreen();
+              default:
+                return _buildDashboardWithSliver(context, contacts, groups, apiService);
+            }
+            },
+          ),
+        ),
+      ),
+      bottomNavigationBar: _buildBottomNavigationBar(),
+    );
+  }
+
+
+  Widget _buildDashboardWithSliver(BuildContext context, List<Contact> contacts, List<SocialGroup> groups, ApiService apiService) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF9FAFB),
+      body: StreamBuilder<List<Nudge>>(
+        stream: NudgeService().getNudgesStream(Provider.of<AuthService>(context).currentUser!.uid),
+        builder: (context, nudgeSnapshot) {
+          final nudges = nudgeSnapshot.data ?? [];
+          final analytics = _calculateAnalytics(contacts, nudges);
+          final weeklyNudgePerformance = _calculateWeeklyNudgePerformance(nudges);
+          final vipContacts = contacts.where((c) => c.isVIP).toList();
+          final needsAttention = contacts.where((c) => c.lastContacted.isBefore(DateTime.now().subtract(const Duration(days: 30)))).toList();
+
+          return CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              // Sliver App Bar - This is the smooth collapsing app bar
+              SliverAppBar(
+                title: Padding(
+                  padding: EdgeInsets.only(left: 0),
+                  child: Text( 'Dashboard',style: TextStyle(fontSize: 22, fontFamily: 'Inter', fontWeight: FontWeight.bold, color: Color(0xff555555))),
+                  ),
+                backgroundColor: Color(0xFFF9FAFB),
+                leading: Center(),
+                iconTheme: const IconThemeData(color: Color(0xff3CB3E9)),
+                elevation: 0,
+                actions: [
+                  Stack(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.settings),
+                        onPressed: () {
+                          Navigator.pushNamed(context, '/settings');
+                        },
+                        tooltip: 'Notifications',
+                      ),
+                    ],
+                  )
+                ],
+                surfaceTintColor: Colors.transparent,
+                centerTitle: false,
+                floating: true, // Makes the app bar appear immediately when scrolling up
+                snap: true, // Makes the app bar snap into view when scrolling up
+                pinned: false, // Don't pin - let it fully disappear when scrolling down
               ),
-              Positioned(
-                right: 16,
-                bottom: MediaQuery.of(context).size.height * 0.4,
-                child: FeedbackFloatingButton(
-                  currentSection: getCurrentSection(),
+              
+              // Main content
+              SliverPadding(
+                padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 10),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    // Social Universe
+                    SocialUniverseWidget(
+                      contacts: contacts,
+                      onContactView: (contact) {
+                        _showContactQuickPanel(context, contact, apiService);
+                      },
+                      height: 500,
+                    ),
+                    const SizedBox(height: 20),
+                    
+                    // Quick Insights
+                    _buildQuickInsights(analytics, contacts.length),
+                    const SizedBox(height: 20),
+
+                    // Nudge Performance
+                    _buildWeeklyNudgePerformanceSection(weeklyNudgePerformance),
+                    const SizedBox(height: 20),
+
+                    // Quick Actions
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8.0),
+                      child: Text(
+                        'QUICK ACTIONS',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xff6e6e6e),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    _buildCenteredQuickActions(context),
+                    const SizedBox(height: 20),
+
+                    // VIP Contacts
+                    if (vipContacts.isNotEmpty) ...[
+                      Row(
+                        children: [
+                          Text(
+                            'CLOSE CIRCLE',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xff6e6e6e),
+                            ),
+                          ),
+                          const Spacer(),
+                          TextButton(
+                            onPressed: () {
+                              setState(() {
+                                _currentIndex = 1;
+                                attentionFilter = false;
+                                vipFilter = true;
+                              });
+                            },
+                            child: const Text('View All', style: TextStyle(color: Color(0xff3CB3E9))),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        height: 140,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: vipContacts.length,
+                          itemBuilder: (context, index) {
+                            final contact = vipContacts[index];
+                            return _buildContactCard(contact, apiService, showConnectionType: true);
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+
+                    // Needs Care Section
+                    if (needsAttention.isNotEmpty) ...[
+                      Row(
+                        children: [
+                          Text(
+                            'NEEDS CARE',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xff6e6e6e),
+                            ),
+                          ),
+                          const Spacer(),
+                          TextButton(
+                            onPressed: () {
+                              setState(() => _currentIndex = 1);
+                            },
+                            child: const Text(
+                              'View All',
+                              style: TextStyle(color: Color(0xff3CB3E9)),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        height: 120,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: needsAttention.length,
+                          itemBuilder: (context, index) {
+                            final contact = needsAttention[index];
+                            return _buildContactCard(contact, apiService, showConnectionType: false);
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+
+                    // Pie Chart
+                    _buildInteractivePieChartSection(contacts),
+                    const SizedBox(height: 80), // Bottom padding for FAB
+                  ]),
                 ),
               ),
             ],
-          ),
-          floatingActionButton: hideFloatingActionButton ? Container() : _buildFloatingActionButton(context),
-          bottomNavigationBar: _buildBottomNavigationBar(),
-        ),
+          );
+        },
       ),
+      
+      // Feedback button for dashboard only
+      floatingActionButton: _currentIndex == 0
+          ? Padding(
+        padding: EdgeInsets.only(right: 6,bottom: 30,),
+        child: FeedbackFloatingButton(
+                currentSection: getCurrentSection(),
+              ),
+            )
+          : null,
     );
   }
 
@@ -202,106 +409,121 @@ Future<void> _runDailyCDIUpdate(ApiService apiService) async {
     }
   }
 
-    AppBar _buildAppBar(ApiService apiService) {
-    // final hasOverdueNudges = _hasOverdueNudges();
+//   List<Color> _getGradientPair(int index) {
+//   final List<List<Color>> gradientColors = [
+//     [Color(0xFF2D85F6), Color(0xFF5CDEE5)], // Blue gradient
+//     [Color(0xFF4CAF50), Color(0xFF8BC34A)], // Green gradient
+//     [Color(0xFF9C27B0), Color(0xFFE040FB)], // Purple gradient
+//     [Color(0xFFFF9800), Color(0xFFFFC107)], // Orange gradient
+//     [Color(0xFFF44336), Color(0xFFFF5252)], // Red gradient
+//     [Color(0xFF2196F3), Color(0xFF64B5F6)], // Light blue gradient
+//     [Color(0xFFFFC107), Color(0xFFFFEB3B)], // Yellow gradient
+//     [Color(0xFF795548), Color(0xFFA1887F)], // Brown gradient
+//     [Color(0xFF607D8B), Color(0xFF90A4AE)], // Blue grey gradient
+//     [Color(0xFFE91E63), Color(0xFFF06292)], // Pink gradient
+//     [Color(0xFF00BCD4), Color(0xFF4DD0E1)], // Cyan gradient
+//     [Color(0xFF8BC34A), Color(0xFFAED581)], // Light green gradient
+//     [Color(0xFF673AB7), Color(0xFF9575CD)], // Deep purple gradient
+//     [Color(0xFFFF5722), Color(0xFFFF8A65)], // Deep orange gradient
+//     [Color(0xFF009688), Color(0xFF4DB6AC)], // Teal gradient
+//     [Color(0xFF3F51B5), Color(0xFF7986CB)], // Indigo gradient
+//     [Color(0xFFCDDC39), Color(0xFFE6EE9C)], // Lime gradient
+//     [Color(0xFFFFEB3B), Color(0xFFFFF59D)], // Amber gradient
+//     [Color(0xFF9E9E9E), Color(0xFFE0E0E0)], // Grey gradient
+//     [Color(0xFF00E676), Color(0xFF69F0AE)], // Green accent gradient
+//   ];
+  
+//   final int colorIndex = index % gradientColors.length;
+//   return gradientColors[colorIndex];
+// }
+
+  //   AppBar? _buildAppBar(ApiService apiService) {
+  //   // final hasOverdueNudges = _hasOverdueNudges();
     
-    final overdueNudges = _getOverdueNudges(allNudges);
-    final hasOverdue = overdueNudges.isNotEmpty;
+  //   // final overdueNudges = _getOverdueNudges(allNudges);
+  //   // final hasOverdue = overdueNudges.isNotEmpty;
+
+  //   if (!_showAppBar && _currentIndex == 0) {
+  //     return null;
+  //   }
+
+  //   String title = 'Dashboard';
+  //   if (_currentIndex == 1) {
+  //     title = 'Contacts';
+  //   } else if (_currentIndex == 2) {
+  //     title = 'Social Groups';
+  //   } else if (_currentIndex == 3) {
+  //     title = 'Nudges';
+  //   }
    
-    return AppBar(
-      title: GradientText(
-        text: 'NUDGE',
-        style: const TextStyle(
-          fontSize: 25,
-          fontFamily: 'RobotoMono',
-          fontWeight: FontWeight.bold,
-        ),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-      ),
-      backgroundColor: Colors.white,
-      iconTheme: const IconThemeData(color: Color(0xff3CB3E9)),
-      elevation: 0,
-      actions: _currentIndex == 0
-        ?[Stack(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.notifications),
-                  onPressed: () {
-                    setState(() => _currentIndex = 3); // Switch to nudges view
-                  },
-                  tooltip: 'Notifications',
-                ),
-                if (hasOverdue)
-                  Positioned(
-                    right: 8,
-                    top: 8,
-                    child: Container(
-                      width: 10,
-                      height: 10,
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-              ],
-            )
-      ]:null,
-      surfaceTintColor: Colors.transparent,
-      centerTitle: true,
-    );
-  }
-
-  Widget _buildCurrentView(BuildContext context, List<Contact> contacts, List<SocialGroup> groups, ApiService apiService) {
-    switch (_currentIndex) {
-      case 0:
-        return _buildDashboardContent(context, contacts, groups, apiService);
-      case 1:
-        return ContactsListScreen(
-          showAppBar: false,
-          filter: vipFilter ? 'vip' : attentionFilter ? 'needs_attention' : '',
-          hideButton: hideButton,
-        );
-      case 2:
-        return const GroupsListScreen(showAppBar: false);
-      case 3:
-        return const NotificationsScreen(showAppBar: false);
-      default:
-        return _buildDashboardContent(context, contacts, groups, apiService);
-    }
-  }
-
-  // bool _hasOverdueNudges() {
-  //   final authService = Provider.of<AuthService>(context, listen: false);
-  //   final user = authService.currentUser;
-  //   if (user == null) return false;
-    
-  //   // This is a simplified check - in practice you'd want to use a stream or provider
-  //   return false;
+  //   return AppBar(
+  //     title: Text(
+  //       title, style: TextStyle(
+  //         fontSize: 25,
+  //         fontFamily: 'Inter',
+  //         fontWeight: FontWeight.bold,
+  //         color: Color(0xff555555)
+  //       ),
+  //     ),
+  //     backgroundColor: Color(0xFFF9FAFB),
+  //     iconTheme: const IconThemeData(color: Color(0xff3CB3E9)),
+  //     elevation: 0,
+  //     leading: Center(),
+  //     actions: _currentIndex == 0
+  //       ?[Stack(
+  //             children: [
+  //               IconButton(
+  //                 icon: const Icon(Icons.settings),
+  //                 onPressed: () {
+  //                   Navigator.pushNamed(context, '/settings');
+  //                 },
+  //                 tooltip: 'Notifications',
+  //               ),
+  //             ],
+  //           )
+  //     ]:null,
+  //     surfaceTintColor: Colors.transparent,
+  //     centerTitle: false,
+  //   );
   // }
 
-  Widget _buildFloatingActionButton(BuildContext context) {
-    switch (_currentIndex) {
-      case 0:
-        return Container();
-      case 1:
-        return FloatingActionButton(
-          onPressed: () {
-            _showAddContactOptions(context);
-          },
-          backgroundColor: const Color(0xff3CB3E9),
-          child: const Icon(Icons.add, color: Colors.white),
-        );
-      case 2:
-        return Container();
-      default:
-        return Container();
-    }
-  }
+  // Widget _buildCurrentView(BuildContext context, List<Contact> contacts, List<SocialGroup> groups, ApiService apiService) {
+  //   switch (_currentIndex) {
+  //     case 0:
+  //       return _buildDashboardContent(context, contacts, groups, apiService);
+  //     case 1:
+  //       return ContactsListScreen(
+  //         showAppBar: false,
+  //         filter: vipFilter ? 'vip' : attentionFilter ? 'needs_attention' : '',
+  //         hideButton: hideButton,
+  //       );
+  //     case 2:
+  //       return const GroupsListScreen(showAppBar: false);
+  //     case 3:
+  //       return const NotificationsScreen(showAppBar: false);
+  //     default:
+  //       return _buildDashboardContent(context, contacts, groups, apiService);
+  //   }
+  // }
+
+  // Widget _buildFloatingActionButton(BuildContext context) {
+  //   switch (_currentIndex) {
+  //     case 0:
+  //       return Container();
+  //     case 1:
+  //       return FloatingActionButton(
+  //         onPressed: () {
+  //           _showAddContactOptions(context);
+  //         },
+  //         backgroundColor: const Color(0xff3CB3E9),
+  //         child: const Icon(Icons.add, color: Colors.white),
+  //       );
+  //     case 2:
+  //       return Container();
+  //     default:
+  //       return Container();
+  //   }
+  // }
 
   void _showAddContactOptions(BuildContext context) {
     showModalBottomSheet(
@@ -343,16 +565,6 @@ Future<void> _runDailyCDIUpdate(ApiService apiService) async {
                   Navigator.pushNamed(context, '/import_contacts');
                 },
               ),
-              // if (Theme.of(context).platform == TargetPlatform.android)
-              //   ListTile(
-              //     leading: const Icon(Icons.smartphone, color: Color(0xff3CB3E9)),
-              //     title: const Text('SMART IMPORT', style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xff555555)),),
-              //     subtitle: const Text('Automatically organize and categorize contacts', style: TextStyle(color: Color(0xff555555)),),
-              //     onTap: () {
-              //       Navigator.pop(context);
-              //       _showSmartImportDialog(context);
-              //     },
-              //   ),
               const SizedBox(height: 20),
             ],
           ),
@@ -360,33 +572,6 @@ Future<void> _runDailyCDIUpdate(ApiService apiService) async {
       },
     );
   }
-
-  // void _showSmartImportDialog(BuildContext context) {
-  //   showDialog(
-  //     context: context,
-  //     builder: (context) => AlertDialog(
-  //       title: const Text('Smart Import'),
-  //       content: const Text(
-  //         'Smart import will analyze your contacts and automatically categorize them based on communication patterns and social groups.',
-  //       ),
-  //       actions: [
-  //         TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-  //         TextButton(
-  //           onPressed: () {
-  //             Navigator.pop(context);
-  //             ScaffoldMessenger.of(context).showSnackBar(
-  //               const SnackBar(
-  //                 content: Text('Smart import feature coming soon!'),
-  //                 backgroundColor: Color(0xff3CB3E9),
-  //               ),
-  //             );
-  //           },
-  //           child: const Text('Start Import'),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
 
   void hideButton() {
     setState(() {
@@ -397,80 +582,91 @@ Future<void> _runDailyCDIUpdate(ApiService apiService) async {
   Widget _buildBottomNavigationBar() {
     final overdueNudges = _getOverdueNudges(allNudges);
     final hasOverdue = overdueNudges.isNotEmpty;
-        
-        return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xF2FFFFFF),
-        border: const Border(
-          top: BorderSide(
-            color: Color(0xF2FFFFFF),
-            width: 4.0,
-          ),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, -2),
-          ),
-        ],
+    
+    return Container(
+      height: 70, // Slightly taller for 5 icons
+      decoration: const BoxDecoration(
+        color: Colors.white,
       ),
-      child: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
-        selectedItemColor: const Color(0xFF3CB3E9),
-        unselectedItemColor: const Color(0xFF8A8A8A),
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-            hideFloatingActionButton = false;
-            attentionFilter = false;
-            vipFilter = false;
-          });
-        },
-        items: [
-          BottomNavigationBarItem(
-            icon: SvgPicture.asset(
-              'assets/navbar-icons/home-icon.svg',
-              width: 24,
-              height: 24,
-              colorFilter: ColorFilter.mode(
-                _currentIndex == 0 ? const Color(0xFF3CB3E9) : const Color(0xFF8A8A8A),
-                BlendMode.srcIn,
-              ),
-            ),
-            label: '',
+      child: Theme(
+        data: Theme.of(context).copyWith(
+          bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+            elevation: 0,
+            backgroundColor: Colors.transparent,
           ),
-          BottomNavigationBarItem(
-            icon: SvgPicture.asset(
-              'assets/navbar-icons/contacts-icon.svg',
-              width: 24,
-              height: 24,
-              colorFilter: ColorFilter.mode(
-                _currentIndex == 1 ? const Color(0xFF3CB3E9) : const Color(0xFF8A8A8A),
-                BlendMode.srcIn,
+          canvasColor: Colors.transparent,
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          showSelectedLabels: false,
+          showUnselectedLabels: false,
+          selectedItemColor: const Color(0xFF3CB3E9),
+          unselectedItemColor: const Color(0xFF8A8A8A),
+          onTap: (index) {
+            setState(() {
+              _currentIndex = index;
+              hideFloatingActionButton = false;
+              attentionFilter = false;
+              vipFilter = false;
+            });
+          },
+          selectedIconTheme: const IconThemeData(size: 24),
+          unselectedIconTheme: const IconThemeData(size: 24),
+          selectedFontSize: 0,
+          unselectedFontSize: 0,
+          items: [
+            BottomNavigationBarItem(
+              icon: Container(
+                margin: const EdgeInsets.only(top: 10),
+                child: SvgPicture.asset(
+                  'assets/navbar-icons/home-icon.svg',
+                  width: 24,
+                  height: 24,
+                  colorFilter: ColorFilter.mode(
+                    _currentIndex == 0 ? const Color(0xFF3CB3E9) : const Color(0xFF8A8A8A),
+                    BlendMode.srcIn,
+                  ),
+                ),
               ),
+              label: '',
             ),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: SvgPicture.asset(
-              'assets/navbar-icons/groups-icon.svg',
-              width: 24,
-              height: 24,
-              colorFilter: ColorFilter.mode(
-                _currentIndex == 2 ? const Color(0xFF3CB3E9) : const Color(0xFF8A8A8A),
-                BlendMode.srcIn,
+            BottomNavigationBarItem(
+              icon: Container(
+                margin: const EdgeInsets.only(top: 10),
+                child: SvgPicture.asset(
+                  'assets/navbar-icons/contacts-icon.svg',
+                  width: 24,
+                  height: 24,
+                  colorFilter: ColorFilter.mode(
+                    _currentIndex == 1 ? const Color(0xFF3CB3E9) : const Color(0xFF8A8A8A),
+                    BlendMode.srcIn,
+                  ),
+                ),
               ),
+              label: '',
             ),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Stack(
+            BottomNavigationBarItem(
+              icon: Container(
+                margin: const EdgeInsets.only(top: 10),
+                child: SvgPicture.asset(
+                  'assets/navbar-icons/groups-icon.svg',
+                  width: 24,
+                  height: 24,
+                  colorFilter: ColorFilter.mode(
+                    _currentIndex == 2 ? const Color(0xFF3CB3E9) : const Color(0xFF8A8A8A),
+                    BlendMode.srcIn,
+                  ),
+                ),
+              ),
+              label: '',
+            ),
+            BottomNavigationBarItem(
+              icon: Container(
+                margin: const EdgeInsets.only(top: 10),
+                child: Stack(
                   children: [
                     SvgPicture.asset(
                       'assets/navbar-icons/notifications-icon.svg',
@@ -496,11 +692,57 @@ Future<void> _runDailyCDIUpdate(ApiService apiService) async {
                       ),
                   ],
                 ),
-                label: '',
               ),
-            ],
-          ),
-       );  
+              label: '',
+            ),
+            // NEW: Immersive Universe Icon
+            BottomNavigationBarItem(
+              icon: Container(
+                margin: const EdgeInsets.only(top: 10),
+                child: Stack(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: _currentIndex == 4
+                              ? [const Color(0xFF5CDEE5), const Color(0xFF2D85F6)]
+                              : [const Color(0xFF8A8A8A), const Color(0xFF8A8A8A)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.star,
+                        size: 18,
+                        color: _currentIndex == 4 ? Colors.white : Colors.white,
+                      ),
+                    ),
+                    if (_currentIndex == 4)
+                      Positioned(
+                        right: 0,
+                        bottom: 0,
+                        child: Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF5CDEE5),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              label: '',
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showContactQuickPanel(BuildContext context, Contact contact, ApiService apiService) {
@@ -524,139 +766,160 @@ Future<void> _runDailyCDIUpdate(ApiService apiService) async {
   }
 
   // DASHBOARD CONTENT
-  Widget _buildDashboardContent(BuildContext context, List<Contact> contacts, List<SocialGroup> groups, ApiService apiService) {
-    return StreamBuilder<List<Nudge>>(
-      stream: NudgeService().getNudgesStream(Provider.of<AuthService>(context).currentUser!.uid),
-      builder: (context, nudgeSnapshot) {
-        final nudges = nudgeSnapshot.data ?? [];
-        final analytics = _calculateAnalytics(contacts, nudges);
-        final weeklyNudgePerformance = _calculateWeeklyNudgePerformance(nudges);
 
-        final vipContacts = contacts.where((c) => c.isVIP).toList();
-        final needsAttention = contacts.where((c) => c.lastContacted.isBefore(DateTime.now().subtract(const Duration(days: 30)))).toList();
+  // Widget _buildDashboardContent(BuildContext context, List<Contact> contacts, List<SocialGroup> groups, ApiService apiService) {
+  //   return StreamBuilder<List<Nudge>>(
+  //     stream: NudgeService().getNudgesStream(Provider.of<AuthService>(context).currentUser!.uid),
+  //     builder: (context, nudgeSnapshot) {
+  //       final nudges = nudgeSnapshot.data ?? [];
+  //       final analytics = _calculateAnalytics(contacts, nudges);
+  //       final weeklyNudgePerformance = _calculateWeeklyNudgePerformance(nudges);
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.only(left: 16.0, right: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 10),
-              const Text('DASHBOARD', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20, fontFamily: 'Inter', color: Color(0xff555555))),
-              const SizedBox(height: 20),
-            SocialUniverseWidget(
-              contacts: contacts,
-              onContactSelect: (contact) {
-                _showContactQuickPanel(context, contact, apiService);
-              },
-              height: 420, // Increased height for larger circle
-            ),
-            const SizedBox(height: 20),
-              // Quick Insights (cards with icon + value + label)
-              _buildQuickInsights(analytics, contacts.length),
-              const SizedBox(height: 20),
+  //       final vipContacts = contacts.where((c) => c.isVIP).toList();
+  //       final needsAttention = contacts.where((c) => c.lastContacted.isBefore(DateTime.now().subtract(const Duration(days: 30)))).toList();
 
-              // Nudge Performance (cards + gradient bar)
-              _buildWeeklyNudgePerformanceSection(weeklyNudgePerformance),
-              const SizedBox(height: 20),
+  //        return NotificationListener<ScrollNotification>(
+  //         onNotification: (scrollNotification) {
+  //           // Handle scroll for app bar visibility
+  //           if (scrollNotification is ScrollUpdateNotification) {
+  //             final currentOffset = _scrollController.offset;
+  //             if (currentOffset > _lastOffset && currentOffset > 50) {
+  //               if (_showAppBar) {
+  //                 setState(() {
+  //                   _showAppBar = false;
+  //                 });
+  //               }
+  //             } else if (currentOffset < _lastOffset && _scrollController.offset <= 50) {
+  //               if (!_showAppBar) {
+  //                 setState(() {
+  //                   _showAppBar = true;
+  //                 });
+  //               }
+  //             }
+  //             _lastOffset = currentOffset;
+  //           }
+  //           return false;
+  //         },
+  //         child: SingleChildScrollView(
+  //           controller: _scrollController,
+  //           physics: const BouncingScrollPhysics(),
+  //           padding: const EdgeInsets.only(left: 16.0, right: 16.0),
+  //           child: Column(
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             children: [
+  //               const SizedBox(height: 10),
+  //               const SizedBox(height: 10),
+  //               SocialUniverseWidget(
+  //                 contacts: contacts,
+  //                 onContactView: (contact) {
+  //                   _showContactQuickPanel(context, contact, apiService);
+  //                 },
+  //                 height: 500,
+  //               ),
+  //           const SizedBox(height: 20),
+  //             // Quick Insights (cards with icon + value + label)
+  //             _buildQuickInsights(analytics, contacts.length),
+  //             const SizedBox(height: 20),
 
-              // Quick Actions BELOW nudges (per your latest screenshot)
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8.0),
-                child: Text('QUICK ACTIONS', style: TextStyle(
-                  fontWeight: FontWeight.w500,
-              color: Color(0xff6e6e6e),
-              // letterSpacing: 1.0,
-                )),
-              ),
-              const SizedBox(height: 10),
-              _buildCenteredQuickActions(context),
-              const SizedBox(height: 20),
+  //             // Nudge Performance (cards + gradient bar)
+  //             _buildWeeklyNudgePerformanceSection(weeklyNudgePerformance),
+  //             const SizedBox(height: 20),
 
-              if (vipContacts.isNotEmpty) ...[
-                Row(
-                  children: [
-                     Text('CLOSE CIRCLE', style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xff6e6e6e),
-                      // letterSpacing: 1.0,
-                    )),
-                    const Spacer(),
-                    TextButton(
-                      onPressed: () {
-                        setState(() {
-                          _currentIndex = 1;
-                          attentionFilter = false;
-                          vipFilter = true;
-                        });
-                      },
-                      child: const Text('View All', style: TextStyle(color: Color(0xff3CB3E9))),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  height: 140, // Increased height to accommodate the tag
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: vipContacts.length,
-                    itemBuilder: (context, index) {
-                      final contact = vipContacts[index];
-                      return _buildContactCard(contact, apiService, showConnectionType: true);
-                    },
-                  ),
-                ),
-                const SizedBox(height: 20),
-              ],
+  //             // Quick Actions BELOW nudges (per your latest screenshot)
+  //             Padding(
+  //               padding: EdgeInsets.symmetric(horizontal: 8.0),
+  //               child: Text('QUICK ACTIONS', style: TextStyle(
+  //                 fontWeight: FontWeight.w500,
+  //             color: Color(0xff6e6e6e),
+  //               )),
+  //             ),
+  //             const SizedBox(height: 10),
+  //             _buildCenteredQuickActions(context),
+  //             const SizedBox(height: 20),
 
-              // Needs Care Section
-              if (needsAttention.isNotEmpty) ...[
-                Row(
-                  children: [
-                     Text(
-                      'NEEDS CARE',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xff6e6e6e),
-                      // letterSpacing: 1.0,
-                      ),
-                    ),
-                    const Spacer(),
-                    TextButton(
-                      onPressed: () {
-                        setState(() => _currentIndex = 1);
-                      },
-                      child: const Text(
-                        'View All',
-                        style: TextStyle(color: Color(0xff3CB3E9)),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                 SizedBox(
-                  height: 120, // Keep original height for Needs Care
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: needsAttention.length,
-                    itemBuilder: (context, index) {
-                      final contact = needsAttention[index];
-                      return _buildContactCard(contact, apiService, showConnectionType: false);
-                    },
-                  ),
-                ),
-                const SizedBox(height: 20),
-              ],
+  //             if (vipContacts.isNotEmpty) ...[
+  //               Row(
+  //                 children: [
+  //                    Text('CLOSE CIRCLE', style: TextStyle(
+  //                     fontSize: 15,
+  //                     fontWeight: FontWeight.w500,
+  //                     color: Color(0xff6e6e6e),
+  //                   )),
+  //                   const Spacer(),
+  //                   TextButton(
+  //                     onPressed: () {
+  //                       setState(() {
+  //                         _currentIndex = 1;
+  //                         attentionFilter = false;
+  //                         vipFilter = true;
+  //                       });
+  //                     },
+  //                     child: const Text('View All', style: TextStyle(color: Color(0xff3CB3E9))),
+  //                   ),
+  //                 ],
+  //               ),
+  //               const SizedBox(height: 10),
+  //               SizedBox(
+  //                 height: 140,
+  //                 child: ListView.builder(
+  //                   scrollDirection: Axis.horizontal,
+  //                   itemCount: vipContacts.length,
+  //                   itemBuilder: (context, index) {
+  //                     final contact = vipContacts[index];
+  //                     return _buildContactCard(contact, apiService, showConnectionType: true);
+  //                   },
+  //                 ),
+  //               ),
+  //               const SizedBox(height: 20),
+  //             ],
 
-              _buildInteractivePieChartSection(contacts),
-              const SizedBox(height: 20),
-            ],
-          ),
-        );
-      },
-    );
-  }
+  //             // Needs Care Section
+  //             if (needsAttention.isNotEmpty) ...[
+  //               Row(
+  //                 children: [
+  //                    Text(
+  //                     'NEEDS CARE',
+  //                     style: TextStyle(
+  //                       fontSize: 16,
+  //                       fontWeight: FontWeight.w500,
+  //                       color: Color(0xff6e6e6e),
+  //                     ),
+  //                   ),
+  //                   const Spacer(),
+  //                   TextButton(
+  //                     onPressed: () {
+  //                       setState(() => _currentIndex = 1);
+  //                     },
+  //                     child: const Text(
+  //                       'View All',
+  //                       style: TextStyle(color: Color(0xff3CB3E9)),
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //               const SizedBox(height: 10),
+  //                SizedBox(
+  //                 height: 120,
+  //                 child: ListView.builder(
+  //                   scrollDirection: Axis.horizontal,
+  //                   itemCount: needsAttention.length,
+  //                   itemBuilder: (context, index) {
+  //                     final contact = needsAttention[index];
+  //                     return _buildContactCard(contact, apiService, showConnectionType: false);
+  //                   },
+  //                 ),
+  //               ),
+  //               const SizedBox(height: 20),
+  //             ],
+
+  //             _buildInteractivePieChartSection(contacts),
+  //             const SizedBox(height: 20),
+  //           ],
+  //         ),
+  //       ));
+  //     },
+  //   );
+  // }
 
   // QUICK INSIGHTS row with stat cards
   Widget _buildQuickInsights(Analytics analytics, int totalContacts) {
@@ -665,10 +928,9 @@ Future<void> _runDailyCDIUpdate(ApiService apiService) async {
           Text(
             'QUICK INSIGHTS',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 15,
               fontWeight: FontWeight.w500,
               color: Color(0xff6e6e6e),
-              // letterSpacing: 1.0,
             ),
           ),
           const SizedBox(height: 16),
@@ -680,7 +942,7 @@ Future<void> _runDailyCDIUpdate(ApiService apiService) async {
           value: totalContacts.toString(),
           iconSize: 35,
           iconAsset: 'assets/quick-insights/total-contacts.svg',
-          backgroundAsset: null, // white background
+          backgroundAsset: null,
           iconColor: const Color(0xff3CB3E9),
           onTap: () => setState(() => _currentIndex = 1),
         ),
@@ -739,10 +1001,9 @@ Future<void> _runDailyCDIUpdate(ApiService apiService) async {
           Text(
             'NUDGES THIS WEEK',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 15,
               fontWeight: FontWeight.w500,
               color: Color(0xff6e6e6e),
-              // letterSpacing: 1.0,
             ),
           ),
           const SizedBox(height: 16),
@@ -754,7 +1015,7 @@ Future<void> _runDailyCDIUpdate(ApiService apiService) async {
                 value: (weeklyNudgePerformance['scheduled'] ?? 0).toString(),
                 iconSize: 35,
                 iconAsset: 'assets/performance-icons/clock-scheduled.svg',
-                backgroundAsset: 'assets/card-backgrounds/scheduled.png', // matches your note
+                backgroundAsset: 'assets/card-backgrounds/scheduled.png',
                 iconColor: Colors.white,
               ),
               _buildStatCard(
@@ -762,7 +1023,7 @@ Future<void> _runDailyCDIUpdate(ApiService apiService) async {
                 value: (weeklyNudgePerformance['completed'] ?? 0).toString(),
                 iconSize: 35,
                 iconAsset: 'assets/performance-icons/check-completed.svg',
-                backgroundAsset: null, // white
+                backgroundAsset: null,
                 iconColor: Color(0xff00dd00),
               ),
               _buildStatCard(
@@ -912,7 +1173,7 @@ Future<void> _runDailyCDIUpdate(ApiService apiService) async {
           const SizedBox(width: 12),
           _buildQuickActionButton(
             svgAsset: 'assets/quick-actions/add group-icon.svg',
-            label: 'Create Group', // corrected label
+            label: 'Create Group',
             onPressed: () {
               setState(() {
                 _currentIndex = 2;
@@ -933,9 +1194,9 @@ Widget _buildQuickActionButton({
 }) {
   return SizedBox(
     width: 150,
-    height: 120, // increased height
+    height: 120,
     child: Card(
-      elevation: 4, // shadow
+      elevation: 4,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
@@ -953,7 +1214,7 @@ Widget _buildQuickActionButton({
                 width: 52,
                 height: 52,
                 colorFilter: const ColorFilter.mode(
-                  Colors.grey, // dark grey icon
+                  Colors.grey,
                   BlendMode.srcIn,
                 ),
               ),
@@ -1084,6 +1345,16 @@ Widget _buildQuickActionButton({
   Widget _buildInteractivePieChartSection(List<Contact> contacts) {
     final distributionData = _calculateContactDistribution(contacts);
 
+    //  final gradientColors = _getCategoryGradient(data['category'], index);
+    //                       return LinearGradient(
+    //                         colors: gradientColors,
+    //                         begin: Alignment.topCenter,
+    //                         end: Alignment.bottomCenter,
+    //                       ).createShader(Rect.fromCircle(
+    //                         center: Offset.zero,
+    //                         radius: 1,
+    //                       ));
+
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFFFFFFFF),
@@ -1102,10 +1373,9 @@ Widget _buildQuickActionButton({
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('YOUR SOCIAL LANDSCAPE',
            style: TextStyle(
-              fontSize: 16,
+              fontSize: 15,
               fontWeight: FontWeight.w500,
               color: Color(0xff6e6e6e),
-              // letterSpacing: 1.0,
               )),
           const SizedBox(height: 16),
           if (distributionData.isEmpty)
@@ -1132,13 +1402,14 @@ Widget _buildQuickActionButton({
                       textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
                     ),
                     series: <CircularSeries>[
-                      DoughnutSeries<Map<String, dynamic>, String>(
+                     DoughnutSeries<Map<String, dynamic>, String>(
                         dataSource: distributionData,
+                        innerRadius: '60%',
                         xValueMapper: (Map<String, dynamic> data, _) => data['category'],
                         yValueMapper: (Map<String, dynamic> data, _) => data['count'],
                         dataLabelMapper: (Map<String, dynamic> data, _) {
                           final total = distributionData.fold(0, (sum, item) => sum + (item['count'] as int));
-                          final percentage = ((data['count'] as int) / total * 100).toStringAsFixed(2);
+                          final percentage = ((data['count'] as int) / total * 100).toInt();
                           if (_explodedCategory == data['category']) {
                             return '${data['count']} (${percentage}%)';
                           } else {
@@ -1147,15 +1418,17 @@ Widget _buildQuickActionButton({
                         },
                         dataLabelSettings: DataLabelSettings(
                           isVisible: true,
-                          connectorLineSettings: ConnectorLineSettings(
-                           
-                          ),
                           textStyle: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                           labelPosition: ChartDataLabelPosition.inside,
                         ),
-                        pointColorMapper: (Map<String, dynamic> data, _) =>
-                            _getCategoryColor(data['category'], distributionData.indexOf(data)),
-                        innerRadius: '60%',
+                        // Use pointShaderMapper for gradient colors
+                        // pointShaderMapper: (Map<String, dynamic> data, int index) {
+                         
+                        // },
+                        pointColorMapper: (Map<String, dynamic> data, int index) {
+                          final gradientColors = _getCategoryColor(data['category'], index);
+                          return gradientColors; // Fallback color
+                        },
                         explode: true,
                         explodeAll: false,
                         explodeOffset: _explodedCategory != null ? '25%' : '15%',
@@ -1282,30 +1555,33 @@ Widget _buildQuickActionButton({
   }
 
   Color _getCategoryColor(String category, int index) {
-    final List<Color> distinctColors = const [
-      Color(0xff3CB3E9),
-      Color(0xFF4CAF50),
-      Color(0xFF9C27B0),
-      Color(0xFFFF9800),
-      Color(0xFFF44336),
-      Color(0xFF2196F3),
-      Color(0xFFFFC107),
-      Color(0xFF795548),
-      Color(0xFF607D8B),
-      Color(0xFFE91E63),
-      Color(0xFF00BCD4),
-      Color(0xFF8BC34A),
-      Color(0xFF673AB7),
-      Color(0xFFFF5722),
-      Color(0xFF009688),
-      Color(0xFF3F51B5),
-      Color(0xFFCDDC39),
-      Color(0xFFFFEB3B),
-      Color(0xFF9E9E9E),
-      Color(0xFF00E676),
+    // Create gradient colors for each category
+    final List<List<Color>> gradientColors = const [
+      [Color(0xFF2D85F6), Color(0xFF5CDEE5)], // Blue gradient
+      [Color(0xFF4CAF50), Color(0xFF8BC34A)], // Green gradient
+      [Color(0xFF9C27B0), Color(0xFFE040FB)], // Purple gradient
+      [Color(0xFFFF9800), Color(0xFFFFC107)], // Orange gradient
+      [Color(0xFFF44336), Color(0xFFFF5252)], // Red gradient
+      [Color(0xFF2196F3), Color(0xFF64B5F6)], // Light blue gradient
+      [Color(0xFFFFC107), Color(0xFFFFEB3B)], // Yellow gradient
+      [Color(0xFF795548), Color(0xFFA1887F)], // Brown gradient
+      [Color(0xFF607D8B), Color(0xFF90A4AE)], // Blue grey gradient
+      [Color(0xFFE91E63), Color(0xFFF06292)], // Pink gradient
+      [Color(0xFF00BCD4), Color(0xFF4DD0E1)], // Cyan gradient
+      [Color(0xFF8BC34A), Color(0xFFAED581)], // Light green gradient
+      [Color(0xFF673AB7), Color(0xFF9575CD)], // Deep purple gradient
+      [Color(0xFFFF5722), Color(0xFFFF8A65)], // Deep orange gradient
+      [Color(0xFF009688), Color(0xFF4DB6AC)], // Teal gradient
+      [Color(0xFF3F51B5), Color(0xFF7986CB)], // Indigo gradient
+      [Color(0xFFCDDC39), Color(0xFFE6EE9C)], // Lime gradient
+      [Color(0xFFFFEB3B), Color(0xFFFFF59D)], // Amber gradient
+      [Color(0xFF9E9E9E), Color(0xFFE0E0E0)], // Grey gradient
+      [Color(0xFF00E676), Color(0xFF69F0AE)], // Green accent gradient
     ];
-    final int colorIndex = index % distinctColors.length;
-    return distinctColors[colorIndex];
+    
+    final int colorIndex = index % gradientColors.length;
+    // Return the base color (darker shade) for the segment
+    return gradientColors[colorIndex][0];
   }
 
   Analytics _calculateAnalytics(List<Contact> contacts, List<Nudge> nudges) {
@@ -1334,8 +1610,8 @@ Widget _buildQuickActionButton({
     final cachedIndex = _getCachedRandomIndex(contact.id);
     final fallbackAsset = 'assets/contact-icons/$cachedIndex.png';
     final hasImage = contact.imageUrl.isNotEmpty;
-    // final firstLetter = contact.name.isNotEmpty ? contact.name[0].toUpperCase() : '?';
     final initials = _getContactInitials(contact.name);
+    var size = MediaQuery.of(context).size;
 
     return GestureDetector(
       onTap: () {
@@ -1345,7 +1621,7 @@ Widget _buildQuickActionButton({
         );
       },
       child: Container(
-        width: 100,
+        width: size.width*0.3,
         margin: const EdgeInsets.only(right: 10),
         child: Card(
           child: Padding(
@@ -1372,7 +1648,7 @@ Widget _buildQuickActionButton({
                   child: !hasImage
                     ? Center(
                         child: Text(
-                          initials, // Use initials instead of firstLetter
+                          initials,
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -1389,9 +1665,9 @@ Widget _buildQuickActionButton({
                     decoration: BoxDecoration(
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1), // shadow color
-                          blurRadius: 4, // softness of shadow
-                          offset: const Offset(0, 2), // position of shadow
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
@@ -1400,7 +1676,7 @@ Widget _buildQuickActionButton({
                       width: 18,
                       height: 18,
                       colorFilter: const ColorFilter.mode(
-                        Color(0xFFFFD500), // vibrant orange
+                        Color(0xFFFFD500),
                         BlendMode.srcIn,
                       ),
                     ),
@@ -1437,131 +1713,6 @@ Widget _buildQuickActionButton({
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildNavigationDrawer(BuildContext context, AuthService authService) {
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          DrawerHeader(
-            decoration: const BoxDecoration(color: Color(0xff3CB3E9)),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Row(children: [
-                  SizedBox(width: 20),
-                  Text(
-                    'NUDGE',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 23,
-                      fontFamily: 'RobotoMono',
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ]),
-                SizedBox(height: 10),
-                Text(
-                  'Nurture your relationships',
-                  style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.dashboard, color: Color(0xff555555)),
-            title: const Text('DASHBOARD', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555))),
-            onTap: () {
-              Navigator.pop(context);
-              setState(() => _currentIndex = 0);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.contacts, color: Color(0xff555555)),
-            title: const Text('ALL CONTACTS', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555))),
-            onTap: () {
-              Navigator.pop(context);
-              setState(() {
-                _currentIndex = 1;
-                attentionFilter = false;
-                vipFilter = false;
-              });
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.group, color: Color(0xff555555)),
-            title: const Text('GROUPS', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555))),
-            onTap: () {
-              Navigator.pop(context);
-              setState(() => _currentIndex = 2);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.notifications, color: Color(0xff555555)),
-            title: const Text('NUDGES & REMINDERS', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555))),
-            onTap: () {
-              Navigator.pop(context);
-              setState(() => _currentIndex = 3);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.import_contacts, color: Color(0xff555555)),
-            title: const Text('IMPORT CONTACTS', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555))),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, '/import_contacts');
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.settings, color: Color(0xff555555)),
-            title: const Text('SETTINGS', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555))),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, '/settings');
-            },
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.exit_to_app, color: Color(0xff555555)),
-            title: const Text('LOGOUT', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555))),
-            onTap: () async {
-              _showLogoutConfirmation(authService);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showLogoutConfirmation(AuthService authService) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('LOGGING OUT', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555))),
-        content: const Text('Are you sure you want to log out of your account?', style: TextStyle(fontWeight: FontWeight.w500)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context), 
-            child: const Text('Cancel')
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              await authService.signOut();
-              // Force navigation to welcome screen
-              Navigator.pushNamedAndRemoveUntil(
-                context, 
-                '/welcome', 
-                (route) => false
-              );
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Confirm'),
-          ),
-        ],
       ),
     );
   }
