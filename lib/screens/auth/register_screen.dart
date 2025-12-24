@@ -430,7 +430,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             try {
                               // Check if email exists in Firestore
                               final emailExists = await apiService.checkEmailExists(email);
-                              
+                              print(email); print(' is the email');
+                              print(emailExists); print(' is emailExists');
                               if (emailExists) {
                                 setState(() {
                                   _emailError = 'This email is already registered';
@@ -484,7 +485,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               // Handle Firebase Auth specific errors
                               String errorMessage = 'Registration failed. Please try again.';
                               
-                              if (e.code == 'email-already-in-use') {
+                              if (e.code.contains('email-already-in-use')) {
                                 errorMessage = 'This email is already registered with another account.';
                                 setState(() {
                                   _emailError = errorMessage;
@@ -492,17 +493,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 });
                                 
                                 _showEmailExistsDialog(email);
-                              } else if (e.code == 'weak-password') {
+                              } else if (e.code.contains('weak-password')) {
                                 errorMessage = 'The password is too weak. Please use a stronger password.';
-                              } else if (e.code == 'invalid-email') {
+                              } else if (e.code.contains('invalid-email')) {
                                 errorMessage = 'The email address is invalid.';
-                              } else if (e.code == 'operation-not-allowed') {
+                              } else if (e.code.contains('operation-not-allowed')) {
                                 errorMessage = 'Email/password accounts are not enabled.';
                               }
                               
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text(errorMessage),
+                                  content: Text(e.toString()),
                                   backgroundColor: Colors.red,
                                 ),
                               );

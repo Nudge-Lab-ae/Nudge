@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart' as auth;
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/services/social_universe_service.dart';
 import '../models/contact.dart';
 import '../models/nudge.dart';
@@ -186,14 +187,25 @@ class ApiService {
   }
 
   Future<bool> checkEmailExists(String email) async {
-  try {
-    final snapshot = await _firestore.collection('users').where('email', isEqualTo: email.toLowerCase()).limit(1).get();
-    return snapshot.docs.isNotEmpty;
-  } catch (e) {
-    print('Error checking email existence: $e');
-    return false;
+    try {
+      // Get reference to the callable function
+      final HttpsCallable callable =
+          FirebaseFunctions.instance.httpsCallable('checkEmailExists');
+
+      // Call the function with the email
+      final result = await callable.call(<String, dynamic>{
+        'email': email,
+      });
+
+      // Extract the boolean result
+      final exists = result.data['exists'] as bool;
+      return exists;
+    } catch (e) {
+      print('Error checking email: $e');
+      return false; // fallback
+    }
   }
-}
+
 
   // User methods
   Future<void> ensureUserDocumentCompleteness(String userId) async {
@@ -953,6 +965,7 @@ Future<void> updateFeedbackAdminData({
   }) async {
     try {
       final currentUser = _auth.currentUser;
+      final nudgeService = NudgeService();
       if (currentUser == null) throw Exception('No user logged in');
       
       // Get contact
@@ -1001,6 +1014,7 @@ Future<void> updateFeedbackAdminData({
       
       // Save to Firestore
       await updateContact(contactWithCDI);
+      await nudgeService.rescheduleNudgeAfterInteraction(contactWithCDI, currentUser.uid);
       
       print('Interaction logged for ${contact.name}, new CDI: ${contactWithCDI.cdi}');
       

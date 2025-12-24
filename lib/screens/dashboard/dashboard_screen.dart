@@ -13,11 +13,13 @@ import 'package:nudge/screens/social_universe/social_universe_immersive.dart';
 // import 'package:nudge/screens/settings/settings_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/services/social_universe_service.dart';
+import 'package:nudge/widgets/add_touchpoint_modal.dart';
+import 'package:nudge/widgets/contact_detail_modal.dart';
 // import 'package:nudge/widgets/contact_quick_panel.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
 // import 'package:nudge/widgets/gradient_text.dart';
 import 'package:nudge/widgets/screen_tracker.dart';
-import 'package:nudge/widgets/simple_contact_panel.dart';
+// import 'package:nudge/widgets/simple_contact_panel.dart';
 import 'package:nudge/widgets/social_universe.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:provider/provider.dart';
@@ -266,6 +268,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         _showContactQuickPanel(context, contact, apiService);
                       },
                       height: 500,
+                       onFullScreenPressed: () {
+                          setState(() {
+                            _currentIndex = 4; // Navigate to immersive universe
+                          });
+                        },
                     ),
                     const SizedBox(height: 20),
                     
@@ -699,43 +706,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             BottomNavigationBarItem(
               icon: Container(
                 margin: const EdgeInsets.only(top: 10),
-                child: Stack(
-                  children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: _currentIndex == 4
-                              ? [const Color(0xFF5CDEE5), const Color(0xFF2D85F6)]
-                              : [const Color(0xFF8A8A8A), const Color(0xFF8A8A8A)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        shape: BoxShape.circle,
+                child: Icon(
+                        Icons.star_border,
+                        size: 22,
+                        color: _currentIndex == 4 ? const Color(0xFF3CB3E9) : const Color(0xFF8A8A8A),
                       ),
-                      child: Icon(
-                        Icons.star,
-                        size: 18,
-                        color: _currentIndex == 4 ? Colors.white : Colors.white,
-                      ),
-                    ),
-                    if (_currentIndex == 4)
-                      Positioned(
-                        right: 0,
-                        bottom: 0,
-                        child: Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF5CDEE5),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
               ),
               label: '',
             ),
@@ -745,26 +720,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  void _showContactQuickPanel(BuildContext context, Contact contact, ApiService apiService) {
-    // Use a delayed Future to ensure smooth transition
-    Future.delayed(const Duration(milliseconds: 100), () {
-      showModalBottomSheet(
-        context: context,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        isScrollControlled: true,
-        backgroundColor: Colors.white,
-        builder: (context) {
-          return SimpleContactPanel(
-            contact: contact,
-            apiService: apiService,
-          );
-        },
+void _showContactQuickPanel(BuildContext context, Contact contact, ApiService apiService) {
+  showModalBottomSheet(
+    context: context,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    isScrollControlled: true,
+    backgroundColor: Colors.white,
+    builder: (context) {
+      return ContactDetailsModal(
+        contact: contact,
+        apiService: apiService,
       );
-    });
-  }
-
+    },
+  );
+}
   // DASHBOARD CONTENT
 
   // Widget _buildDashboardContent(BuildContext context, List<Contact> contacts, List<SocialGroup> groups, ApiService apiService) {
@@ -1157,35 +1128,63 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return GestureDetector(onTap: onTap, child: MouseRegion(cursor: SystemMouseCursors.click, child: card));
   }
 
-  // Quick actions row (uses SVG icons from assets/quick-icons/)
-  Widget _buildCenteredQuickActions(BuildContext context) {
-    return Center(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _buildQuickActionButton(
-            svgAsset: 'assets/quick-actions/add contact icon.svg',
-            label: 'Add Contacts',
-            onPressed: () {
-              _showAddContactOptions(context);
-            },
-          ),
-          const SizedBox(width: 12),
-          _buildQuickActionButton(
-            svgAsset: 'assets/quick-actions/add group-icon.svg',
-            label: 'Create Group',
-            onPressed: () {
-              setState(() {
-                _currentIndex = 2;
-                attentionFilter = false;
-                vipFilter = false;
-              });
-            },
-          ),
-        ],
-      ),
-    );
-  }
+// Quick actions row (uses SVG icons from assets/quick-icons/)
+Widget _buildCenteredQuickActions(BuildContext context) {
+  return Center(
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _buildQuickActionButton(
+          svgAsset: 'assets/quick-actions/add contact icon.svg',
+          label: 'Add Contacts',
+          onPressed: () {
+            _showAddContactOptions(context);
+          },
+        ),
+        const SizedBox(width: 12),
+        _buildQuickActionButton(
+          svgAsset: 'assets/quick-actions/add group-icon.svg',
+          label: 'Create Group',
+          onPressed: () {
+            setState(() {
+              _currentIndex = 2;
+              attentionFilter = false;
+              vipFilter = false;
+            });
+          },
+        ),
+        const SizedBox(width: 12),
+        _buildQuickActionButton(
+          svgAsset: 'assets/quick-actions/touchpoint-icon.svg',
+          label: 'Add Touchpoint',
+          onPressed: () {
+            _showAddTouchpointModal(context);
+          },
+        ),
+      ],
+    ),
+  );
+}
+
+void _showAddTouchpointModal(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (context) {
+      return Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: AddTouchpointModal(
+          apiService: Provider.of<ApiService>(context, listen: false),
+        ),
+      );
+    },
+  );
+}
 
 Widget _buildQuickActionButton({
   required String svgAsset,
