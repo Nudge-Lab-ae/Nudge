@@ -436,7 +436,7 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
                     : const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.add, size: 20),
+                          Icon(Icons.add, size: 20, color: Colors.white,),
                           SizedBox(width: 8),
                           Text(
                             'LOG TOUCHPOINT',

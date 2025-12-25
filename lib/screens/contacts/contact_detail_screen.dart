@@ -12,7 +12,7 @@ import 'package:provider/provider.dart';
 import '../../models/contact.dart';
 // import '../../services/database_service.dart';
 import '../../services/auth_service.dart';
-import '../../widgets/smart_tagging_suggestions.dart';
+// import '../../widgets/smart_tagging_suggestions.dart';
 
 class ContactDetailScreen extends StatefulWidget {
   final Contact contact;
@@ -68,15 +68,6 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     }
   }
 
-  Future<void> _editNextNudge() async {
-    // Show dialog to edit next nudge schedule
-    showDialog(
-      context: context,
-      builder: (context) {
-        return _NextNudgeDialog(contact: _currentContact);
-      },
-    );
-  }
 
   String _getContactInitials(String name) {
     if (name.isEmpty) return '?';
@@ -311,19 +302,19 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                 subtitle: Text(_currentContact.socialGroups.join(', ')),
               ),
             
-            // Social Tags Section (Renamed from Tag Suggestions)
-            const SizedBox(height: 24),
-            const Text(
-              'SOCIAL TAGS',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Color(0xff6e6e6e),
-                letterSpacing: 1.0,
-              ),
-            ),
-            const SizedBox(height: 8),
-            SmartTaggingSuggestions(contact: _currentContact),
+            // // Social Tags Section (Renamed from Tag Suggestions)
+            // const SizedBox(height: 24),
+            // const Text(
+            //   'SOCIAL TAGS',
+            //   style: TextStyle(
+            //     fontSize: 16,
+            //     fontWeight: FontWeight.bold,
+            //     color: Color(0xff6e6e6e),
+            //     letterSpacing: 1.0,
+            //   ),
+            // ),
+            // const SizedBox(height: 8),
+            // SmartTaggingSuggestions(contact: _currentContact),
             
             // Important Dates Section
             if (_currentContact.birthday != null || _currentContact.anniversary != null || _currentContact.workAnniversary != null) ...[
@@ -401,63 +392,164 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
               ),
             ],
             
-            // Scheduled Nudges Section (Replaces Snooze/Done buttons)
-            const SizedBox(height: 30),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'SCHEDULED NUDGES',
-                      style: TextStyle(
-                        color: Color(0xff6e6e6e),
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+            const SizedBox(height: 20),
+
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    _logInteraction(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF3CB3E9),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.add, size: 20, color: Colors.white),
+                      SizedBox(width: 12),
+                      Text(
+                        'LOG INTERACTION',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'Next nudge scheduled based on your ${_currentContact.period.toLowerCase()} frequency',
-                      style: TextStyle(color: Colors.grey[600]),
-                    ),
-                    const SizedBox(height: 15),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                             Text(
-                                'Frequency: ${FrequencyPeriodMapper.getConversationalChoice(_currentContact.frequency, _currentContact.period)}',
-                                style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555)),
-                              ),
-                              Text(
-                                'Connection Type: ${_currentContact.connectionType}',
-                                style: TextStyle(color: Colors.grey[600], fontSize: 14,),
-                              ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.edit, color: Color(0xff3CB3E9)),
-                          onPressed: _editNextNudge,
-                          tooltip: 'Edit Nudge Schedule',
-                        ),
-                      ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-            
-            const SizedBox(height: 20),
           ],
         ),
       ),
     );
   }
+
+  Future<void> _logInteraction(BuildContext context) async {
+  // Show interaction type selection
+  final interactionType = await showModalBottomSheet<String>(
+    context: context,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (context) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'SELECT INTERACTION TYPE',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: Color(0xff555555),
+              ),
+            ),
+            const SizedBox(height: 20),
+            
+            // Interaction type options
+            Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.call, color: Color(0xFF3CB3E9)),
+                  title: const Text('Phone Call'),
+                  onTap: () => Navigator.pop(context, 'call'),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.message, color: Color(0xFF3CB3E9)),
+                  title: const Text('Message'),
+                  onTap: () => Navigator.pop(context, 'message'),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.people, color: Color(0xFF3CB3E9)),
+                  title: const Text('In Person Meeting'),
+                  onTap: () => Navigator.pop(context, 'meet'),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.more_horiz, color: Color(0xFF3CB3E9)),
+                  title: const Text('Other'),
+                  onTap: () => Navigator.pop(context, 'other'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    },
+  );
+
+  if (interactionType == null) return;
+
+  // Optional notes input
+  final notes = await showDialog<String>(
+    context: context,
+    builder: (context) {
+      String notesText = '';
+      return AlertDialog(
+        title: const Text('Add Notes (Optional)'),
+        content: TextField(
+          autofocus: true,
+          maxLines: 3,
+          onChanged: (value) => notesText = value,
+          decoration: const InputDecoration(
+            hintText: 'Add any notes about this interaction...',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, null),
+            child: const Text('Skip'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, notesText),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF3CB3E9),
+            ),
+            child: const Text('Add Notes', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      );
+    },
+  );
+
+  try {
+    final apiService = Provider.of<ApiService>(context, listen: false);
+    
+    // Log the interaction
+    await apiService.logInteraction(
+      contactId: _currentContact.id,
+      interactionType: interactionType,
+      notes: notes,
+    );
+
+    // Show success message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Interaction logged for ${_currentContact.name}!'),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+
+  } catch (e) {
+    print('Error logging interaction: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Failed to log interaction: $e'),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+}
 
   int getRandomIndex(String seed) {
   if (seed.isEmpty) return 1;
@@ -468,150 +560,4 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
   return (hash.abs() % 6) + 1;
 }
 
-}
-
-// Replace the entire _NextNudgeDialog class with this updated version:
-
-class _NextNudgeDialog extends StatefulWidget {
-  final Contact contact;
-  
-  const _NextNudgeDialog({required this.contact});
-
-  @override
-  State<_NextNudgeDialog> createState() => __NextNudgeDialogState();
-}
-
-class __NextNudgeDialogState extends State<_NextNudgeDialog> {
-  late String _selectedFrequencyChoice;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedFrequencyChoice = FrequencyPeriodMapper.getConversationalChoice(
-      widget.contact.frequency, 
-      widget.contact.period
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Edit Nudge Schedule', style: TextStyle(fontWeight: FontWeight.bold)),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text('Adjust how often you want to be reminded to contact ${widget.contact.name}'),
-          const SizedBox(height: 20),
-          
-          // Frequency Selection with Conversational Options
-          const Text('Contact Frequency:', style: TextStyle(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            value: _selectedFrequencyChoice,
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-            ),
-            items: FrequencyPeriodMapper.frequencyMapping.keys.map((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(value),
-              );
-            }).toList(),
-            onChanged: (String? newValue) {
-              if (newValue != null) {
-                setState(() {
-                  _selectedFrequencyChoice = newValue;
-                });
-              }
-            },
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // Show what the selection means
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.info, color: Color(0xff3CB3E9), size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    _getFrequencyDescription(_selectedFrequencyChoice),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: () async {
-            try {
-              final apiService = Provider.of<ApiService>(context, listen: false);
-              final frequencyData = FrequencyPeriodMapper.getFrequencyPeriod(_selectedFrequencyChoice);
-              
-              final updatedContact = widget.contact.copyWith(
-                period: frequencyData['period'] as String,
-                frequency: frequencyData['frequency'] as int,
-              );
-              
-              await apiService.updateContact(updatedContact);
-              Navigator.of(context).pop();
-              
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Updated nudge schedule for ${widget.contact.name}')),
-              );
-            } catch (e) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Error updating schedule: $e')),
-              );
-            }
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xff3CB3E9),
-          ),
-          child: const Text('Save', style: TextStyle(color: Colors.white)),
-        ),
-      ],
-    );
-  }
-
-  String _getFrequencyDescription(String frequencyChoice) {
-    final data = FrequencyPeriodMapper.getFrequencyPeriod(frequencyChoice);
-    final frequency = data['frequency'];
-    final period = data['period'];
-    
-    switch (frequencyChoice) {
-      case 'Every few days':
-        return 'You\'ll be reminded to contact ${widget.contact.name} multiple times per week';
-      case 'Weekly':
-        return 'You\'ll be reminded to contact ${widget.contact.name} once per week';
-      case 'Every 2 weeks':
-        return 'You\'ll be reminded to contact ${widget.contact.name} twice per month';
-      case 'Monthly':
-        return 'You\'ll be reminded to contact ${widget.contact.name} once per month';
-      case 'Quarterly':
-        return 'You\'ll be reminded to contact ${widget.contact.name} once every 3 months';
-      case 'Twice a year':
-        return 'You\'ll be reminded to contact ${widget.contact.name} twice per year';
-      case 'Once a year':
-        return 'You\'ll be reminded to contact ${widget.contact.name} once per year';
-      default:
-        return 'You\'ll be reminded to contact ${widget.contact.name} $frequency times per $period';
-    }
-  }
 }

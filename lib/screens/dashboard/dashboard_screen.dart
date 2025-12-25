@@ -17,6 +17,7 @@ import 'package:nudge/widgets/add_touchpoint_modal.dart';
 import 'package:nudge/widgets/contact_detail_modal.dart';
 // import 'package:nudge/widgets/contact_quick_panel.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
+import 'package:nudge/widgets/interactive_donut_chart.dart';
 // import 'package:nudge/widgets/gradient_text.dart';
 import 'package:nudge/widgets/screen_tracker.dart';
 // import 'package:nudge/widgets/simple_contact_panel.dart';
@@ -25,7 +26,7 @@ import 'package:percent_indicator/percent_indicator.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 // import 'package:intl/intl.dart';
-import 'package:syncfusion_flutter_charts/charts.dart';
+// import 'package:syncfusion_flutter_charts/charts.dart';
 import '../../services/auth_service.dart';
 import '../../services/nudge_service.dart';
 import '../../models/contact.dart';
@@ -380,7 +381,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                     // Pie Chart
                     _buildInteractivePieChartSection(contacts),
-                    const SizedBox(height: 80), // Bottom padding for FAB
+                    const SizedBox(height: 20), // Bottom padding for FAB
                   ]),
                 ),
               ),
@@ -1191,8 +1192,9 @@ Widget _buildQuickActionButton({
   required String label,
   required VoidCallback onPressed,
 }) {
+  var size = MediaQuery.of(context).size;
   return SizedBox(
-    width: 150,
+    width: size.width*0.28,
     height: 120,
     child: Card(
       elevation: 4,
@@ -1344,16 +1346,6 @@ Widget _buildQuickActionButton({
   Widget _buildInteractivePieChartSection(List<Contact> contacts) {
     final distributionData = _calculateContactDistribution(contacts);
 
-    //  final gradientColors = _getCategoryGradient(data['category'], index);
-    //                       return LinearGradient(
-    //                         colors: gradientColors,
-    //                         begin: Alignment.topCenter,
-    //                         end: Alignment.bottomCenter,
-    //                       ).createShader(Rect.fromCircle(
-    //                         center: Offset.zero,
-    //                         radius: 1,
-    //                       ));
-
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFFFFFFFF),
@@ -1391,8 +1383,9 @@ Widget _buildQuickActionButton({
             Column(
               children: [
                 SizedBox(
-                  height: 300,
-                  child: SfCircularChart(
+                  height: 400,
+                  child: InteractiveDonutChart(distributionData: distributionData)
+                  /* SfCircularChart(
                     legend: Legend(
                       isVisible: true,
                       overflowMode: LegendItemOverflowMode.wrap,
@@ -1460,7 +1453,7 @@ Widget _buildQuickActionButton({
                       format: 'point.x : point.y contacts (point.percentage%)',
                       canShowMarker: true,
                     ),
-                  ),
+                  ), */
                 ),
                 if (_explodedCategory != null && _selectedPieSegmentIndex >= 0)
                   _buildSegmentDetails(

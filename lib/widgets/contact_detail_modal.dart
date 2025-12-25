@@ -25,7 +25,7 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
     final ringColor = _getRingColor(contact.computedRing);
     
     return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
+      height: MediaQuery.of(context).size.height * 0.65,
       padding: const EdgeInsets.all(20),
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -285,7 +285,7 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.add, size: 20),
+                  Icon(Icons.add, size: 20, color: Colors.white,),
                   SizedBox(width: 12),
                   Text(
                     'ADD TOUCHPOINT',
@@ -387,7 +387,7 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF3CB3E9),
               ),
-              child: const Text('Add Notes'),
+              child: const Text('Add Notes', style: TextStyle(color: Colors.white),),
             ),
           ],
         );

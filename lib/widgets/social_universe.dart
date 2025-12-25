@@ -1,5 +1,6 @@
 // lib/widgets/social_universe.dart - UPDATED WITH FIXES
 import 'package:flutter/material.dart';
+import 'package:nudge/test/mock_data_generator.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
 import 'package:nudge/widgets/social_universe_guide.dart';
 import 'dart:math';
@@ -44,10 +45,20 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
   // Rotation animation controller
   late AnimationController _rotationController;
   late Animation<double> _rotationAnimation;
+  bool _useMockData = false;
+  List<Contact> _mockContacts = [];
+  late List<Contact> _displayContacts;
 
   @override
   void initState() {
     super.initState();
+    
+    // Initialize mock data
+    _mockContacts = MockContactsGenerator.generateMockContacts(count: 50);
+    MockContactsGenerator.printDistribution(_mockContacts);
+    
+    // FIX: Set displayContacts to REAL contacts by default, not mock
+    _displayContacts = widget.contacts;  // Changed from _mockContacts to widget.contacts
     
     // Initialize rotation animation
     _rotationController = AnimationController(
@@ -62,6 +73,9 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
     
     // Initialize slider value
     _sliderValue = _immersionLevel;
+    Future.delayed(Duration(seconds: 1)).then((value){
+      _displayContacts = widget.contacts;
+    });
   }
 
   @override
@@ -77,6 +91,28 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
     } else {
       return _buildCompactView();
     }
+  }
+
+  void _toggleMockData() {
+    setState(() {
+      _useMockData = !_useMockData;
+      _displayContacts = _useMockData ? _mockContacts : widget.contacts;
+      _selectedContact = null; // Clear selection when toggling
+      
+      // FIX: Clear star positions when switching data sets
+      _starPositions.clear();
+      _starSizes.clear();
+      
+      // Show snackbar notification
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_useMockData 
+            ? 'Using mock data (${_displayContacts.length} contacts)' 
+            : 'Using real data (${_displayContacts.length} contacts)'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    });
   }
 
   Widget _buildCompactView() {
@@ -113,27 +149,66 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'SOCIAL UNIVERSE',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF8A9DFF),
-                              letterSpacing: 1.5,
-                            ),
-                          ),
-                          SizedBox(height: 2),
-                          Text(
-                            'Tap stars to view details',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.white54,
-                            ),
-                          ),
-                        ],
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                              Row(
+                                children: [
+                                  const Text(
+                                    'SOCIAL UNIVERSE',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF8A9DFF),
+                                      letterSpacing: 1.5,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  // Mock data indicator
+                                  if (_useMockData)
+                                    GestureDetector(
+                                      onTap: _toggleMockData,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.orange.withOpacity(0.2),
+                                          borderRadius: BorderRadius.circular(4),
+                                          border: Border.all(color: Colors.orange),
+                                        ),
+                                        child: const Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.psychology, size: 10, color: Colors.orange),
+                                            SizedBox(width: 4),
+                                            Text(
+                                              'TEST MODE',
+                                              style: TextStyle(
+                                                fontSize: 8,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.orange,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Tap stars to view details • ${_useMockData ? 'Click TEST MODE to return to real data' : 'Double-tap to test with mock data'}',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.white54,
+                                ),
+                              ),
+                            const SizedBox(height: 2),
+                          ],
+                        ),
                       ),
                       // Fullscreen button
                       GestureDetector(
@@ -161,25 +236,25 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                     child: LayoutBuilder(
                       builder: (context, constraints) {
                         final size = min(constraints.maxWidth, constraints.maxHeight);
-                        return Center(
-                          child: SizedBox(
-                            width: size,
-                            height: size,
-                            child: GestureDetector(
-                              onTapDown: (details) {
-                                _handleUniverseTap(details.localPosition, Size(size, size));
-                              },
+                        return GestureDetector(
+                          onDoubleTap: _toggleMockData,
+                          onTapDown: (details) {
+                            _handleUniverseTap(details.localPosition, Size(size, size));
+                          },
+                          child: Center(
+                            child: SizedBox(
+                              width: size,
+                              height: size,
                               child: AnimatedBuilder(
                                 animation: _rotationAnimation,
                                 builder: (context, child) {
                                   return CustomPaint(
                                     painter: UniversePainter(
-                                      contacts: widget.contacts,
+                                      contacts: _displayContacts, // Use displayContacts
                                       selectedContact: _selectedContact,
                                       isImmersive: false,
                                       immersionLevel: 1.0,
                                       rotation: _rotationAnimation.value,
-                                      // FIX: Add callback to track star positions
                                       onStarDrawn: (contactId, position, starSize) {
                                         if (mounted) {
                                           _starPositions[contactId] = position;
@@ -259,7 +334,9 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
         children: [
           // Universe takes the entire screen with rotation
           Positioned.fill(
+            // In _buildImmersiveView(), update the AnimatedBuilder:
             child: GestureDetector(
+              onDoubleTap: widget.isImmersive ? _toggleMockData : null,
               onTapDown: (details) {
                 final screenSize = MediaQuery.of(context).size;
                 _handleUniverseTap(details.localPosition, screenSize);
@@ -274,12 +351,11 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                 builder: (context, child) {
                   return CustomPaint(
                     painter: UniversePainter(
-                      contacts: widget.contacts,
+                      contacts: _displayContacts, // Use displayContacts
                       selectedContact: _selectedContact,
                       isImmersive: true,
                       immersionLevel: _immersionLevel,
                       rotation: _rotationAnimation.value,
-                      // FIX: Add callback to track star positions
                       onStarDrawn: (contactId, position, starSize) {
                         if (mounted) {
                           _starPositions[contactId] = position;
@@ -325,30 +401,31 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Back button
-                          GestureDetector(
-                            onTap: () {
-                              if (widget.onExitImmersive != null) {
-                                widget.onExitImmersive!();
-                              } else {
-                                Navigator.pop(context);
-                              }
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.15),
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white30),
-                              ),
-                              child: const Icon(
-                                Icons.arrow_back,
-                                color: Colors.white,
-                                size: 24,
-                              ),
-                            ),
-                          ),
+                          // GestureDetector(
+                          //   onTap: () {
+                          //     if (widget.onExitImmersive != null) {
+                          //       widget.onExitImmersive!();
+                          //     } else {
+                          //       Navigator.pop(context);
+                          //     }
+                          //   },
+                          //   child: Container(
+                          //     padding: const EdgeInsets.all(12),
+                          //     decoration: BoxDecoration(
+                          //       color: Colors.white.withOpacity(0.15),
+                          //       shape: BoxShape.circle,
+                          //       border: Border.all(color: Colors.white30),
+                          //     ),
+                          //     child: const Icon(
+                          //       Icons.arrow_back,
+                          //       color: Colors.white,
+                          //       size: 24,
+                          //     ),
+                          //   ),
+                          // ),
                           
                           // Center title
+                          // In _buildImmersiveView(), update the center title section:
                           Expanded(
                             child: Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -367,13 +444,34 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    'Explore your ${widget.contacts.length} connections',
+                                    'Explore your ${_displayContacts.length} connections${_useMockData ? ' (TEST MODE)' : ''}',
                                     style: const TextStyle(
                                       color: Colors.white70,
                                       fontSize: 14,
                                     ),
                                     textAlign: TextAlign.center,
                                   ),
+                                  if (_useMockData)
+                                    const SizedBox(height: 4),
+                                  if (_useMockData)
+                                    GestureDetector(
+                                      onTap: _toggleMockData,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.orange.withOpacity(0.2),
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(color: Colors.orange),
+                                        ),
+                                        child: const Text(
+                                          'Click to return to real data',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.orange,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
                                 ],
                               ),
                             ),
@@ -776,7 +874,8 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
     );
   }
 
-  // FIX: Improved tap detection using stored star positions
+  
+  // FIX: Update _handleUniverseTap to use _displayContacts instead of widget.contacts
   void _handleUniverseTap(Offset tapPosition, Size size) {
     // Clear previous positions if universe size changed
     if (_starPositions.isNotEmpty) {
@@ -806,9 +905,10 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
     }
     
     if (tappedContactId != null) {
-      final contact = widget.contacts.firstWhere(
+      // FIX: Use _displayContacts instead of widget.contacts
+      final contact = _displayContacts.firstWhere(
         (c) => c.id == tappedContactId,
-        orElse: () => widget.contacts.first,
+        orElse: () => _displayContacts.first,
       );
       
       setState(() {
@@ -820,7 +920,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
       });
     }
   }
-
+  
   Widget _buildLegendRow() {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
@@ -868,8 +968,429 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
       ],
     );
   }
+  void _showMockContactDetails(Contact contact) {
+    final ringColor = _getRingColor(contact.computedRing);
+    final daysSince = DateTime.now().difference(contact.lastContacted).inDays;
+    final lastContactText = _getTimeAgoText(daysSince);
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    ringColor,
+                    ringColor.withOpacity(0.3),
+                  ],
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  contact.name.substring(0, 1).toUpperCase(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(contact.name),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.black.withOpacity(0.95),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: Colors.orange),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Mock data warning
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.warning, size: 16, color: Colors.orange),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'This is a mock contact for testing Social Universe visualization',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.orange,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // Social Universe Info
+              _buildDetailSection('Social Universe Positioning', [
+                _buildDetailRow('Computed Ring', contact.computedRing.toUpperCase(), 
+                  ringColor),
+                _buildDetailRow('CDI Score', '${contact.cdi.toStringAsFixed(1)}/100',
+                  contact.cdi >= 80 ? Colors.green : 
+                  contact.cdi >= 50 ? Color(0xFFFFC107) : Colors.redAccent),
+                _buildDetailRow('Position Angle', '${contact.angleDeg.toStringAsFixed(1)}°',
+                  Colors.white),
+                _buildDetailRow('VIP Status', contact.isVIP ? 'YES' : 'NO',
+                  contact.isVIP ? Color(0xFFFFD700) : Colors.grey),
+                _buildDetailRow('Raw Band', contact.rawBand.toUpperCase(),
+                  Colors.white),
+                _buildDetailRow('Band Since', 
+                  '${DateTime.now().difference(contact.rawBandSince).inDays} days',
+                  Colors.white),
+              ]),
+              
+              const SizedBox(height: 16),
+              
+              // Contact Info
+              _buildDetailSection('Contact Information', [
+                _buildDetailRow('Connection Type', contact.connectionType, Colors.white),
+                _buildDetailRow('Period', contact.period, Colors.white),
+                _buildDetailRow('Frequency', '${contact.frequency}/period', Colors.white),
+                _buildDetailRow('Last Contacted', lastContactText, Colors.white),
+                _buildDetailRow('Interaction Count', 
+                  '${contact.interactionCountInWindow} in last 90 days', Colors.white),
+              ]),
+              
+              const SizedBox(height: 16),
+              
+              // Tags
+              if (contact.tags.isNotEmpty)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Tags:',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: contact.tags.map((tag) => Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          tag,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                          ),
+                        ),
+                      )).toList(),
+                    ),
+                  ],
+                ),
+              
+              const SizedBox(height: 16),
+              
+              // CDI Interpretation
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white24),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'CDI Interpretation:',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _getCDIInterpretation(contact.cdi),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'CLOSE',
+              style: TextStyle(color: Colors.orange),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-  Widget _buildCompactContactCard(Contact contact) {
+  Widget _buildDetailSection(String title, List<Widget> children) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        ...children,
+      ],
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value, Color valueColor) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              '$label:',
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                color: valueColor,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getCDIInterpretation(double cdi) {
+    if (cdi >= 80) {
+      return 'Strong, active connection. In the Inner Circle with regular interactions.';
+    } else if (cdi >= 50) {
+      return 'Moderate connection. In the Middle Circle, could benefit from more frequent contact.';
+    } else {
+      return 'Weaker connection. In the Outer Circle, consider reconnecting soon.';
+    }
+  }
+
+    Widget _buildCompactContactCard(Contact contact) {
+      // Add mock data warning
+      if (_useMockData && contact.id.startsWith('mock_')) {
+        return Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+              Colors.orange.withOpacity(0.3),
+                Colors.orange.withOpacity(0.1),
+                Colors.black.withOpacity(0.8),
+              ],
+            ),
+            border: Border.all(color: Colors.orange.withOpacity(0.4)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.orange.withOpacity(0.3),
+                blurRadius: 20,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.orange,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.warning,
+                      size: 16,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Mock Contact - Test Data',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          _getRingColor(contact.computedRing),
+                          _getRingColor(contact.computedRing).withOpacity(0.5),
+                        ],
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        contact.name.substring(0, 1).toUpperCase(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          contact.name,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                contact.connectionType,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'CDI: ${contact.cdi.toStringAsFixed(0)}',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.white54,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '• ${contact.computedRing.toUpperCase()}',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.white54,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                                  GestureDetector(
+                    onTap: () {
+                      if (_useMockData && contact.id.startsWith('mock_')) {
+                        // For mock data, show debug info dialog
+                        _showMockContactDetails(contact);
+                      } else {
+                        // For real data, use the normal callback
+                        widget.onContactView(contact);
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        gradient: LinearGradient(
+                          colors: _useMockData && contact.id.startsWith('mock_') 
+                            ? [Colors.orange, Color(0xFFFF9800)]
+                            : const [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                      child: Text(
+                        _useMockData && contact.id.startsWith('mock_') ? 'DETAILS' : 'VIEW',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      }
+
     final daysAgo = DateTime.now().difference(contact.lastContacted).inDays;
     final lastContactText = _getTimeAgoText(daysAgo);
     final ringColor = _getRingColor(contact.computedRing);
@@ -1206,7 +1727,13 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
             Expanded(
               child: GestureDetector(
                 onTap: () {
-                  widget.onContactView(contact);
+                  if (_useMockData && contact.id.startsWith('mock_')) {
+                    // For mock data, show debug info
+                    _showMockContactDetails(contact);
+                  } else {
+                    // For real data, use the normal callback
+                    widget.onContactView(contact);
+                  }
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -1214,33 +1741,42 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                   ),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
+                    gradient: LinearGradient(
+                      colors: _useMockData && contact.id.startsWith('mock_')
+                        ? [Colors.orange, Color(0xFFFF9800)]
+                        : const [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF5CDEE5).withOpacity(0.5),
+                        color: (_useMockData && contact.id.startsWith('mock_')
+                          ? Colors.orange
+                          : const Color(0xFF5CDEE5)
+                        ).withOpacity(0.5),
                         blurRadius: 10,
                         spreadRadius: 1,
                       ),
                     ],
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        'VIEW DETAILS',
-                        style: TextStyle(
+                        _useMockData && contact.id.startsWith('mock_') 
+                          ? 'VIEW MOCK DETAILS' 
+                          : 'VIEW DETAILS',
+                        style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
                         ),
                       ),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Icon(
-                        Icons.arrow_forward,
+                        _useMockData && contact.id.startsWith('mock_')
+                          ? Icons.info_outline
+                          : Icons.arrow_forward,
                         size: 16,
                         color: Colors.white,
                       ),
