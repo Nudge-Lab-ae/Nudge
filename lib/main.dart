@@ -1,10 +1,7 @@
-// lib/main.dart
 import 'dart:io';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
-// import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:nudge/firebase_options.dart';
@@ -16,11 +13,8 @@ import 'package:nudge/screens/contacts/edit_contact_screen.dart';
 import 'package:nudge/screens/feedback/feedback_forum_screen.dart';
 import 'package:nudge/screens/splash_screen.dart';
 import 'package:nudge/services/api_service.dart';
-// import 'package:nudge/services/background_service.dart';
 import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/theme/text_styles.dart';
-// import 'package:nudge/widgets/app_warapper.dart';
-// import 'package:nudge/widgets/feedback_floating_button.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -36,14 +30,48 @@ import 'screens/settings/settings_screen.dart';
 import 'screens/groups/groups_list_screen.dart';
 import 'services/auth_service.dart';
 import 'models/user.dart' as user;
-// import 'package:firebase_app_check/firebase_app_check.dart';
 
 // Create a GlobalKey for navigator to handle notifications when app is in background
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
+// Add this global variable to track notification navigation
+String? _pendingNotificationRoute;
+
 // Initialize flutter_local_notifications
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
+
+// Global function to handle notification navigation
+void handleNotificationNavigation(Map<String, dynamic> payload) {
+  print('handleNotificationNavigation called with payload: $payload');
+  
+  // Force navigation to dashboard with notifications tab
+  _pendingNotificationRoute = '/dashboard?tab=notifications';
+  print('Pending notification route set to: $_pendingNotificationRoute');
+  
+  // If navigator is ready, navigate immediately
+  if (navigatorKey.currentState != null) {
+    _processPendingNotification();
+  }
+}
+
+// Process pending notification
+void _processPendingNotification() {
+  if (_pendingNotificationRoute != null && navigatorKey.currentState != null) {
+    print('Processing pending notification route: $_pendingNotificationRoute');
+    
+    // Navigate to dashboard with notifications tab
+    if (_pendingNotificationRoute == '/dashboard?tab=notifications') {
+      navigatorKey.currentState!.pushNamedAndRemoveUntil(
+        '/dashboard',
+        (route) => false,
+        arguments: {'initialTab': 3}, // 3 is the index for notifications in bottom nav
+      );
+    }
+    
+    _pendingNotificationRoute = null;
+  }
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -66,17 +94,13 @@ Future<void> main() async {
 
     print('Attempting Firebase initialization...');
     
-    // await Firebase.initializeApp(
-    //   options: DefaultFirebaseOptions.currentPlatform,
-    //   name: Platform.isAndroid?"Nudge":"Nudge-iOS"
-    // );
     if (Platform.isIOS) {
-       await Firebase.initializeApp();
+      await Firebase.initializeApp();
     } else {
-       await Firebase.initializeApp(
-       options: DefaultFirebaseOptions.currentPlatform,
-       name: "Nudge"
-  );
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+        name: "Nudge"
+      );
     }
    
     print('stage 3 - Firebase initialized successfully');
@@ -94,7 +118,7 @@ Future<void> main() async {
       print('Fallback also failed: $e2');
     }
   }
-  // BackgroundService.initialize();
+  
   WidgetsBinding.instance.debugShowWidgetInspectorOverrideNotifier.value = false;
   runApp(const NudgeApp());
   _initializeInBackground();
@@ -102,8 +126,6 @@ Future<void> main() async {
 
 Future<void> _initializeInBackground() async {
   try {
-   
-    
     // Initialize other services in background
     await initializeLocalNotifications();
     await Future.delayed(Duration(seconds: 2));
@@ -117,14 +139,6 @@ Future<void> _initializeInBackground() async {
     print('Background initialization error: $e');
   }
 }
-
-// void printDebugToken() async {
-//   final token = await FirebaseAppCheck.instance.getToken(true);
-//   print('Debug App Check token: $token');
-  
-//   // You'll need to register this token in Firebase Console
-//   // under App Check → Manage debug tokens
-// }
 
 Future<void> initializeLocalNotifications() async {
   const AndroidInitializationSettings initializationSettingsAndroid =
@@ -143,12 +157,12 @@ Future<void> initializeLocalNotifications() async {
   );
 
   await flutterLocalNotificationsPlugin.initialize(
-    initializationSettings,
-    onDidReceiveNotificationResponse: (NotificationResponse response) {
-      // Handle notification tap
-      _handleNotificationTap(response.payload);
-    },
-  );
+  initializationSettings,
+  onDidReceiveNotificationResponse: (NotificationResponse response) {
+    print('Notification tapped - navigating to notifications');
+    navigateToNotificationsScreen();
+  },
+);
 
   // Create notification channel for Android
   const AndroidNotificationChannel channel = AndroidNotificationChannel(
@@ -206,16 +220,16 @@ Future<void> initializeFCM() async {
   });
 
   // Set up background message handler
-  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+ FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
     print('App opened from background via notification');
-    _handleBackgroundMessage(message);
+    navigateToNotificationsScreen();
   });
 
   // Handle notification when app is terminated
   RemoteMessage? initialMessage = await messaging.getInitialMessage();
   if (initialMessage != null) {
     print('App opened from terminated state via notification');
-    _handleTerminatedMessage(initialMessage);
+    navigateToNotificationsScreen();
   }
 }
 
@@ -236,38 +250,21 @@ void _setupIOSFCM() {
   FirebaseMessaging.instance.getInitialMessage().then((message) {
     if (message != null) {
       print('App opened from terminated state with message: ${message.data}');
-      _handleMessage(message);
+      _handleTerminatedMessage(message);
     }
   });
   
   // Handle messages when app is in foreground
   FirebaseMessaging.onMessage.listen((message) {
     print('Foreground message: ${message.data}');
-    _handleMessage(message);
+    _showLocalNotification(message);
   });
   
   // Handle when app is in background but not terminated
   FirebaseMessaging.onMessageOpenedApp.listen((message) {
     print('App opened from background with message: ${message.data}');
-    _handleMessage(message);
+    _handleBackgroundMessage(message);
   });
-}
-
-// void _setupTokenRefreshListener() {
-//   // Set up token refresh listener
-//   FirebaseMessaging.instance.onTokenRefresh.listen((token) async{
-//     print('FCM Token refreshed: $token');
-//     final apiService = ApiService();
-//     await apiService.updateUser({'fcmToken': token});
-//   });
-// }
-
-void _handleMessage(RemoteMessage message) {
-  // Handle your notification message here
-  print('Handling message: ${message.data}');
-  
-  // You can navigate to specific screens based on message data
-  // or show local notifications, etc.
 }
 
 void _showLocalNotification(RemoteMessage message) {
@@ -293,21 +290,34 @@ void _showLocalNotification(RemoteMessage message) {
 
   flutterLocalNotificationsPlugin.show(
     message.hashCode,
-    message.notification?.title ?? 'New Nudge',
-    message.notification?.body ?? 'Time to connect with your contact!',
+    message.notification?.title ?? 'Connection Nudge 💫',
+    message.notification?.body ?? 'Time to connect!',
     platformChannelSpecifics,
-    payload: _buildNotificationPayload(message),
+    payload: _buildNotificationPayload(message.data),
   );
 }
 
-String _buildNotificationPayload(RemoteMessage message) {
-  // Create a payload string with relevant data
+void navigateToNotificationsScreen() {
+  print('Direct navigation to notifications screen');
+  
+  if (navigatorKey.currentState != null) {
+    // Clear all existing routes and go to dashboard with notifications tab
+    navigatorKey.currentState!.pushNamedAndRemoveUntil(
+      '/dashboard',
+      (route) => false,
+      arguments: {'initialTab': 3},
+    );
+  } else {
+    print('Navigator not ready, storing for later');
+    _pendingNotificationRoute = '/dashboard?tab=notifications';
+  }
+}
+
+String _buildNotificationPayload(Map<String, dynamic> messageData) {
+  // Simplified payload - just force notifications tab
   final payload = {
-    'type': message.data['type'] ?? 'nudge',
-    'nudgeId': message.data['nudgeId'] ?? '',
-    'contactId': message.data['contactId'] ?? '',
-    'contactName': message.data['contactName'] ?? '',
-    'screen': message.data['screen'] ?? 'notifications',
+    'timestamp': DateTime.now().millisecondsSinceEpoch.toString(),
+    'screen': 'notifications',
   };
   
   return payload.entries
@@ -315,37 +325,62 @@ String _buildNotificationPayload(RemoteMessage message) {
       .join('&');
 }
 
-void _handleNotificationTap(String? payload) {
-  print('Notification tapped with payload: $payload');
+// Map<String, String> _parsePayload(String? payload) {
+//   if (payload == null) return {};
   
-  if (payload != null) {
-    final params = Uri.splitQueryString(payload);
-    final screen = params['screen'] ?? 'notifications';
-    
-    // Navigate to appropriate screen based on notification data
-    if (navigatorKey.currentState != null) {
-      switch (screen) {
-        case 'notifications':
-          navigatorKey.currentState!.pushNamed('/notifications');
-          break;
-        // Add more cases for other screens as needed
-        default:
-          navigatorKey.currentState!.pushNamed('/notifications');
-      }
-    }
-  }
-}
+//   final params = <String, String>{};
+//   final pairs = payload.split('&');
+  
+//   for (final pair in pairs) {
+//     final split = pair.split('=');
+//     if (split.length == 2) {
+//       params[split[0]] = split[1];
+//     }
+//   }
+  
+//   return params;
+// }
+
+// void _handleNotificationTap(String? payload) {
+//   print('Notification tapped - forcing to notifications screen');
+  
+//   // Always navigate to notifications screen
+//   WidgetsBinding.instance.addPostFrameCallback((_) {
+//     if (navigatorKey.currentState != null) {
+//       navigatorKey.currentState!.pushNamedAndRemoveUntil(
+//         '/dashboard',
+//         (route) => false,
+//         arguments: {'initialTab': 3}, // 3 is notifications tab index
+//       );
+//     }
+//   });
+// }
 
 void _handleBackgroundMessage(RemoteMessage message) {
-  print('Handling background message: ${message.data}');
-  _handleNotificationTap(_buildNotificationPayload(message));
+  print('Background message - forcing to notifications screen');
+  
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (navigatorKey.currentState != null) {
+      navigatorKey.currentState!.pushNamedAndRemoveUntil(
+        '/dashboard',
+        (route) => false,
+        arguments: {'initialTab': 3},
+      );
+    }
+  });
 }
 
 void _handleTerminatedMessage(RemoteMessage message) {
-  print('Handling terminated message: ${message.data}');
-  // Store this and handle it when the app fully initializes
+  print('Terminated message - forcing to notifications screen');
+  
   WidgetsBinding.instance.addPostFrameCallback((_) {
-    _handleNotificationTap(_buildNotificationPayload(message));
+    if (navigatorKey.currentState != null) {
+      navigatorKey.currentState!.pushNamedAndRemoveUntil(
+        '/dashboard',
+        (route) => false,
+        arguments: {'initialTab': 3},
+      );
+    }
   });
 }
 
@@ -390,15 +425,19 @@ class NudgeApp extends StatelessWidget {
             labelSmall: AppTextStyles.caption,
           ),
         ),
-        initialRoute: '/splash', // Change initial route to splash
+        initialRoute: '/splash',
         routes: {
-          '/splash': (context) => const SplashScreen(), // Add splash route
+          '/splash': (context) => const SplashScreen(),
           '/': (context) => const AuthWrapper(),
           '/welcome': (context) => const WelcomeScreen(),
           '/login': (context) => const LoginScreen(),
           '/register': (context) => const RegisterScreen(),
           '/complete_profile': (context) => const CompleteProfileScreen(),
-          '/dashboard': (context) => const DashboardScreen(),
+          '/dashboard': (context) {
+            // Check for notification navigation argument
+            final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+            return DashboardScreen(initialTab: args?['initialTab'] ?? 0);
+          },
           '/contacts': (context) {
             final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
             return ContactsListScreen(filter: args?['filter'], mode: args?['action'], showAppBar: true, hideButton: (){},);
@@ -406,19 +445,35 @@ class NudgeApp extends StatelessWidget {
           '/analytics': (context) => const AnalyticsScreen(),
           '/add_contact': (context) => const AddContactScreen(),
           '/import_contacts': (context) => const ImportContactsScreen(),
-          '/notifications': (context) => const NotificationsScreen(showAppBar: false,),
+          '/notifications': (context) => const NotificationsScreen(showAppBar: true),
           '/settings': (context) => const SettingsScreen(),
           '/groups': (context) => const GroupsListScreen(showAppBar: true,),
           '/edit_contact': (context) {
             final contactId = ModalRoute.of(context)!.settings.arguments as String;
             return EditContactScreen(contactId: contactId);
           },
-           '/feedback_forum': (context) => const FeedbackForumScreen(),
+          '/feedback_forum': (context) => const FeedbackForumScreen(),
         },
-          builder: (context, child) {
-         return child!;
+        builder: (context, child) {
+          // Process any pending notification when the app is built
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (_pendingNotificationRoute != null && navigatorKey.currentState != null) {
+              print('Processing pending notification route on app build');
+              navigateToNotificationsScreen();
+              _pendingNotificationRoute = null;
+            }
+          });
+          return child!;
         },
         onGenerateRoute: (settings) {
+          // If notification route is detected, always go to dashboard with notifications tab
+          if (settings.name == '/notifications' || 
+              settings.name?.contains('notification') == true) {
+            return MaterialPageRoute(
+              builder: (context) => DashboardScreen(initialTab: 3),
+            );
+          }
+          
           return MaterialPageRoute(
             builder: (context) => Scaffold(
               body: Center(
@@ -433,7 +488,6 @@ class NudgeApp extends StatelessWidget {
   }
 }
 
-// AuthWrapper to handle authentication state with FCM token storage
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
 
@@ -441,10 +495,7 @@ class AuthWrapper extends StatefulWidget {
   State<AuthWrapper> createState() => _AuthWrapperState();
 }
 
-// Update the _AuthWrapperState in lib/main.dart
-
 class _AuthWrapperState extends State<AuthWrapper> {
-  // bool _isCheckingUserData = false;
   String _checkingStatus = '';
   bool _initialized = false;
 
@@ -484,7 +535,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       setState(() {
-        // _isCheckingUserData = true;
         _checkingStatus = 'Checking user data...';
       });
       
@@ -496,7 +546,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
         print('Error checking user data: $e');
       } finally {
         setState(() {
-          // _isCheckingUserData = false;
           _checkingStatus = '';
         });
       }

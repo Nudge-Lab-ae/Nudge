@@ -96,14 +96,14 @@ class NudgeService {
           .set(nudge.toMap());
       
       // Schedule notification
-      if (shouldSendPush) {
-        await _notificationService.scheduleNudgeNotification(
-          nudge.id.hashCode,
-          'Time to connect with ${contact.name}!',
-          'Remember to reach out to ${contact.name}. You scheduled this reminder.',
-          nextNudgeTime,
-        );
-      }
+      // if (shouldSendPush) {
+      //   await _notificationService.scheduleNudgeNotification(
+      //     nudge.id.hashCode,
+      //     'Time to connect with ${contact.name}!',
+      //     'Remember to reach out to ${contact.name}. You scheduled this reminder.',
+      //     nextNudgeTime,
+      //   );
+      // }
       
       // Update contact's last nudge time
       await _firestore
@@ -216,75 +216,306 @@ DateTime _calculateNextNudgeTimeFromLastContact(Contact contact) {
   return nextTime;
 }
 
-  // Future<bool> scheduleNudgeForContactWithCheck(
-  //   Contact contact, 
-  //   String userId,
-  //   {String? period, 
-  //    int? frequency, 
-  //    DateTime? scheduledTime}
-  // ) async {
-  //   try {
-  //     // Check if contact already has an active nudge
-  //     final hasActiveNudge = await _overdueManager.hasActiveNudgeForContact(
-  //       contact.id, 
-  //       userId
-  //     );
-      
-  //     if (hasActiveNudge) {
-  //       // Cancel existing active nudges for this contact
-  //       await _cancelActiveNudgesForContact(contact.id, userId);
-  //     }
-      
-  //     // Get next available time slot
-  //     DateTime nextAvailableTime;
-  //     if (scheduledTime != null) {
-  //       nextAvailableTime = scheduledTime;
-  //     } else {
-  //       nextAvailableTime = await _overdueManager.getNextAvailableTimeSlot(
-  //         userId,
-  //         preferredDate: _calculateNextNudgeTime(
-  //           period ?? contact.period,
-  //           frequency ?? contact.frequency,
-  //         ),
-  //       );
-  //     }
-      
-  //     // Schedule the nudge
-  //     return await scheduleNudgeForContact(
-  //       contact,
-  //       userId,
-  //       period: period,
-  //       frequency: frequency,
-  //       scheduledTime: nextAvailableTime,
-  //     );
-      
-  //   } catch (e) {
-  //     print('Error scheduling nudge with check: $e');
-  //     return false;
-  //   }
-  // }
+// Main method to schedule nudges for imported contacts with proper spacing
+Future<Map<String, dynamic>> scheduleGroupedNudgesWithSpacing(
+  List<Contact> contacts, 
+  String userId,
+) async {
+  try {
+    print('Starting spaced scheduling for ${contacts.length} contacts');
+    
+    // Step 1: Group contacts by period and frequency
+    final groupedContacts = _groupContactsByPeriodFrequency(contacts);
+    
+    // Step 2: Get existing scheduled nudges to avoid conflicts
+    final existingNudges = await _getExistingScheduledNudges(userId);
+    
+    // Step 3: Process each group with proper spacing
+    final results = await _processContactGroups(
+      groupedContacts, 
+      userId, 
+      existingNudges
+    );
+    
+    print('Successfully scheduled ${results['successCount']} out of ${contacts.length} contacts');
+    
+    return results;
+  } catch (e) {
+    print('Error in scheduleGroupedNudgesWithSpacing: $e');
+    return {
+      'successCount': 0,
+      'failCount': contacts.length,
+      'failedContacts': contacts.map((c) => c.name).toList(),
+      'error': e.toString(),
+    };
+  }
+}
+
+// Group contacts by their period and frequency
+Map<String, List<Contact>> _groupContactsByPeriodFrequency(List<Contact> contacts) {
+  final groups = <String, List<Contact>>{};
   
-  // // Helper method to cancel active nudges for a contact
-  // Future<void> _cancelActiveNudgesForContact(String contactId, String userId) async {
-  //   try {
-  //     final snapshot = await _firestore
-  //         .collection('users')
-  //         .doc(userId)
-  //         .collection('nudges')
-  //         .where('contactId', isEqualTo: contactId)
-  //         .where('isCompleted', isEqualTo: false)
-  //         // .where('isCanceled', isEqualTo: false)
-  //         .get();
+  for (final contact in contacts) {
+    final key = '${contact.period}_${contact.frequency}';
+    if (!groups.containsKey(key)) {
+      groups[key] = [];
+    }
+    groups[key]!.add(contact);
+  }
+  
+  // Sort groups by priority (weekly first, then monthly, etc.)
+  final sortedGroups = <String, List<Contact>>{};
+  final periodOrder = ['weekly', 'monthly', 'quarterly', 'annually'];
+  
+  // Sort keys by period
+  final sortedKeys = groups.keys.toList()
+    ..sort((a, b) {
+      final periodA = a.split('_')[0].toLowerCase();
+      final periodB = b.split('_')[0].toLowerCase();
       
-  //     for (final doc in snapshot.docs) {
-  //       await doc.reference.delete();
+      final indexA = periodOrder.indexOf(periodA);
+      final indexB = periodOrder.indexOf(periodB);
+      
+      if (indexA != -1 && indexB != -1) {
+        return indexA.compareTo(indexB);
+      }
+      return a.compareTo(b);
+    });
+    
+  for (final key in sortedKeys) {
+    sortedGroups[key] = groups[key]!;
+  }
+  
+  print('Grouped ${contacts.length} contacts into ${sortedGroups.length} groups');
+  return sortedGroups;
+}
+
+// Process contact groups with proper spacing
+Future<Map<String, dynamic>> _processContactGroups(
+  Map<String, List<Contact>> groupedContacts,
+  String userId,
+  List<DateTime> existingNudges,
+) async {
+  int successCount = 0;
+  int failCount = 0;
+  final failedContacts = <String>[];
+  
+  // Track current time for each group
+  final currentGroupTimes = <String, DateTime>{};
+  
+  for (final entry in groupedContacts.entries) {
+    final groupKey = entry.key;
+    final contacts = entry.value;
+    final parts = groupKey.split('_');
+    final period = parts[0];
+    final frequency = int.tryParse(parts[1]) ?? 1;
+    
+    print('Processing group: $groupKey with ${contacts.length} contacts');
+    
+    // Calculate ideal spacing for this group
+    final idealSpacing = _calculateIdealSpacing(period, frequency, contacts.length);
+    
+    // Set initial base time for this group
+    DateTime groupBaseTime = currentGroupTimes[groupKey] ?? DateTime.now();
+    currentGroupTimes[groupKey] = groupBaseTime;
+    
+    // Process each contact in the group with spacing
+    for (int i = 0; i < contacts.length; i++) {
+      final contact = contacts[i];
+      
+      try {
+        // Calculate nudge time with proper spacing
+        final nudgeTime = await _calculateSpacedNudgeTime(
+          contact,
+          userId,
+          i,
+          contacts.length,
+          groupBaseTime,
+          idealSpacing,
+          existingNudges,
+        );
         
-  //       await _notificationService.cancelNotification(doc.id.hashCode);
-  //     }
-  //   } catch (e) {
-  //     print('Error canceling active nudges: $e');
-  //   }
-  // }
+        if (nudgeTime != null && nudgeTime.isAfter(DateTime.now())) {
+          // Schedule the nudge
+          final success = await scheduleNudgeForContact(
+            contact,
+            userId,
+            period: contact.period,
+            frequency: contact.frequency,
+            scheduledTime: nudgeTime,
+          );
+          
+          if (success) {
+            successCount++;
+            // Add to existing nudges for future calculations
+            existingNudges.add(nudgeTime);
+            print('Scheduled ${contact.name} at ${nudgeTime.toLocal()}');
+          } else {
+            failCount++;
+            failedContacts.add(contact.name);
+          }
+        } else {
+          failCount++;
+          failedContacts.add(contact.name);
+        }
+        
+        // Update group base time for next contact
+        groupBaseTime = groupBaseTime.add(idealSpacing);
+        
+        // Small delay to avoid overwhelming
+        await Future.delayed(const Duration(milliseconds: 50));
+        
+      } catch (e) {
+        print('Error scheduling ${contact.name}: $e');
+        failCount++;
+        failedContacts.add(contact.name);
+      }
+    }
+  }
+  
+  return {
+    'successCount': successCount,
+    'failCount': failCount,
+    'failedContacts': failedContacts,
+  };
+}
+
+// Calculate ideal spacing between nudges for a group
+Duration _calculateIdealSpacing(String period, int frequency, int groupSize) {
+  final totalNudgesPerPeriod = groupSize * frequency;
+  
+  switch (period.toLowerCase()) {
+    case 'weekly':
+      // Spread across 7 days
+      final days = 7 / totalNudgesPerPeriod;
+      return Duration(days: days.toInt(), hours: ((days % 1) * 24).toInt());
+      
+    case 'monthly':
+      // Spread across 30 days
+      final days = 30 / totalNudgesPerPeriod;
+      return Duration(days: days.toInt(), hours: ((days % 1) * 24).toInt());
+      
+    case 'quarterly':
+      // Spread across 90 days
+      final days = 90 / totalNudgesPerPeriod;
+      return Duration(days: days.toInt(), hours: ((days % 1) * 24).toInt());
+      
+    case 'annually':
+      // Spread across 365 days
+      final days = 365 / totalNudgesPerPeriod;
+      return Duration(days: days.toInt(), hours: ((days % 1) * 24).toInt());
+      
+    default:
+      // Default to weekly spacing
+      final days = 7 / totalNudgesPerPeriod;
+      return Duration(days: days.toInt(), hours: ((days % 1) * 24).toInt());
+  }
+}
+
+// Calculate nudge time with spacing and conflict avoidance
+Future<DateTime?> _calculateSpacedNudgeTime(
+  Contact contact,
+  String userId,
+  int contactIndex,
+  int totalContacts,
+  DateTime baseTime,
+  Duration idealSpacing,
+  List<DateTime> existingNudges,
+) async {
+  try {
+    // Start with base time adjusted by contact index
+    DateTime candidateTime = baseTime.add(idealSpacing * contactIndex);
+    
+    // Add some randomization within the day
+    final randomHour = 9 + (contactIndex % 9); // Between 9 AM and 5 PM
+    candidateTime = DateTime(
+      candidateTime.year,
+      candidateTime.month,
+      candidateTime.day,
+      randomHour,
+      (contactIndex % 4) * 15, // 0, 15, 30, or 45 minutes
+    );
+    
+    // Avoid conflicts with existing nudges
+    candidateTime = _avoidTimeConflicts(candidateTime, existingNudges);
+    
+    // Ensure it's in the future
+    if (candidateTime.isBefore(DateTime.now())) {
+      candidateTime = DateTime.now().add(const Duration(hours: 1));
+    }
+    
+    return candidateTime;
+  } catch (e) {
+    print('Error calculating nudge time for ${contact.name}: $e');
+    return null;
+  }
+}
+
+// Adjust time to avoid conflicts with existing nudges
+DateTime _avoidTimeConflicts(DateTime candidateTime, List<DateTime> existingNudges, {int maxAttempts = 10}) {
+  const conflictThreshold = Duration(hours: 2); // 2-hour buffer
+  
+  for (int attempt = 0; attempt < maxAttempts; attempt++) {
+    bool hasConflict = false;
+    
+    for (final existingTime in existingNudges) {
+      final timeDifference = candidateTime.difference(existingTime).abs();
+      if (timeDifference < conflictThreshold) {
+        hasConflict = true;
+        break;
+      }
+    }
+    
+    if (!hasConflict) {
+      return candidateTime;
+    }
+    
+    // Try different offsets
+    if (attempt % 2 == 0) {
+      // Try positive offset
+      candidateTime = candidateTime.add(Duration(hours: attempt + 1));
+    } else {
+      // Try negative offset
+      candidateTime = candidateTime.subtract(Duration(hours: attempt));
+    }
+  }
+  
+  // If we couldn't avoid conflicts, return the original time
+  return candidateTime;
+}
+
+// Get existing scheduled nudges
+Future<List<DateTime>> _getExistingScheduledNudges(String userId) async {
+  try {
+    final now = DateTime.now();
+    
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('nudges')
+        .where('isCompleted', isEqualTo: false)
+        .where('scheduledTime', isGreaterThanOrEqualTo: now.millisecondsSinceEpoch)
+        .get();
+    
+    final existingNudges = snapshot.docs
+        .map((doc) {
+          final data = doc.data();
+          final time = data['scheduledTime'];
+          if (time is int) {
+            return DateTime.fromMillisecondsSinceEpoch(time);
+          }
+          return now;
+        })
+        .where((time) => time.isAfter(now))
+        .toList();
+    
+    print('Found ${existingNudges.length} existing scheduled nudges');
+    return existingNudges;
+  } catch (e) {
+    print('Error getting existing nudges: $e');
+    return [];
+  }
+}
   
   // // Add method to process overdue nudges (call this periodically)
   Future<void> processOverdueNudges(String userId) async {

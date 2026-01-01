@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:crop_your_image/crop_your_image.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -558,7 +558,6 @@ void _showDeleteAccountConfirmation(AuthService authService) {
 
   
   Future<bool> deleteUser(AuthService authService) async {
-    FirebaseFirestore _firestore = FirebaseFirestore.instance;
     FirebaseAuth _auth = FirebaseAuth.instance;
     ApiService apiService = ApiService();
     User? currentUser = _auth.currentUser;
@@ -569,8 +568,6 @@ void _showDeleteAccountConfirmation(AuthService authService) {
       );
       return false;
     }
-    
-    String uid = currentUser.uid;
     
     setState(() {
       deleting = true;
@@ -583,14 +580,11 @@ void _showDeleteAccountConfirmation(AuthService authService) {
 
       apiService.cancelUserNotifications();
       
-      // Try to delete
-      await currentUser.delete();
-      
-      await _firestore.collection('users').doc(uid).delete();
+      bool deleted = await apiService.deleteUser();
       
       // Then delete the auth user account
       
-      
+      if (!deleted) return false;
       // Clear any cached data
       await _auth.signOut();
       
@@ -606,43 +600,7 @@ void _showDeleteAccountConfirmation(AuthService authService) {
       showDeletedMessage();
       
       return true;
-    } /* on FirebaseAuthException catch (e) {
-        if (e.code == 'requires-recent-login') {
-          // Force Firebase auth state refresh
-          await AuthRefreshHelper.refreshAuthState();
-          
-          // Store deletion retry intent
-          await DeletionRetryHelper.storeDeletionRetryIntent();
-          
-          // Skip splash screen for instant refresh
-          AppRestartHelper.setSkipSplashFlag();
-          
-          // Show brief message
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Refreshing app state...'),
-              duration: Duration(seconds: 2),
-            ),
-          );
-          
-          // Navigate to splash which will skip animation and go to AuthWrapper
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            Navigator.pushNamedAndRemoveUntil(
-              context,
-              '/splash',
-              (route) => false,
-            );
-          });
-          
-          return false;
-        } else {
-          print('Error deleting user: $e');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: ${e.message}')),
-          );
-          return false;
-        }
-      } */catch (error) {
+    } catch (error) {
       print('Error deleting user: $error');
       
       // Fallback: Force logout on any error

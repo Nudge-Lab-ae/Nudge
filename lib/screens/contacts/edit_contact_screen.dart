@@ -953,6 +953,10 @@ class _EditContactScreenState extends State<EditContactScreen> {
           
           // Save to database
           await apiService.updateContact(updatedContact);
+          if (_originalContact!.connectionType != updatedContact.connectionType) {
+            await apiService.cancelNudgesForContacts([updatedContact.id]);
+            await apiService.scheduleNudgesForContacts(contactIds: [updatedContact.id]);
+          }
           print('phase 6');
           
           ScaffoldMessenger.of(context).showSnackBar(

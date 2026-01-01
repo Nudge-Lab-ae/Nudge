@@ -75,6 +75,118 @@ class ApiService {
     }
   }
 
+   Future<Map<String, dynamic>> scheduleHourlyNotifications() async {
+   try {
+      final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('rescheduleUserNudgesHourlyTest');
+      final result = await callable.call();
+      print('called hourly notification function');
+      print(result.data);
+      return result.data;
+    } catch (e) {
+      throw Exception('Failed to trigger nudge: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> scheduleSingleNudge({
+    required String contactId,
+    required DateTime scheduledTime,
+  }) async {
+    try {
+      final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('scheduleSingleNudge');
+      
+      // Convert DateTime to ISO string for transmission
+      final scheduledTimeIso = scheduledTime.toUtc().toIso8601String();
+      
+      final result = await callable.call({
+        'contactId': contactId,
+        'scheduledTime': scheduledTimeIso,
+      });
+      
+      print('✅ Called scheduleSingleNudge function for contact: $contactId');
+      print('📅 Scheduled for: $scheduledTimeIso');
+      print('📊 Result: ${result.data}');
+      
+      return result.data;
+    } catch (e) {
+      print('❌ Error scheduling single nudge: $e');
+      throw Exception('Failed to schedule nudge: $e');
+    }
+  }
+
+  // 2. Schedule nudges for multiple contacts with automatic spreading
+  Future<Map<String, dynamic>> scheduleNudgesForContacts({
+    required List<String> contactIds,
+  }) async {
+    try {
+      final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('scheduleSpacedNudgesForContacts');
+      
+      final result = await callable.call({
+        'contactIds': contactIds,
+      });
+      
+      print('✅ Called scheduleSpacedNudgesForContacts function');
+      print('👥 Contacts to schedule: ${contactIds.length}');
+      print('📊 Result: ${result.data}');
+      
+      return result.data;
+    } catch (e) {
+      print('❌ Error scheduling nudges for contacts: $e');
+      throw Exception('Failed to schedule nudges for contacts: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> cancelSingleNudge({
+    required String nudgeId,
+    }) async {
+    try {
+      final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('cancelSingleNudge');
+      
+      
+      final result = await callable.call({
+        'nudgeId': nudgeId,
+      });
+      
+      print('📊 Result: ${result.data}');
+      
+      return result.data;
+    } catch (e) {
+      print('❌ Error cancelling single nudge: $e');
+      throw Exception('Failed to cancel the nudge: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> cancelMultipleNudge({
+    required List<String> nudgeIds,
+    }) async {
+    try {
+      final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('cancelMultipleNudges');
+      
+      
+      final result = await callable.call({
+        'nudgeIds': nudgeIds,
+      });
+      
+      print('📊 Result: ${result.data}');
+      
+      return result.data;
+    } catch (e) {
+      print('❌ Error cancelling nudges: $e');
+      throw Exception('Failed to cancel nudges: $e');
+    }
+  }
+
+
+    Future<Map<String, dynamic>> cancelHourlyNotifications() async {
+   try {
+      final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('cancelHourlyTestNudges');
+      final result = await callable.call();
+      return result.data;
+    } catch (e) {
+      throw Exception('Failed to trigger nudge: $e');
+    }
+  }
+
+
    Future<Map<String, dynamic>> cancelUserNotifications() async {
     String contactId = _auth.currentUser!.uid;
     print('sending scheduled nudges');
@@ -508,7 +620,8 @@ class ApiService {
             lastInteraction: DateTime.now(),
             colorCode: '#FF0000',
             birthdayNudgesEnabled: false,
-            anniversaryNudgesEnabled: false
+            anniversaryNudgesEnabled: false,
+            orderIndex: 11
           );
         }
       }).toList();
@@ -760,6 +873,19 @@ Future<Map<String, dynamic>> register(String email, String password) async {
     throw Exception('Failed to register: $e');
   }
 }
+
+  Future<bool> deleteUser() async{
+     try {
+      final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('deleteUserAccount');
+      final result = await callable.call();
+      print('called hourly notification function');
+      print(result.data);
+      return true;
+    } catch (e) {
+      // throw Exception('Failed to trigger nudge: $e');
+      return false;
+    }
+  }
 
 Future<void> submitFeedback({
   required String message,
@@ -1055,8 +1181,8 @@ class FrequencyPeriodMapper {
     'Every 2 weeks': {'frequency': 2, 'period': 'Monthly'},
     'Monthly': {'frequency': 1, 'period': 'Monthly'},
     'Quarterly': {'frequency': 1, 'period': 'Quarterly'},
-    'Twice a year': {'frequency': 2, 'period': 'Yearly'},
-    'Once a year': {'frequency': 1, 'period': 'Yearly'},
+    'Twice a year': {'frequency': 2, 'period': 'Annually'},
+    'Once a year': {'frequency': 1, 'period': 'Annually'},
   };
 
   static String getConversationalChoice(int frequency, String period) {

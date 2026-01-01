@@ -1003,7 +1003,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(contact.name),
+              child: Text(contact.name, style: TextStyle(color: Colors.white),),
             ),
           ],
         ),
@@ -1969,13 +1969,22 @@ class UniversePainter extends CustomPainter {
     final y = center.dy + spreadRadius * sin(angle);
     final position = Offset(x, y);
     
-    // Visual size based on selection and VIP status
+     
     double baseSize = isImmersive ? 14.0 : 8.0;
     baseSize *= (1 + 0.5 * immersionLevel);
-    
+
+    // DRAMATIC CONTRAST: Reduce middle and outer circles significantly
+    if (contact.computedRing == 'inner') {
+      // Inner circles: original size (100%)
+    } else if (contact.computedRing == 'middle') {
+      baseSize *= 0.6;  // Middle circles: 40% smaller (60% of original)
+    } else if (contact.computedRing == 'outer') {
+      baseSize *= 0.4;  // Outer circles: 60% smaller (40% of original)
+    }
+
     if (isVIP) baseSize *= 1.3;
     if (isSelected) baseSize *= 2.0;
-    
+
     final visualSize = baseSize;
     
     // Make VIP stars gold

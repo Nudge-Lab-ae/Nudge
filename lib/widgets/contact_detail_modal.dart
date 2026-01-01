@@ -31,8 +31,8 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: ListView(
+        // crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header with close button
           Row(
@@ -210,7 +210,38 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
           
           const SizedBox(height: 24),
           
-          // Contact information section
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                _logTouchpoint(context, contact);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF3CB3E9),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.add, size: 20, color: Colors.white,),
+                  SizedBox(width: 12),
+                  Text(
+                    'ADD TOUCHPOINT',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+           const SizedBox(height: 24),
+           // Contact information section
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -263,39 +294,6 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                     maxLines: 3,
                   ),
               ],
-            ),
-          ),
-          
-          const SizedBox(height: 24),
-          
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                _logTouchpoint(context, contact);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF3CB3E9),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.add, size: 20, color: Colors.white,),
-                  SizedBox(width: 12),
-                  Text(
-                    'ADD TOUCHPOINT',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
             ),
           ),
                   

@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:nudge/services/api_service.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 // import 'package:facebook_auth/facebook_auth.dart';
 
@@ -128,6 +130,22 @@ class AuthService {
     } catch (e) {
       print(e.toString());
       return null;
+    }
+  }
+
+  Future<void> storeFCMToken() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final apiService = ApiService();
+        String? token = await FirebaseMessaging.instance.getToken();
+        if (token != null) {
+          await apiService.updateUser({'fcmToken': token});
+          print('FCM token stored for user: ${user.uid}');
+        }
+      }
+    } catch (e) {
+      print('Error storing FCM token: $e');
     }
   }
 

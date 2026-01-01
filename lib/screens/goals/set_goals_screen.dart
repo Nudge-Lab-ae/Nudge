@@ -76,7 +76,8 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
           lastInteraction: DateTime.now(),
           colorCode: '#4FC3F7',
           anniversaryNudgesEnabled: false,
-          birthdayNudgesEnabled: false
+          birthdayNudgesEnabled: false,
+          orderIndex: 0
         ),
         SocialGroup(
           id: 'Friend',
@@ -89,7 +90,8 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
           lastInteraction: DateTime.now(),
           colorCode: '#FF6F61',
          anniversaryNudgesEnabled: false,
-          birthdayNudgesEnabled: false
+          birthdayNudgesEnabled: false,
+          orderIndex: 1
         ),
         SocialGroup(
           id: 'Client',
@@ -102,7 +104,8 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
           lastInteraction: DateTime.now(),
           colorCode: '#81C784',
           anniversaryNudgesEnabled: false,
-          birthdayNudgesEnabled: false
+          birthdayNudgesEnabled: false,
+          orderIndex: 2
         ),
         SocialGroup(
           id: 'Colleague',
@@ -115,7 +118,8 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
           lastInteraction: DateTime.now(),
           colorCode: '#FFC107',
           anniversaryNudgesEnabled: false,
-          birthdayNudgesEnabled: false
+          birthdayNudgesEnabled: false,
+          orderIndex: 3
         ),
         SocialGroup(
           id: 'Mentor',
@@ -128,7 +132,8 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
           lastInteraction: DateTime.now(),
           colorCode: '#607D8B',
           anniversaryNudgesEnabled: false,
-          birthdayNudgesEnabled: false
+          birthdayNudgesEnabled: false,
+          orderIndex: 4
         ),
       ];
       setState(() {
@@ -213,7 +218,8 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
       lastInteraction: DateTime.now(),
       colorCode: '#2596BE',
       anniversaryNudgesEnabled: false,
-      birthdayNudgesEnabled: false
+      birthdayNudgesEnabled: false,
+      orderIndex: _userGroups.length
     );
     
     setState(() {
@@ -251,7 +257,8 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
         lastInteraction: group.lastInteraction,
         colorCode: group.colorCode,
         anniversaryNudgesEnabled: group.anniversaryNudgesEnabled,
-        birthdayNudgesEnabled: group.birthdayNudgesEnabled
+        birthdayNudgesEnabled: group.birthdayNudgesEnabled,
+        orderIndex: group.orderIndex
       );
     });
   }

@@ -1,8 +1,10 @@
+// import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:nudge/models/contact.dart';
 import 'package:nudge/models/nudge.dart';
 // import 'package:nudge/models/social_group.dart';
 import 'package:nudge/screens/contacts/contact_detail_screen.dart';
+import 'package:nudge/services/api_service.dart';
 import 'package:nudge/services/auth_service.dart';
 import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
@@ -26,9 +28,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   bool _showCalendar = false;
-  final ScrollController _scrollController = ScrollController();
-  bool _showHeader = true;
-  double _lastOffset = 0.0;
+  // final ScrollController _scrollController = ScrollController();
+  var apiService = ApiService();
   
   bool _isSelecting = false;
   Set<String> _selectedNudgeIds = {};
@@ -41,34 +42,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   void initState() {
     super.initState();
     _selectedDay = DateTime.now();
-     _scrollController.addListener(() {
-      _handleScroll();
-    });
     _processOverdueNudges();
   }
 
-  void _handleScroll() {
-    final currentOffset = _scrollController.offset;
-    
-    // Show header when scrolling up, hide when scrolling down
-    if (currentOffset > _lastOffset && currentOffset > 50) {
-      if (_showHeader) {
-        setState(() {
-          _showHeader = false;
-        });
-      }
-    } else if (currentOffset < _lastOffset && _scrollController.offset <= 50) {
-      if (!_showHeader) {
-        setState(() {
-          _showHeader = true;
-        });
-      }
+  Future<void> _processOverdueNudges() async {
+    try {
+      final userId = Provider.of<AuthService>(context, listen: false).currentUser!.uid;
+      final nudgeService = NudgeService();
+      await nudgeService.processOverdueNudges(userId);
+    } catch (e) {
+      print('Error processing overdue nudges in UI: $e');
     }
-    
-    _lastOffset = currentOffset;
   }
 
-    // Add these selection methods:
+  // Add these selection methods:
 
   void _exitSelectionMode() {
     setState(() {
@@ -88,10 +75,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   });
 }
-
-  // List<Nudge> _getVisibleNudges(List<Nudge> allNudges) {
-  //   return _getFilteredNudges(allNudges, _selectedFilter);
-  // }
 
   Widget _buildSelectableNudgeItem(Nudge nudge, bool isSelected, bool isOverdue, BuildContext context) {
     return ListTile(
@@ -301,21 +284,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     });
   }
 
-  Future<void> _processOverdueNudges() async {
-    try {
-      final userId = Provider.of<AuthService>(context, listen: false).currentUser!.uid;
-      final nudgeService = NudgeService();
-      await nudgeService.processOverdueNudges(userId);
-    } catch (e) {
-      print('Error processing overdue nudges in UI: $e');
-    }
-  }
-
 // Update the build method to handle both modes
 @override
 Widget build(BuildContext context) {
   final authService = Provider.of<AuthService>(context);
   final user = authService.currentUser;
+  var size = MediaQuery.of(context).size;
   
   // When used from dashboard (showAppBar: false), use CustomScrollView
   if (!widget.showAppBar) {
@@ -368,49 +342,43 @@ Widget build(BuildContext context) {
                       snap: true,
                       pinned: false,
                       actions: [
-                        if (_isSelecting)
-                          IconButton(
-                            icon: const Icon(Icons.close, color: Colors.red),
-                            onPressed: _exitSelectionMode,
-                          )
-                        else
-                          Padding(
-                            padding: const EdgeInsets.only(right: 16.0),
-                            child: ElevatedButton(
-                              onPressed: () {
-                                setState(() {
-                                  _showCalendar = !_showCalendar;
-                                });
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.grey[50],
-                                foregroundColor: const Color(0xff3CB3E9),
-                                side: BorderSide(color: Colors.grey.shade300, width: 1),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
+                        Padding(
+                          padding: const EdgeInsets.only(right: 16.0),
+                          child: ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                _showCalendar = !_showCalendar;
+                              });
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.grey[50],
+                              foregroundColor: const Color(0xff3CB3E9),
+                              side: BorderSide(color: Colors.grey.shade300, width: 1),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              elevation: 0,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  _showCalendar ? Icons.list : Icons.calendar_today,
+                                  size: 16,
                                 ),
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                elevation: 0,
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    _showCalendar ? Icons.list : Icons.calendar_today,
-                                    size: 16,
+                                const SizedBox(width: 6),
+                                Text(
+                                  _showCalendar ? 'List View' : 'Calendar View',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
                                   ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    _showCalendar ? 'List View' : 'Calendar View',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           ),
+                        ),
                       ],
                     ),
                     
@@ -421,22 +389,25 @@ Widget build(BuildContext context) {
                         ),
                     
                     if (_showCalendar) ...[
-                      // Calendar View
-                      SliverPadding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        sliver: SliverToBoxAdapter(
-                          child: _buildCalendarView(allNudges),
-                        ),
-                      ),
-                      
-                      if (_selectedDay != null)
-                        SliverPadding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          sliver: SliverToBoxAdapter(
-                            child: _buildDayNudges(_getNudgesForDay(allNudges, _selectedDay!), context),
+                        // Calendar View - Wrap in Expanded to give it height constraints
+                        SliverToBoxAdapter(
+                          child: SizedBox(
+                            height: size.height*0.9,
+                            child: Column(
+                              children: [
+                                // Calendar
+                                _buildCalendarView(allNudges),
+                                // Day's nudges with proper height constraint
+                                Expanded(
+                                  child: _selectedDay != null
+                                      ? _buildDayNudges(_getNudgesForDay(allNudges, _selectedDay!), context)
+                                      : _buildEmptyDayState(),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                    ] else ...[
+                      ] else ...[
                       // List View - Filter Header
                       SliverPadding(
                         padding: const EdgeInsets.all(16.0),
@@ -530,11 +501,24 @@ Widget build(BuildContext context) {
                 _buildHeader(),
                 
                 if (_showCalendar) ...[
-                  // Calendar View
-                  _buildCalendarView(allNudges),
-                  const SizedBox(height: 16),
-                  if (_selectedDay != null)
-                    _buildDayNudges(_getNudgesForDay(allNudges, _selectedDay!), context),
+                  // Calendar View - Wrap in Expanded to give it height constraints
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: size.height*0.9, // Fixed height to prevent unbounded constraints
+                      child: Column(
+                        children: [
+                          // Calendar
+                          _buildCalendarView(allNudges),
+                          // Day's nudges with proper height constraint
+                          Expanded(
+                            child: _selectedDay != null
+                                ? _buildDayNudges(_getNudgesForDay(allNudges, _selectedDay!), context)
+                                : _buildEmptyDayState(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ] else ...[
                   // Selection Controls (only when selecting)
                   if (_isSelecting)
@@ -564,213 +548,99 @@ Widget build(BuildContext context) {
   );
 }
 
+  // Helper method to get contact initials (matching contacts_list_screen)
+  String _getContactInitials(String name) {
+    if (name.isEmpty) return '?';
+    
+    // Trim and split the name by spaces
+    final parts = name.trim().split(' ').where((part) => part.isNotEmpty).toList();
+    
+    if (parts.length >= 2) {
+      // Has at least first and last name - get first letter of first and last name
+      return '${parts.first[0].toUpperCase()}${parts.last[0].toUpperCase()}';
+    } else if (parts.length == 1) {
+      // Only first name available
+      return parts.first[0].toUpperCase();
+    }
+    
+    return '?';
+  }
 
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
-        border: Border(
-          bottom: BorderSide(color: Colors.grey.shade300, width: 1),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 3,
-            offset: const Offset(0, 2),
+  // Helper method to get random icon index (matching contacts_list_screen)
+  int getRandomIndex(String seed) {
+    if (seed.isEmpty) return 1;
+    var hash = 0;
+    for (var i = 0; i < seed.length; i++) {
+      hash = seed.codeUnitAt(i) + ((hash << 5) - hash);
+    }
+    return (hash.abs() % 6) + 1;
+  }
+
+Widget _buildDayNudges(List<Nudge> dayNudges, BuildContext context) {
+  if (dayNudges.isEmpty) {
+    return _buildEmptyDayState();
+  }
+  
+  return Expanded(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Text(
+            DateFormat('EEEE, MMMM d, y').format(_selectedDay!),
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xff555555),
+            ),
           ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // View Toggle moved to left
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                _showCalendar = !_showCalendar;
-              });
+        ),
+        const SizedBox(height: 8),
+        Expanded(
+          child: ListView.builder(
+            shrinkWrap: true,
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: dayNudges.length,
+            itemBuilder: (context, index) {
+              final nudge = dayNudges[index];
+              final isOverdue = !nudge.isCompleted && 
+                              nudge.scheduledTime.isBefore(DateTime.now());
+              return _buildNormalNudgeItem(nudge, isOverdue, context);
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.grey[50],
-              foregroundColor: const Color(0xff3CB3E9),
-              side: BorderSide(color: Colors.grey.shade300, width: 1),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              elevation: 0,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  _showCalendar ? Icons.list : Icons.calendar_today,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  _showCalendar ? 'View in List' : 'View in Calendar',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 
-  Widget _buildCalendarView(List<Nudge> allNudges) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: TableCalendar<Nudge>(
-        firstDay: DateTime.utc(2023, 1, 1),
-        lastDay: DateTime.utc(2025, 12, 31),
-        focusedDay: _focusedDay,
-        selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-        onDaySelected: (selectedDay, focusedDay) {
-          setState(() {
-            _selectedDay = selectedDay;
-            _focusedDay = focusedDay;
-          });
-        },
-        onPageChanged: (focusedDay) {
-          setState(() {
-            _focusedDay = focusedDay;
-          });
-        },
-        calendarFormat: _calendarFormat,
-        onFormatChanged: (format) {
-          setState(() {
-            _calendarFormat = format;
-          });
-        },
-        eventLoader: (day) => _getNudgesForDay(allNudges, day),
-        calendarStyle: CalendarStyle(
-          todayDecoration: BoxDecoration(
-            color: const Color(0xff3CB3E9).withOpacity(0.3),
-            shape: BoxShape.circle,
-          ),
-          selectedDecoration: const BoxDecoration(
-            color: Color(0xff3CB3E9),
-            shape: BoxShape.circle,
-          ),
-          todayTextStyle: const TextStyle(
-            color: Color(0xff3CB3E9),
-            fontWeight: FontWeight.bold,
-          ),
-          selectedTextStyle: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-          markerDecoration: BoxDecoration(
-            color: Colors.orange,
-            shape: BoxShape.circle,
-          ),
-          markerMargin: const EdgeInsets.symmetric(horizontal: 1),
-          outsideDaysVisible: false,
-        ),
-        headerStyle: HeaderStyle(
-          formatButtonVisible: false,
-          titleCentered: true,
-          titleTextStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Color(0xff555555),
-          ),
-          leftChevronIcon: const Icon(
-            Icons.chevron_left,
-            color: Color(0xff3CB3E9),
-          ),
-          rightChevronIcon: const Icon(
-            Icons.chevron_right,
-            color: Color(0xff3CB3E9),
-          ),
-        ),
-        daysOfWeekStyle: const DaysOfWeekStyle(
-          weekdayStyle: TextStyle(
-            color: Color(0xff555555),
-            fontWeight: FontWeight.w600,
-          ),
-          weekendStyle: TextStyle(
-            color: Color(0xff555555),
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-    );
-  }
-
-   Widget _buildDayNudges(List<Nudge> dayNudges, BuildContext context) {
-    return Expanded(
+Widget _buildEmptyDayState() {
+  return Expanded(
+    child: Center(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Text(
-              DateFormat('EEEE, MMMM d, y').format(_selectedDay!),
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xff555555),
-              ),
+          Icon(
+            Icons.notifications_off,
+            size: 64,
+            color: Colors.grey[400],
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'No nudges scheduled',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey,
+              fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 8),
-          dayNudges.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.notifications_off,
-                        size: 64,
-                        color: Colors.grey[400],
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'No nudges scheduled',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              : Expanded(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: dayNudges.length,
-                    itemBuilder: (context, index) {
-                      final nudge = dayNudges[index];
-                      final isOverdue = !nudge.isCompleted && 
-                                       nudge.scheduledTime.isBefore(DateTime.now());
-                      return _buildNormalNudgeItem(nudge, isOverdue, context);
-                    },
-                  ),
-                ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   List<Nudge> _getNudgesForDay(List<Nudge> allNudges, DateTime day) {
     return allNudges.where((nudge) {
@@ -1141,7 +1011,7 @@ Widget build(BuildContext context) {
       ],
     );
   }
-  
+
   Widget _buildSectionHeader(String title, int count) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
@@ -1176,6 +1046,9 @@ Widget build(BuildContext context) {
   }
 
   Widget _buildNormalNudgeItem(Nudge nudge, bool isOverdue, BuildContext context) {
+    final initials = _getContactInitials(nudge.contactName);
+    final iconIndex = getRandomIndex(nudge.contactId);
+    
     return Dismissible(
       key: Key(nudge.id),
       direction: DismissDirection.horizontal,
@@ -1211,12 +1084,20 @@ Widget build(BuildContext context) {
           leading: Stack(
             children: [
               CircleAvatar(
+                radius: 24,
+                backgroundColor: Colors.transparent,
                 backgroundImage: nudge.contactImageUrl.isNotEmpty
                     ? NetworkImage(nudge.contactImageUrl)
-                    : null,
-                backgroundColor: const Color(0xff3CB3E9),
+                    : AssetImage('assets/contact-icons/$iconIndex.png') as ImageProvider,
                 child: nudge.contactImageUrl.isEmpty
-                    ? const Icon(Icons.person, color: Colors.white)
+                    ? Text(
+                        initials,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      )
                     : null,
               ),
               if (nudge.isVIP)
@@ -1241,6 +1122,7 @@ Widget build(BuildContext context) {
                   nudge.contactName,
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
+                    fontSize: 15,
                     color: isOverdue ? Colors.orange[800] :  const Color(0xff555555),
                   ),
                 ),
@@ -1252,7 +1134,14 @@ Widget build(BuildContext context) {
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(nudge.message),
+              Text(
+                nudge.message,
+                style: const TextStyle(
+                  fontSize: 12,
+                  height: 1.4,
+                  color: Color(0xff777777),
+                ),
+              ),
               const SizedBox(height: 4),
               Row(
                 children: [
@@ -1608,6 +1497,9 @@ Widget build(BuildContext context) {
                     Duration(hours: selectedSnoozeHours),
                     nudge.contactName,
                   );
+                  final newScheduledTime = DateTime.now().add(Duration(hours: selectedSnoozeHours));
+                  apiService.cancelSingleNudge(nudgeId: nudge.id);
+                  apiService.scheduleSingleNudge(contactId: nudge.contactId, scheduledTime: newScheduledTime);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Nudge snoozed for $selectedSnoozeHours hour${selectedSnoozeHours > 1 ? 's' : ''}'),
@@ -1703,5 +1595,189 @@ Widget build(BuildContext context) {
     } else {
       return '$frequency times per $period';
     }
+  }
+
+  // Original calendar view (for standalone mode)
+  Widget _buildCalendarView(List<Nudge> allNudges) {
+    final now = DateTime.now();
+    final firstDay = DateTime(now.year - 1, 1, 1);
+    final lastDay = DateTime(now.year + 1, 12, 31);
+    
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TableCalendar<Nudge>(
+        firstDay: firstDay,
+        lastDay: lastDay,
+        focusedDay: _focusedDay,
+        selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+        onDaySelected: (selectedDay, focusedDay) {
+          setState(() {
+            _selectedDay = selectedDay;
+            _focusedDay = focusedDay;
+          });
+        },
+        onPageChanged: (focusedDay) {
+          setState(() {
+            _focusedDay = focusedDay;
+          });
+        },
+        calendarFormat: _calendarFormat,
+        onFormatChanged: (format) {
+          setState(() {
+            _calendarFormat = format;
+          });
+        },
+        eventLoader: (day) => _getNudgesForDay(allNudges, day),
+        
+        // More compact calendar styles
+        calendarStyle: CalendarStyle(
+          todayDecoration: BoxDecoration(
+            color: const Color(0xff3CB3E9).withOpacity(0.2),
+            shape: BoxShape.circle,
+          ),
+          selectedDecoration: const BoxDecoration(
+            color: Color(0xff3CB3E9),
+            shape: BoxShape.circle,
+          ),
+          todayTextStyle: const TextStyle(
+            color: Color(0xff3CB3E9),
+            fontWeight: FontWeight.bold,
+            fontSize: 13,
+          ),
+          selectedTextStyle: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 13,
+          ),
+          defaultTextStyle: const TextStyle(
+            fontSize: 13,
+            color: Color(0xff555555),
+          ),
+          weekendTextStyle: const TextStyle(
+            fontSize: 13,
+            color: Color(0xff555555),
+          ),
+          markerDecoration: BoxDecoration(
+            color: Colors.orange,
+            shape: BoxShape.circle,
+            // size: Size.square(5),
+          ),
+          markerMargin: const EdgeInsets.symmetric(horizontal: 1),
+          outsideDaysVisible: false,
+          cellPadding: const EdgeInsets.all(4),
+          cellMargin: EdgeInsets.zero,
+        ),
+        
+        headerStyle: HeaderStyle(
+          formatButtonVisible: false,
+          titleCentered: true,
+          titleTextStyle: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Color(0xff555555),
+          ),
+          leftChevronIcon: const Icon(
+            Icons.chevron_left,
+            color: Color(0xff3CB3E9),
+            size: 20,
+          ),
+          rightChevronIcon: const Icon(
+            Icons.chevron_right,
+            color: Color(0xff3CB3E9),
+            size: 20,
+          ),
+          headerPadding: const EdgeInsets.symmetric(vertical: 8),
+          leftChevronPadding: EdgeInsets.zero,
+          rightChevronPadding: EdgeInsets.zero,
+        ),
+        
+        daysOfWeekStyle: const DaysOfWeekStyle(
+          weekdayStyle: TextStyle(
+            color: Color(0xff555555),
+            fontWeight: FontWeight.w600,
+            fontSize: 12,
+          ),
+          weekendStyle: TextStyle(
+            color: Color(0xff555555),
+            fontWeight: FontWeight.w600,
+            fontSize: 12,
+          ),
+        ),
+        
+        // Make the calendar more condensed
+        rowHeight: 36,
+        daysOfWeekHeight: 24,
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB),
+        border: Border(
+          bottom: BorderSide(color: Colors.grey.shade300, width: 1),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 3,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // View Toggle moved to left
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                _showCalendar = !_showCalendar;
+              });
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey[50],
+              foregroundColor: const Color(0xff3CB3E9),
+              side: BorderSide(color: Colors.grey.shade300, width: 1),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              elevation: 0,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  _showCalendar ? Icons.list : Icons.calendar_today,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  _showCalendar ? 'View in List' : 'View in Calendar',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

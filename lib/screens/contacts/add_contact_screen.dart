@@ -64,9 +64,9 @@ class _AddContactScreenState extends State<AddContactScreen> {
   void initState() {
     super.initState();
     // Load tag suggestions based on existing contacts
-     if (widget.groupName != null) {
-      _connectionType = widget.groupName!;
-    }
+    //  if (widget.groupName != null) {
+    //   _connectionType = widget.groupName!;
+    // }
     
     _loadTagSuggestions();
     _loadUserGroups();
@@ -481,15 +481,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
-                        widget.groupName!=null
-                        ? ConnectionTypeChip(
-                                    label: widget.groupName!,
-                                    isSelected: true,
-                                    onSelected: (selected) {
-                                      
-                                    },
-                                  )
-                        :_userGroups.isEmpty
+                        _userGroups.isEmpty
                             ? const Text('No groups available. Create groups first.', style: TextStyle(color: Colors.grey))
                             : Wrap(
                                 spacing: 8,
@@ -497,7 +489,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                 children: _userGroups.map((group) {
                                   return ConnectionTypeChip(
                                     label: group.name,
-                                    isSelected: _connectionType == group.id,
+                                    isSelected: _connectionType == group.name,
                                     onSelected: (selected) {
                                       if (selected) setState(() => _connectionType = group.id);
                                     },
@@ -903,6 +895,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                   period: period,
                                   frequency: frequency,
                                 );
+                                await apiService.scheduleNudgesForContacts(contactIds: [newContact.id]);
                                 print('Automatic nudge scheduled for ${newContact.name}');
                               } catch (e) {
                                 print('Error scheduling automatic nudge: $e');

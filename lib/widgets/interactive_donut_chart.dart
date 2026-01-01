@@ -95,24 +95,46 @@ class _InteractiveDonutChartState extends State<InteractiveDonutChart>
     return '${p.toStringAsFixed(1)}%';
   }
 
-  void _onTapDown(TapDownDetails details, Size size, Offset center, double outerRadius) {
+  void _onTapDown(TapDownDetails details, Size size, Offset center, double outerRadius, double innerRadius) {
     if (_filteredData.isEmpty) return;
     
     final local = details.localPosition;
     final dx = local.dx - center.dx;
     final dy = local.dy - center.dy;
     final r = sqrt(dx * dx + dy * dy);
-    final innerRadius = outerRadius * 0.65;
 
-    if (r < innerRadius || r > outerRadius) return;
+    // Check if tap is in the donut ring area (between inner and outer radius)
+    if (r < innerRadius - 10 || r > outerRadius + 10) return;
 
+    // If tap is within 10 pixels of the inner radius, still count it as a valid tap
+    // This makes the entire donut area more sensitive
     double angle = atan2(dy, dx);
     if (angle < 0) angle += 2 * pi;
 
+    // Check which segment was tapped
     double acc = -pi / 2;
     for (int i = 0; i < _filteredData.length; i++) {
       final sweep = (_filteredData[i]["count"] as num).toDouble() / total * 2 * pi;
-      if (angle >= acc && angle <= acc + sweep) {
+      
+      // Normalize angles for comparison
+      double normalizedAcc = acc;
+      double normalizedAccPlusSweep = acc + sweep;
+      
+      // Handle wrap-around for segments crossing the -π/2 boundary
+      if (normalizedAcc < 0) normalizedAcc += 2 * pi;
+      if (normalizedAccPlusSweep < 0) normalizedAccPlusSweep += 2 * pi;
+      
+      // Check if angle is within this segment
+      bool isInSegment = false;
+      if (normalizedAcc <= normalizedAccPlusSweep) {
+        // Normal case: segment doesn't wrap around
+        isInSegment = angle >= normalizedAcc && angle <= normalizedAccPlusSweep;
+      } else {
+        // Segment wraps around 2π boundary
+        isInSegment = angle >= normalizedAcc || angle <= normalizedAccPlusSweep;
+      }
+      
+      if (isInSegment) {
         setState(() {
           if (selectedIndex == i) {
             selectedIndex = null;
@@ -134,18 +156,20 @@ class _InteractiveDonutChartState extends State<InteractiveDonutChart>
       final size = Size(constraints.maxWidth, min(constraints.maxHeight, 280));
       final outerRadius = min(size.width, size.height) * 0.38;
       final innerRadius = outerRadius * 0.65;
-      final center = Offset(size.width / 2, size.height / 3); // Moved up
+      final center = Offset(size.width / 2, size.height / 3);
 
       return Container(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Make the entire area around the chart clickable
             GestureDetector(
-              onTapDown: (d) => _onTapDown(d, size, center, outerRadius),
-              child: SizedBox(
+              onTapDown: (d) => _onTapDown(d, size, center, outerRadius, innerRadius),
+              child: Container(
                 width: size.width,
-                height: size.height * 0.65, // Reduced chart height
+                height: size.height * 0.65,
+                color: Colors.transparent, // Make entire area tappable
                 child: AnimatedBuilder(
                   animation: _explodeAnim,
                   builder: (context, _) {
@@ -170,7 +194,7 @@ class _InteractiveDonutChartState extends State<InteractiveDonutChart>
             
             // Compact Legends placed directly below chart
             Container(
-              margin: const EdgeInsets.only(top: 40.0), // Reduced margin
+              margin: const EdgeInsets.only(top: 40.0),
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
               decoration: BoxDecoration(
                 color: Colors.grey.shade50,
@@ -458,22 +482,38 @@ class _DonutPainter extends CustomPainter {
       final offset = Offset(cos(midAngle) * explode, sin(midAngle) * explode);
       final sliceCenter = center + offset;
 
-      // Create the donut segment with thicker appearance
+      // Create the donut segment
       final path = Path()
         ..addArc(Rect.fromCircle(center: sliceCenter, radius: outerRadius), startAngle, sweep)
         ..arcTo(Rect.fromCircle(center: sliceCenter, radius: innerRadius),
             startAngle + sweep, -sweep, false)
         ..close();
 
+      // Calculate gradient start and end points for THIS segment only
+      // This ensures the full gradient is applied to each segment individually
       final colors = gradients[originalIndex % gradients.length];
-      final grad = LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
+      
+      // Calculate points along the middle of the segment for gradient direction
+      // final midInnerPoint = sliceCenter + Offset(cos(midAngle), sin(midAngle)) * innerRadius;
+      // final midOuterPoint = sliceCenter + Offset(cos(midAngle), sin(midAngle)) * outerRadius;
+      
+      // Create a gradient that spans the entire segment from inner to outer edge
+      // This gives each segment its own full gradient
+      final gradient = LinearGradient(
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
         colors: colors,
+        stops: const [0.0, 1.0],
       );
-
+      
+      // Create a shader that covers the segment's bounding box
+      final segmentBounds = Rect.fromCircle(
+        center: sliceCenter + Offset(cos(midAngle), sin(midAngle)) * ((innerRadius + outerRadius) / 2),
+        radius: (outerRadius - innerRadius) / 2,
+      ).inflate(outerRadius - innerRadius);
+      
       final paint = Paint()
-        ..shader = grad.createShader(Rect.fromCircle(center: sliceCenter, radius: outerRadius))
+        ..shader = gradient.createShader(segmentBounds)
         ..style = PaintingStyle.fill;
       
       // Add a subtle shadow for depth

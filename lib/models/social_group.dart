@@ -12,6 +12,7 @@ class SocialGroup {
   String colorCode;
   bool birthdayNudgesEnabled = true;
   bool anniversaryNudgesEnabled = true;
+  int orderIndex;
 
   SocialGroup({
     required this.id,
@@ -25,6 +26,7 @@ class SocialGroup {
     required this.colorCode,
     required this.birthdayNudgesEnabled,
     required this.anniversaryNudgesEnabled,
+    required this.orderIndex,
   });
 
   Map<String, dynamic> toMap() {
@@ -41,6 +43,7 @@ class SocialGroup {
       'createdAt': DateTime.now().millisecondsSinceEpoch,
       'birthdayNudgesEnabled': birthdayNudgesEnabled,
       'anniversaryNudgesEnabled': anniversaryNudgesEnabled,
+      'orderIndex': orderIndex,
     };
   }
 
@@ -58,6 +61,7 @@ class SocialGroup {
       colorCode: data['colorCode'] ?? '#2596BE',
       birthdayNudgesEnabled: data['birthdayNudgesEnabled'] ?? false,
       anniversaryNudgesEnabled: data['anniversaryNudgesEnabled'] ?? false,
+      orderIndex: data['orderIndex'] ?? 0,
     );
   }
 
@@ -74,6 +78,7 @@ class SocialGroup {
       colorCode: data['colorCode'] ?? '#2596BE',
       birthdayNudgesEnabled: data['birthdayNudgesEnabled'] ?? false,
       anniversaryNudgesEnabled: data['anniversaryNudgesEnabled'] ?? false,
+      orderIndex: data['orderIndex'] ?? 0,
     );
   }
 
@@ -89,7 +94,7 @@ class SocialGroup {
     String? colorCode,
     bool? birthdayNudgesEnabled,
     bool? anniversaryNudgesEnabled,
-
+    int? orderIndex,
   }) {
     return SocialGroup(
       id: id ?? this.id,
@@ -103,6 +108,7 @@ class SocialGroup {
       colorCode: colorCode ?? this.colorCode,
       birthdayNudgesEnabled: birthdayNudgesEnabled ?? this.birthdayNudgesEnabled,
       anniversaryNudgesEnabled: anniversaryNudgesEnabled?? this.anniversaryNudgesEnabled,
+      orderIndex: orderIndex ?? this.orderIndex,
     );
   }
 }

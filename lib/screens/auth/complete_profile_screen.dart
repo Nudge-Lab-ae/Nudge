@@ -1,6 +1,7 @@
 // complete_profile_screen.dart - Updated with crop_your_image
 import 'dart:typed_data';
 
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -91,7 +92,7 @@ void _initializeDefaultGroups() {
     SocialGroup(
       id: 'family', 
       name: 'Family', 
-      frequency: 4,
+      frequency: 2,
       period: 'Monthly',
       colorCode: '#4FC3F7', 
       description: '', 
@@ -100,6 +101,7 @@ void _initializeDefaultGroups() {
       lastInteraction: DateTime.now(), 
       birthdayNudgesEnabled: true,
       anniversaryNudgesEnabled: true,
+      orderIndex: 0,
     ),
     SocialGroup(
       id: 'friend', 
@@ -113,6 +115,7 @@ void _initializeDefaultGroups() {
       lastInteraction: DateTime.now(), 
       birthdayNudgesEnabled: true,
       anniversaryNudgesEnabled: true,
+      orderIndex: 1
     ),
     SocialGroup(
       id: 'colleague', 
@@ -126,6 +129,7 @@ void _initializeDefaultGroups() {
       lastInteraction: DateTime.now(), 
       birthdayNudgesEnabled: true,
       anniversaryNudgesEnabled: true,
+      orderIndex: 2
     ),
     SocialGroup(
       id: 'client', 
@@ -139,12 +143,13 @@ void _initializeDefaultGroups() {
       lastInteraction: DateTime.now(), 
       birthdayNudgesEnabled: true,
       anniversaryNudgesEnabled: true,
+      orderIndex: 3
     ),
     SocialGroup(
       id: 'mentor', 
       name: 'Mentor', 
       frequency: 2,
-      period: 'Yearly',
+      period: 'Annually',
       colorCode: '#607D8B', 
       description: '', 
       memberCount: 0, 
@@ -152,6 +157,7 @@ void _initializeDefaultGroups() {
       lastInteraction: DateTime.now(), 
       birthdayNudgesEnabled: true,
       anniversaryNudgesEnabled: true,
+      orderIndex: 4
     ),
   ]);
 }
@@ -263,6 +269,26 @@ void _initializeDefaultGroups() {
       final user = authService.currentUser;
       
       if (user != null) {
+        // STEP 1: Ensure FCM token is stored before anything else
+        print('storing token');
+        await authService.storeFCMToken();
+        
+        // STEP 2: Get fresh user data with FCM token
+        final freshUserDoc = await apiService.getUser();
+        final freshUserMap = freshUserDoc.toMap();
+        if (freshUserMap['fcmToken'] == null || freshUserMap['fcmToken'].isEmpty) {
+          // Try to get token again if not available
+          print('getting token');
+          String? fcmToken = await FirebaseMessaging.instance.getToken();
+          if (fcmToken != null) {
+            await apiService.updateUser({'fcmToken': fcmToken});
+          } else {
+            throw Exception('FCM token is required for notifications');
+          }
+        } else{
+          print('got token already');
+        }
+
         // Upload image if selected
         String imageUrl = '';
         if (_imageBytes != null) {
@@ -295,8 +321,9 @@ void _initializeDefaultGroups() {
 
         if (_selectedContacts.isNotEmpty) {
           // Schedule nudges in background without waiting
+          //  apiService.scheduleHourlyNotifications();
+           apiService.scheduleRegularNotifications();
           _scheduleNudgesForImportedContacts();
-          apiService.scheduleRegularNotifications();
         }
         
         print('Final Stage 4');
@@ -364,6 +391,7 @@ void _initializeDefaultGroups() {
   // }
 
   void _toggleCloseCircleContact(Contact contact) {
+    print(contact.toMap()); print(' is the contact');
     setState(() {
       if (_closeCircleContacts.contains(contact)) {
         _closeCircleContacts.remove(contact);
@@ -1085,6 +1113,11 @@ Widget _buildGroupsStep() {
                 if (oldIndex < newIndex) newIndex -= 1;
                 final item = _userGroups.removeAt(oldIndex);
                 _userGroups.insert(newIndex, item);
+                
+                // Update orderIndex for all groups
+                for (int i = 0; i < _userGroups.length; i++) {
+                  _userGroups[i] = _userGroups[i].copyWith(orderIndex: i);
+                }
               });
             },
           ),
@@ -1237,8 +1270,8 @@ Widget _buildGroupsStep() {
   }
 
   String _getCurrentFrequencyChoice(SocialGroup group) {
-  return FrequencyPeriodMapper.getConversationalChoice(group.frequency, group.period);
-}
+    return FrequencyPeriodMapper.getConversationalChoice(group.frequency, group.period);
+  }
 
   bool _isValidPhoneNumber(String phone) {
     // Remove any spaces, dashes, or parentheses
@@ -1362,6 +1395,7 @@ Widget _buildGroupsStep() {
       colorCode: '#2596BE',
       birthdayNudgesEnabled: true, // Default enabled
       anniversaryNudgesEnabled: true, // Default enabled
+      orderIndex: _userGroups.length
     ));
   });
 }
@@ -1478,29 +1512,20 @@ Widget _buildGroupsStep() {
                               context,
                               MaterialPageRoute(
                                 builder: (context) => const ImportContactsScreen(),
-                                settings: RouteSettings(arguments: _userGroups), // Pass groups here
+                                settings: RouteSettings(arguments: {
+                                  'groups': _getOrderedGroupsForSelection(),
+                                  'onboarding': true, // Add this flag
+                                }),
                               ),
                             );
-
-                            print('hey there'); print(result);
                             
                             if (result != null && result is List<Contact>) {
-                              // Merge the newly imported contacts with existing ones
                               final Set<String> existingIds = _selectedContacts.map((c) => c.id).toSet();
                               final List<Contact> newContacts = result.where((c) => !existingIds.contains(c.id)).toList();
                               
                               setState(() {
                                 _selectedContacts.addAll(newContacts);
                               });
-                              
-                              if (newContacts.isNotEmpty) {
-                                // ScaffoldMessenger.of(context).showSnackBar(
-                                //   SnackBar(
-                                //     content: Text('Added ${newContacts.length} contacts to ${result.isNotEmpty && result.first.socialGroups.isNotEmpty ? result.first.socialGroups.first : 'selected group'}'),
-                                //     backgroundColor: Colors.green,
-                                //   ),
-                                // );
-                              }
                             }
                           },
                           style: ElevatedButton.styleFrom(
@@ -1552,6 +1577,11 @@ Widget _buildGroupsStep() {
         ],
       ),
     );
+  }
+
+  List<SocialGroup> _getOrderedGroupsForSelection() {
+    // Return groups in their current UI order (after any reordering)
+    return List.from(_userGroups);
   }
 
   Widget _buildCloseCircleStep() {
@@ -1684,46 +1714,48 @@ Widget _buildGroupsStep() {
   }
 
   Future<void> _scheduleNudgesForImportedContacts() async {
-  final authService = Provider.of<AuthService>(context, listen: false);
-  final nudgeService = NudgeService();
-  final user = authService.currentUser;
-  
-  if (user == null || _selectedContacts.isEmpty) return;
-
-  try {
-    int scheduledCount = 0;
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final nudgeService = NudgeService();
+    final user = authService.currentUser;
     
-    for (final contact in _selectedContacts) {
-      // Find the group for this contact
-      SocialGroup? group = _userGroups.firstWhere(
-        (g) => contact.socialGroups.contains(g.id),
-        orElse: () => _userGroups.first, // Default to first group
-      );
+    if (user == null || _selectedContacts.isEmpty) return;
+
+    try {
+      print('Starting spaced scheduling for ${_selectedContacts.length} contacts');
       
-      final success = await nudgeService.scheduleNudgeForContact(
-        contact,
+      // Use the new grouped scheduling with proper spacing
+      final result = await nudgeService.scheduleGroupedNudgesWithSpacing(
+        _selectedContacts,
         user.uid,
-        period: group.period,
-        frequency: group.frequency,
       );
       
-      if (success) scheduledCount++;
-      
-      // Small delay to avoid overwhelming the system
-      await Future.delayed(const Duration(milliseconds: 100));
+      if (result['successCount'] as int > 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Scheduled ${result['successCount']} nudges with proper spacing',
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Log the scheduling
+        print('Successfully scheduled ${result['successCount']} nudges');
+        print('Failed: ${result['failCount']}');
+        
+        if (result['failedContacts'] != null) {
+          final failed = result['failedContacts'] as List<String>;
+          if (failed.isNotEmpty) {
+            print('Failed contacts: ${failed.join(', ')}');
+          }
+        }
+      }
+    } catch (e) {
+      print('Error scheduling grouped nudges: $e');
+      // Don't show error to user as this is background process
     }
-    
-    if (scheduledCount > 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Scheduled nudges for $scheduledCount contacts')),
-      );
-    }
-  } catch (e) {
-    print('Error scheduling nudges: $e');
-    // Don't show error to user as this is background process
   }
-}
-
+    
   @override
   Widget build(BuildContext context) {
     return GestureDetector(

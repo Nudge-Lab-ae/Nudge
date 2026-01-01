@@ -4,15 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:nudge/screens/contacts/edit_contact_screen.dart';
 import 'package:nudge/services/api_service.dart';
+import 'package:nudge/services/auth_service.dart';
 import 'package:nudge/theme/text_styles.dart';
+// import 'package:nudge/widgets/add_touchpoint_modal.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
-// import 'package:nudge/theme/text_styles.dart';
-// import 'package:nudge/widgets/gradient_text.dart';
 import 'package:provider/provider.dart';
 import '../../models/contact.dart';
-// import '../../services/database_service.dart';
-import '../../services/auth_service.dart';
-// import '../../widgets/smart_tagging_suggestions.dart';
 
 class ContactDetailScreen extends StatefulWidget {
   final Contact contact;
@@ -68,7 +65,6 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     }
   }
 
-
   String _getContactInitials(String name) {
     if (name.isEmpty) return '?';
     
@@ -88,10 +84,6 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // final authService = Provider.of<AuthService>(context);
-    // final apiService = Provider.of<ApiService>(context);
-    // final user = authService.currentUser;
-    // var size = MediaQuery.of(context).size;
     final initials = _getContactInitials(_currentContact.name);
     
     bool isLocalImage = _currentContact.imageUrl.isNotEmpty && 
@@ -108,7 +100,6 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Contact Details', style: AppTextStyles.title2.copyWith(color: Color(0xff555555))),
-        // Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Color(0xff3CB3E9), fontFamily: 'RobotoMono'),),
         centerTitle: true,
         iconTheme: IconThemeData(color: Color(0xff3CB3E9)),
         backgroundColor: Colors.white,
@@ -125,13 +116,6 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
               );
             },
           ),
-          // IconButton(
-          //   icon: Icon(Icons.notifications),
-          //   onPressed: () {
-          //     apiService.triggerManualNudge(_currentContact.id);
-          //   },
-          //   tooltip: 'Send test nudge',
-          // ),
         ],
       ),
       floatingActionButton: Padding(
@@ -283,12 +267,6 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
               subtitle: Text(_currentContact.connectionType),
             ),
 
-            // ListTile(
-            //   leading: const Icon(Icons.schedule),
-            //   title: const Text('Contact Period', style: TextStyle(fontWeight: FontWeight.w600),),
-            //   subtitle: Text(_currentContact.period.toString()),
-            // ),
-            
           ListTile(
             leading: const Icon(Icons.schedule),
             title: const Text('Contact Frequency', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555)),),
@@ -301,20 +279,6 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                 title: const Text('Social Groups', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555)),),
                 subtitle: Text(_currentContact.socialGroups.join(', ')),
               ),
-            
-            // // Social Tags Section (Renamed from Tag Suggestions)
-            // const SizedBox(height: 24),
-            // const Text(
-            //   'SOCIAL TAGS',
-            //   style: TextStyle(
-            //     fontSize: 16,
-            //     fontWeight: FontWeight.bold,
-            //     color: Color(0xff6e6e6e),
-            //     letterSpacing: 1.0,
-            //   ),
-            // ),
-            // const SizedBox(height: 8),
-            // SmartTaggingSuggestions(contact: _currentContact),
             
             // Important Dates Section
             if (_currentContact.birthday != null || _currentContact.anniversary != null || _currentContact.workAnniversary != null) ...[
@@ -394,12 +358,11 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
             
             const SizedBox(height: 20),
 
-
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    _logInteraction(context);
+                    _showLogInteractionModal(context);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF3CB3E9),
@@ -431,125 +394,28 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     );
   }
 
-  Future<void> _logInteraction(BuildContext context) async {
-  // Show interaction type selection
-  final interactionType = await showModalBottomSheet<String>(
-    context: context,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
-    builder: (context) {
-      return Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'SELECT INTERACTION TYPE',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: Color(0xff555555),
-              ),
-            ),
-            const SizedBox(height: 20),
-            
-            // Interaction type options
-            Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.call, color: Color(0xFF3CB3E9)),
-                  title: const Text('Phone Call'),
-                  onTap: () => Navigator.pop(context, 'call'),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.message, color: Color(0xFF3CB3E9)),
-                  title: const Text('Message'),
-                  onTap: () => Navigator.pop(context, 'message'),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.people, color: Color(0xFF3CB3E9)),
-                  title: const Text('In Person Meeting'),
-                  onTap: () => Navigator.pop(context, 'meet'),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.more_horiz, color: Color(0xFF3CB3E9)),
-                  title: const Text('Other'),
-                  onTap: () => Navigator.pop(context, 'other'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      );
-    },
-  );
-
-  if (interactionType == null) return;
-
-  // Optional notes input
-  final notes = await showDialog<String>(
-    context: context,
-    builder: (context) {
-      String notesText = '';
-      return AlertDialog(
-        title: const Text('Add Notes (Optional)'),
-        content: TextField(
-          autofocus: true,
-          maxLines: 3,
-          onChanged: (value) => notesText = value,
-          decoration: const InputDecoration(
-            hintText: 'Add any notes about this interaction...',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, null),
-            child: const Text('Skip'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, notesText),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF3CB3E9),
-            ),
-            child: const Text('Add Notes', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      );
-    },
-  );
-
-  try {
+  Future<void> _showLogInteractionModal(BuildContext context) async {
     final apiService = Provider.of<ApiService>(context, listen: false);
     
-    // Log the interaction
-    await apiService.logInteraction(
-      contactId: _currentContact.id,
-      interactionType: interactionType,
-      notes: notes,
-    );
-
-    // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Interaction logged for ${_currentContact.name}!'),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 3),
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-    );
-
-  } catch (e) {
-    print('Error logging interaction: $e');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Failed to log interaction: $e'),
-        backgroundColor: Colors.red,
-      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: _LogInteractionModal(
+            apiService: apiService,
+            contact: _currentContact,
+          ),
+        );
+      },
     );
   }
-}
 
   int getRandomIndex(String seed) {
   if (seed.isEmpty) return 1;
@@ -558,6 +424,289 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     hash = seed.codeUnitAt(i) + ((hash << 5) - hash);
   }
   return (hash.abs() % 6) + 1;
+  }
 }
 
+// Custom modal that shows only the log interaction part (without contact selection)
+class _LogInteractionModal extends StatefulWidget {
+  final ApiService apiService;
+  final Contact contact;
+  
+  const _LogInteractionModal({
+    required this.apiService,
+    required this.contact,
+  });
+
+  @override
+  State<_LogInteractionModal> createState() => __LogInteractionModalState();
+}
+
+class __LogInteractionModalState extends State<_LogInteractionModal> {
+  TextEditingController _notesController = TextEditingController();
+  String? _selectedInteractionType;
+  bool _isLoading = false;
+
+  final List<String> _interactionTypes = [
+    'call',
+    'message',
+    'meet',
+    'other'
+  ];
+
+  @override
+  void dispose() {
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _logTouchpoint() async {
+    if (_selectedInteractionType == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select an interaction type'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Log the interaction
+      await widget.apiService.logInteraction(
+        contactId: widget.contact.id,
+        interactionType: _selectedInteractionType!,
+        notes: _notesController.text.isNotEmpty ? _notesController.text : null,
+      );
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Touchpoint logged for ${widget.contact.name}! Next nudge has been rescheduled.'),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+
+      // Close the modal after a brief delay
+      Future.delayed(const Duration(milliseconds: 500), () {
+        Navigator.pop(context);
+      });
+
+    } catch (e) {
+      print('Error logging touchpoint: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to log touchpoint: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'LOG TOUCHPOINT',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xff555555),
+                  letterSpacing: 1.2,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close, color: Color(0xff555555)),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 20),
+          
+          // Selected Contact Display (already selected from contact detail)
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF3CB3E9).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF3CB3E9).withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFF3CB3E9),
+                  ),
+                  child: Center(
+                    child: Text(
+                      widget.contact.name.substring(0, 1).toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.contact.name,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xff333333),
+                        ),
+                      ),
+                      Text(
+                        widget.contact.connectionType,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xff888888),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Interaction Type Selection
+          Text(
+            'INTERACTION TYPE',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Color(0xff888888),
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+          
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _interactionTypes.map((type) {
+              final isSelected = _selectedInteractionType == type;
+              return ChoiceChip(
+                label: Text(
+                  type.toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: isSelected ? Colors.white : Color(0xff333333),
+                  ),
+                ),
+                selected: isSelected,
+                selectedColor: const Color(0xFF3CB3E9),
+                backgroundColor: Colors.white,
+                side: BorderSide(
+                  color: isSelected ? const Color(0xFF3CB3E9) : const Color(0xFFEEEEEE),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                onSelected: (selected) {
+                  setState(() {
+                    _selectedInteractionType = selected ? type : null;
+                  });
+                },
+              );
+            }).toList(),
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Notes Field
+          TextField(
+            controller: _notesController,
+            maxLines: 3,
+            decoration: InputDecoration(
+              labelText: 'Notes (optional)',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFEEEEEE)),
+              ),
+              filled: true,
+              fillColor: Colors.white,
+            ),
+          ),
+          
+          const SizedBox(height: 20),
+          
+          // Log Button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _isLoading ? null : _logTouchpoint,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF3CB3E9),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 2,
+              ),
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.add, size: 20, color: Colors.white,),
+                        SizedBox(width: 8),
+                        Text(
+                          'LOG TOUCHPOINT',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+          
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
 }

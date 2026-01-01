@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_contacts/flutter_contacts.dart' as fContacts;
+import 'package:nudge/models/social_group.dart';
 // import 'package:nudge/models/social_group.dart';
 // import 'package:flutter_contacts/properties/event.dart';
 // import 'package:flutter_contacts/properties/event.dart';
@@ -18,7 +19,7 @@ class ContactSyncService {
 
   Future<Map<String, dynamic>> importDeviceContacts({
     required Function(int processed, int total) onProgress,
-    required String groupId,
+    required SocialGroup group,
     int limit = 0,
     bool useSmartFilter = true,
   }) async {
@@ -152,9 +153,9 @@ class ContactSyncService {
           email: deviceContact.emails.isNotEmpty 
               ? deviceContact.emails.first.address 
               : '',
-          connectionType: groupId,
-          frequency: 2,
-          period: 'Annually',
+          connectionType: group.name,
+          frequency: group.frequency,
+          period: group.period,
           socialGroups: [],
           notes: '',
           imageUrl: deviceContact.photoOrThumbnail != null

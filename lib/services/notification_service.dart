@@ -1,10 +1,13 @@
-// lib/services/notification_service.dart
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:nudge/main.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
-// import 'package:flutter/material.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -44,6 +47,7 @@ class NotificationService {
       onDidReceiveNotificationResponse: (NotificationResponse response) {
         // Handle notification tap when app is in foreground
         print('Notification tapped: ${response.payload}');
+        _handleNotificationTap(response.payload);
       },
     );
 
@@ -62,27 +66,146 @@ class NotificationService {
           ?.createNotificationChannel(channel);
     }
 
-      // await notificationsPlugin
-      // .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-      // ?.requestPermission();
-  
-  // Get FCM token and save to user document
+    // Get FCM token and save to user document
+    String? fcmToken = await FirebaseMessaging.instance.getToken();
+    final user = FirebaseAuth.instance.currentUser;
+    if (fcmToken != null && user != null) {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .update({'fcmToken': fcmToken});
+      print('FCM Token saved for user: $fcmToken');
+    }
+    
+    // Listen for token refresh
+    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .update({'fcmToken': newToken});
+        print('FCM Token refreshed: $newToken');
+      }
+    });
 
-      // String? fcmToken = await FirebaseMessaging.instance.getToken();
-      // if (fcmToken != null) {
-      //   await FirebaseFirestore.instance
-      //       .collection('users')
-      //       .doc(FirebaseAuth.instance.currentUser!.uid)
-      //       .update({'fcmToken': fcmToken});
-      // }
-      
-      // // Listen for token refresh
-      // FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
-      //   await FirebaseFirestore.instance
-      //       .collection('users')
-      //       .doc(FirebaseAuth.instance.currentUser!.uid)
-      //       .update({'fcmToken': newToken});
-      // });
+    // Set up Firebase Messaging handlers
+    _setupFirebaseMessaging();
+  }
+
+  void _setupFirebaseMessaging() {
+    // Handle foreground messages
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      print('Foreground FCM message: ${message.notification?.title}');
+      _showLocalNotificationFromFCM(message);
+    });
+
+    // Handle when app is opened from background via notification
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      print('App opened from background via FCM notification');
+      _handleFCMNotificationTap(message);
+    });
+
+    // Handle initial message when app is opened from terminated state
+    FirebaseMessaging.instance.getInitialMessage().then((RemoteMessage? message) {
+      if (message != null) {
+        print('App opened from terminated state via FCM notification');
+        // Delay to ensure app is fully initialized
+        Future.delayed(const Duration(seconds: 1), () {
+          _handleFCMNotificationTap(message);
+        });
+      }
+    });
+  }
+
+  // Map<String, String> _parsePayload(String? payload) {
+  //   if (payload == null) return {};
+    
+  //   final params = <String, String>{};
+  //   final pairs = payload.split('&');
+    
+  //   for (final pair in pairs) {
+  //     final split = pair.split('=');
+  //     if (split.length == 2) {
+  //       params[split[0]] = split[1];
+  //     }
+  //   }
+    
+  //   return params;
+  // }
+
+void _handleNotificationTap(String? payload) {
+  print('Local notification tapped - forcing to notifications screen');
+  
+  // Always navigate to notifications screen regardless of payload
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (navigatorKey.currentState != null) {
+      navigatorKey.currentState!.pushNamedAndRemoveUntil(
+        '/dashboard',
+        (route) => false,
+        arguments: {'initialTab': 3}, // 3 is notifications tab index
+      );
+    }
+  });
+}
+
+void _handleFCMNotificationTap(RemoteMessage message) {
+  print('FCM notification tapped - forcing to notifications screen');
+  
+  // Always navigate to notifications screen
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (navigatorKey.currentState != null) {
+      navigatorKey.currentState!.pushNamedAndRemoveUntil(
+        '/dashboard',
+        (route) => false,
+        arguments: {'initialTab': 3}, // 3 is notifications tab index
+      );
+    }
+  });
+}
+
+String _buildNotificationPayload(Map<String, dynamic> messageData) {
+  // Always return the same payload for notifications tab
+  final payload = {
+    'screen': 'notifications',
+    'timestamp': DateTime.now().millisecondsSinceEpoch.toString(),
+  };
+  
+  return payload.entries
+      .map((entry) => '${entry.key}=${entry.value}')
+      .join('&');
+}
+
+  Future<void> _showLocalNotificationFromFCM(RemoteMessage message) async {
+    const AndroidNotificationDetails androidNotificationDetails =
+        AndroidNotificationDetails(
+      'nudge_channel_id',
+      'Nudge Notifications',
+      channelDescription: 'Channel for Nudge reminders',
+      importance: Importance.high,
+      priority: Priority.high,
+      playSound: true,
+      showWhen: true,
+      autoCancel: true,
+    );
+
+    const DarwinNotificationDetails iOSNotificationDetails =
+        DarwinNotificationDetails();
+
+    const NotificationDetails notificationDetails = NotificationDetails(
+      android: androidNotificationDetails,
+      iOS: iOSNotificationDetails,
+    );
+
+    await notificationsPlugin.show(
+      message.hashCode,
+      message.notification?.title ?? 'Connection Nudge 💫',
+      message.notification?.body ?? 'Time to connect!',
+      notificationDetails,
+      payload: _buildNotificationPayload(message.data),
+    );
+    
+    print('Local notification shown for FCM message');
   }
 
   Future<void> scheduleNudgeNotification(

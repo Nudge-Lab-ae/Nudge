@@ -11,7 +11,7 @@ import '../../models/contact.dart';
 import '../../models/nudge.dart';
 import '../../widgets/feedback_floating_button.dart';
 
-enum SortOption { name, memberCount, frequency }
+enum SortOption { orderIndex, name, memberCount, frequency }
 
 class GroupsListScreen extends StatefulWidget {
   final bool showAppBar;
@@ -27,9 +27,10 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
   Stream<List<Nudge>>? _nudgesStream;
   List allContacts = [];
   final ConfettiController _confettiController = ConfettiController(duration: const Duration(seconds: 3));
-  SortOption _currentSortOption = SortOption.name;
+  SortOption _currentSortOption = SortOption.orderIndex;
   bool _sortAscending = true;
   final ScrollController _scrollController = ScrollController();
+  List allGroups = [];
 
   @override
   void initState() {
@@ -89,6 +90,11 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
     List<SocialGroup> sortedGroups = List.from(groups);
     
     switch (_currentSortOption) {
+      case SortOption.orderIndex:
+        sortedGroups.sort((a, b) => _sortAscending 
+            ? a.orderIndex.compareTo(b.orderIndex) 
+            : b.orderIndex.compareTo(a.orderIndex));
+        break;
       case SortOption.name:
         sortedGroups.sort((a, b) => _sortAscending 
             ? a.name.compareTo(b.name) 
@@ -209,6 +215,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                         }
 
                         final groups = groupsSnapshot.data!;
+                        allGroups = groups;
                         final sortedGroups = _sortGroups(groups);
                         final filteredGroups = sortedGroups.where((group) {
                           return group.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
@@ -769,6 +776,7 @@ void _showCreateGroupDialog(BuildContext context, ApiService apiService) {
                       colorCode: selectedColor,
                       birthdayNudgesEnabled: true,
                       anniversaryNudgesEnabled: true,
+                      orderIndex: allGroups.length
                     );
                     
                     try {

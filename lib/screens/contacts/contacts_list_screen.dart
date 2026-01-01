@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:nudge/screens/contacts/import_contacts_screen.dart';
 import 'package:nudge/services/api_service.dart';
-import 'package:nudge/services/nudge_service.dart';
+// import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/theme/text_styles.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
 // import 'package:nudge/widgets/gradient_text.dart';
@@ -1217,10 +1217,17 @@ Widget build(BuildContext context) {
         print('Error adding contact $contactId to group: $e');
       }
     }
+    List<String> contactIds = [];
+    contacts.map((contact){
+      contactIds.add(contact.id);
+    });
     
     // Schedule nudges for successfully added contacts (in background)
     if (successfullyAddedContacts.isNotEmpty) {
-      _scheduleNudgesForGroupContacts(successfullyAddedContacts, groupName, groupPeriod, groupFrequency, user.uid);
+      await apiService.cancelNudgesForContacts(contactIds);
+      // _scheduleNudgesForGroupContacts(successfullyAddedContacts, groupName, groupPeriod, groupFrequency, user.uid);
+      await apiService.scheduleNudgesForContacts(contactIds: contactIds);
+
     }
     
     // Show result
@@ -1245,34 +1252,34 @@ Widget build(BuildContext context) {
     });
   }
 
-  Future<void> _scheduleNudgesForGroupContacts(List<Contact> contacts, String groupName, String period, int frequency, String userId) async {
-    final nudgeService = NudgeService();
+  // Future<void> _scheduleNudgesForGroupContacts(List<Contact> contacts, String groupName, String period, int frequency, String userId) async {
+  //   final nudgeService = NudgeService();
     
-    try {
-      int scheduledCount = 0;
+  //   try {
+  //     int scheduledCount = 0;
       
-      for (final contact in contacts) {
-        // Schedule nudge for this contact with group parameters
-        final success = await nudgeService.scheduleNudgeForContact(
-          contact,
-          userId,
-          period: period,
-          frequency: frequency,
-        );
+  //     for (final contact in contacts) {
+  //       // Schedule nudge for this contact with group parameters
+  //       final success = await nudgeService.scheduleNudgeForContact(
+  //         contact,
+  //         userId,
+  //         period: period,
+  //         frequency: frequency,
+  //       );
         
-        if (success) scheduledCount++;
+  //       if (success) scheduledCount++;
         
-        // Small delay to avoid overwhelming the system
-        await Future.delayed(const Duration(milliseconds: 50));
-      }
+  //       // Small delay to avoid overwhelming the system
+  //       await Future.delayed(const Duration(milliseconds: 50));
+  //     }
       
-      print('Successfully scheduled nudges for $scheduledCount contacts in $groupName group');
+  //     print('Successfully scheduled nudges for $scheduledCount contacts in $groupName group');
       
-    } catch (e) {
-      print('Error scheduling nudges for group contacts: $e');
-      // Don't show error to user as this is background process
-    }
-  }
+  //   } catch (e) {
+  //     print('Error scheduling nudges for group contacts: $e');
+  //     // Don't show error to user as this is background process
+  //   }
+  // }
 
   void _addContactToGroup(BuildContext context, Contact contact, String groupName, String groupPeriod, int groupFrequency) async {
     final apiService = Provider.of<ApiService>(context, listen: false);
@@ -1317,6 +1324,8 @@ Widget build(BuildContext context) {
       );
       
       await apiService.updateContact(updatedContact);
+      await apiService.cancelNudgesForContacts([contact.id]);
+      await apiService.scheduleNudgesForContacts(contactIds: [contact.id]);
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Added ${contact.name} to $groupName')),

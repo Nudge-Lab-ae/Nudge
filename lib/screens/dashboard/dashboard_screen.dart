@@ -33,7 +33,9 @@ import '../../models/contact.dart';
 // import '../../widgets/vip_badge.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+  final int initialTab;
+  
+  const DashboardScreen({super.key, this.initialTab = 0});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -63,6 +65,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.initState();
     getNudges();
     _checkDeletionRetry();
+    _currentIndex = widget.initialTab;
     _initializeNotifications();
      _initializeSocialUniverse();
     _scrollController.addListener(() {
@@ -165,6 +168,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final authService = Provider.of<AuthService>(context);
     final user = authService.currentUser;
     final apiService = Provider.of<ApiService>(context);
+
+    print('DashboardScreen building with _currentIndex: $_currentIndex, initialTab: ${widget.initialTab}');
     
     if (user == null) {
       return const Scaffold(
@@ -238,17 +243,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 iconTheme: const IconThemeData(color: Color(0xff3CB3E9)),
                 elevation: 0,
                 actions: [
-                  Stack(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.settings),
+                 Padding(
+                  padding: EdgeInsets.only(right: 0),
+                  child: MaterialButton(
+                        child: const Icon(Icons.settings, color:  Color(0xff3CB3E9),),
                         onPressed: () {
                           Navigator.pushNamed(context, '/settings');
                         },
-                        tooltip: 'Notifications',
+                        onLongPress: () {
+                          apiService.cancelHourlyNotifications();
+                        },
+                        // tooltip: 'Notifications',
                       ),
-                    ],
-                  )
+                 )
                 ],
                 surfaceTintColor: Colors.transparent,
                 centerTitle: false,
@@ -1383,78 +1390,9 @@ Widget _buildQuickActionButton({
             Column(
               children: [
                 SizedBox(
-                  height: 400,
+                  height: 370,
                   child: InteractiveDonutChart(distributionData: distributionData)
-                  /* SfCircularChart(
-                    legend: Legend(
-                      isVisible: true,
-                      overflowMode: LegendItemOverflowMode.wrap,
-                      position: LegendPosition.bottom,
-                      itemPadding: 5,
-                      textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                    ),
-                    series: <CircularSeries>[
-                     DoughnutSeries<Map<String, dynamic>, String>(
-                        dataSource: distributionData,
-                        innerRadius: '60%',
-                        xValueMapper: (Map<String, dynamic> data, _) => data['category'],
-                        yValueMapper: (Map<String, dynamic> data, _) => data['count'],
-                        dataLabelMapper: (Map<String, dynamic> data, _) {
-                          final total = distributionData.fold(0, (sum, item) => sum + (item['count'] as int));
-                          final percentage = ((data['count'] as int) / total * 100).toInt();
-                          if (_explodedCategory == data['category']) {
-                            return '${data['count']} (${percentage}%)';
-                          } else {
-                            return '$percentage%';
-                          }
-                        },
-                        dataLabelSettings: DataLabelSettings(
-                          isVisible: true,
-                          textStyle: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                          labelPosition: ChartDataLabelPosition.inside,
-                        ),
-                        // Use pointShaderMapper for gradient colors
-                        // pointShaderMapper: (Map<String, dynamic> data, int index) {
-                         
-                        // },
-                        pointColorMapper: (Map<String, dynamic> data, int index) {
-                          final gradientColors = _getCategoryColor(data['category'], index);
-                          return gradientColors; // Fallback color
-                        },
-                        explode: true,
-                        explodeAll: false,
-                        explodeOffset: _explodedCategory != null ? '25%' : '15%',
-                        explodeGesture: ActivationMode.singleTap,
-                        onPointTap: (ChartPointDetails details) {
-                          setState(() {
-                            final tappedIndex = details.pointIndex ?? -1;
-                            if (tappedIndex >= 0 && tappedIndex < distributionData.length) {
-                              final tappedCategory = distributionData[tappedIndex]['category'];
-                              if (_explodedCategory == tappedCategory) {
-                                _explodedCategory = null;
-                                _selectedPieSegmentIndex = -1;
-                              } else {
-                                _explodedCategory = tappedCategory;
-                                _selectedPieSegmentIndex = tappedIndex;
-                              }
-                            }
-                          });
-                        },
-                        onPointDoubleTap: (ChartPointDetails details) {
-                          setState(() {
-                            _explodedCategory = null;
-                            _selectedPieSegmentIndex = -1;
-                          });
-                        },
-                      ),
-                    ],
-                    tooltipBehavior: TooltipBehavior(
-                      enable: false,
-                      format: 'point.x : point.y contacts (point.percentage%)',
-                      canShowMarker: true,
-                    ),
-                  ), */
-                ),
+                  ),
                 if (_explodedCategory != null && _selectedPieSegmentIndex >= 0)
                   _buildSegmentDetails(
                     distributionData[_selectedPieSegmentIndex],

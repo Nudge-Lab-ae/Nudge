@@ -5,7 +5,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:nudge/models/social_group.dart';
 import 'package:nudge/models/user.dart';
-import 'package:nudge/services/nudge_service.dart';
+// import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
 // import 'package:nudge/theme/text_styles.dart';
 import 'package:nudge/widgets/gradient_text.dart';
@@ -32,6 +32,9 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   int _selectedQuantity = 50;
   bool _useSmartFilter = true;
   final List<int> _quantityOptions = [25, 50, 100, 150];
+  late List<SocialGroup> _availableGroups = [];
+  bool _isOnboarding = false;
+
 
   void _showSettingsDialog(String message) {
     showDialog(
@@ -57,221 +60,143 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   }
 
   Future<void> _importDeviceContacts() async {
-  setState(() {
-    _isImporting = true;
-    _processedCount = 0;
-    _totalCount = 0;
-    _statusMessage = 'Checking for existing contacts...';
-  });
+    setState(() {
+      _isImporting = true;
+      _processedCount = 0;
+      _totalCount = 0;
+      _statusMessage = 'Checking for existing contacts...';
+    });
 
-  final authService = Provider.of<AuthService>(context, listen: false);
-  final apiService = Provider.of<ApiService>(context, listen: false);
-  final user = authService.currentUser;
-  if (user == null) {
-    setState(() => _isImporting = false);
-    return;
-  }
-
-  final syncService = ContactSyncService(apiService: apiService);
-
-  try {
-    // Get passed groups from route arguments (if any)
+    final authService = Provider.of<AuthService>(context, listen: false);
     final apiService = Provider.of<ApiService>(context, listen: false);
-    // final passedGroups = ModalRoute.of(context)?.settings.arguments as List<SocialGroup>?;
-    List<SocialGroup> allGroups = [];
-    User thisUser = await apiService.getUser();
-    var userGroups = thisUser.groups;
-    for (int i=0; i<userGroups!.length; i++) {
-      allGroups.add(SocialGroup.fromMap(userGroups[i]));
-    }
-    print('groups are'); print(userGroups); print(allGroups);
-    
-    // Show group selection dialog with passed groups (if available)
-    final SocialGroup? selectedGroup = await _showGroupSelectionDialog(allGroups);
-    if (selectedGroup == null) {
+    final user = authService.currentUser;
+    if (user == null) {
       setState(() => _isImporting = false);
-      return; // User cancelled group selection
-    }
-
-    final result = await syncService.importDeviceContacts(
-      limit: _selectedQuantity,
-      useSmartFilter: _useSmartFilter,
-      groupId: selectedGroup.name, // Pass the group ID
-      onProgress: (processed, total) {
-        setState(() {
-          _processedCount = processed;
-          _totalCount = total;
-          _statusMessage = 'Processing $processed of $total contacts...';
-        });
-      },
-    );
-
-    setState(() => _isImporting = false);
-    final importedContacts = await apiService.getAllContacts();
-
-    if (result['needsSettings'] == true) {
-      _showSettingsDialog(result['message']);
       return;
     }
 
-    if (result['success'] == true) {
-      if (result['importedCount'] == 0) {
-        setState(() {
-          _statusMessage =
-              'No new contacts to import - all contacts already exist in Nudge';
-        });
+    final syncService = ContactSyncService(apiService: apiService);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('All contacts already imported')),
-        );
+    try {
+      // Check if we have groups from arguments, otherwise fetch from API
+      List<SocialGroup> groupsForSelection;
+      
+      if (_availableGroups.isNotEmpty) {
+        groupsForSelection = _availableGroups;
+      } else {
+        print('No groups from arguments, fetching from API');
+        User thisUser = await apiService.getUser();
+        var userGroups = thisUser.groups;
+        groupsForSelection = [];
         
-        // Return empty list to parent screen
-        Navigator.pop(context, importedContacts);
+        if (userGroups != null && userGroups.isNotEmpty) {
+          for (int i = 0; i < userGroups.length; i++) {
+            groupsForSelection.add(SocialGroup.fromMap(userGroups[i]));
+          }
+        } else {
+          groupsForSelection = _createDefaultGroups();
+        }
+      }
+      
+      final SocialGroup? selectedGroup = await _showGroupSelectionDialog(groupsForSelection);
+      if (selectedGroup == null) {
+        setState(() {
+          _isImporting = false;
+          _statusMessage = '';
+        });
+        return;
+      }
+
+      final result = await syncService.importDeviceContacts(
+        limit: _selectedQuantity,
+        useSmartFilter: _useSmartFilter,
+        group: selectedGroup,
+        onProgress: (processed, total) {
+          setState(() {
+            _processedCount = processed;
+            _totalCount = total;
+            _statusMessage = 'Processing $processed of $total contacts...';
+          });
+        },
+      );
+
+      setState(() => _isImporting = false);
+      final importedContacts = await apiService.getAllContacts();
+
+      if (result['needsSettings'] == true) {
+        _showSettingsDialog(result['message']);
+        return;
+      }
+
+      if (result['success'] == true) {
+        if (result['importedCount'] == 0) {
+          setState(() {
+            _statusMessage =
+                'No new contacts to import - all contacts already exist in Nudge';
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('All contacts already imported')),
+          );
+          
+          Navigator.pop(context, importedContacts);
+        } else {
+          setState(() {
+            _statusMessage =
+                'Successfully imported ${result['importedCount']} contacts to ${selectedGroup.name}!';
+          });
+
+          final importedContacts = await apiService.getAllContacts();
+          final recentlyImportedContacts = importedContacts
+              .where((contact) => contact.socialGroups.contains(selectedGroup.name))
+              .toList();
+          List<String> importedContactIds = [];
+          recentlyImportedContacts.map((contact){
+            importedContactIds.add(contact.id);
+          });
+          
+          // CONDITIONALLY SCHEDULE NUDGES
+          if (!_isOnboarding && recentlyImportedContacts.isNotEmpty) {
+            await apiService.scheduleNudgesForContacts(contactIds: importedContactIds);
+          }
+          
+          Navigator.pop(context, recentlyImportedContacts);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Successfully imported ${result['importedCount']} contacts to ${selectedGroup.name}!'),
+            ),
+          );
+        }
       } else {
         setState(() {
-          _statusMessage =
-              'Successfully imported ${result['importedCount']} contacts to ${selectedGroup.name}!';
+          _statusMessage = 'Import failed: ${result['message']}';
         });
 
-        // Get the actual imported contacts from API
-        final importedContacts = await apiService.getAllContacts();
-        // final recentlyImportedContacts = importedContacts
-        //     .where((contact) => contact.socialGroups.contains(selectedGroup.name))
-        //     .toList();
-
-        // _scheduleNudgesForImportedContacts(result['importedCount'], user.uid);
-        
-        // Return the imported contacts to parent screen
-        Navigator.pop(context, importedContacts);
-
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Successfully imported ${result['importedCount']} contacts to ${selectedGroup.name}!'),
-          ),
+          SnackBar(content: Text('Failed to import contacts: ${result['message']}')),
         );
+        
+        Navigator.pop(context, []);
       }
-    } else {
+    } catch (e) {
       setState(() {
-        _statusMessage = 'Import failed: ${result['message']}';
+        _isImporting = false;
+        _statusMessage = 'Error: $e';
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to import contacts: ${result['message']}')),
+        SnackBar(content: Text('Failed to import contacts: $e')),
       );
       
-      // Return empty list on failure
       Navigator.pop(context, []);
     }
-  } catch (e) {
-    setState(() {
-      _isImporting = false;
-      _statusMessage = 'Error: $e';
-    });
+  }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Failed to import contacts: $e')),
-    );
-    
-    // Return empty list on error
-    Navigator.pop(context, []);
+  Future<SocialGroup?> _showGroupSelectionDialog(List<SocialGroup> groupsForSelection) async {
+  if (groupsForSelection.isEmpty) {
+    groupsForSelection = _createDefaultGroups();
   }
-}
-
-  Future<SocialGroup?> _showGroupSelectionDialog(List<SocialGroup>? passedGroups) async {
-  List<SocialGroup> availableGroups = [];
-  
-  // If groups are passed in (from onboarding), use them
-  if (passedGroups != null && passedGroups.isNotEmpty) {
-    availableGroups = passedGroups;
-  } else {
-    // Otherwise, try to get groups from API
-    try {
-      final apiService = Provider.of<ApiService>(context, listen: false);
-      // final authService = Provider.of<AuthService>(context, listen: false);
-      final user = await apiService.getUser();
-      
-      if (user.username != '') {
-        final groups = user.groups;
-        groups!.map((e){
-          availableGroups.add(SocialGroup.fromMap(e));
-        });
-      }
-    } catch (e) {
-      print('Error getting groups: $e');
-    }
-  }
-  
-  // If still no groups, create default ones
-  if (availableGroups.isEmpty) {
-    availableGroups = [
-      SocialGroup(
-        id: 'Family', 
-        name: 'Family', 
-        frequency: 4,
-        period: 'Monthly',
-        colorCode: '#4FC3F7', 
-        description: '', 
-        memberCount: 0, 
-        memberIds: [], 
-        lastInteraction: DateTime.now(), 
-        birthdayNudgesEnabled: true,
-        anniversaryNudgesEnabled: true,
-      ),
-      SocialGroup(
-        id: 'Friend', 
-        name: 'Friend', 
-        frequency: 8,
-        period: 'Quarterly',
-        colorCode: '#FF6F61', 
-        description: '', 
-        memberCount: 0, 
-        memberIds: [], 
-        lastInteraction: DateTime.now(), 
-        birthdayNudgesEnabled: true,
-        anniversaryNudgesEnabled: true,
-      ),
-      SocialGroup(
-        id: 'Colleague', 
-        name: 'Colleague', 
-        frequency: 4,
-        period: 'Annually',
-        colorCode: '#81C784', 
-        description: '', 
-        memberCount: 0, 
-        memberIds: [], 
-        lastInteraction: DateTime.now(), 
-        birthdayNudgesEnabled: true,
-        anniversaryNudgesEnabled: true,
-      ),
-      SocialGroup(
-        id: 'Mentor', 
-        name: 'Mentor', 
-        frequency: 2,
-        period: 'Annually',
-        colorCode: '#607D8B', 
-        description: '', 
-        memberCount: 0, 
-        memberIds: [], 
-        lastInteraction: DateTime.now(), 
-        birthdayNudgesEnabled: true,
-        anniversaryNudgesEnabled: true,
-      ),
-      SocialGroup(
-        id: 'Client', 
-        name: 'Client', 
-        frequency: 2,
-        period: 'Monthly',
-        colorCode: '#81C784', 
-        description: '', 
-        memberCount: 0, 
-        memberIds: [], 
-        lastInteraction: DateTime.now(), 
-        birthdayNudgesEnabled: true,
-        anniversaryNudgesEnabled: true,
-      ),
-    ];
-  }
-  
   
   // Show dialog for group selection
   return await showDialog<SocialGroup>(
@@ -282,9 +207,9 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
         width: double.maxFinite,
         height: 300,
         child: ListView.builder(
-          itemCount: availableGroups.length,
+          itemCount: groupsForSelection.length,
           itemBuilder: (context, index) {
-            final group = availableGroups[index];
+            final group = groupsForSelection[index];
             return Card(
               margin: const EdgeInsets.only(bottom: 8),
               child: ListTile(
@@ -297,7 +222,12 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
                   ),
                 ),
                 title: Text(group.name),
-                subtitle: Text(_getCurrentFrequencyChoice(group)),
+                subtitle: Text(
+                  // Show the frequency and period from the group
+                  // '${group.frequency} times ${group.period.toLowerCase()}',
+                  FrequencyPeriodMapper.getConversationalChoice(group.frequency, group.period),
+                  style: const TextStyle(color: Colors.grey),
+                ),
                 onTap: () => Navigator.pop(context, group),
               ),
             );
@@ -312,10 +242,6 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
       ],
     ),
   );
-}  
-
-String _getCurrentFrequencyChoice(SocialGroup group) {
-  return FrequencyPeriodMapper.getConversationalChoice(group.frequency, group.period);
 }
 
 //   void _showImportSuccessAndScheduleNudges(int importedCount, String userId) async {
@@ -339,7 +265,7 @@ String _getCurrentFrequencyChoice(SocialGroup group) {
 
   /// Full-screen multi-select picker UI.
   /// This fetches contacts, shows a checkbox list in full screen, and imports the selected ones.
-Future<void> _pickContactsAndImport() async {
+  Future<void> _pickContactsAndImport() async {
     final permissionOk = await fContacts.FlutterContacts.requestPermission();
     if (!permissionOk) {
       _showSettingsDialog('Contacts permission is required to pick contacts');
@@ -348,7 +274,7 @@ Future<void> _pickContactsAndImport() async {
 
     final contacts = await fContacts.FlutterContacts.getContacts(
       withProperties: true,
-      withPhoto: true, // ✅ request photos
+      withPhoto: true,
     );
 
     final selectedContacts = await Navigator.of(context).push<List<fContacts.Contact>>(
@@ -368,14 +294,31 @@ Future<void> _pickContactsAndImport() async {
     final apiService = Provider.of<ApiService>(context, listen: false);
     final authService = Provider.of<AuthService>(context, listen: false);
 
-    List<SocialGroup> allGroups = [];
-    User thisUser = await apiService.getUser();
-    var userGroups = thisUser.groups;
-    for (int i = 0; i < userGroups!.length; i++) {
-      allGroups.add(SocialGroup.fromMap(userGroups[i]));
+    List<SocialGroup> groupsForSelection;
+    
+    if (_availableGroups.isNotEmpty) {
+      // Use groups passed from onboarding
+      groupsForSelection = _availableGroups;
+    } else {
+      // Fallback: get groups from API
+      try {
+        User thisUser = await apiService.getUser();
+        var userGroups = thisUser.groups;
+        groupsForSelection = [];
+        
+        if (userGroups != null && userGroups.isNotEmpty) {
+          for (int i = 0; i < userGroups.length; i++) {
+            groupsForSelection.add(SocialGroup.fromMap(userGroups[i]));
+          }
+        } else {
+          groupsForSelection = _createDefaultGroups();
+        }
+      } catch (e) {
+        groupsForSelection = _createDefaultGroups();
+      }
     }
 
-    final SocialGroup? selectedGroup = await _showGroupSelectionDialog(allGroups);
+    final SocialGroup? selectedGroup = await _showGroupSelectionDialog(groupsForSelection);
     if (selectedGroup == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Group selection cancelled')),
@@ -385,6 +328,9 @@ Future<void> _pickContactsAndImport() async {
 
     final user = authService.currentUser;
     if (user == null) return;
+
+    // print('The selected group is'); print(selectedGroup.toMap());
+    // return;
 
     final syncService = ContactSyncService(apiService: apiService);
 
@@ -420,6 +366,16 @@ Future<void> _pickContactsAndImport() async {
           .where((contact) => contact.socialGroups.contains(selectedGroup.name))
           .toList();
 
+      List<String> importedContactIds = [];
+      recentlyImportedContacts.map((contact){
+        importedContactIds.add(contact.id);
+      });
+      
+      // CONDITIONALLY SCHEDULE NUDGES
+      if (_isOnboarding == false && recentlyImportedContacts.isNotEmpty) {
+        await apiService.scheduleNudgesForContacts(contactIds: importedContactIds);
+      }
+
       Navigator.pop(context, recentlyImportedContacts);
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -427,7 +383,7 @@ Future<void> _pickContactsAndImport() async {
           content: Text('Successfully imported ${result['importedCount']} contacts to ${selectedGroup.name}!'),
         ),
       );
-      _scheduleNudgesForImportedContacts(result['importedCount'], user.uid);
+      // _scheduleNudgesForImportedContacts(result['importedCount'], user.uid);
     } else {
       setState(() {
         _statusMessage = 'Import failed: ${result['message']}';
@@ -438,6 +394,81 @@ Future<void> _pickContactsAndImport() async {
     }
   }
 
+    // Add this method to create default groups when none are available
+  List<SocialGroup> _createDefaultGroups() {
+    return [
+      SocialGroup(
+        id: 'family',
+        name: 'Family',
+        description: '',
+        period: 'Monthly',
+        frequency: 4,
+        memberIds: [],
+        memberCount: 0,
+        lastInteraction: DateTime.now(),
+        colorCode: '#4FC3F7',
+        birthdayNudgesEnabled: true,
+        anniversaryNudgesEnabled: true,
+        orderIndex: 0
+      ),
+      SocialGroup(
+        id: 'friend',
+        name: 'Friend',
+        description: '',
+        period: 'Weekly',
+        frequency: 2,
+        memberIds: [],
+        memberCount: 0,
+        lastInteraction: DateTime.now(),
+        colorCode: '#FF6F61',
+        birthdayNudgesEnabled: true,
+        anniversaryNudgesEnabled: true,
+        orderIndex: 1
+      ),
+      SocialGroup(
+        id: 'colleague',
+        name: 'Colleague',
+        description: '',
+        period: 'Monthly',
+        frequency: 2,
+        memberIds: [],
+        memberCount: 0,
+        lastInteraction: DateTime.now(),
+        colorCode: '#81C784',
+        birthdayNudgesEnabled: true,
+        anniversaryNudgesEnabled: true,
+        orderIndex: 2
+      ),
+      SocialGroup(
+        id: 'client',
+        name: 'Client',
+        description: '',
+        period: 'Quarterly',
+        frequency: 1,
+        memberIds: [],
+        memberCount: 0,
+        lastInteraction: DateTime.now(),
+        colorCode: '#FFC107',
+        birthdayNudgesEnabled: true,
+        anniversaryNudgesEnabled: true,
+        orderIndex: 3
+      ),
+      SocialGroup(
+        id: 'mentor',
+        name: 'Mentor',
+        description: '',
+        period: 'Annually',
+        frequency: 2,
+        memberIds: [],
+        memberCount: 0,
+        lastInteraction: DateTime.now(),
+        colorCode: '#607D8B',
+        birthdayNudgesEnabled: true,
+        anniversaryNudgesEnabled: true,
+        orderIndex: 4
+      ),
+    ];
+  }
 
   String _getQuantityLabel(int quantity) {
     return quantity == 0 ? 'All Contacts' : 'First $quantity Contacts';
@@ -445,88 +476,123 @@ Future<void> _pickContactsAndImport() async {
 
   // Add to _ImportContactsScreenState class in import_contacts_screen.dart
 
- Future<void> _scheduleNudgesForImportedContacts(int importedCount, String userId) async {
-  final apiService = Provider.of<ApiService>(context, listen: false);
-  final nudgeService = NudgeService();
+//  Future<void> _scheduleNudgesForImportedContacts(int importedCount, String userId) async {
+//   final apiService = Provider.of<ApiService>(context, listen: false);
+//   final nudgeService = NudgeService();
   
-  try {
-    // Show scheduling indicator
-    setState(() {
-      _statusMessage = 'Scheduling nudges for imported contacts...';
-      _isImporting = true;
-    });
+//   try {
+//     // Show scheduling indicator
+//     setState(() {
+//       _statusMessage = 'Scheduling nudges for imported contacts...';
+//       _isImporting = true;
+//     });
 
-    // Get the updated contacts list
-    final contacts = await apiService.getAllContacts();
+//     // Get the updated contacts list
+//     final contacts = await apiService.getAllContacts();
     
-    // Schedule nudges for newly imported contacts
-    int scheduledCount = 0;
-    for (final contact in contacts) {
-      // Use default settings for imported contacts
-      final success = await nudgeService.scheduleNudgeForContact(
-        contact,
-        userId,
-        period: 'Monthly',
-        frequency: 2,
-      );
+//     // Schedule nudges for newly imported contacts
+//     int scheduledCount = 0;
+//     for (final contact in contacts) {
+//       // Use default settings for imported contacts
+//       final success = await nudgeService.scheduleNudgeForContact(
+//         contact,
+//         userId,
+//         period: 'Monthly',
+//         frequency: 2,
+//       );
       
-      if (success) scheduledCount++;
-    }
+//       if (success) scheduledCount++;
+//     }
     
-    setState(() {
-      _isImporting = false;
-    });
+//     setState(() {
+//       _isImporting = false;
+//     });
 
-    if (scheduledCount > 0) {
-      _showNudgeScheduledMessage(scheduledCount);
-    }
-  } catch (e) {
-    setState(() {
-      _isImporting = false;
-    });
-    print('Error scheduling nudges: $e');
-    // Don't show error to user as this is background process
-  }
-}
+//     if (scheduledCount > 0) {
+//       _showNudgeScheduledMessage(scheduledCount);
+//     }
+//   } catch (e) {
+//     setState(() {
+//       _isImporting = false;
+//     });
+//     print('Error scheduling nudges: $e');
+//     // Don't show error to user as this is background process
+//   }
+// }
 
-void _showNudgeScheduledMessage(int scheduledCount) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(Icons.auto_awesome, color: Colors.white, size: 18),
-              SizedBox(width: 8),
-              Text(
-                'Automatic Nudge Scheduling',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Nudges scheduled for $scheduledCount contacts. You\'ll receive reminders automatically!',
-            style: const TextStyle(color: Colors.white70, fontSize: 12),
-          ),
-        ],
-      ),
-      backgroundColor: const Color(0xff3CB3E9),
-      duration: const Duration(seconds: 5),
-      behavior: SnackBarBehavior.floating,
-    ),
-  );
-}
+// void _showNudgeScheduledMessage(int scheduledCount) {
+//   ScaffoldMessenger.of(context).showSnackBar(
+//     SnackBar(
+//       content: Column(
+//         mainAxisSize: MainAxisSize.min,
+//         crossAxisAlignment: CrossAxisAlignment.start,
+//         children: [
+//           const Row(
+//             children: [
+//               Icon(Icons.auto_awesome, color: Colors.white, size: 18),
+//               SizedBox(width: 8),
+//               Text(
+//                 'Automatic Nudge Scheduling',
+//                 style: TextStyle(
+//                   fontWeight: FontWeight.bold,
+//                   color: Colors.white,
+//                 ),
+//               ),
+//             ],
+//           ),
+//           const SizedBox(height: 4),
+//           Text(
+//             'Nudges scheduled for $scheduledCount contacts. You\'ll receive reminders automatically!',
+//             style: const TextStyle(color: Colors.white70, fontSize: 12),
+//           ),
+//         ],
+//       ),
+//       backgroundColor: const Color(0xff3CB3E9),
+//       duration: const Duration(seconds: 5),
+//       behavior: SnackBarBehavior.floating,
+//     ),
+//   );
+// }
 
 @override
   void initState() {
     super.initState();
     // For iOS, immediately open the contact picker
+     _getArgumentsFromRoute();
+    
+    // For iOS, immediately open the contact picker
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (Platform.isIOS) {
+        // Don't auto-open picker during onboarding
+        if (!_isOnboarding) {
+          _pickContactsAndImport();
+        }
+      }
+    });
+  }
+
+  void _getArgumentsFromRoute() {
+    final arguments = ModalRoute.of(context)?.settings.arguments;
+    
+    if (arguments is Map<String, dynamic>) {
+      // Extract groups
+      if (arguments['groups'] is List<SocialGroup>) {
+        setState(() {
+          _availableGroups = arguments['groups'] as List<SocialGroup>;
+        });
+        print('Got ${_availableGroups.length} groups from arguments');
+      }
+      
+      // Extract onboarding flag
+      if (arguments.containsKey('onboarding')) {
+        setState(() {
+          _isOnboarding = arguments['onboarding'] as bool;
+        });
+        print('Onboarding mode: $_isOnboarding');
+      }
+    } else {
+      print('No arguments passed, will fetch from API');
+    }
   }
 
 
@@ -561,7 +627,7 @@ void _showNudgeScheduledMessage(int scheduledCount) {
         backgroundColor: Colors.white,
       ),
       floatingActionButton: Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).size.height * 0.4),
+        padding: EdgeInsets.only(bottom: 50),
         child: FeedbackFloatingButton(),
       ),
       body: Padding(
@@ -705,7 +771,7 @@ void _showNudgeScheduledMessage(int scheduledCount) {
         backgroundColor: Colors.white,
       ),
       floatingActionButton: Padding(
-        padding: EdgeInsets.only(bottom: size.height * 0.4),
+        padding: EdgeInsets.only(bottom: 50),
         child: FeedbackFloatingButton(),
       ),
       body: Padding(
