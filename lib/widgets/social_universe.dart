@@ -1,11 +1,12 @@
-// lib/widgets/social_universe.dart - UPDATED WITH FIXES
+// social_universe.dart - Fixed for performance while keeping animations and visual effects
 import 'package:flutter/material.dart';
 import 'package:nudge/test/mock_data_generator.dart';
-import 'package:nudge/widgets/feedback_floating_button.dart';
 import 'package:nudge/widgets/social_universe_guide.dart';
+import 'package:nudge/providers/theme_provider.dart';
+import 'package:nudge/theme/app_theme.dart';
+import 'package:provider/provider.dart';
 import 'dart:math';
 import '../models/contact.dart';
-// import '../services/social_universe_service.dart';
 
 class SocialUniverseWidget extends StatefulWidget {
   final List<Contact> contacts;
@@ -33,16 +34,12 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
     with SingleTickerProviderStateMixin {
   Contact? _selectedContact;
   bool _showControls = true;
-  double _immersionLevel = 0.5;
+  double _immersionLevel = 1.0;
   
-  // FIX: Improved slider value tracking
-  double _sliderValue = 0.5;
-  
-  // FIX: Add star position tracking for accurate taps
+  double _sliderValue = 1.0;
   final Map<String, Offset> _starPositions = {};
   final Map<String, double> _starSizes = {};
   
-  // Rotation animation controller
   late AnimationController _rotationController;
   late Animation<double> _rotationAnimation;
   bool _useMockData = false;
@@ -53,14 +50,11 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
   void initState() {
     super.initState();
     
-    // Initialize mock data
     _mockContacts = MockContactsGenerator.generateMockContacts(count: 50);
     MockContactsGenerator.printDistribution(_mockContacts);
     
-    // FIX: Set displayContacts to REAL contacts by default, not mock
-    _displayContacts = widget.contacts;  // Changed from _mockContacts to widget.contacts
+    _displayContacts = widget.contacts;
     
-    // Initialize rotation animation
     _rotationController = AnimationController(
       duration: const Duration(seconds: 60),
       vsync: this,
@@ -71,10 +65,11 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
       end: 2 * pi,
     ).animate(_rotationController);
     
-    // Initialize slider value
     _sliderValue = _immersionLevel;
-    Future.delayed(Duration(seconds: 1)).then((value){
-      _displayContacts = widget.contacts;
+    Future.delayed(const Duration(seconds: 1)).then((value){
+      setState(() {
+        _displayContacts = widget.contacts;
+      });
     });
   }
 
@@ -86,10 +81,12 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    
     if (widget.isImmersive) {
-      return _buildImmersiveView();
+      return _buildImmersiveView(themeProvider);
     } else {
-      return _buildCompactView();
+      return _buildCompactView(themeProvider);
     }
   }
 
@@ -97,97 +94,114 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
     setState(() {
       _useMockData = !_useMockData;
       _displayContacts = _useMockData ? _mockContacts : widget.contacts;
-      _selectedContact = null; // Clear selection when toggling
+      _selectedContact = null;
       
-      // FIX: Clear star positions when switching data sets
       _starPositions.clear();
       _starSizes.clear();
       
-      // Show snackbar notification
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(_useMockData 
             ? 'Using mock data (${_displayContacts.length} contacts)' 
             : 'Using real data (${_displayContacts.length} contacts)'),
-          duration: Duration(seconds: 2),
+          duration: const Duration(seconds: 2),
         ),
       );
     });
   }
 
-  Widget _buildCompactView() {
+  Widget _buildCompactView(ThemeProvider themeProvider) {
+    final isDarkMode = themeProvider.isDarkMode;
+    
     return Container(
       height: widget.height,
+      width: double.infinity, // Take full width available
+      margin: const EdgeInsets.symmetric(horizontal: 0), // Remove side margins
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        gradient: const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF0A0E21),
-            Color(0xFF1A1F38),
-          ],
-        ),
+        color: isDarkMode 
+          ? AppTheme.darkUniverseBackground 
+          : const Color(0xFFE3F2FD), // LIGHT BLUE container for light mode
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.5),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+            color: Colors.black.withOpacity(isDarkMode ? 0.5 : 0.15),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Stack(
         children: [
-          // Main content with fixed size for universe
           Positioned.fill(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
+                  // Header with theme-specific styling
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: isDarkMode 
+                        ? Colors.black.withOpacity(0.4) 
+                        : Colors.white.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: isDarkMode 
+                          ? Colors.white24 
+                          : const Color(0xFF2196F3).withOpacity(0.3),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                               Row(
                                 children: [
-                                  const Text(
+                                  Text(
                                     'SOCIAL UNIVERSE',
                                     style: TextStyle(
-                                      fontSize: 14,
+                                      fontSize: 16, // Slightly larger
                                       fontWeight: FontWeight.w700,
-                                      color: Color(0xFF8A9DFF),
-                                      letterSpacing: 1.5,
+                                      color: isDarkMode 
+                                        ? AppTheme.darkUniversePrimary 
+                                        : const Color(0xFF1565C0), // Dark blue for light mode
+                                      letterSpacing: 1.2,
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  // Mock data indicator
                                   if (_useMockData)
                                     GestureDetector(
                                       onTap: _toggleMockData,
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(
-                                          horizontal: 6,
-                                          vertical: 2,
+                                          horizontal: 8,
+                                          vertical: 3,
                                         ),
                                         decoration: BoxDecoration(
                                           color: Colors.orange.withOpacity(0.2),
-                                          borderRadius: BorderRadius.circular(4),
+                                          borderRadius: BorderRadius.circular(6),
                                           border: Border.all(color: Colors.orange),
                                         ),
                                         child: const Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            Icon(Icons.psychology, size: 10, color: Colors.orange),
+                                            Icon(Icons.psychology, size: 12, color: Colors.orange),
                                             SizedBox(width: 4),
                                             Text(
                                               'TEST MODE',
                                               style: TextStyle(
-                                                fontSize: 8,
+                                                fontSize: 9,
                                                 fontWeight: FontWeight.bold,
                                                 color: Colors.orange,
                                               ),
@@ -198,181 +212,210 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                                     ),
                                 ],
                               ),
-                              const SizedBox(height: 2),
+                              const SizedBox(height: 4),
                               Text(
                                 'Tap stars to view details • ${_useMockData ? 'Click TEST MODE to return to real data' : 'Double-tap to test with mock data'}',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.white54,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isDarkMode 
+                                    ? Colors.white54 
+                                    : const Color(0xFF546E7A),
                                 ),
                               ),
-                            const SizedBox(height: 2),
-                          ],
-                        ),
-                      ),
-                      // Fullscreen button
-                      GestureDetector(
-                        onTap: widget.onFullScreenPressed,
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.white24),
-                          ),
-                          child: const Icon(
-                            Icons.fullscreen,
-                            size: 20,
-                            color: Colors.white70,
+                            ],
                           ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 12),
+                        GestureDetector(
+                          onTap: widget.onFullScreenPressed,
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: isDarkMode 
+                                ? Colors.white.withOpacity(0.1) 
+                                : const Color(0xFF2196F3).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isDarkMode 
+                                  ? Colors.white24 
+                                  : const Color(0xFF2196F3).withOpacity(0.3),
+                              ),
+                            ),
+                            child: Icon(
+                              Icons.fullscreen,
+                              size: 22,
+                              color: isDarkMode 
+                                ? Colors.white70 
+                                : const Color(0xFF1565C0),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 16),
                   
-                  // Universe area - FIXED SIZE
+                  // MAIN UNIVERSE DISPLAY - Takes most space
                   Expanded(
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final size = min(constraints.maxWidth, constraints.maxHeight);
-                        return GestureDetector(
-                          onDoubleTap: _toggleMockData,
-                          onTapDown: (details) {
-                            _handleUniverseTap(details.localPosition, Size(size, size));
-                          },
-                          child: Center(
-                            child: SizedBox(
-                              width: size,
-                              height: size,
-                              child: AnimatedBuilder(
-                                animation: _rotationAnimation,
-                                builder: (context, child) {
-                                  return CustomPaint(
-                                    painter: UniversePainter(
-                                      contacts: _displayContacts, // Use displayContacts
-                                      selectedContact: _selectedContact,
-                                      isImmersive: false,
-                                      immersionLevel: 1.0,
-                                      rotation: _rotationAnimation.value,
-                                      onStarDrawn: (contactId, position, starSize) {
-                                        if (mounted) {
-                                          _starPositions[contactId] = position;
-                                          _starSizes[contactId] = starSize;
-                                        }
-                                      },
-                                    ),
-                                  );
-                                },
+                    child: Center(
+                      child: Container(
+                        width: double.infinity,
+                        height: double.infinity,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          // Different backgrounds for light/dark mode
+                          gradient: isDarkMode 
+                            ? RadialGradient(
+                                center: Alignment.center,
+                                colors: [
+                                  const Color(0xFF1A237E).withOpacity(0.8),
+                                  const Color(0xFF0D47A1).withOpacity(0.9),
+                                  const Color(0xFF01579B),
+                                ],
+                                radius: 1.5,
+                              )
+                            : RadialGradient(
+                                center: Alignment.center,
+                                colors: [
+                                  const Color(0xFF64B5F6).withOpacity(0.9),
+                                  const Color(0xFF42A5F5).withOpacity(0.95),
+                                  const Color(0xFF2196F3),
+                                ],
+                                radius: 1.2,
                               ),
+                        ),
+                        child: RepaintBoundary(
+                          child: GestureDetector(
+                            onDoubleTap: _toggleMockData,
+                            onTapDown: (details) {
+                              final containerSize = Size(widget.height, widget.height);
+                              _handleUniverseTap(details.localPosition, containerSize);
+                            },
+                            child: AnimatedBuilder(
+                              animation: _rotationAnimation,
+                              builder: (context, child) {
+                                return CustomPaint(
+                                  painter: UniversePainter(
+                                    contacts: _displayContacts,
+                                    selectedContact: _selectedContact,
+                                    isImmersive: false,
+                                    immersionLevel: 0.5,
+                                    rotation: _rotationAnimation.value,
+                                    onStarDrawn: (contactId, position, starSize) {
+                                      if (mounted) {
+                                        _starPositions[contactId] = position;
+                                        _starSizes[contactId] = starSize;
+                                      }
+                                    },
+                                    isDarkMode: isDarkMode,
+                                  ),
+                                );
+                              },
                             ),
                           ),
-                        );
-                      },
+                        ),
+                      ),
                     ),
                   ),
                   
                   const SizedBox(height: 16),
                   
-                  _buildLegendRow(),
+                  // Legend - theme specific
+                  _buildLegendRow(isDarkMode),
                 ],
               ),
             ),
           ),
           
-          // Contact preview card - Overlay at bottom
           if (_selectedContact != null)
             Positioned(
               bottom: 16,
               left: 16,
               right: 16,
-              child: _buildCompactContactCard(_selectedContact!),
+              child: _buildCompactContactCard(_selectedContact!, isDarkMode, themeProvider),
             ),
         ],
       ),
     );
   }
-
-  void _showSocialUniverseGuide(BuildContext context) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (context) {
-      return Container(
-        height: MediaQuery.of(context).size.height * 0.9,
-        decoration: BoxDecoration(
-          color: Colors.black,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24),
+    
+  void _showSocialUniverseGuide(ThemeProvider themeProvider) {
+    final isDarkMode = themeProvider.isDarkMode;
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.9,
+          decoration: BoxDecoration(
+            color: isDarkMode ? Colors.black : Colors.white,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
           ),
-        ),
-        child: SocialUniverseGuide(
-          onClose: () {
-            Navigator.pop(context);
-          },
-        ),
-      );
-    },
-  );
-}
+          child: SocialUniverseGuide(
+            onClose: () {
+              Navigator.pop(context);
+            },
+            isDarkMode: isDarkMode,
+          ),
+        );
+      },
+    );
+  }
 
-  Widget _buildImmersiveView() {
-    return Scaffold(
-      backgroundColor: Colors.black,
-       floatingActionButton: Padding(
-                padding: EdgeInsets.only(
-                  bottom: 30.0,
-                  right: 6.0,
-                ),
-                child: FeedbackFloatingButton(
-                  currentSection: 'social-universe',
-                 ),
-              ),
-      body: Stack(
+  Widget _buildImmersiveView(ThemeProvider themeProvider) {
+    final isDarkMode = themeProvider.isDarkMode;
+    var size = MediaQuery.of(context).size;
+    
+    return Container(
+      color: isDarkMode ? Colors.black : const Color(0xFFC2D9F7),
+      child: Stack(
         children: [
-          // Universe takes the entire screen with rotation
           Positioned.fill(
-            // In _buildImmersiveView(), update the AnimatedBuilder:
-            child: GestureDetector(
-              onDoubleTap: widget.isImmersive ? _toggleMockData : null,
-              onTapDown: (details) {
-                final screenSize = MediaQuery.of(context).size;
-                _handleUniverseTap(details.localPosition, screenSize);
-              },
-              onTap: () {
-                setState(() {
-                  _showControls = !_showControls;
-                });
-              },
-              child: AnimatedBuilder(
-                animation: _rotationAnimation,
-                builder: (context, child) {
-                  return CustomPaint(
-                    painter: UniversePainter(
-                      contacts: _displayContacts, // Use displayContacts
-                      selectedContact: _selectedContact,
-                      isImmersive: true,
-                      immersionLevel: _immersionLevel,
-                      rotation: _rotationAnimation.value,
-                      onStarDrawn: (contactId, position, starSize) {
-                        if (mounted) {
-                          _starPositions[contactId] = position;
-                          _starSizes[contactId] = starSize;
-                        }
-                      },
-                    ),
-                  );
+            child: RepaintBoundary(
+              child: GestureDetector(
+                onDoubleTap: widget.isImmersive ? _toggleMockData : null,
+                onTapDown: (details) {
+                  final screenSize = MediaQuery.of(context).size;
+                  _handleUniverseTap(details.localPosition, screenSize);
                 },
+                onTap: () {
+                  setState(() {
+                    _showControls = !_showControls;
+                  });
+                },
+                child: AnimatedBuilder(
+                  animation: _rotationAnimation,
+                  builder: (context, child) {
+                    return CustomPaint(
+                      painter: UniversePainter(
+                        contacts: _displayContacts,
+                        selectedContact: _selectedContact,
+                        isImmersive: true,
+                        immersionLevel: _immersionLevel,
+                        rotation: _rotationAnimation.value,
+                        onStarDrawn: (contactId, position, starSize) {
+                          if (mounted) {
+                            _starPositions[contactId] = position;
+                            _starSizes[contactId] = starSize;
+                          }
+                        },
+                        isDarkMode: isDarkMode,
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
           ),
           
-          // Top controls
           AnimatedPositioned(
             duration: const Duration(milliseconds: 300),
-            top: _showControls ? 0 : -100,
+            top: _showControls ? -10 : -100,
             left: 0,
             right: 0,
             child: Container(
@@ -380,128 +423,120 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withOpacity(0.95),
-                    Colors.black.withOpacity(0.7),
-                    Colors.transparent,
-                  ],
+                  colors: isDarkMode
+                    ? [
+                        Colors.black.withOpacity(0.95),
+                        Colors.black.withOpacity(0.7),
+                        Colors.transparent,
+                      ]
+                    : [
+                        const Color(0xFFC2D9F7).withOpacity(0.95),
+                        const Color(0xFFC2D9F7).withOpacity(0.7),
+                        Colors.transparent,
+                      ],
                   stops: const [0.0, 0.3, 1.0],
                 ),
               ),
               child: SafeArea(
                 bottom: false,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 6),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Main header row
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Back button
-                          // GestureDetector(
-                          //   onTap: () {
-                          //     if (widget.onExitImmersive != null) {
-                          //       widget.onExitImmersive!();
-                          //     } else {
-                          //       Navigator.pop(context);
-                          //     }
-                          //   },
-                          //   child: Container(
-                          //     padding: const EdgeInsets.all(12),
-                          //     decoration: BoxDecoration(
-                          //       color: Colors.white.withOpacity(0.15),
-                          //       shape: BoxShape.circle,
-                          //       border: Border.all(color: Colors.white30),
-                          //     ),
-                          //     child: const Icon(
-                          //       Icons.arrow_back,
-                          //       color: Colors.white,
-                          //       size: 24,
-                          //     ),
-                          //   ),
-                          // ),
-                          
-                          // Center title
-                          // In _buildImmersiveView(), update the center title section:
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 20),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  const Text(
-                                    'IMMERSIVE UNIVERSE',
-                                    style: TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.w700,
-                                      color: Color(0xFF8A9DFF),
-                                      letterSpacing: 1.5,
+                      // Update header background for better contrast
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: isDarkMode 
+                            ? Colors.black.withOpacity(0.5) 
+                            : Colors.white.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isDarkMode 
+                              ? Colors.white24 
+                              : const Color(0xFF3B82F6).withOpacity(0.2),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Social Universe',
+                                      style: TextStyle(
+                                        fontSize: 22,
+                                        fontFamily: 'Inter',
+                                        fontWeight: FontWeight.w800,
+                                        color: isDarkMode ? Colors.white : Colors.black,
+                                      ),
+                                      textAlign: TextAlign.center,
                                     ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Explore your ${_displayContacts.length} connections${_useMockData ? ' (TEST MODE)' : ''}',
-                                    style: const TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 14,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  if (_useMockData)
                                     const SizedBox(height: 4),
-                                  if (_useMockData)
-                                    GestureDetector(
-                                      onTap: _toggleMockData,
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: Colors.orange.withOpacity(0.2),
-                                          borderRadius: BorderRadius.circular(12),
-                                          border: Border.all(color: Colors.orange),
-                                        ),
-                                        child: const Text(
-                                          'Click to return to real data',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.orange,
+                                    Text(
+                                      'Explore your ${_displayContacts.length} connections${_useMockData ? ' (TEST MODE)' : ''}',
+                                      style: TextStyle(
+                                        color: isDarkMode ? Colors.white70 : Colors.black,
+                                        fontSize: 14,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    if (_useMockData)
+                                      const SizedBox(height: 4),
+                                    if (_useMockData)
+                                      GestureDetector(
+                                        onTap: _toggleMockData,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: Colors.orange.withOpacity(0.2),
+                                            borderRadius: BorderRadius.circular(12),
+                                            border: Border.all(color: Colors.orange),
+                                          ),
+                                          child: Text(
+                                            'Click to return to real data',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.orange,
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                          
-                          // Info button
-                          GestureDetector(
-                            onTap: () {
-                              _showSocialUniverseGuide(context);
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: Colors.white30),
-                              ),
-                              child: const Icon(
-                                Icons.info_outline,
-                                size: 20,
-                                color: Colors.white70,
+                            
+                            GestureDetector(
+                              onTap: () {
+                                _showSocialUniverseGuide(themeProvider);
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isDarkMode ? Colors.white.withOpacity(0.15) : Colors.blue.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(color: isDarkMode ? Colors.white30 : Colors.blue.shade200),
+                                ),
+                                child: Icon(
+                                  Icons.info_outline,
+                                  size: 20,
+                                  color: isDarkMode ? Colors.white70 : Colors.blue.shade700,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                      
                       const SizedBox(height: 24),
                     ],
                   ),
@@ -510,21 +545,20 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
             ),
           ),
           
-          // Visual intensity controls - FIXED: Proper value tracking
           if (_showControls && _selectedContact == null)
             Positioned(
-              bottom: 20,
+              bottom: 90,
               right: 20,
               child: Container(
-                width: 300,
+                width: size.width*0.85,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.85),
+                  color: isDarkMode ? Colors.black.withOpacity(0.85) : Colors.white.withOpacity(0.9),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white24),
+                  border: Border.all(color: isDarkMode ? Colors.white24 : Colors.blue.shade100),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.5),
+                      color: Colors.black.withOpacity(isDarkMode ? 0.5 : 0.1),
                       blurRadius: 20,
                       spreadRadius: 2,
                     ),
@@ -533,61 +567,89 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
+                    Row(
                       children: [
                         Icon(
                           Icons.tune,
                           size: 18,
-                          color: Color(0xFF5CDEE5),
+                          color: isDarkMode ? AppTheme.darkUniverseSecondary : AppTheme.lightUniversePrimary,
                         ),
-                        SizedBox(width: 8),
+                        const SizedBox(width: 8),
                         Text(
                           'Visual Intensity',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: isDarkMode ? Colors.white : Colors.blue.shade800,
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        Spacer(),
-                        Icon(
+                        const Spacer(),
+                        GestureDetector(
+                          onTap: (){
+                            setState(() {
+                              _showControls = false;
+                            });
+                          },
+                          child: Icon(
                           Icons.visibility,
                           size: 18,
-                          color: Colors.white70,
+                          color: isDarkMode ? Colors.white70 : Colors.blue.shade600,
                         ),
+                        )
                       ],
                     ),
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        const Icon(
+                        GestureDetector(
+                          onTap: (){
+                            if (_sliderValue > 0.55){
+                              setState(() {
+                                 _sliderValue -= 0.1;
+                                 _immersionLevel -= 0.1;
+                              });
+                              print('decreased ${_sliderValue}');
+                            }
+                          },
+                          child: Icon(
                           Icons.remove,
-                          color: Colors.white70,
+                          color: isDarkMode ? Colors.white70 : Colors.blue.shade600,
                           size: 22,
+                        ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Slider(
-                            value: _sliderValue, // FIX: Use tracked slider value
+                            value: _sliderValue,
                             min: 0.5,
                             max: 1.0,
                             divisions: 5,
-                            activeColor: const Color(0xFF5CDEE5),
-                            inactiveColor: Colors.white24,
+                            activeColor: isDarkMode ? AppTheme.darkUniverseSecondary : AppTheme.lightUniversePrimary,
+                            inactiveColor: isDarkMode ? Colors.white24 : Colors.blue.shade100,
                             onChanged: (value) {
                               setState(() {
-                                _sliderValue = value; // FIX: Update slider value
-                                _immersionLevel = value; // Update immersion level
+                                _sliderValue = value;
+                                _immersionLevel = value;
                               });
                             },
                           ),
                         ),
                         const SizedBox(width: 12),
-                        const Icon(
+                        GestureDetector(
+                          onTap: (){
+                            if (_sliderValue <1.0){
+                              setState(() {
+                                  _sliderValue += 0.1;
+                                  _immersionLevel += 0.1;
+                              });
+                              print('added');
+                            }
+                          },
+                          child: Icon(
                           Icons.add,
-                          color: Colors.white70,
+                          color: isDarkMode ? Colors.white70 : Colors.blue.shade600,
                           size: 22,
-                        ),
+                        )),
                         const SizedBox(width: 16),
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -595,13 +657,13 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                             vertical: 8,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF5CDEE5).withOpacity(0.2),
+                            color: (isDarkMode ? AppTheme.darkUniverseSecondary : AppTheme.lightUniversePrimary).withOpacity(0.2),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            '${(_sliderValue * 100).toInt()}%', // FIX: Use slider value
-                            style: const TextStyle(
-                              color: Color(0xFF5CDEE5),
+                            '${(_sliderValue * 100).toInt()}%',
+                            style: TextStyle(
+                              color: isDarkMode ? AppTheme.darkUniverseSecondary : AppTheme.lightUniversePrimary,
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
@@ -610,10 +672,10 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                       ],
                     ),
                     const SizedBox(height: 8),
-                    const Text(
+                    Text(
                       'Adjust the visual depth of your social connections',
                       style: TextStyle(
-                        color: Colors.white54,
+                        color: isDarkMode ? Colors.white54 : Colors.blueGrey.shade600,
                         fontSize: 12,
                       ),
                     ),
@@ -622,7 +684,6 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
               ),
             ),
           
-          // Hint for showing controls
           if (!_showControls)
             Positioned(
               top: 20,
@@ -639,22 +700,22 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.7),
+                    color: isDarkMode ? Colors.black.withOpacity(0.7) : Colors.white.withOpacity(0.8),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white24),
+                    border: Border.all(color: isDarkMode ? Colors.white24 : Colors.blue.shade200),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
                       Icon(
                         Icons.visibility,
                         size: 16,
-                        color: Colors.white70,
+                        color: isDarkMode ? Colors.white70 : Colors.blue.shade700,
                       ),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Text(
                         'Show Controls',
                         style: TextStyle(
-                          color: Colors.white70,
+                          color: isDarkMode ? Colors.white70 : Colors.blue.shade700,
                           fontSize: 12,
                         ),
                       ),
@@ -664,10 +725,9 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
               ),
             ),
           
-          // Selected contact card at bottom
           if (_selectedContact != null)
             Positioned(
-              bottom: 0,
+              bottom: 90,
               left: 0,
               right: 0,
               child: Container(
@@ -675,58 +735,57 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                   maxHeight: MediaQuery.of(context).size.height * 0.35,
                 ),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.transparent,
-                      Colors.black.withOpacity(0.95),
-                    ],
-                  ),
+                  // gradient: LinearGradient(
+                  //   begin: Alignment.topCenter,
+                  //   end: Alignment.bottomCenter,
+                  //   colors: [
+                  //     Colors.transparent,
+                  //     isDarkMode ? Colors.black.withOpacity(0.95) : Colors.white.withOpacity(0.95),
+                  //   ],
+                  // ),
                 ),
                 child: SingleChildScrollView(
                   child: Padding(
                     padding: const EdgeInsets.all(20),
-                    child: _buildImmersiveContactCard(_selectedContact!),
+                    child: _buildImmersiveContactCard(_selectedContact!, isDarkMode, themeProvider),
                   ),
                 ),
               ),
             ),
           
-          // Visual intensity controls when contact is selected
           if (_showControls && _selectedContact != null)
             Positioned(
-              bottom: 20,
+              bottom: 90,
               right: 20,
               child: GestureDetector(
                 onTap: () {
-                  _showIntensityDialog(context);
+                  _showIntensityDialog(context, themeProvider);
                 },
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.8),
+                    color: isDarkMode ? Colors.black.withOpacity(0.8) : Colors.white.withOpacity(0.9),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFF5CDEE5).withOpacity(0.5)),
+                    border: Border.all(color: (isDarkMode ? AppTheme.darkUniverseSecondary : AppTheme.lightUniversePrimary).withOpacity(0.5)),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.5),
+                        color: Colors.black.withOpacity(isDarkMode ? 0.5 : 0.1),
                         blurRadius: 10,
                       ),
                     ],
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
                       Icon(
                         Icons.tune,
                         size: 18,
-                        color: Color(0xFF5CDEE5),
+                        color: isDarkMode ? AppTheme.darkUniverseSecondary : AppTheme.lightUniversePrimary,
                       ),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Text(
                         'Intensity',
                         style: TextStyle(
-                          color: Colors.white70,
+                          color: isDarkMode ? Colors.white70 : Colors.blue.shade700,
                           fontSize: 12,
                         ),
                       ),
@@ -740,8 +799,8 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
     );
   }
 
-  void _showIntensityDialog(BuildContext context) {
-    // FIX: Local variable for dialog state
+  void _showIntensityDialog(BuildContext context, ThemeProvider themeProvider) {
+    final isDarkMode = themeProvider.isDarkMode;
     double tempSliderValue = _sliderValue;
     
     showDialog(
@@ -750,10 +809,10 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
         return StatefulBuilder(
           builder: (context, setState) {
             return Dialog(
-              backgroundColor: Colors.black.withOpacity(0.9),
+              backgroundColor: isDarkMode ? Colors.black.withOpacity(0.9) : Colors.white.withOpacity(0.95),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Colors.white24),
+                side: BorderSide(color: isDarkMode ? Colors.white24 : Colors.blue.shade100),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(24),
@@ -761,29 +820,40 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Visual Intensity',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: isDarkMode ? Colors.white : Colors.blue.shade900,
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
+                    Text(
                       'Adjust the visual depth of your social universe',
                       style: TextStyle(
-                        color: Colors.white70,
+                        color: isDarkMode ? Colors.white70 : Colors.blueGrey.shade600,
                         fontSize: 14,
                       ),
                     ),
                     const SizedBox(height: 24),
                     Row(
                       children: [
-                        const Icon(
+                        GestureDetector(
+                          onTap: (){
+                            if (tempSliderValue > 0.55){
+                              setState(() {
+                                 tempSliderValue -= 0.1;
+                                //  _immersionLevel -= 0.1;
+                              });
+                              print('decreased ${_sliderValue}');
+                            }
+                          },
+                          child: Icon(
                           Icons.remove,
-                          color: Colors.white70,
-                          size: 24,
+                          color: isDarkMode ? Colors.white70 : Colors.blue.shade600,
+                          size: 22,
+                        ),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
@@ -792,8 +862,8 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                             min: 0.5,
                             max: 1.0,
                             divisions: 5,
-                            activeColor: const Color(0xFF5CDEE5),
-                            inactiveColor: Colors.white24,
+                            activeColor: isDarkMode ? AppTheme.darkUniverseSecondary : AppTheme.lightUniversePrimary,
+                            inactiveColor: isDarkMode ? Colors.white24 : Colors.blue.shade100,
                             onChanged: (value) {
                               setState(() {
                                 tempSliderValue = value;
@@ -802,11 +872,21 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                           ),
                         ),
                         const SizedBox(width: 16),
-                        const Icon(
+                        GestureDetector(
+                          onTap: (){
+                            if (tempSliderValue <1.0){
+                              setState(() {
+                                  tempSliderValue += 0.1;
+                                  // _immersionLevel += 0.1;
+                              });
+                              print('added');
+                            }
+                          },
+                          child: Icon(
                           Icons.add,
-                          color: Colors.white70,
-                          size: 24,
-                        ),
+                          color: isDarkMode ? Colors.white70 : Colors.blue.shade600,
+                          size: 22,
+                        )),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -817,13 +897,13 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                           vertical: 12,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF5CDEE5).withOpacity(0.2),
+                          color: (isDarkMode ? AppTheme.darkUniverseSecondary : AppTheme.lightUniversePrimary).withOpacity(0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
                           'Current: ${(tempSliderValue * 100).toInt()}%',
-                          style: const TextStyle(
-                            color: Color(0xFF5CDEE5),
+                          style: TextStyle(
+                            color: isDarkMode ? AppTheme.darkUniverseSecondary : AppTheme.lightUniversePrimary,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -838,10 +918,10 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                           onPressed: () {
                             Navigator.pop(context);
                           },
-                          child: const Text(
+                          child: Text(
                             'CANCEL',
                             style: TextStyle(
-                              color: Colors.white70,
+                              color: isDarkMode ? Colors.white70 : Colors.blueGrey.shade600,
                             ),
                           ),
                         ),
@@ -854,10 +934,10 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                             });
                             Navigator.pop(context);
                           },
-                          child: const Text(
+                          child: Text(
                             'APPLY',
                             style: TextStyle(
-                              color: Color(0xFF5CDEE5),
+                              color: isDarkMode ? AppTheme.darkUniverseSecondary : AppTheme.lightUniversePrimary,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -874,38 +954,27 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
     );
   }
 
-  
-  // FIX: Update _handleUniverseTap to use _displayContacts instead of widget.contacts
   void _handleUniverseTap(Offset tapPosition, Size size) {
-    // Clear previous positions if universe size changed
-    if (_starPositions.isNotEmpty) {
-      // Check if we need to recalc positions (e.g., after rotation)
-      // For now, we'll use the current positions
-    }
-    
     String? tappedContactId;
     double closestDistance = double.infinity;
     
-    // Check each star's position
     for (final entry in _starPositions.entries) {
       final contactId = entry.key;
       final starPosition = entry.value;
       
-      // Calculate distance from tap to star center
       final distance = (tapPosition - starPosition).distance;
-      
-      // Get star size with a generous tap area (2x visual size)
       final starSize = _starSizes[contactId] ?? 10.0;
-      final tapRadius = starSize * 2.0;
       
-      if (distance < tapRadius && distance < closestDistance) {
+      // FIXED: Increased touch sensitivity - use adaptive touch radius
+      final touchRadius = starSize * 2.5; // Increased sensitivity
+      
+      if (distance < touchRadius && distance < closestDistance) {
         closestDistance = distance;
         tappedContactId = contactId;
       }
     }
     
     if (tappedContactId != null) {
-      // FIX: Use _displayContacts instead of widget.contacts
       final contact = _displayContacts.firstWhere(
         (c) => c.id == tappedContactId,
         orElse: () => _displayContacts.first,
@@ -920,32 +989,45 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
       });
     }
   }
-  
-  Widget _buildLegendRow() {
+    
+  Widget _buildLegendRow(bool isDarkMode) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: isDarkMode 
+          ? Colors.white.withOpacity(0.05) 
+          : Colors.white.withOpacity(0.7),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white12),
+        border: Border.all(
+          color: isDarkMode 
+            ? Colors.white12 
+            : const Color(0xFF2196F3).withOpacity(0.2),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildLegendItem('Inner Circle', Colors.green, Icons.star),
-          _buildLegendItem('Middle Circle', Color(0xFFFFC107), Icons.circle),
-          _buildLegendItem('Outer Circle', Colors.redAccent, Icons.circle_outlined),
+          _buildLegendItem('Inner Circle', Colors.yellow, Icons.star, isDarkMode),
+          _buildLegendItem('Middle Circle', const Color(0xff3CB3E9), Icons.circle, isDarkMode),
+          _buildLegendItem('Outer Circle', const Color(0xff897ED6), Icons.circle_outlined, isDarkMode),
         ],
       ),
     );
   }
 
-  Widget _buildLegendItem(String label, Color color, IconData icon) {
+  Widget _buildLegendItem(String label, Color color, IconData icon, bool isDarkMode) {
     return Column(
       children: [
         Container(
-          width: 12,
-          height: 12,
+          width: 14,
+          height: 14,
           decoration: BoxDecoration(
             color: color,
             shape: BoxShape.circle,
@@ -956,19 +1038,28 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
               ),
             ],
           ),
+          child: Icon(
+            icon,
+            size: 8,
+            color: Colors.white,
+          ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 6),
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 10,
-            color: Colors.white70,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: isDarkMode ? Colors.white70 : const Color(0xFF37474F),
           ),
         ),
       ],
     );
   }
-  void _showMockContactDetails(Contact contact) {
+    
+  void _showMockContactDetails(Contact contact, ThemeProvider themeProvider) {
+    // final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDarkMode = themeProvider.isDarkMode;
     final ringColor = _getRingColor(contact.computedRing);
     final daysSince = DateTime.now().difference(contact.lastContacted).inDays;
     final lastContactText = _getTimeAgoText(daysSince);
@@ -1003,21 +1094,20 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(contact.name, style: TextStyle(color: Colors.white),),
+              child: Text(contact.name, style: TextStyle(color: isDarkMode ? Colors.white : Colors.black, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
-        backgroundColor: Colors.black.withOpacity(0.95),
+        backgroundColor: isDarkMode ? Colors.black.withOpacity(0.95) : Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: Colors.orange),
+          side: const BorderSide(color: Colors.orange),
         ),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Mock data warning
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -1043,47 +1133,44 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
               ),
               const SizedBox(height: 16),
               
-              // Social Universe Info
               _buildDetailSection('Social Universe Positioning', [
                 _buildDetailRow('Computed Ring', contact.computedRing.toUpperCase(), 
-                  ringColor),
+                  ringColor, isDarkMode),
                 _buildDetailRow('CDI Score', '${contact.cdi.toStringAsFixed(1)}/100',
                   contact.cdi >= 80 ? Colors.green : 
-                  contact.cdi >= 50 ? Color(0xFFFFC107) : Colors.redAccent),
+                  contact.cdi >= 50 ? const Color(0xFFFFC107) : Colors.redAccent, isDarkMode),
                 _buildDetailRow('Position Angle', '${contact.angleDeg.toStringAsFixed(1)}°',
-                  Colors.white),
+                  isDarkMode ? Colors.white : Colors.black, isDarkMode),
                 _buildDetailRow('VIP Status', contact.isVIP ? 'YES' : 'NO',
-                  contact.isVIP ? Color(0xFFFFD700) : Colors.grey),
+                  contact.isVIP ? const Color(0xFFFFD700) : Colors.grey, isDarkMode),
                 _buildDetailRow('Raw Band', contact.rawBand.toUpperCase(),
-                  Colors.white),
+                  isDarkMode ? Colors.white : Colors.black, isDarkMode),
                 _buildDetailRow('Band Since', 
                   '${DateTime.now().difference(contact.rawBandSince).inDays} days',
-                  Colors.white),
-              ]),
+                  isDarkMode ? Colors.white : Colors.black, isDarkMode),
+              ], isDarkMode),
               
               const SizedBox(height: 16),
               
-              // Contact Info
               _buildDetailSection('Contact Information', [
-                _buildDetailRow('Connection Type', contact.connectionType, Colors.white),
-                _buildDetailRow('Period', contact.period, Colors.white),
-                _buildDetailRow('Frequency', '${contact.frequency}/period', Colors.white),
-                _buildDetailRow('Last Contacted', lastContactText, Colors.white),
+                _buildDetailRow('Connection Type', contact.connectionType, isDarkMode ? Colors.white : Colors.black, isDarkMode),
+                _buildDetailRow('Period', contact.period, isDarkMode ? Colors.white : Colors.black, isDarkMode),
+                _buildDetailRow('Frequency', '${contact.frequency}/period', isDarkMode ? Colors.white : Colors.black, isDarkMode),
+                _buildDetailRow('Last Contacted', lastContactText, isDarkMode ? Colors.white : Colors.black, isDarkMode),
                 _buildDetailRow('Interaction Count', 
-                  '${contact.interactionCountInWindow} in last 90 days', Colors.white),
-              ]),
+                  '${contact.interactionCountInWindow} in last 90 days', isDarkMode ? Colors.white : Colors.black, isDarkMode),
+              ], isDarkMode),
               
               const SizedBox(height: 16),
               
-              // Tags
               if (contact.tags.isNotEmpty)
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Tags:',
                       style: TextStyle(
-                        color: Colors.white70,
+                        color: isDarkMode ? Colors.white70 : Colors.grey.shade700,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -1094,13 +1181,13 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                       children: contact.tags.map((tag) => Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
+                          color: isDarkMode ? Colors.white.withOpacity(0.1) : Colors.grey.shade100,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           tag,
-                          style: const TextStyle(
-                            color: Colors.white70,
+                          style: TextStyle(
+                            color: isDarkMode ? Colors.white70 : Colors.grey.shade700,
                             fontSize: 12,
                           ),
                         ),
@@ -1111,29 +1198,28 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
               
               const SizedBox(height: 16),
               
-              // CDI Interpretation
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.05),
+                  color: isDarkMode ? Colors.white.withOpacity(0.05) : Colors.grey.shade50,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white24),
+                  border: Border.all(color: isDarkMode ? Colors.white24 : Colors.grey.shade300),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'CDI Interpretation:',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: isDarkMode ? Colors.white : Colors.black,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       _getCDIInterpretation(contact.cdi),
-                      style: const TextStyle(
-                        color: Colors.white70,
+                      style: TextStyle(
+                        color: isDarkMode ? Colors.white70 : Colors.grey.shade700,
                         fontSize: 12,
                       ),
                     ),
@@ -1156,14 +1242,14 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
     );
   }
 
-  Widget _buildDetailSection(String title, List<Widget> children) {
+  Widget _buildDetailSection(String title, List<Widget> children, bool isDarkMode) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           title,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: isDarkMode ? Colors.white : Colors.black,
             fontSize: 14,
             fontWeight: FontWeight.bold,
           ),
@@ -1174,7 +1260,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
     );
   }
 
-  Widget _buildDetailRow(String label, String value, Color valueColor) {
+  Widget _buildDetailRow(String label, String value, Color valueColor, bool isDarkMode) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -1184,8 +1270,8 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
             width: 120,
             child: Text(
               '$label:',
-              style: const TextStyle(
-                color: Colors.white70,
+              style: TextStyle(
+                color: isDarkMode ? Colors.white70 : Colors.grey.shade600,
                 fontSize: 12,
               ),
             ),
@@ -1215,181 +1301,177 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
     }
   }
 
-    Widget _buildCompactContactCard(Contact contact) {
-      // Add mock data warning
-      if (_useMockData && contact.id.startsWith('mock_')) {
-        return Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
+  Widget _buildCompactContactCard(Contact contact, bool isDarkMode, ThemeProvider themeProvider) {
+    if (_useMockData && contact.id.startsWith('mock_')) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.yellow.withOpacity(0.5),
               Colors.orange.withOpacity(0.3),
-                Colors.orange.withOpacity(0.1),
-                Colors.black.withOpacity(0.8),
-              ],
-            ),
-            border: Border.all(color: Colors.orange.withOpacity(0.4)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.orange.withOpacity(0.3),
-                blurRadius: 20,
-                spreadRadius: 2,
-              ),
+              isDarkMode ? Colors.black.withOpacity(0.8) : Colors.white.withOpacity(0.8),
             ],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
+          border: Border.all(color: Colors.orange.withOpacity(0.4)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.orange.withOpacity(0.5),
+              blurRadius: 20,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.orange,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.warning,
+                    size: 16,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Mock Contact - Test Data',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
                       color: Colors.orange,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.warning,
-                      size: 16,
-                      color: Colors.white,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text(
-                      'Mock Contact - Test Data',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.orange,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: RadialGradient(
-                        colors: [
-                          _getRingColor(contact.computedRing),
-                          _getRingColor(contact.computedRing).withOpacity(0.5),
-                        ],
-                      ),
-                    ),
-                    child: Center(
-                      child: Text(
-                        contact.name.substring(0, 1).toUpperCase(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          contact.name,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                contact.connectionType,
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.white70,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'CDI: ${contact.cdi.toStringAsFixed(0)}',
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: Colors.white54,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              '• ${contact.computedRing.toUpperCase()}',
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: Colors.white54,
-                              ),
-                            ),
-                          ],
-                        ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        _getRingColor(contact.computedRing),
+                        _getRingColor(contact.computedRing).withOpacity(0.5),
                       ],
                     ),
                   ),
-                  
-                                  GestureDetector(
-                    onTap: () {
-                      if (_useMockData && contact.id.startsWith('mock_')) {
-                        // For mock data, show debug info dialog
-                        _showMockContactDetails(contact);
-                      } else {
-                        // For real data, use the normal callback
-                        widget.onContactView(contact);
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        gradient: LinearGradient(
-                          colors: _useMockData && contact.id.startsWith('mock_') 
-                            ? [Colors.orange, Color(0xFFFF9800)]
-                            : const [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                      ),
-                      child: Text(
-                        _useMockData && contact.id.startsWith('mock_') ? 'DETAILS' : 'VIEW',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
+                  child: Center(
+                    child: Text(
+                      contact.name.substring(0, 1).toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                ],
-              ),
-            ],
-          ),
-        );
-      }
+                ),
+                const SizedBox(width: 12),
+                
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        contact.name,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              contact.connectionType,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'CDI: ${contact.cdi.toStringAsFixed(0)}',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.white54,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '• ${contact.computedRing.toUpperCase()}',
+                            style: const TextStyle(
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                
+                GestureDetector(
+                  onTap: () {
+                    if (_useMockData && contact.id.startsWith('mock_')) {
+                      _showMockContactDetails(contact, themeProvider);
+                    } else {
+                      widget.onContactView(contact);
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      gradient: LinearGradient(
+                        colors: _useMockData && contact.id.startsWith('mock_') 
+                          ? [Colors.orange, const Color(0xFFFF9800)]
+                          : const [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                    child: Text(
+                      _useMockData && contact.id.startsWith('mock_') ? 'DETAILS' : 'VIEW',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
 
     final daysAgo = DateTime.now().difference(contact.lastContacted).inDays;
     final lastContactText = _getTimeAgoText(daysAgo);
@@ -1403,9 +1485,9 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            ringColor.withOpacity(0.3),
-            ringColor.withOpacity(0.1),
-            Colors.black.withOpacity(0.8),
+            Colors.yellow.withOpacity(0.5),  // Yellow at top-left
+            Colors.orange.withOpacity(0.3), 
+            // isDarkMode ? Colors.black.withOpacity(0.8) : Colors.white.withOpacity(0.8),
           ],
         ),
         border: Border.all(color: ringColor.withOpacity(0.4)),
@@ -1451,10 +1533,10 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
               children: [
                 Text(
                   contact.name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Colors.white,
+                    color: isDarkMode ? Colors.white : Colors.black,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -1479,9 +1561,9 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                     const SizedBox(width: 8),
                     Text(
                       '• $lastContactText',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
-                        color: Colors.white54,
+                        color: isDarkMode ? Colors.white54 : Colors.grey.shade600,
                       ),
                     ),
                   ],
@@ -1499,7 +1581,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
+                  colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -1509,7 +1591,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  color: Colors.black,
                 ),
               ),
             ),
@@ -1519,7 +1601,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
     );
   }
 
-  Widget _buildImmersiveContactCard(Contact contact) {
+  Widget _buildImmersiveContactCard(Contact contact, bool isDarkMode, ThemeProvider themeProvider) {
     final daysAgo = DateTime.now().difference(contact.lastContacted).inDays;
     final lastContactText = _getTimeAgoText(daysAgo);
     final ringColor = _getRingColor(contact.computedRing);
@@ -1527,7 +1609,6 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Contact header
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1563,24 +1644,22 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
             ),
             const SizedBox(width: 16),
             
-            // Contact name with proper wrapping
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     contact.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: isDarkMode ? Colors.white : Colors.black,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 8),
                   
-                  // Contact tags
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -1591,7 +1670,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
+                          color: isDarkMode ? Colors.white.withOpacity(0.15) : Colors.blue.shade50,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
@@ -1621,24 +1700,24 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
+                          color: isDarkMode ? Colors.white.withOpacity(0.15) : Colors.blue.shade50,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.category,
                               size: 14,
-                              color: Colors.white70,
+                              color: isDarkMode ? Colors.white70 : Colors.blue.shade700,
                             ),
                             const SizedBox(width: 6),
                             Flexible(
                               child: Text(
                                 contact.connectionType,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.white70,
+                                  color: isDarkMode ? Colors.white70 : Colors.blue.shade700,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -1689,28 +1768,27 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
         
         const SizedBox(height: 16),
         
-        // Contact info
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
+            color: isDarkMode ? Colors.white.withOpacity(0.05) : Colors.blue.shade50,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white24),
+            border: Border.all(color: isDarkMode ? Colors.white24 : Colors.blue.shade100),
           ),
           child: Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.access_time,
                 size: 16,
-                color: Colors.white54,
+                color: isDarkMode ? Colors.white54 : Colors.blue.shade600,
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'Last contact: $lastContactText',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
-                    color: Colors.white54,
+                    color: isDarkMode ? Colors.white54 : Colors.blue.shade700,
                   ),
                 ),
               ),
@@ -1720,7 +1798,6 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
         
         const SizedBox(height: 16),
         
-        // Action buttons
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -1728,10 +1805,8 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
               child: GestureDetector(
                 onTap: () {
                   if (_useMockData && contact.id.startsWith('mock_')) {
-                    // For mock data, show debug info
-                    _showMockContactDetails(contact);
+                    _showMockContactDetails(contact, themeProvider);
                   } else {
-                    // For real data, use the normal callback
                     widget.onContactView(contact);
                   }
                 },
@@ -1743,7 +1818,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                     borderRadius: BorderRadius.circular(12),
                     gradient: LinearGradient(
                       colors: _useMockData && contact.id.startsWith('mock_')
-                        ? [Colors.orange, Color(0xFFFF9800)]
+                        ? [Colors.orange, const Color(0xFFFF9800)]
                         : const [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -1800,14 +1875,14 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                   vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
+                  color: isDarkMode ? Colors.white.withOpacity(0.1) : Colors.blue.shade50,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white30),
+                  border: Border.all(color: isDarkMode ? Colors.white30 : Colors.blue.shade200),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.close,
                   size: 20,
-                  color: Colors.white70,
+                  color: isDarkMode ? Colors.white70 : Colors.blue.shade700,
                 ),
               ),
             ),
@@ -1833,11 +1908,11 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
   Color _getRingColor(String ring) {
     switch (ring) {
       case 'inner':
-        return Colors.green;
+        return Colors.yellow;
       case 'middle':
-        return Color(0xFFFFC107);
+        return const Color(0xff3CB3E9);
       case 'outer':
-        return Colors.redAccent;
+        return const Color(0xff897ED6);
       default:
         return Colors.grey;
     }
@@ -1859,7 +1934,27 @@ class UniversePainter extends CustomPainter {
   final bool isImmersive;
   final double immersionLevel;
   final double rotation;
-  final Function(String contactId, Offset position, double size)? onStarDrawn; // FIX: Add callback
+  final Function(String contactId, Offset position, double size)? onStarDrawn;
+  final bool isDarkMode;
+  
+  // Performance optimization: Use pre-allocated Paint objects
+  final Paint _backgroundPaint = Paint();
+  final Paint _ringPaint = Paint();
+  final Paint _glowPaint = Paint();
+  final Paint _starPaint = Paint();
+  final Random _random = Random(42);
+
+  late final Map<String, int> _contactHashCache = {};
+  late final Map<String, double> _contactSpreadOffsetCache = {};
+  late final Map<String, double> _contactAngleCache = {};
+  
+  // Pre-calculate ring radii to avoid recalculating every frame
+  late final double _innerInnerRadius;
+  late final double _innerOuterRadius;
+  late final double _middleInnerRadius;
+  late final double _middleOuterRadius;
+  late final double _outerInnerRadius;
+  late final double _outerOuterRadius;
   
   UniversePainter({
     required this.contacts,
@@ -1867,163 +1962,236 @@ class UniversePainter extends CustomPainter {
     required this.isImmersive,
     required this.immersionLevel,
     required this.rotation,
-    this.onStarDrawn, // FIX: Add callback parameter
-  });
+    this.onStarDrawn,
+    required this.isDarkMode,
+  }) {
+    // Pre-calculate ring radii once during construction
+    // These are based on maxRadius which will be calculated in paint()
+    // We'll store the ratios and multiply by actual maxRadius later
+    _innerInnerRadius = 0.15;
+    _innerOuterRadius = 0.35;
+    _middleInnerRadius = 0.35;
+    _middleOuterRadius = 0.55;
+    _outerInnerRadius = 0.55;
+    _outerOuterRadius = 0.80;
+  }
+
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final maxRadius = min(size.width / 2, size.height / 2) * 0.9;
+    final maxRadius = min(size.width / 2, size.height / 2) * 1.3;
     
     // Draw cosmic background
-    _drawCosmicBackground(canvas, size, immersionLevel);
+    _drawCosmicBackground(canvas, size, immersionLevel, isDarkMode);
     
-    // Draw rings with varying opacity based on immersion
+    // Draw rings with theme-specific colors
     _drawRing(
-      canvas,
-      center,
-      maxRadius * 0.15,
-      maxRadius * 0.40,
-      Colors.green.withOpacity(0.1 + 0.3 * immersionLevel),
-    );
-    _drawRing(
-      canvas,
-      center,
-      maxRadius * 0.45,
-      maxRadius * 0.70,
-      Color(0xFFFFC107).withOpacity(0.1 + 0.3 * immersionLevel),
-    );
-    _drawRing(
-      canvas,
-      center,
-      maxRadius * 0.75,
-      maxRadius,
-      Colors.redAccent.withOpacity(0.1 + 0.3 * immersionLevel),
-    );
+    canvas,
+    center,
+    maxRadius * 0.15,  // inner radius (not drawn, just for positioning)
+    maxRadius * 0.35,  // outer radius (drawn as boundary)
+    isDarkMode 
+      ? Colors.yellow.withOpacity(0.15 + 0.3 * immersionLevel)
+      : Colors.yellow.withOpacity(0.12 + 0.25 * immersionLevel),
+    isDarkMode,
+    true
+  );
+
+  // Middle Circle: radius 45-70% (only outer boundary at 70%)
+  _drawRing(
+    canvas,
+    center,
+    maxRadius * 0.35,  // inner radius (not drawn, just for positioning)
+    maxRadius * 0.55,  // outer radius (drawn as boundary)
+    isDarkMode 
+      ? const Color(0xff3CB3E9).withOpacity(0.15 + 0.3 * immersionLevel)
+      : const Color(0xff3CB3E9).withOpacity(0.12 + 0.25 * immersionLevel),
+    isDarkMode,
+    false
+  );
+
+  // NEW: Outer Circle: radius 75-100% (only outer boundary at 100%)
+  _drawRing(
+    canvas,
+    center,
+    maxRadius * 0.55,  // inner radius (not drawn, just for positioning)
+    maxRadius * 0.75,   // outer radius (drawn as boundary) - fits container
+    isDarkMode 
+      ? const Color(0xff897ED6).withOpacity(0.15 + 0.3 * immersionLevel)
+      : const Color(0xff897ED6).withOpacity(0.12 + 0.25 * immersionLevel),
+    isDarkMode,
+    false
+  );
     
-    // Draw central user
-    _drawCentralUser(canvas, center, immersionLevel);
+    // Draw central user with theme support
+    _drawCentralUser(canvas, center, immersionLevel, isDarkMode);
     
     // Draw all stars with rotation
     for (final contact in contacts) {
-      final starInfo = _drawStar(canvas, center, contact, maxRadius, size);
+      final starInfo = _drawStar(canvas, center, contact, maxRadius, size, isDarkMode);
       
-      // FIX: Report star position back to widget
       if (onStarDrawn != null && starInfo != null) {
         onStarDrawn!(contact.id, starInfo.position, starInfo.size);
       }
     }
-    
-    // Draw connections for immersive mode
-    if (isImmersive && immersionLevel > 0.7) {
-      _drawConnections(canvas, center, maxRadius);
-    }
+
+    // _drawShootingStars(canvas, size, immersionLevel, isDarkMode);
   }
 
-  StarInfo? _drawStar(Canvas canvas, Offset center, Contact contact, double maxRadius, Size size) {
+  StarInfo? _drawStar(Canvas canvas, Offset center, Contact contact, double maxRadius, Size size, bool isDarkMode) {
     final isSelected = selectedContact?.id == contact.id;
     final isVIP = contact.isVIP;
     
-    // Get ring info
+    // CACHE HASH CALCULATIONS
+    int hash;
+    if (_contactHashCache.containsKey(contact.id)) {
+      hash = _contactHashCache[contact.id]!;
+    } else {
+      hash = _stringToHash(contact.id);
+      _contactHashCache[contact.id] = hash;
+    }
+    
+    // CACHE SPREAD OFFSET
+    double spreadOffset;
+    if (_contactSpreadOffsetCache.containsKey(contact.id)) {
+      spreadOffset = _contactSpreadOffsetCache[contact.id]!;
+    } else {
+      spreadOffset = (hash.abs() % 35) / 100.0;
+      _contactSpreadOffsetCache[contact.id] = spreadOffset;
+    }
+    
+    // CACHE ANGLE
+    double contactAngleRad;
+    if (_contactAngleCache.containsKey(contact.id)) {
+      contactAngleRad = _contactAngleCache[contact.id]!;
+    } else {
+      final contactAngleDeg = contact.angleDeg != 0 
+          ? contact.angleDeg 
+          : (hash % 360).toDouble();
+      contactAngleRad = contactAngleDeg * (pi / 180);
+      _contactAngleCache[contact.id] = contactAngleRad;
+    }
+    
     double innerRadius, outerRadius;
     Color color;
     
     switch (contact.computedRing) {
       case 'inner':
-        innerRadius = maxRadius * 0.15;
-        outerRadius = maxRadius * 0.40;
-        color = Colors.green;
+        innerRadius = maxRadius * _innerInnerRadius;
+        outerRadius = maxRadius * _innerOuterRadius;
+        color = Colors.yellow;
         break;
       case 'middle':
-        innerRadius = maxRadius * 0.45;
-        outerRadius = maxRadius * 0.70;
-        color = Color(0xFFFFC107);
+        innerRadius = maxRadius * _middleInnerRadius;
+        outerRadius = maxRadius * _middleOuterRadius;
+        color = const Color(0xff3CB3E9);
         break;
       case 'outer':
-        innerRadius = maxRadius * 0.75;
-        outerRadius = maxRadius;
-        color = Colors.redAccent;
+        innerRadius = maxRadius * _outerInnerRadius;
+        outerRadius = maxRadius * _outerOuterRadius;
+        color = const Color(0xff897ED6);
         break;
       default:
-        innerRadius = maxRadius * 0.45;
-        outerRadius = maxRadius * 0.70;
+        innerRadius = maxRadius * _outerInnerRadius;
+        outerRadius = maxRadius * _outerOuterRadius;
         color = Colors.grey;
     }
     
-    // Generate stable position based on contact ID
-    final hash = _stringToHash(contact.id);
-    final spreadOffset = (hash.abs() % 35) / 100.0;
-    
     final ringWidth = outerRadius - innerRadius;
-    final spreadRadius = innerRadius + (ringWidth * (0.3 + spreadOffset * 0.7));
+    // Position stars within the middle 60% of each ring (20% to 80% of ring width)
+    final spreadRadius = innerRadius + (ringWidth * (0.2 + spreadOffset * 0.6));
     
-    // Use the contact's angle or generate one, then ADD ROTATION
-    final contactAngle = contact.angleDeg != 0 
-        ? contact.angleDeg * (pi / 180)
-        : (hash % 360) * (pi / 180);
-    
-    // Apply rotation to the angle
-    final angle = contactAngle + rotation;
+    final angle = contactAngleRad + rotation;
     
     final x = center.dx + spreadRadius * cos(angle);
     final y = center.dy + spreadRadius * sin(angle);
     final position = Offset(x, y);
     
-     
-    double baseSize = isImmersive ? 14.0 : 8.0;
-    baseSize *= (1 + 0.5 * immersionLevel);
-
-    // DRAMATIC CONTRAST: Reduce middle and outer circles significantly
+    // Base star size - SIMPLIFIED CALCULATION
+    double baseSize = isImmersive ? 16.0 : 10.0;
+    
+    // Simplified size calculations without multiplication chain
     if (contact.computedRing == 'inner') {
-      // Inner circles: original size (100%)
-    } else if (contact.computedRing == 'middle') {
-      baseSize *= 0.6;  // Middle circles: 40% smaller (60% of original)
-    } else if (contact.computedRing == 'outer') {
-      baseSize *= 0.4;  // Outer circles: 60% smaller (40% of original)
+      baseSize *= 1.2;
+    } else {
+      baseSize *= 0.8;
     }
 
-    if (isVIP) baseSize *= 1.3;
-    if (isSelected) baseSize *= 2.0;
+    if (isVIP) baseSize *= 1.4;
+    if (isSelected) baseSize *= 2.2;
 
-    final visualSize = baseSize;
+    final visualSize = baseSize * (1 + 0.5 * immersionLevel);
     
-    // Make VIP stars gold
     if (isVIP) {
       color = const Color(0xFFFFD700);
     }
     
-    // Draw star glow
-    final glowOpacity = isSelected ? 0.7 : 0.3 * immersionLevel;
-    final glowPaint = Paint()
-      ..color = color.withOpacity(glowOpacity)
-      ..maskFilter = MaskFilter.blur(
-        BlurStyle.normal,
-        visualSize * (1 + immersionLevel),
-      );
+    // OPTIMIZED: Use pre-allocated paint objects
+    _drawStarCentralGlow(canvas, position, visualSize, color, immersionLevel, isDarkMode, isSelected);
+    _drawStarShape(canvas, position, visualSize, color, isSelected, isDarkMode, immersionLevel);
     
-    canvas.drawCircle(position, visualSize * 2.0, glowPaint);
-    
-    // Draw star shape
-    _drawStarShape(canvas, position, visualSize, color, isSelected);
-    
-    // Draw VIP crown for VIP stars
     if (isVIP && isSelected) {
       _drawVIPCrown(canvas, position, visualSize);
     }
     
-    // Return star info for tap detection
     return StarInfo(position: position, size: visualSize);
   }
 
-  void _drawStarShape(Canvas canvas, Offset center, double size, Color color, bool isSelected) {
-    // Create a 6-point star for better visual appeal
-    const numberOfPoints = 6;
-    final halfPi = pi / numberOfPoints;
+  void _drawStarCentralGlow(Canvas canvas, Offset center, double size, Color color, double immersionLevel, bool isDarkMode, bool isSelected) {
+    final centralGlowRadius = size * (0.4 + immersionLevel * 0.3);
+    
+    // Primary central glow - bright and intense
+    final primaryGlowPaint = Paint()
+      ..shader = RadialGradient(
+        center: Alignment.center,
+        colors: [
+          Colors.white.withOpacity(0.9 + immersionLevel * 0.1),
+          color.withOpacity(0.8 + immersionLevel * 0.2),
+          color.withOpacity(0.4 + immersionLevel * 0.3),
+        ],
+        stops: const [0.0, 0.4, 1.0],
+      ).createShader(Rect.fromCircle(center: center, radius: centralGlowRadius))
+      ..maskFilter = MaskFilter.blur(BlurStyle.normal, size * (0.4 + immersionLevel * 0.2));
+    
+    canvas.drawCircle(center, centralGlowRadius, primaryGlowPaint);
+    
+    // Secondary aura glow - softer
+    final auraGlowPaint = Paint()
+      ..color = color.withOpacity(0.3 + immersionLevel * 0.2)
+      ..maskFilter = MaskFilter.blur(BlurStyle.normal, size * (0.8 + immersionLevel * 0.4));
+    
+    canvas.drawCircle(center, centralGlowRadius * 1.8, auraGlowPaint);
+    
+    // White hot core for selected/VIP stars
+    if (isSelected || immersionLevel > 0.7) {
+      final hotCorePaint = Paint()
+        ..shader = RadialGradient(
+          center: Alignment.center,
+          colors: [
+            Colors.white.withOpacity(0.95),
+            color.withOpacity(0.9),
+          ],
+          stops: const [0.0, 1.0],
+        ).createShader(Rect.fromCircle(center: center, radius: size * 0.4));
+      
+      canvas.drawCircle(center, size * 0.4, hotCorePaint);
+    }
+  }
+
+  // MODIFIED: Remove top highlight from star shape
+  void _drawStarShape(Canvas canvas, Offset center, double size, Color color, bool isSelected, bool isDarkMode, double immersionLevel) {
+    const numberOfPoints = 5;
+    final innerRadiusRatio = 0.45;
+    final rotationOffset = -pi / 2;
+    
     final points = <Offset>[];
     
     for (var i = 0; i < numberOfPoints * 2; i++) {
-      final pointRadius = i.isEven ? size : size * 0.6;
-      final pointAngle = halfPi * i;
+      final isEven = i.isEven;
+      final pointRadius = isEven ? size : size * innerRadiusRatio;
+      final pointAngle = (pi / numberOfPoints) * i + rotationOffset;
+      
       points.add(Offset(
         center.dx + pointRadius * cos(pointAngle),
         center.dy + pointRadius * sin(pointAngle),
@@ -2032,47 +2200,262 @@ class UniversePainter extends CustomPainter {
     
     final path = Path()..addPolygon(points, true);
     
-    // Draw star body with gradient
-    final gradient = RadialGradient(
-      center: Alignment.center,
-      colors: isSelected
-          ? [color, color.withOpacity(0.9), color.withOpacity(0.7)]
-          : [color.withOpacity(0.9), color.withOpacity(0.7), color.withOpacity(0.5)],
-      stops: const [0.0, 0.6, 1.0],
-    );
-    
+    // Star gradient - REMOVED TOP HIGHLIGHT
     final starPaint = Paint()
-      ..shader = gradient.createShader(
+      ..shader = RadialGradient(
+        center: Alignment.center,
+        colors: [
+          Colors.white.withOpacity(0.8 + immersionLevel * 0.2),
+          color.withOpacity(0.9 + immersionLevel * 0.1),
+          color.withOpacity(0.6 + immersionLevel * 0.2),
+        ],
+        stops: const [0.0, 0.5, 1.0],
+      ).createShader(
         Rect.fromCircle(center: center, radius: size),
       );
     
     canvas.drawPath(path, starPaint);
     
-    // Draw highlight for selected stars
+    // NO TOP HIGHLIGHT - Only central glow remains
+    
+    // Optional: Add subtle border for selected stars
     if (isSelected) {
-      final highlightPaint = Paint()
-        ..color = Colors.white.withOpacity(0.6)
+      final borderPaint = Paint()
+        ..color = isDarkMode
+        ?Colors.white.withOpacity(0.5 + immersionLevel * 0.2)
+        :Colors.black.withOpacity(0.5 + immersionLevel * 0.2) 
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.0;
+        ..strokeWidth = 2.5 + immersionLevel * 0.5
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 1.0);
       
-      canvas.drawPath(path, highlightPaint);
+      canvas.drawPath(path, borderPaint);
+    }
+
+    if (!isDarkMode) {
+      final borderPaint = Paint()
+        ..color = Colors.black.withOpacity(0.5 + immersionLevel * 0.1)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.5 + immersionLevel * 0.5
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 1.0);
       
-      // Draw orbiting particles for selected stars
-      final time = DateTime.now().millisecondsSinceEpoch / 1000;
-      final particleCount = 6;
-      for (int i = 0; i < particleCount; i++) {
-        final particleAngle = (i * 2 * pi / particleCount) + time * 2;
-        final particleRadius = size * 2.5;
-        final particleX = center.dx + particleRadius * cos(particleAngle);
-        final particleY = center.dy + particleRadius * sin(particleAngle);
+      canvas.drawPath(path, borderPaint);
+    }
+
+  }
+
+  void _drawCosmicBackground(Canvas canvas, Size size, double immersionLevel, bool isDarkMode) {
+    final clampedImmersionLevel = immersionLevel.clamp(0.0, 1.0);
+    
+    if (isDarkMode) {
+      // DARK MODE: Deep space with bright stars
+      _backgroundPaint
+        ..shader = RadialGradient(
+          center: Alignment.center,
+          colors: [
+            const Color.fromARGB(255, 3, 4, 10),
+            const Color.fromARGB(255, 13, 16, 29),
+            const Color.fromARGB(255, 20, 23, 36),
+          ],
+          stops: const [0.0, 0.6, 1.0],
+        ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+      
+      canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), _backgroundPaint);
+      
+      // Add some nebula effects for dark mode
+      // _drawNebula(canvas, size, clampedImmersionLevel, true);
+      
+    } else {
+      // LIGHT MODE: VIVID BLUE COSMOS
+      _backgroundPaint
+        ..shader = RadialGradient(
+          center: Alignment.center,
+          colors: [
+            const Color.fromARGB(255, 61, 96, 162), // Bright blue center
+            const Color.fromARGB(255, 17, 61, 108), // Medium blue
+            const Color(0xFF0288D1), // Deep blue
+            const Color.fromARGB(255, 35, 139, 195),  
+            const Color.fromARGB(255, 117, 179, 227), // Dark blue edges
+          ],
+          stops: const [0.0, 0.4, 0.7, 0.9, 1.0],
+        ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+      
+      canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), _backgroundPaint);
+      
+      // Add some light mode nebula/cloud effects
+      _drawNebula(canvas, size, clampedImmersionLevel, false);
+    }
+    
+    // Draw background stars with CLEAR DIFFERENCE between modes
+    _drawBackgroundStars(canvas, size, clampedImmersionLevel, isDarkMode);
+  }
+
+  void _drawNebula(Canvas canvas, Size size, double immersionLevel, bool isDarkMode) {
+    final center = Offset(size.width / 2, size.height / 2);
+    
+    // Create 2-3 nebula clouds
+    final nebulaCount = 2 + (immersionLevel * 2).toInt();
+    
+    for (int n = 0; n < nebulaCount; n++) {
+      final nebulaX = center.dx + (_random.nextDouble() - 0.5) * size.width * 0.6;
+      final nebulaY = center.dy + (_random.nextDouble() - 0.5) * size.height * 0.6;
+      final nebulaRadius = size.width * (0.15 + _random.nextDouble() * 0.25);
+      
+      if (isDarkMode) {
+        // Dark mode nebula - purples and blues
+        _ringPaint
+          ..shader = RadialGradient(
+            center: Alignment.center,
+            colors: [
+              const Color.fromARGB(255, 38, 23, 78).withOpacity(0.25 + immersionLevel * 0.03),
+              const Color.fromARGB(255, 21, 27, 65).withOpacity(0.23 + immersionLevel * 0.02),
+              const Color.fromARGB(255, 36, 62, 105).withOpacity(0.22 + immersionLevel * 0.01),
+              Colors.transparent,
+            ],
+            stops: const [0.0, 0.3, 0.6, 1.0],
+          ).createShader(Rect.fromCircle(
+            center: Offset(nebulaX, nebulaY),
+            radius: nebulaRadius,
+          ))
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, nebulaRadius * 0.7);
         
-        final particlePaint = Paint()
-          ..color = Colors.white.withOpacity(0.8)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+        canvas.drawCircle(Offset(nebulaX, nebulaY), nebulaRadius, _ringPaint);
+      } else {
+        // Light mode clouds - light blues and cyans
+        _ringPaint
+          ..shader = RadialGradient(
+            center: Alignment.center,
+            colors: [
+              const Color(0xFF80DEEA).withOpacity(0.08 + immersionLevel * 0.04),
+              const Color(0xFF4DD0E1).withOpacity(0.05 + immersionLevel * 0.03),
+              const Color(0xFF26C6DA).withOpacity(0.03 + immersionLevel * 0.02),
+              Colors.transparent,
+            ],
+            stops: const [0.0, 0.4, 0.7, 1.0],
+          ).createShader(Rect.fromCircle(
+            center: Offset(nebulaX, nebulaY),
+            radius: nebulaRadius,
+          ))
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, nebulaRadius * 0.9);
         
-        canvas.drawCircle(Offset(particleX, particleY), 2.0, particlePaint);
+        canvas.drawCircle(Offset(nebulaX, nebulaY), nebulaRadius, _ringPaint);
       }
     }
+  }
+
+  void _drawBackgroundStars(Canvas canvas, Size size, double immersionLevel, bool isDarkMode) {
+      // Increased star count for more vividness without blur
+      final baseStarCount = isDarkMode ? 150 : 90; // More stars
+      final starCount = (baseStarCount * (0.5 + immersionLevel * 1.2)).toInt();
+      
+      for (int i = 0; i < starCount; i++) {
+        final x = (_random.nextDouble() * size.width);
+        final y = (_random.nextDouble() * size.height);
+        final starBrightness = _random.nextDouble();
+        
+        // Star size - keep them small and sharp
+        final baseRadius = isDarkMode ? 0.5 : 0.4;
+        final radius = baseRadius + starBrightness * 0.4 + (immersionLevel * 0.2);
+        
+        if (isDarkMode) {
+          // DARK MODE STARS: Sharp and bright
+          final opacity = (0.5 + starBrightness * 0.4) * (0.6 + immersionLevel * 0.5);
+          _starPaint
+            ..color = Colors.white.withOpacity(opacity.clamp(0.0, 1.0))
+            ..maskFilter = null; // No blur for sharp stars
+          
+          canvas.drawCircle(Offset(x, y), radius, _starPaint);
+          
+        } else {
+          // LIGHT MODE STARS: Sharp and clean
+          final opacity = (0.6 + starBrightness * 0.4) * (0.8 + immersionLevel * 0.1);
+          _starPaint
+            ..color = Colors.white.withOpacity(opacity.clamp(0.0, 1.0))
+            ..maskFilter = null; // No blur for sharp stars
+          
+          canvas.drawCircle(Offset(x, y), radius, _starPaint);
+        }
+      }
+    }
+  
+  void _drawCentralUser(Canvas canvas, Offset center, double immersionLevel, bool isDarkMode) {
+    final time = DateTime.now().millisecondsSinceEpoch / 1000;
+    final pulse = (sin(time * 2) + 1) / 2;
+    
+    if (isDarkMode) {
+      // DARK MODE central user: Gold/Yellow
+      _glowPaint
+        ..shader = RadialGradient(
+          center: Alignment.center,
+          colors: [
+            const Color.fromARGB(255, 225, 255, 0).withOpacity(0.9),
+            const Color.fromARGB(255, 238, 255, 0).withOpacity(0.7),
+            Colors.transparent,
+          ],
+          stops: const [0.0, 0.4, 1.0],
+        ).createShader(Rect.fromCircle(center: center, radius: 30 + pulse * 8))
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 20);
+      
+      canvas.drawCircle(center, 30 + pulse * 8, _glowPaint);
+      
+      // Central sphere
+      _starPaint
+        ..shader = RadialGradient(
+          center: Alignment.center,
+          colors: const [Color.fromARGB(255, 234, 255, 0), Color.fromARGB(255, 242, 255, 0)],
+        ).createShader(Rect.fromCircle(center: center, radius: 18));
+      
+      canvas.drawCircle(center, 18, _starPaint);
+      
+    } else {
+      // LIGHT MODE central user: Bright Cyan/Blue
+      _glowPaint
+        ..shader = RadialGradient(
+          center: Alignment.center,
+          colors: [
+            const Color(0xFFFFD600).withOpacity(0.9),
+            const Color.fromARGB(255, 221, 255, 0).withOpacity(0.7),
+            Colors.transparent,
+          ],
+          stops: const [0.0, 0.4, 1.0],
+        ).createShader(Rect.fromCircle(center: center, radius: 28 + pulse * 6))
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18);
+      
+      canvas.drawCircle(center, 28 + pulse * 6, _glowPaint);
+      
+      // Central sphere
+      _starPaint
+        ..shader = RadialGradient(
+          center: Alignment.center,
+          colors: const [Color.fromARGB(255, 255, 251, 0), Color.fromARGB(255, 221, 255, 0)],
+        ).createShader(Rect.fromCircle(center: center, radius: 16));
+      
+      canvas.drawCircle(center, 16, _starPaint);
+    }
+    
+    // "YOU" text - theme specific
+    final textColor = isDarkMode ? Colors.white : Colors.white;
+    final shadowColor = isDarkMode ? Colors.black.withOpacity(0.8) : Colors.black.withOpacity(0.5);
+    
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: 'YOU',
+        style: TextStyle(
+          color: textColor,
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+          shadows: [
+            Shadow(
+              blurRadius: 6,
+              color: shadowColor,
+              offset: const Offset(1, 1),
+            ),
+          ],
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    textPainter.paint(canvas, center.translate(-18, 26));
   }
 
   int _stringToHash(String str) {
@@ -2083,123 +2466,65 @@ class UniversePainter extends CustomPainter {
     return hash;
   }
 
-  void _drawCosmicBackground(Canvas canvas, Size size, double immersionLevel) {
-    // Base background
-    final paint = Paint()
-      ..shader = RadialGradient(
-        center: Alignment.center,
-        colors: [
-          Color.lerp(Color(0xFF1A1F38), Color(0xFF0A0E21), immersionLevel)!,
-          Color.lerp(Color(0xFF0A0E21), Colors.black, immersionLevel)!,
-          Colors.black,
-        ],
-        stops: [0.0, 0.8, 1.0],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+  void _drawRing(Canvas canvas, Offset center, double innerRadius, double outerRadius, Color color, bool isDarkMode, bool isInnerRing) {
+    // Make ALL borders thicker and more vivid
+    final borderWidth = isDarkMode ? (1.5 + immersionLevel * 1.0) : (2.5 + immersionLevel * 1.5);
+    final ringOpacity = immersionLevel * 0.3; // Rings get more visible with immersion
     
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
-    
-    // Draw stars
-    final random = Random(42);
-    final starCount = (150 * (1 + immersionLevel)).toInt();
-    
-    for (int i = 0; i < starCount; i++) {
-      final x = (random.nextDouble() * size.width);
-      final y = (random.nextDouble() * size.height);
-      final radius = random.nextDouble() * (1.5 + immersionLevel);
-      final opacity = random.nextDouble() * (0.6 + 0.4 * immersionLevel);
+    if (isInnerRing) {
+      // Inner ring - only draw the outer circle
+      _ringPaint
+        ..shader = RadialGradient(
+          colors: [
+            color.withOpacity(0.4 + ringOpacity),
+            color.withOpacity(0.25 + ringOpacity * 0.8),
+            Colors.transparent,
+          ],
+          stops: const [0.0, 0.6, 1.0],
+        ).createShader(
+          Rect.fromCircle(center: center, radius: outerRadius),
+        )
+        ..style = PaintingStyle.fill;
       
-      final starPaint = Paint()
-        ..color = Colors.white.withOpacity(opacity);
+      canvas.drawCircle(center, outerRadius, _ringPaint);
       
-      canvas.drawCircle(Offset(x, y), radius, starPaint);
+      _glowPaint
+        ..color = color.withOpacity((isDarkMode ? 0.45 : 0.6) + ringOpacity)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = borderWidth;
+      
+      // ONLY draw the outer circle, not the inner one
+      canvas.drawCircle(center, outerRadius, _glowPaint);
+      
+    } else {
+      // Middle/Outer ring - only draw the outer circle
+      _ringPaint
+        ..shader = RadialGradient(
+          colors: [
+            color.withOpacity(0.3 + ringOpacity * 0.8),
+            color.withOpacity(0.15 + ringOpacity * 0.6),
+            Colors.transparent,
+          ],
+          stops: const [0.0, 0.7, 1.0],
+        ).createShader(
+          Rect.fromCircle(center: center, radius: outerRadius),
+        )
+        ..style = PaintingStyle.fill;
+      
+      canvas.drawCircle(center, outerRadius, _ringPaint);
+      
+      _glowPaint
+        ..color = color.withOpacity((isDarkMode ? 0.15 : 0.25) + ringOpacity * 0.7)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = borderWidth * 0.9;
+      
+      // ONLY draw the outer circle, not the inner one
+      canvas.drawCircle(center, outerRadius, _glowPaint);
     }
   }
-
-  void _drawRing(Canvas canvas, Offset center, double innerRadius, double outerRadius, Color color) {
-    // Ring gradient
-    final gradient = RadialGradient(
-      colors: [
-        color.withOpacity(0.3),
-        color.withOpacity(0.1),
-        Colors.transparent,
-      ],
-      stops: const [0.0, 0.5, 1.0],
-    );
-    
-    final paint = Paint()
-      ..shader = gradient.createShader(
-        Rect.fromCircle(center: center, radius: outerRadius),
-      )
-      ..style = PaintingStyle.fill;
-    
-    canvas.drawCircle(center, outerRadius, paint);
-    
-    // Ring outlines
-    final outlinePaint = Paint()
-      ..color = color.withOpacity(0.4)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
-    
-    canvas.drawCircle(center, innerRadius, outlinePaint);
-    canvas.drawCircle(center, outerRadius, outlinePaint);
-  }
-
-  void _drawCentralUser(Canvas canvas, Offset center, double immersionLevel) {
-    final time = DateTime.now().millisecondsSinceEpoch / 1000;
-    final pulse = (sin(time * 2) + 1) / 2;
-    
-    // Core glow
-    final glowPaint = Paint()
-      ..shader = RadialGradient(
-        center: Alignment.center,
-        colors: [
-          Color(0xFF5CDEE5).withOpacity(0.8),
-          Color(0xFF2D85F6).withOpacity(0.6),
-          Colors.transparent,
-        ],
-        stops: [0.0, 0.3, 1.0],
-      ).createShader(Rect.fromCircle(center: center, radius: 25 + pulse * 5))
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 15);
-    
-    canvas.drawCircle(center, 25 + pulse * 5, glowPaint);
-    
-    // Central sphere
-    final spherePaint = Paint()
-      ..shader = RadialGradient(
-        center: Alignment.center,
-        colors: const [
-          Color(0xFF5CDEE5),
-          Color(0xFF2D85F6),
-        ],
-      ).createShader(Rect.fromCircle(center: center, radius: 15));
-    
-    canvas.drawCircle(center, 15, spherePaint);
-    
-    // "YOU" text
-    final textPainter = TextPainter(
-      text: const TextSpan(
-        text: 'YOU',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          shadows: [
-            Shadow(
-              blurRadius: 4,
-              color: Colors.black,
-              offset: Offset(1, 1),
-            ),
-          ],
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    );
-    textPainter.layout();
-    textPainter.paint(canvas, center.translate(-15, 22));
-  }
-
+  
   void _drawVIPCrown(Canvas canvas, Offset position, double size) {
-    final crownPaint = Paint()
+    _starPaint
       ..shader = const LinearGradient(
         colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
       ).createShader(Rect.fromCircle(center: position, radius: size * 0.5));
@@ -2210,43 +2535,7 @@ class UniversePainter extends CustomPainter {
       ..lineTo(position.dx + size * 0.4, position.dy - size * 0.6)
       ..close();
     
-    canvas.drawPath(crownPath, crownPaint);
-  }
-
-  void _drawConnections(Canvas canvas, Offset center, double maxRadius) {
-    final connectionPaint = Paint()
-      ..color = Colors.white.withOpacity(0.1)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.8;
-    
-    // Draw connections between VIP contacts and center
-    for (final contact in contacts.where((c) => c.isVIP)) {
-      final hash = _stringToHash(contact.id);
-      final contactAngle = contact.angleDeg != 0 
-          ? contact.angleDeg * (pi / 180)
-          : (hash % 360) * (pi / 180);
-      
-      final ringRadius = _getContactRingRadius(contact) * maxRadius;
-      final contactX = center.dx + ringRadius * cos(contactAngle);
-      final contactY = center.dy + ringRadius * sin(contactAngle);
-      final contactPos = Offset(contactX, contactY);
-      
-      // Draw connection line to center
-      canvas.drawLine(center, contactPos, connectionPaint);
-    }
-  }
-
-  double _getContactRingRadius(Contact contact) {
-    switch (contact.computedRing) {
-      case 'inner':
-        return 0.275;
-      case 'middle':
-        return 0.575;
-      case 'outer':
-        return 0.875;
-      default:
-        return 0.575;
-    }
+    canvas.drawPath(crownPath, _starPaint);
   }
 
   @override
@@ -2255,11 +2544,11 @@ class UniversePainter extends CustomPainter {
            oldDelegate.selectedContact != selectedContact ||
            oldDelegate.isImmersive != isImmersive ||
            oldDelegate.immersionLevel != immersionLevel ||
-           oldDelegate.rotation != rotation;
+           oldDelegate.rotation != rotation ||
+           oldDelegate.isDarkMode != isDarkMode;
   }
 }
 
-// FIX: Helper class to return star information
 class StarInfo {
   final Offset position;
   final double size;

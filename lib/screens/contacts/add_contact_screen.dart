@@ -5,6 +5,7 @@ import 'package:crop_your_image/crop_your_image.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:nudge/screens/dashboard/dashboard_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/theme/text_styles.dart';
@@ -21,6 +22,8 @@ import 'dart:io';
 // import 'package:image_picker/image_picker.dart';
 // import '../../services/storage_service.dart';
 import 'package:intl/intl.dart';
+import '../../providers/theme_provider.dart';
+import '../../theme/app_theme.dart';
 
 class AddContactScreen extends StatefulWidget {
   final String? groupName;
@@ -165,11 +168,34 @@ class _AddContactScreenState extends State<AddContactScreen> {
     bool isAnniversary = false,
     bool isWorkAnniversary = false,
   }) async {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime(1900),
       lastDate: DateTime(2100),
+      builder: (context, child) {
+        return Theme(
+          data: themeProvider.isDarkMode
+              ? ThemeData.dark().copyWith(
+                  colorScheme: ColorScheme.dark(
+                    primary: AppTheme.primaryColor,
+                    onPrimary: Colors.white,
+                    surface: AppTheme.darkSurface,
+                    onSurface: Colors.white,
+                  ),
+                )
+              : ThemeData.light().copyWith(
+                  colorScheme: ColorScheme.light(
+                    primary: AppTheme.primaryColor,
+                    onPrimary: Colors.white,
+                    surface: Colors.white,
+                    onSurface: Colors.black,
+                  ),
+                ),
+          child: child!,
+        );
+      },
     );
     
     if (picked != null) {
@@ -186,35 +212,23 @@ class _AddContactScreenState extends State<AddContactScreen> {
   }
 
   Widget _buildCropScreen() {
+    final themeProvider = Provider.of<ThemeProvider>(context);
     var size = MediaQuery.of(context).size;
     return Container(
       width: size.width,
       height: size.height,
-      color: Colors.white,
+      color: themeProvider.getBackgroundColor(context),
       child: Column(
       children: [
         const SizedBox(height: 100),
         Text(
           'CROP CONTACT PICTURE',
           style: AppTextStyles.title2.copyWith(
-            color: Color(0XFF555555),
+            color: themeProvider.getTextPrimaryColor(context),
             fontWeight: FontWeight.w600, textBaseline: null,
             decorationColor: Colors.black, decorationThickness: 0
           ),
-          // style: TextStyle(
-          //   fontSize: 18, 
-          //   fontWeight: FontWeight.w500, 
-          //   decoration: TextDecoration.underline, 
-          //   decorationColor: Colors.transparent,
-          //   color: Colors.black,
-          //   ),
         ),
-        // const SizedBox(height: 10),
-        // const Text(
-        //   'Adjust the square to frame the photo',
-        //   style: TextStyle(color: Colors.grey, fontSize: 16, fontWeight: FontWeight.w500),
-        // ),
-        // const SizedBox(height: 20),
         Expanded(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -248,11 +262,11 @@ class _AddContactScreenState extends State<AddContactScreen> {
                       }
                     },
                     withCircleUi: true,
-                    baseColor: Colors.white,
-                    maskColor: Colors.white.withAlpha(100),
-                    cornerDotBuilder: (size, edgeAlignment) => const DotControl(color: Colors.blue),
+                    baseColor: themeProvider.isDarkMode ? AppTheme.darkSurface : Colors.white,
+                    maskColor: themeProvider.isDarkMode ? AppTheme.darkSurface.withAlpha(150) : Colors.white.withAlpha(100),
+                    cornerDotBuilder: (size, edgeAlignment) => DotControl(color: themeProvider.isDarkMode ? AppTheme.primaryColor : Colors.blue),
                   )
-                : const Center(child: CircularProgressIndicator()),
+                : Center(child: CircularProgressIndicator(color: themeProvider.isDarkMode ? AppTheme.primaryColor : null)),
           ),
         ),
         Container(
@@ -275,7 +289,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                 child: ElevatedButton(
                   onPressed: _cropImage,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xff3CB3E9),
+                    backgroundColor: AppTheme.primaryColor,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                   child: const Text('Save Crop', style: TextStyle(color: Colors.white)),
@@ -313,29 +327,36 @@ class _AddContactScreenState extends State<AddContactScreen> {
   }
 }
 
+  void _dismissKeyboard() {
+    FocusScope.of(context).unfocus();
+  }
+
   @override
   Widget build(BuildContext context) {
-     if (_isCropping) {
-        return _buildCropScreen();
-      }
+    final themeProvider = Provider.of<ThemeProvider>(context);
     final authService = Provider.of<AuthService>(context);
     final apiService = Provider.of<ApiService>(context);
     final user = authService.currentUser;
     // var size = MediaQuery.of(context).size;
+    
+    if (_isCropping) {
+      return _buildCropScreen();
+    }
     
     return StreamProvider<List<SocialGroup>>(
         create: (context) => apiService.getGroupsStream(),
         initialData: const [],
         child: Consumer<List<SocialGroup>>(
           builder: (context, groups, child) {
-            return Scaffold(
+            return GestureDetector(
+              onTap: _dismissKeyboard,
+              child: Scaffold(
                 appBar: AppBar(
-                  title: Text('Add Contact', style: AppTextStyles.title2.copyWith(color: Color(0xff555555))),
-                  // Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Color(0xff3CB3E9), fontFamily: 'RobotoMono'),),
+                  title: Text('Add Contact', style: AppTextStyles.title2.copyWith(color: themeProvider.getTextPrimaryColor(context))),
                   centerTitle: true,
-                  iconTheme: IconThemeData(color: Color(0xff3CB3E9)),
+                  iconTheme: IconThemeData(color: AppTheme.primaryColor),
                   surfaceTintColor: Colors.transparent,
-                  backgroundColor: Colors.white
+                  backgroundColor: themeProvider.getSurfaceColor(context),
                 ),
                 floatingActionButton: Padding(
                   padding: EdgeInsets.only(bottom: 50, right: 6),
@@ -348,15 +369,6 @@ class _AddContactScreenState extends State<AddContactScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // const Text(
-                        //   'NEW CONTACT',
-                        //   style: TextStyle(
-                        //     fontSize: 20,
-                        //     fontWeight: FontWeight.bold,
-                        //     color: Color(0xff6e6e6e),
-                        //     ),
-                        // ),
-                        // const SizedBox(height: 10),
                         Center(
                           child: Stack(
                             children: [
@@ -369,7 +381,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.01),
+                                        color: Colors.black.withOpacity(themeProvider.isDarkMode ? 0.3 : 0.01),
                                         blurRadius: 8,
                                         spreadRadius: 2,
                                       ),
@@ -377,7 +389,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                   ),
                                   child: CircleAvatar(
                                     radius: 50,
-                                    backgroundColor: Colors.transparent, // Removed blue background
+                                    backgroundColor: Colors.transparent,
                                     backgroundImage: _imageBytes != null
                                         ? MemoryImage(_imageBytes!)
                                         : (_imageUrl.isNotEmpty
@@ -428,19 +440,19 @@ class _AddContactScreenState extends State<AddContactScreen> {
                         ),
                         const SizedBox(height: 20),
 
-                        const Text(
+                        Text(
                           'Add details below',
                           style: TextStyle(
                             fontSize: 16,
-                            color: Colors.grey,
+                            color: themeProvider.getTextSecondaryColor(context),
                           ),
                         ),
                         const SizedBox(height: 30),
                         
                         // Name field
-                        const Text(
+                        Text(
                           'NAME *',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                          style: TextStyle(fontWeight: FontWeight.bold, color: themeProvider.getTextPrimaryColor(context)),
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
@@ -451,38 +463,41 @@ class _AddContactScreenState extends State<AddContactScreen> {
                             }
                             return null;
                           },
+                          style: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
                           decoration: InputDecoration(
                             hintText: 'Enter full name',
-                              enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey, width: 1),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blue, width: 2),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                // Optional: to show border even when there's an error
-                errorBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.red, width: 1),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                focusedErrorBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.red, width: 2),
-                  borderRadius: BorderRadius.circular(10)
-                ),
+                            hintStyle: TextStyle(color: themeProvider.getTextHintColor(context)),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: themeProvider.getTextHintColor(context), width: 1),
+                              borderRadius: BorderRadius.circular(10)
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+                              borderRadius: BorderRadius.circular(10)
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.red, width: 1),
+                              borderRadius: BorderRadius.circular(10)
+                            ),
+                            focusedErrorBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.red, width: 2),
+                              borderRadius: BorderRadius.circular(10)
+                            ),
+                            filled: true,
+                            fillColor: themeProvider.getCardColor(context),
                           ),
                         ),
                         
                         const SizedBox(height: 20),
                         
                         // Connection Type - Now dynamically loaded from user groups
-                        const Text(
+                        Text(
                           'CONNECTION TYPE *',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                          style: TextStyle(fontWeight: FontWeight.bold, color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'),
                         ),
                         const SizedBox(height: 8),
                         _userGroups.isEmpty
-                            ? const Text('No groups available. Create groups first.', style: TextStyle(color: Colors.grey))
+                            ? Text('No groups available. Create groups first.', style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans'))
                             : Wrap(
                                 spacing: 8,
                                 runSpacing: 10,
@@ -502,115 +517,119 @@ class _AddContactScreenState extends State<AddContactScreen> {
                         // VIP and Priority
                         Row(
                           children: [
-                            Checkbox(
-                              value: _isVIP,
-                              onChanged: (value) {
-                                setState(() => _isVIP = value ?? false);
-                              },
+                            Theme(
+                              data: ThemeData(
+                                checkboxTheme: CheckboxThemeData(
+                                  fillColor: MaterialStateProperty.resolveWith<Color?>(
+                                    (Set<MaterialState> states) {
+                                      if (states.contains(MaterialState.selected)) {
+                                        return AppTheme.primaryColor;
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ),
+                              ),
+                              child: Checkbox(
+                                value: _isVIP,
+                                onChanged: (value) {
+                                  setState(() => _isVIP = value ?? false);
+                                },
+                              ),
                             ),
-                            const Text('Close Circle'),
-                            
-                            const SizedBox(width: 20),
-                            
-                            // const Text('Priority:'),
-                            // const SizedBox(width: 10),
-                            // DropdownButton<int>(
-                            //   value: _priority,
-                            //   onChanged: (value) {
-                            //     setState(() => _priority = value ?? 3);
-                            //   },
-                            //   items: [1, 2, 3, 4, 5].map((priority) {
-                            //     return DropdownMenuItem<int>(
-                            //       value: priority,
-                            //       child: Text('$priority'),
-                            //     );
-                            //   }).toList(),
-                            // ),
+                            Text('Close Circle', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
                           ],
                         ),
                         
                         const SizedBox(height: 20),
                         
                         // Profession
-                        const Text(
+                        Text(
                           'PROFESSION',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                          style: TextStyle(fontWeight: FontWeight.bold, color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'),
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _professionController,
+                          style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'),
                           decoration: InputDecoration(
                             hintText: 'Enter profession',
-                              enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey, width: 1),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blue, width: 2),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                // Optional: to show border even when there's an error
-                errorBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.red, width: 1),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                focusedErrorBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.red, width: 2),
-                  borderRadius: BorderRadius.circular(10)
-                ),
+                            hintStyle: TextStyle(color: themeProvider.getTextHintColor(context), fontFamily: 'OpenSans'),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: themeProvider.getTextHintColor(context), width: 1),
+                              borderRadius: BorderRadius.circular(10)
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+                              borderRadius: BorderRadius.circular(10)
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.red, width: 1),
+                              borderRadius: BorderRadius.circular(10)
+                            ),
+                            focusedErrorBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.red, width: 2),
+                              borderRadius: BorderRadius.circular(10)
+                            ),
+                            filled: true,
+                            fillColor: themeProvider.getCardColor(context),
                           ),
                         ),
                         
                         const SizedBox(height: 20),
                         
                         // Important Dates Section
-                        const Text(
+                        Text(
                           'IMPORTANT DATES',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
+                            color: themeProvider.getTextPrimaryColor(context),
                           ),
                         ),
                         const SizedBox(height: 10),
                         
                         // Birthday
                         ListTile(
-                          leading: const Icon(Icons.cake),
+                          leading: Icon(Icons.cake, color: themeProvider.getTextPrimaryColor(context)),
                           title: Text(
                             _birthday != null
                                 ? 'Birthday: ${DateFormat('MMM d, y').format(_birthday!)}'
                                 : 'Add Birthday',
+                            style: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
                           ),
                           trailing: IconButton(
-                            icon: const Icon(Icons.calendar_today),
+                            icon: Icon(Icons.calendar_today, color: themeProvider.getTextPrimaryColor(context)),
                             onPressed: () => _selectDate(context, isBirthday: true),
                           ),
                         ),
                         
                         // Anniversary
                         ListTile(
-                          leading: const Icon(Icons.favorite),
+                          leading: Icon(Icons.favorite, color: themeProvider.getTextPrimaryColor(context)),
                           title: Text(
                             _anniversary != null
                                 ? 'Anniversary: ${DateFormat('MMM d, y').format(_anniversary!)}'
                                 : 'Add Anniversary',
+                            style: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
                           ),
                           trailing: IconButton(
-                            icon: const Icon(Icons.calendar_today),
+                            icon: Icon(Icons.calendar_today, color: themeProvider.getTextPrimaryColor(context)),
                             onPressed: () => _selectDate(context, isAnniversary: true),
                           ),
                         ),
                         
                         // Work Anniversary
                         ListTile(
-                          leading: const Icon(Icons.work),
+                          leading: Icon(Icons.work, color: themeProvider.getTextPrimaryColor(context)),
                           title: Text(
                             _workAnniversary != null
                                 ? 'Work Anniversary: ${DateFormat('MMM d, y').format(_workAnniversary!)}'
                                 : 'Add Work Anniversary',
+                            style: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
                           ),
                           trailing: IconButton(
-                            icon: const Icon(Icons.calendar_today),
+                            icon: Icon(Icons.calendar_today, color: themeProvider.getTextPrimaryColor(context)),
                             onPressed: () => _selectDate(context, isWorkAnniversary: true),
                           ),
                         ),
@@ -618,9 +637,9 @@ class _AddContactScreenState extends State<AddContactScreen> {
                         const SizedBox(height: 20),
                         
                         // Tags
-                        const Text(
+                        Text(
                           'SOCIAL GROUPS',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                          style: TextStyle(fontWeight: FontWeight.bold, color: themeProvider.getTextPrimaryColor(context)),
                         ),
                         const SizedBox(height: 8),
                         
@@ -630,8 +649,10 @@ class _AddContactScreenState extends State<AddContactScreen> {
                             spacing: 8,
                             children: _tagSuggestions.map((tag) {
                               return FilterChip(
-                                label: Text(tag),
+                                label: Text(tag, style: TextStyle(color: themeProvider.getTextPrimaryColor(context))),
                                 selected: _tags.contains(tag),
+                                selectedColor: AppTheme.primaryColor.withOpacity(0.3),
+                                backgroundColor: themeProvider.getCardColor(context),
                                 onSelected: (selected) {
                                   setState(() {
                                     if (selected) {
@@ -653,30 +674,33 @@ class _AddContactScreenState extends State<AddContactScreen> {
                             Expanded(
                               child: TextFormField(
                                 controller: _tagsController,
+                                style: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
                                 decoration: InputDecoration(
                                   hintText: 'Add new Social Group',
-                                    enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey, width: 1),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blue, width: 2),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                // Optional: to show border even when there's an error
-                errorBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.red, width: 1),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                focusedErrorBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.red, width: 2),
-                  borderRadius: BorderRadius.circular(10)
-                ),
+                                  hintStyle: TextStyle(color: themeProvider.getTextHintColor(context)),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderSide: BorderSide(color: themeProvider.getTextHintColor(context), width: 1),
+                                    borderRadius: BorderRadius.circular(10)
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+                                    borderRadius: BorderRadius.circular(10)
+                                  ),
+                                  errorBorder: OutlineInputBorder(
+                                    borderSide: BorderSide(color: Colors.red, width: 1),
+                                    borderRadius: BorderRadius.circular(10)
+                                  ),
+                                  focusedErrorBorder: OutlineInputBorder(
+                                    borderSide: BorderSide(color: Colors.red, width: 2),
+                                    borderRadius: BorderRadius.circular(10)
+                                  ),
+                                  filled: true,
+                                  fillColor: themeProvider.getCardColor(context),
                                 ),
                               ),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.add),
+                              icon: Icon(Icons.add, color: AppTheme.primaryColor),
                               onPressed: () {
                                 if (_tagsController.text.isNotEmpty) {
                                   setState(() {
@@ -694,7 +718,9 @@ class _AddContactScreenState extends State<AddContactScreen> {
                           spacing: 8,
                           children: _tags.map((tag) {
                             return Chip(
-                              label: Text(tag),
+                              label: Text(tag, style: TextStyle(color: themeProvider.getTextPrimaryColor(context))),
+                              backgroundColor: themeProvider.getCardColor(context),
+                              deleteIconColor: Colors.red,
                               onDeleted: () {
                                 setState(() => _tags.remove(tag));
                               },
@@ -705,117 +731,108 @@ class _AddContactScreenState extends State<AddContactScreen> {
                         const SizedBox(height: 20),
                         
                         // Phone Number
-                        const Text(
+                        Text(
                           'PHONE NUMBER',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                          style: TextStyle(fontWeight: FontWeight.bold, color: themeProvider.getTextPrimaryColor(context)),
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _phoneController,
+                          style: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
                           keyboardType: TextInputType.phone,
                           decoration: InputDecoration(
                             hintText: 'Enter phone number',
-                              enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey, width: 1),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blue, width: 2),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                // Optional: to show border even when there's an error
-                errorBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.red, width: 1),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                focusedErrorBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.red, width: 2),
-                  borderRadius: BorderRadius.circular(10)
-                ),
+                            hintStyle: TextStyle(color: themeProvider.getTextHintColor(context)),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: themeProvider.getTextHintColor(context), width: 1),
+                              borderRadius: BorderRadius.circular(10)
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+                              borderRadius: BorderRadius.circular(10)
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.red, width: 1),
+                              borderRadius: BorderRadius.circular(10)
+                            ),
+                            focusedErrorBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.red, width: 2),
+                              borderRadius: BorderRadius.circular(10)
+                            ),
+                            filled: true,
+                            fillColor: themeProvider.getCardColor(context),
                           ),
                         ),
                         
                         const SizedBox(height: 20),
                         
                         // Email
-                        const Text(
+                        Text(
                           'EMAIL',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                          style: TextStyle(fontWeight: FontWeight.bold, color: themeProvider.getTextPrimaryColor(context)),
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _emailController,
+                          style: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
                           keyboardType: TextInputType.emailAddress,
                           decoration: InputDecoration(
                             hintText: 'Enter email address',
-                             enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey, width: 1),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blue, width: 2),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                // Optional: to show border even when there's an error
-                errorBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.red, width: 1),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                focusedErrorBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.red, width: 2),
-                  borderRadius: BorderRadius.circular(10)
-                ),
+                            hintStyle: TextStyle(color: themeProvider.getTextHintColor(context)),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: themeProvider.getTextHintColor(context), width: 1),
+                              borderRadius: BorderRadius.circular(10)
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+                              borderRadius: BorderRadius.circular(10)
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.red, width: 1),
+                              borderRadius: BorderRadius.circular(10)
+                            ),
+                            focusedErrorBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.red, width: 2),
+                              borderRadius: BorderRadius.circular(10)
+                            ),
+                            filled: true,
+                            fillColor: themeProvider.getCardColor(context),
                           ),
                         ),
                         
                         const SizedBox(height: 20),
                         
-                        // Social Groups
-                        // const Text(
-                        //   'Social Groups',
-                        //   style: TextStyle(fontWeight: FontWeight.bold),
-                        // ),
-                        // const SizedBox(height: 8),
-                        // TextFormField(
-                        //   controller: _socialGroupsController,
-                        //   decoration: InputDecoration(
-                        //     hintText: 'e.g.: #Highschool #Padel #ComicCon',
-                        //     border: OutlineInputBorder(
-                        //       borderRadius: BorderRadius.circular(10),
-                        //     ),
-                        //   ),
-                        // ),
-                        
-                        const SizedBox(height: 20),
-                        
                         // Notes
-                        const Text(
+                        Text(
                           'NOTES',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                          style: TextStyle(fontWeight: FontWeight.bold, color: themeProvider.getTextPrimaryColor(context)),
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _notesController,
+                          style: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
                           maxLines: 3,
                           decoration: InputDecoration(
                             hintText: 'Add any notes about this contact',
-                             enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey, width: 1),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blue, width: 2),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                // Optional: to show border even when there's an error
-                errorBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.red, width: 1),
-                  borderRadius: BorderRadius.circular(10)
-                ),
-                focusedErrorBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.red, width: 2),
-                  borderRadius: BorderRadius.circular(10)
-                ),
+                            hintStyle: TextStyle(color: themeProvider.getTextHintColor(context)),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: themeProvider.getTextHintColor(context), width: 1),
+                              borderRadius: BorderRadius.circular(10)
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+                              borderRadius: BorderRadius.circular(10)
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.red, width: 1),
+                              borderRadius: BorderRadius.circular(10)
+                            ),
+                            focusedErrorBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.red, width: 2),
+                              borderRadius: BorderRadius.circular(10)
+                            ),
+                            filled: true,
+                            fillColor: themeProvider.getCardColor(context),
                           ),
                         ),
                         
@@ -826,88 +843,88 @@ class _AddContactScreenState extends State<AddContactScreen> {
                           width: double.infinity,
                           height: 50,
                           child: ElevatedButton(
-                         onPressed: () async {
-                            print('stage0');
-                            if (_formKey.currentState!.validate() && user != null) {
-                              // Upload image if selected
-                              if (_imageBytes != null) {
-                                try {
-                                  _imageUrl = await uploadImageToFirebase(_imageBytes!, 'new_contact_${DateTime.now().millisecondsSinceEpoch}');
-                                } catch (e) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Failed to upload image: $e')),
-                                  );
-                                  return;
+                            onPressed: () async {
+                              print('stage0');
+                              if (_formKey.currentState!.validate() && user != null) {
+                                // Upload image if selected
+                                if (_imageBytes != null) {
+                                  try {
+                                    _imageUrl = await uploadImageToFirebase(_imageBytes!, 'new_contact_${DateTime.now().millisecondsSinceEpoch}');
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Failed to upload image: $e')),
+                                    );
+                                    return;
+                                  }
                                 }
-                              }
 
-                              // Use group settings if provided, otherwise use default matching
-                              String period;
-                              int frequency;
-                              print('stage1');
-                              
-                              if (widget.groupPeriod != null && widget.groupFrequency != null) {
-                                period = widget.groupPeriod!;
-                                frequency = widget.groupFrequency!;
-                              } else {
-                                Map<String, dynamic> schedule = await matchSchedule(_connectionType, groups);
-                                period = schedule['period'];
-                                frequency = schedule['frequency'];
-                              }
-                              print('stage2');
-                              
-                              final newContact = Contact(
-                                id: '', // Will be generated by Firestore
-                                name: _nameController.text,
-                                connectionType: _connectionType,
-                                frequency: frequency,
-                                period: period,
-                                socialGroups: _socialGroupsController.text
-                                    .split(' ')
-                                    .where((group) => group.startsWith('#'))
-                                    .map((group) => group.substring(1))
-                                    .toList(),
-                                phoneNumber: _phoneController.text,
-                                email: _emailController.text,
-                                notes: _notesController.text,
-                                imageUrl: _imageUrl,
-                                lastContacted: DateTime.now(),
-                                isVIP: _isVIP,
-                                priority: _priority,
-                                tags: _tags,
-                                interactionHistory: {},
-                                profession: _professionController.text.isEmpty ? null : _professionController.text,
-                                birthday: _birthday,
-                                anniversary: _anniversary,
-                                workAnniversary: _workAnniversary,
-                              );
-                              
-                              // Save to Firestore
-                              await apiService.addContact(newContact);
-                              print('stage3');
-                              
-                              // Automatically schedule nudge based on connection category
-                              try {
-                                final nudgeService = NudgeService();
-                                await nudgeService.scheduleNudgeForContact(
-                                  newContact, 
-                                  user.uid,
-                                  period: period,
+                                // Use group settings if provided, otherwise use default matching
+                                String period;
+                                int frequency;
+                                print('stage1');
+                                
+                                if (widget.groupPeriod != null && widget.groupFrequency != null) {
+                                  period = widget.groupPeriod!;
+                                  frequency = widget.groupFrequency!;
+                                } else {
+                                  Map<String, dynamic> schedule = await matchSchedule(_connectionType, groups);
+                                  period = schedule['period'];
+                                  frequency = schedule['frequency'];
+                                }
+                                print('stage2');
+                                
+                                final newContact = Contact(
+                                  id: '', // Will be generated by Firestore
+                                  name: _nameController.text,
+                                  connectionType: _connectionType,
                                   frequency: frequency,
+                                  period: period,
+                                  socialGroups: _socialGroupsController.text
+                                      .split(' ')
+                                      .where((group) => group.startsWith('#'))
+                                      .map((group) => group.substring(1))
+                                      .toList(),
+                                  phoneNumber: _phoneController.text,
+                                  email: _emailController.text,
+                                  notes: _notesController.text,
+                                  imageUrl: _imageUrl,
+                                  lastContacted: DateTime.now(),
+                                  isVIP: _isVIP,
+                                  priority: _priority,
+                                  tags: _tags,
+                                  interactionHistory: {},
+                                  profession: _professionController.text.isEmpty ? null : _professionController.text,
+                                  birthday: _birthday,
+                                  anniversary: _anniversary,
+                                  workAnniversary: _workAnniversary,
                                 );
-                                await apiService.scheduleNudgesForContacts(contactIds: [newContact.id]);
-                                print('Automatic nudge scheduled for ${newContact.name}');
-                              } catch (e) {
-                                print('Error scheduling automatic nudge: $e');
-                                // Don't show error to user - nudge scheduling is secondary
+                                
+                                // Save to Firestore
+                                await apiService.addContact(newContact);
+                                print('stage3');
+                                
+                                // Automatically schedule nudge based on connection category
+                                try {
+                                  final nudgeService = NudgeService();
+                                  await nudgeService.scheduleNudgeForContact(
+                                    newContact, 
+                                    user.uid,
+                                    period: period,
+                                    frequency: frequency,
+                                  );
+                                  await apiService.scheduleNudgesForContacts(contactIds: [newContact.id]);
+                                  print('Automatic nudge scheduled for ${newContact.name}');
+                                } catch (e) {
+                                  print('Error scheduling automatic nudge: $e');
+                                  // Don't show error to user - nudge scheduling is secondary
+                                }
+                                
+                                // Navigate back
+                                Navigator.pop(context);
                               }
-                              
-                              // Navigate back
-                              Navigator.pop(context);
-                            }
-                          },
+                            },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xff3CB3E9),
+                              backgroundColor: AppTheme.primaryColor,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
@@ -926,7 +943,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                     ),
                   ),
                 ),
-              );
+              ));
     }));
   }
   

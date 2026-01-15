@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:nudge/screens/contacts/edit_contact_screen.dart';
+import 'package:nudge/screens/dashboard/dashboard_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/services/auth_service.dart';
 import 'package:nudge/theme/text_styles.dart';
@@ -10,6 +11,9 @@ import 'package:nudge/theme/text_styles.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
 import 'package:provider/provider.dart';
 import '../../models/contact.dart';
+import '../../providers/theme_provider.dart';
+import '../../theme/app_theme.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class ContactDetailScreen extends StatefulWidget {
   final Contact contact;
@@ -84,12 +88,13 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
     final initials = _getContactInitials(_currentContact.name);
     
     bool isLocalImage = _currentContact.imageUrl.isNotEmpty && 
         (_currentContact.imageUrl.startsWith('/') || 
          _currentContact.imageUrl.startsWith('file://'));
-    
+
     bool hasNoInfo = _currentContact.phoneNumber.isEmpty &&
         _currentContact.email.isEmpty &&
         _currentContact.notes.isEmpty &&
@@ -99,14 +104,14 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Contact Details', style: AppTextStyles.title2.copyWith(color: Color(0xff555555))),
+        title: Text('Contact Details', style: AppTextStyles.title2.copyWith(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
         centerTitle: true,
-        iconTheme: IconThemeData(color: Color(0xff3CB3E9)),
-        backgroundColor: Colors.white,
+        iconTheme: IconThemeData(color: AppTheme.primaryColor),
+        backgroundColor: themeProvider.getSurfaceColor(context),
         surfaceTintColor: Colors.transparent,
         actions: [
           IconButton(
-            icon: const Icon(Icons.edit),
+            icon: Icon(Icons.edit, color: themeProvider.getTextPrimaryColor(context)),
             onPressed: () {
               Navigator.push(
                 context,
@@ -130,66 +135,69 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
             Center(
               child: Column(
                 children: [
-                 Container(
-        width: 120,
-        height: 120,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.01),
-              blurRadius: 8,
-              spreadRadius: 2,
-            ),
-          ],
-        ),
-        child: CircleAvatar(
-          radius: 80,
-          backgroundColor: Colors.transparent, // Removed blue background
-          backgroundImage: _currentContact.imageUrl.isNotEmpty
-              ? isLocalImage
-                  ? FileImage(File(_currentContact.imageUrl.replaceFirst('file://', '')))
-                  : NetworkImage(_currentContact.imageUrl) as ImageProvider
-              : AssetImage('assets/contact-icons/${getRandomIndex(_currentContact.id)}.png') as ImageProvider,
-          child: _currentContact.imageUrl.isEmpty
-              ? Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    image: DecorationImage(
-                      image: AssetImage('assets/contact-icons/${getRandomIndex(_currentContact.id)}.png'),
-                      fit: BoxFit.cover,
+                  Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(themeProvider.isDarkMode ? 0.3 : 0.01),
+                          blurRadius: 8,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: CircleAvatar(
+                      radius: 80,
+                      backgroundColor: Colors.transparent,
+                      backgroundImage: _currentContact.imageUrl.isNotEmpty
+                          ? isLocalImage
+                              ? FileImage(File(_currentContact.imageUrl.replaceFirst('file://', '')))
+                              : NetworkImage(_currentContact.imageUrl) as ImageProvider
+                          : AssetImage('assets/contact-icons/${getRandomIndex(_currentContact.id)}.png') as ImageProvider,
+                      child: _currentContact.imageUrl.isEmpty
+                          ? Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                image: DecorationImage(
+                                  image: AssetImage('assets/contact-icons/${getRandomIndex(_currentContact.id)}.png'),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  _currentContact.name.isNotEmpty ? initials.toUpperCase() : '?',
+                                  style: TextStyle(
+                                    fontSize: 30,
+                                    fontFamily: 'OpenSans',
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : null,
                     ),
                   ),
-                  child: Center(
-                    child: Text(
-                      _currentContact.name.isNotEmpty ?initials.toUpperCase() : '?',
-                      style: TextStyle(
-                        fontSize: 30,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                )
-              : null,
-        ),
-      ),
                   const SizedBox(height: 15),
                   Text(
                     (_currentContact.name),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 24,
+                      fontFamily: 'OpenSans',
                       fontWeight: FontWeight.bold,
-                      color: Color(0xff555555)
+                      color: themeProvider.getTextPrimaryColor(context)
                     ),
                   ),
                   const SizedBox(height: 5),
                   if (_currentContact.profession != null && _currentContact.profession!.isNotEmpty)
                     Text(
                       _currentContact.profession!,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
-                        color: Colors.grey,
+                        fontFamily: 'OpenSans',
+                        color: themeProvider.getTextSecondaryColor(context),
                       ),
                     ),
                   const SizedBox(height: 20),
@@ -199,20 +207,22 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
             
             // Close Circle Toggle
             Card(
+              color: themeProvider.getCardColor(context),
               child: ListTile(
-                leading: Icon(Icons.star, color: _currentContact.isVIP ? Colors.amber : Colors.grey),
-                title: Text('Close Circle', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555))),
+                leading: Icon(Icons.star, color: _currentContact.isVIP ? Colors.amber : themeProvider.getTextSecondaryColor(context)),
+                title: Text('Close Circle', style: TextStyle(fontWeight: FontWeight.w600, color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
                 subtitle: Text(_currentContact.isVIP 
                     ? 'This contact is in your Close Circle' 
-                    : 'Add to your Close Circle for special attention'),
+                    : 'Add to your Close Circle for special attention',
+                    style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
                 trailing: _isUpdatingVIP
-                    ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryColor))
                     : Switch(
                         value: _currentContact.isVIP,
                         onChanged: _toggleVIPStatus,
-                        activeColor: Color(0xff3CB3E9),
-                        inactiveThumbColor: Color(0xff555555),
-                        inactiveTrackColor: Color(0xffaaaaaa),
+                        activeColor: AppTheme.primaryColor,
+                        inactiveThumbColor: themeProvider.getTextSecondaryColor(context),
+                        inactiveTrackColor: themeProvider.getTextHintColor(context),
                       ),
               ),
             ),
@@ -221,12 +231,13 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
             
             // Contact Information Section
             if (_currentContact.phoneNumber.isNotEmpty || _currentContact.email.isNotEmpty) ...[
-              const Text(
+              Text(
                 'CONTACT INFORMATION',
                 style: TextStyle(
                   fontSize: 18,
+                  fontFamily: 'OpenSans',
                   fontWeight: FontWeight.bold,
-                  color: Color(0xff6e6e6e),
+                  color: themeProvider.getTextSecondaryColor(context),
                   letterSpacing: 1.0,
                 ),
               ),
@@ -234,99 +245,113 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
               
               if (_currentContact.phoneNumber.isNotEmpty)
                 ListTile(
-                  leading: const Icon(Icons.phone, color: Color(0xff555555),),
-                  title: const Text('Phone', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555)),),
-                  subtitle: Text(_currentContact.phoneNumber),
+                  leading: Icon(Icons.phone, color: themeProvider.getTextPrimaryColor(context)),
+                  title: Text('Phone', style: TextStyle(fontWeight: FontWeight.w600, color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+                  subtitle: Text(_currentContact.phoneNumber, style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
                 ),
               
               if (_currentContact.email.isNotEmpty)
                 ListTile(
-                  leading: const Icon(Icons.email),
-                  title: const Text('Email', style: TextStyle(fontWeight: FontWeight.w600),),
-                  subtitle: Text(_currentContact.email),
+                  leading: Icon(Icons.email, color: themeProvider.getTextPrimaryColor(context)),
+                  title: Text('Email', style: TextStyle(fontWeight: FontWeight.w600, color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+                  subtitle: Text(_currentContact.email, style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
                 ),
               const SizedBox(height: 20),
             ],
             
             // Connection Details Section
-            const Text(
+            Text(
               'CONNECTION DETAILS',
               style: TextStyle(
                 fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Color(0xff6e6e6e),
-              letterSpacing: 1.0,
-
+                fontFamily: 'OpenSans',
+                fontWeight: FontWeight.bold,
+                color: themeProvider.getTextSecondaryColor(context),
+                letterSpacing: 1.0,
               ),
             ),
             const SizedBox(height: 10),
             
             ListTile(
-              leading: const Icon(Icons.category, color: Color(0xff555555)),
-              title: const Text('Connection Type', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555)),),
-              subtitle: Text(_currentContact.connectionType),
+              leading: 
+              // Icon(Icons.category, color: themeProvider.getTextPrimaryColor(context)),
+              SvgPicture.asset(
+              'assets/contact-icons/connection-type.svg',
+              width: 22,
+              height: 22,
+              color: themeProvider.getTextPrimaryColor(context)
+            ),
+              title: Text('Connection Type', style: TextStyle(fontWeight: FontWeight.w600, color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+              subtitle: Text(_currentContact.connectionType, style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
             ),
 
-          ListTile(
-            leading: const Icon(Icons.schedule),
-            title: const Text('Contact Frequency', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555)),),
-            subtitle: Text(FrequencyPeriodMapper.getConversationalChoice(_currentContact.frequency, _currentContact.period)),
-          ),
+            ListTile(
+              leading: Icon(Icons.schedule, color: themeProvider.getTextPrimaryColor(context)),
+              title: Text('Contact Frequency', style: TextStyle(fontWeight: FontWeight.w600, color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+              subtitle: Text(FrequencyPeriodMapper.getConversationalChoice(_currentContact.frequency, _currentContact.period),
+                style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
+            ),
             
             if (_currentContact.socialGroups.isNotEmpty)
               ListTile(
-                leading: const Icon(Icons.group),
-                title: const Text('Social Groups', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555)),),
-                subtitle: Text(_currentContact.socialGroups.join(', ')),
+                leading: Icon(Icons.group, color: themeProvider.getTextPrimaryColor(context)),
+                title: Text('Social Groups', style: TextStyle(fontWeight: FontWeight.w600, color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+                subtitle: Text(_currentContact.socialGroups.join(', '), style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
               ),
             
             // Important Dates Section
             if (_currentContact.birthday != null || _currentContact.anniversary != null || _currentContact.workAnniversary != null) ...[
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'IMPORTANT DATES',
                 style: TextStyle(
                   fontSize: 18,
+                  fontFamily: 'OpenSans',
                   fontWeight: FontWeight.bold,
+                  color: themeProvider.getTextPrimaryColor(context),
                 ),
               ),
               const SizedBox(height: 10),
               
               if (_currentContact.birthday != null)
                 ListTile(
-                  leading: const Icon(Icons.cake),
-                  title: const Text('Birthday', style: TextStyle(color: Color(0xff555555)),),
-                  subtitle: Text(DateFormat('MMMM d, y').format(_currentContact.birthday!)),
+                  leading: Icon(Icons.cake, color: themeProvider.getTextPrimaryColor(context)),
+                  title: Text('Birthday', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+                  subtitle: Text(DateFormat('MMMM d, y').format(_currentContact.birthday!), 
+                    style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
                 ),
               
               if (_currentContact.anniversary != null)
                 ListTile(
-                  leading: const Icon(Icons.favorite),
-                  title: const Text('Anniversary', style: TextStyle(color: Color(0xff555555)),),
-                  subtitle: Text(DateFormat('MMMM d, y').format(_currentContact.anniversary!)),
+                  leading: Icon(Icons.favorite, color: themeProvider.getTextPrimaryColor(context)),
+                  title: Text('Anniversary', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+                  subtitle: Text(DateFormat('MMMM d, y').format(_currentContact.anniversary!), 
+                    style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
                 ),
               
               if (_currentContact.workAnniversary != null)
                 ListTile(
-                  leading: const Icon(Icons.work),
-                  title: const Text('Work Anniversary', style: TextStyle(color: Color(0xff555555)),),
-                  subtitle: Text(DateFormat('MMMM d, y').format(_currentContact.workAnniversary!)),
+                  leading: Icon(Icons.work, color: themeProvider.getTextPrimaryColor(context)),
+                  title: Text('Work Anniversary', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+                  subtitle: Text(DateFormat('MMMM d, y').format(_currentContact.workAnniversary!), 
+                    style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
                 ),
             ],
             
             // Notes Section
             if (_currentContact.notes.isNotEmpty) ...[
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'Notes',
                 style: TextStyle(
-                  color: Color(0xff555555),
+                  color: themeProvider.getTextPrimaryColor(context),
                   fontSize: 18,
+                  fontFamily: 'OpenSans',
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 10),
-              Text(_currentContact.notes),
+              Text(_currentContact.notes, style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
             ],
             
             // Contextual message when no info
@@ -335,18 +360,20 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.grey[50],
+                  color: themeProvider.getCardColor(context),
                   borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: themeProvider.getTextHintColor(context)),
                 ),
                 child: Column(
                   children: [
-                    Icon(Icons.info, size: 40, color: Colors.grey[400]),
+                    Icon(Icons.info, size: 40, color: themeProvider.getTextSecondaryColor(context)),
                     const SizedBox(height: 10),
                     Text(
                       'Add your first Close Circle contact for better insights.',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.grey[600],
+                        fontFamily: 'OpenSans',
+                        color: themeProvider.getTextSecondaryColor(context),
                         fontStyle: FontStyle.italic,
                       ),
                       textAlign: TextAlign.center,
@@ -356,46 +383,133 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
               ),
             ],
             
-            const SizedBox(height: 20),
+            const SizedBox(height: 30),
 
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    _showLogInteractionModal(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF3CB3E9),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.add, size: 20, color: Colors.white),
-                      SizedBox(width: 12),
-                      Text(
-                        'LOG INTERACTION',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
+            // Simpler version - add this as a Chip or Badge
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              decoration: BoxDecoration(
+                color: _getRingColor(_currentContact.computedRing).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: _getRingColor(_currentContact.computedRing).withOpacity(0.3),
                 ),
               ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    _getRingIcon(_currentContact.computedRing),
+                    size: 16,
+                    color: _getRingColor(_currentContact.computedRing),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    _getFormattedRingName(_currentContact.computedRing),
+                    style: TextStyle(
+                      color: _getRingColor(_currentContact.computedRing),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      fontFamily: 'OpenSans',
+                    ),
+                  ),
+                  if (_currentContact.cdi > 0) ...[
+                    const SizedBox(width: 12),
+                    Text(
+                      'CDI: ${_currentContact.cdi.toStringAsFixed(0)}',
+                      style: TextStyle(
+                        color: themeProvider.getTextSecondaryColor(context),
+                        fontSize: 12,
+                        fontFamily: 'OpenSans',
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 36),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  _showLogInteractionModal(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.add, size: 20, color: Colors.white),
+                    SizedBox(width: 12),
+                    Text(
+                      'LOG INTERACTION',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontFamily: 'OpenSans',
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
+    // Add this method to get ring color
+  Color _getRingColor(String ring) {
+    switch (ring) {
+      case 'inner':
+        return Colors.yellow;
+      case 'middle':
+        return const Color(0xff3CB3E9);
+      case 'outer':
+        return const Color(0xff897ED6);
+      default:
+        return Colors.grey;
+    }
+  }
+
+  // Add this method to get ring icon
+  IconData _getRingIcon(String ring) {
+    switch (ring) {
+      case 'inner':
+        return Icons.star;
+      case 'middle':
+        return Icons.circle;
+      case 'outer':
+        return Icons.circle_outlined;
+      default:
+        return Icons.circle;
+    }
+  }
+
+  // Add this method to get formatted ring name
+  String _getFormattedRingName(String ring) {
+    switch (ring) {
+      case 'inner':
+        return 'Inner Circle';
+      case 'middle':
+        return 'Middle Circle';
+      case 'outer':
+        return 'Outer Circle';
+      default:
+        return 'Unknown';
+    }
+  }
+
   Future<void> _showLogInteractionModal(BuildContext context) async {
     final apiService = Provider.of<ApiService>(context, listen: false);
+    final themeProvider = Provider.of<ThemeProvider>(context);
     
     showModalBottomSheet(
       context: context,
@@ -403,6 +517,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
+      backgroundColor: themeProvider.getSurfaceColor(context),
       builder: (context) {
         return Padding(
           padding: EdgeInsets.only(
@@ -418,12 +533,12 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
   }
 
   int getRandomIndex(String seed) {
-  if (seed.isEmpty) return 1;
-  var hash = 0;
-  for (var i = 0; i < seed.length; i++) {
-    hash = seed.codeUnitAt(i) + ((hash << 5) - hash);
-  }
-  return (hash.abs() % 6) + 1;
+    if (seed.isEmpty) return 1;
+    var hash = 0;
+    for (var i = 0; i < seed.length; i++) {
+      hash = seed.codeUnitAt(i) + ((hash << 5) - hash);
+    }
+    return (hash.abs() % 6) + 1;
   }
 }
 
@@ -445,13 +560,7 @@ class __LogInteractionModalState extends State<_LogInteractionModal> {
   TextEditingController _notesController = TextEditingController();
   String? _selectedInteractionType;
   bool _isLoading = false;
-
-  final List<String> _interactionTypes = [
-    'call',
-    'message',
-    'meet',
-    'other'
-  ];
+  final List<String> _interactionTypes = ['call', 'message', 'meet', 'other'];
 
   @override
   void dispose() {
@@ -513,6 +622,8 @@ class __LogInteractionModalState extends State<_LogInteractionModal> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    
     return Container(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.85,
@@ -526,17 +637,18 @@ class __LogInteractionModalState extends State<_LogInteractionModal> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'LOG TOUCHPOINT',
                 style: TextStyle(
                   fontSize: 18,
+                  fontFamily: 'OpenSans',
                   fontWeight: FontWeight.w700,
-                  color: Color(0xff555555),
+                  color: themeProvider.getTextPrimaryColor(context),
                   letterSpacing: 1.2,
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.close, color: Color(0xff555555)),
+                icon: Icon(Icons.close, color: themeProvider.getTextPrimaryColor(context)),
                 onPressed: () => Navigator.pop(context),
               ),
             ],
@@ -544,13 +656,13 @@ class __LogInteractionModalState extends State<_LogInteractionModal> {
           
           const SizedBox(height: 20),
           
-          // Selected Contact Display (already selected from contact detail)
+          // Selected Contact Display
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF3CB3E9).withOpacity(0.1),
+              color: AppTheme.primaryColor.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFF3CB3E9).withOpacity(0.3)),
+              border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
             ),
             child: Row(
               children: [
@@ -559,13 +671,14 @@ class __LogInteractionModalState extends State<_LogInteractionModal> {
                   height: 40,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: const Color(0xFF3CB3E9),
+                    color: AppTheme.primaryColor,
                   ),
                   child: Center(
                     child: Text(
                       widget.contact.name.substring(0, 1).toUpperCase(),
                       style: const TextStyle(
                         color: Colors.white,
+                        fontFamily: 'OpenSans',
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -579,17 +692,19 @@ class __LogInteractionModalState extends State<_LogInteractionModal> {
                     children: [
                       Text(
                         widget.contact.name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
+                          fontFamily: 'OpenSans',
                           fontWeight: FontWeight.w600,
-                          color: Color(0xff333333),
+                          color: themeProvider.getTextPrimaryColor(context),
                         ),
                       ),
                       Text(
                         widget.contact.connectionType,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: Color(0xff888888),
+                          fontFamily: 'OpenSans',
+                          color: themeProvider.getTextSecondaryColor(context),
                         ),
                       ),
                     ],
@@ -606,8 +721,9 @@ class __LogInteractionModalState extends State<_LogInteractionModal> {
             'INTERACTION TYPE',
             style: TextStyle(
               fontSize: 12,
+              fontFamily: 'OpenSans',
               fontWeight: FontWeight.w600,
-              color: Color(0xff888888),
+              color: themeProvider.getTextSecondaryColor(context),
               letterSpacing: 0.5,
             ),
           ),
@@ -623,15 +739,16 @@ class __LogInteractionModalState extends State<_LogInteractionModal> {
                   type.toUpperCase(),
                   style: TextStyle(
                     fontSize: 12,
+                    fontFamily: 'OpenSans',
                     fontWeight: FontWeight.w600,
-                    color: isSelected ? Colors.white : Color(0xff333333),
+                    color: isSelected ? Colors.white : themeProvider.getTextPrimaryColor(context),
                   ),
                 ),
                 selected: isSelected,
-                selectedColor: const Color(0xFF3CB3E9),
-                backgroundColor: Colors.white,
+                selectedColor: AppTheme.primaryColor,
+                backgroundColor: themeProvider.getCardColor(context),
                 side: BorderSide(
-                  color: isSelected ? const Color(0xFF3CB3E9) : const Color(0xFFEEEEEE),
+                  color: isSelected ? AppTheme.primaryColor : themeProvider.getTextHintColor(context),
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
@@ -650,15 +767,21 @@ class __LogInteractionModalState extends State<_LogInteractionModal> {
           // Notes Field
           TextField(
             controller: _notesController,
+            style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'),
             maxLines: 3,
             decoration: InputDecoration(
               labelText: 'Notes (optional)',
+              labelStyle: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans'),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFFEEEEEE)),
+                borderSide: BorderSide(color: themeProvider.getTextHintColor(context)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: themeProvider.getTextHintColor(context)),
               ),
               filled: true,
-              fillColor: Colors.white,
+              fillColor: themeProvider.getCardColor(context),
             ),
           ),
           
@@ -670,7 +793,7 @@ class __LogInteractionModalState extends State<_LogInteractionModal> {
             child: ElevatedButton(
               onPressed: _isLoading ? null : _logTouchpoint,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF3CB3E9),
+                backgroundColor: AppTheme.primaryColor,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
@@ -690,12 +813,13 @@ class __LogInteractionModalState extends State<_LogInteractionModal> {
                   : const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.add, size: 20, color: Colors.white,),
+                        Icon(Icons.add, size: 20, color: Colors.white),
                         SizedBox(width: 8),
                         Text(
                           'LOG TOUCHPOINT',
                           style: TextStyle(
                             fontSize: 16,
+                            fontFamily: 'OpenSans',
                             fontWeight: FontWeight.w600,
                           ),
                         ),

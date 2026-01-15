@@ -184,22 +184,43 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
           Positioned(
             right: 0,
             bottom: 0,
-            child: FloatingActionButton(
-              onPressed: _toggleExpanded,
-              mini: true,
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                child: _isExpanded
-                    ? const Icon(Icons.close, size: 18)
-                    : Container(
-                        decoration: BoxDecoration(
-                          image: DecorationImage(
-                            image: AssetImage('assets/Nudge-logo.jpg'),
-                            fit: BoxFit.cover,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: _toggleExpanded,
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  width: 55,  // You can change this to any size
+                  height: 55, // You can change this to any size
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: _isExpanded
+                        ? Container(
+                            width: 35,
+                            height: 35,
+                            decoration: BoxDecoration(
+                              color: Color(0xff3CB3E9),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(Icons.close, size: 18, color: Colors.white,),
+                          )
+                        : Container(
+                            width: 55,
+                            height: 55,
+                            decoration: BoxDecoration(
+                              image: DecorationImage(
+                                image: AssetImage('assets/Nudge-logo.png'),
+                                fit: BoxFit.cover,
+                              ),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
+                  ),
+                ),
               ),
             ),
           ),

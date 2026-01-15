@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nudge/services/api_service.dart';
-// import 'package:nudge/widgets/gradient_text.dart';
+import 'package:provider/provider.dart';
+import '../../providers/theme_provider.dart';
 
 class FeedbackForumScreen extends StatefulWidget {
   const FeedbackForumScreen({super.key});
@@ -13,74 +14,102 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
   final ApiService _apiService = ApiService();
   String _filterStatus = 'all';
   final List<String> _statusOptions = ['all', 'received', 'planned', 'in_progress', 'completed'];
-
-  // Client-side filtering function
+  
+  // Track upvoted feedbacks by user
+  Map<String, bool> _upvotedFeedbacks = {};
+  
   List<Map<String, dynamic>> _filterFeedbacks(List<Map<String, dynamic>> feedbacks) {
     List<Map<String, dynamic>> filtered = feedbacks;
+    
+    // Filter to only show Feature Requests
+    filtered = filtered.where((f) => f['type'] == 'Feature Request').toList();
 
-    // Apply status filter
     if (_filterStatus != 'all') {
       filtered = filtered.where((f) => f['status'] == _filterStatus).toList();
     }
 
-    // Only show public feedbacks in the forum
-    filtered = filtered;
-
     return filtered;
+  }
+  
+  // Method to handle upvoting
+  Future<void> _toggleUpvote(String feedbackId, bool currentlyUpvoted) async {
+    try {
+      final newUpvotedState = !currentlyUpvoted;
+      
+      // Update locally first for immediate UI feedback
+      setState(() {
+        _upvotedFeedbacks[feedbackId] = newUpvotedState;
+      });
+      
+      // Call API to update upvote count
+      await _apiService.upvoteFeedback(
+        feedbackId: feedbackId,
+        upvote: newUpvotedState,
+      );
+      
+    } catch (e) {
+      // Revert on error
+      setState(() {
+        _upvotedFeedbacks[feedbackId] = currentlyUpvoted;
+      });
+      print('Error upvoting: $e');
+    }
+  }
+  
+  // Initialize upvote states
+  void _initializeUpvoteStates(List<Map<String, dynamic>> feedbacks) async{
+    for (var feedback in feedbacks) {
+      final feedbackId = feedback['id'] as String?;
+      if (feedbackId != null) {
+        final upvotes = feedback['upvotes'] as List<dynamic>? ?? [];
+        final currentUser =  await _apiService.getUser();
+        // Check if current user has already upvoted this feedback
+        final isUpvoted = upvotes.any((upvote) => 
+          upvote is Map && upvote['userId'] == currentUser.id
+        );
+        
+        _upvotedFeedbacks[feedbackId] = isUpvoted;
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDarkMode = themeProvider.isDarkMode;
+    
     return Scaffold(
       appBar: AppBar(
-        title:  Text(
-                  'Feedback Forum',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xff555555),
-                  ),
-                ),
-        /* GradientText(
-          text: 'NUDGE',
-          style: const TextStyle(
-            fontSize: 25,
-            fontFamily: 'RobotoMono',
+        title: Text(
+          'Feature Requests Forum',
+          style: TextStyle(
+            fontSize: 24,
             fontWeight: FontWeight.bold,
+            color: isDarkMode ? Colors.white : const Color(0xff555555),
           ),
-          gradient: const LinearGradient(
-            colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ), */
+        ),
         centerTitle: true,
-        iconTheme: const IconThemeData(color: Color(0xff3CB3E9)),
-        backgroundColor: Colors.white,
+        iconTheme: IconThemeData(
+          color: isDarkMode ? const Color(0xFFCCCCCC) : const Color(0xff3CB3E9),
+        ),
+        backgroundColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+        elevation: 0,
       ),
+      backgroundColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
       body: Column(
         children: [
           // Header
           Container(
             padding: const EdgeInsets.all(16),
-            color: Colors.grey.shade50,
-            child: const Column(
+            color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey.shade50,
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Text(
-                //   'Feedback Forum',
-                //   style: TextStyle(
-                //     fontSize: 24,
-                //     fontWeight: FontWeight.bold,
-                //     color: Color(0xff3CB3E9),
-                //   ),
-                // ),
-                // SizedBox(height: 8),
                 Text(
-                  'See what others are suggesting and track feature updates',
+                  'Browse and upvote feature requests. Track their progress and share your support!',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey,
+                    color: isDarkMode ? const Color(0xFFAAAAAA) : Colors.grey,
                   ),
                 ),
               ],
@@ -91,31 +120,55 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
+              color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+              border: Border(
+                bottom: BorderSide(
+                  color: isDarkMode ? const Color(0xFF444444) : Colors.grey.shade300,
+                ),
+              ),
             ),
             child: Row(
               children: [
-                const Text('Filter by status:'),
+                Text(
+                  'Filter by status:',
+                  style: TextStyle(
+                    color: isDarkMode ? const Color(0xFFCCCCCC) : const Color(0xff333333),
+                  ),
+                ),
                 const SizedBox(width: 12),
-                DropdownButton<String>(
-                  value: _filterStatus,
-                  items: _statusOptions.map((status) {
-                    return DropdownMenuItem(
-                      value: status,
-                      child: Text(
-                        status == 'all' ? 'All Statuses' : _getStatusDisplayName(status),
-                        style: TextStyle(
-                          color: _getStatusColor(status),
-                          fontWeight: FontWeight.w500,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: isDarkMode ? const Color(0xFF3A3A3A) : Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isDarkMode ? const Color(0xFF555555) : Colors.grey.shade400,
+                    ),
+                  ),
+                  child: DropdownButton<String>(
+                    value: _filterStatus,
+                    dropdownColor: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+                    underline: const SizedBox(),
+                    items: _statusOptions.map((status) {
+                      return DropdownMenuItem(
+                        value: status,
+                        child: Text(
+                          status == 'all' ? 'All Statuses' : _getStatusDisplayName(status),
+                          style: TextStyle(
+                            color: status == 'all' 
+                              ? (isDarkMode ? const Color(0xFFCCCCCC) : const Color(0xff333333))
+                              : _getStatusColor(status),
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _filterStatus = value!;
-                    });
-                  },
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _filterStatus = value!;
+                      });
+                    },
+                  ),
                 ),
               ],
             ),
@@ -124,11 +177,14 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
           // Feedback List
           Expanded(
             child: StreamBuilder<List<Map<String, dynamic>>>(
-              // Now using getFeedbacksStream without filters
               stream: _apiService.getFeedbacksStream(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return Center(
+                    child: CircularProgressIndicator(
+                      color: isDarkMode ? const Color(0xFF3CB3E9) : const Color(0xff3CB3E9),
+                    ),
+                  );
                 }
                 
                 if (snapshot.hasError) {
@@ -136,9 +192,18 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.error_outline, size: 64, color: Colors.grey),
+                        Icon(
+                          Icons.error_outline,
+                          size: 64,
+                          color: isDarkMode ? const Color(0xFFAAAAAA) : Colors.grey,
+                        ),
                         const SizedBox(height: 16),
-                        Text('Error loading feedback: ${snapshot.error}'),
+                        Text(
+                          'Error loading feature requests: ${snapshot.error}',
+                          style: TextStyle(
+                            color: isDarkMode ? const Color(0xFFAAAAAA) : Colors.grey,
+                          ),
+                        ),
                       ],
                     ),
                   );
@@ -146,7 +211,11 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
                 
                 final allFeedbacks = snapshot.data ?? [];
                 
-                // Apply client-side filtering
+                // Initialize upvote states
+                if (_upvotedFeedbacks.isEmpty && allFeedbacks.isNotEmpty) {
+                  _initializeUpvoteStates(allFeedbacks);
+                }
+                
                 final filteredFeedbacks = _filterFeedbacks(allFeedbacks);
                 
                 if (filteredFeedbacks.isEmpty) {
@@ -154,18 +223,27 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.forum_outlined, size: 64, color: Colors.grey),
+                        Icon(
+                          Icons.auto_awesome_outlined,
+                          size: 64,
+                          color: isDarkMode ? const Color(0xFF555555) : Colors.grey,
+                        ),
                         const SizedBox(height: 16),
-                        const Text(
-                          'No feedback items yet',
-                          style: TextStyle(fontSize: 18, color: Colors.grey),
+                        Text(
+                          'No feature requests yet',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: isDarkMode ? const Color(0xFFCCCCCC) : Colors.grey,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           _filterStatus != 'all' 
-                              ? 'No items with status "${_getStatusDisplayName(_filterStatus)}"'
-                              : 'Be the first to share your feedback!',
-                          style: const TextStyle(color: Colors.grey),
+                              ? 'No feature requests with status "${_getStatusDisplayName(_filterStatus)}"'
+                              : 'Be the first to suggest a new feature!',
+                          style: TextStyle(
+                            color: isDarkMode ? const Color(0xFFAAAAAA) : Colors.grey,
+                          ),
                         ),
                       ],
                     ),
@@ -176,7 +254,7 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
                   padding: const EdgeInsets.all(16),
                   itemCount: filteredFeedbacks.length,
                   itemBuilder: (context, index) {
-                    return _buildFeedbackItem(filteredFeedbacks[index]);
+                    return _buildFeedbackItem(filteredFeedbacks[index], isDarkMode);
                   },
                 );
               },
@@ -187,17 +265,31 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
     );
   }
 
-  Widget _buildFeedbackItem(Map<String, dynamic> feedback) {
+  Widget _buildFeedbackItem(Map<String, dynamic> feedback, bool isDarkMode) {
+    final feedbackId = feedback['id'] as String? ?? '';
     final title = feedback['adminTitle'] ?? 'No Title';
     final message = feedback['message'] ?? '';
     final status = feedback['status'] ?? 'received';
-    final type = feedback['type'] ?? 'Feedback';
+    // final type = feedback['type'] ?? 'Feature Request';
     final section = feedback['section'] ?? 'General';
     final user = feedback['user'] ?? {};
     final adminResponse = feedback['adminResponse'];
+    final upvotes = feedback['upvotes'] as List<dynamic>? ?? [];
+    final upvoteCount = upvotes.length;
+    
+    final isUpvoted = _upvotedFeedbacks[feedbackId] ?? false;
     
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
+      color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isDarkMode ? const Color(0xFF444444) : Colors.grey.shade200,
+          width: 1,
+        ),
+      ),
+      elevation: 0,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -210,7 +302,7 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: _getStatusColor(status).withOpacity(0.1),
+                    color: _getStatusColor(status).withOpacity(isDarkMode ? 0.2 : 0.1),
                     borderRadius: BorderRadius.circular(4),
                     border: Border.all(color: _getStatusColor(status)),
                   ),
@@ -224,20 +316,39 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                // Type indicator
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: Colors.blue),
-                  ),
-                  child: Text(
-                    type.toUpperCase(),
-                    style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue,
+                // Upvote count
+                GestureDetector(
+                  onTap: feedbackId.isNotEmpty ? () {
+                    _toggleUpvote(feedbackId, isUpvoted);
+                  } : null,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isUpvoted 
+                        ? Colors.orange.withOpacity(isDarkMode ? 0.3 : 0.2)
+                        : Colors.grey.withOpacity(isDarkMode ? 0.2 : 0.1),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                        color: isUpvoted ? Colors.orange : Colors.grey,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          isUpvoted ? Icons.arrow_upward : Icons.arrow_upward_outlined,
+                          size: 12,
+                          color: isUpvoted ? Colors.orange : Colors.grey,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          upvoteCount.toString(),
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: isUpvoted ? Colors.orange : Colors.grey,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -250,9 +361,10 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
             // Title
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
+                color: isDarkMode ? Colors.white : const Color(0xff333333),
               ),
             ),
             
@@ -262,7 +374,7 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
             Text(
               message.length > 150 ? '${message.substring(0, 150)}...' : message,
               style: TextStyle(
-                color: Colors.grey.shade700,
+                color: isDarkMode ? const Color(0xFFAAAAAA) : Colors.grey.shade700,
                 fontSize: 14,
               ),
             ),
@@ -272,18 +384,32 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
             // Meta information
             Row(
               children: [
-                Icon(Icons.person_outline, size: 14, color: Colors.grey.shade600),
+                Icon(
+                  Icons.person_outline,
+                  size: 14,
+                  color: isDarkMode ? const Color(0xFF888888) : Colors.grey.shade600,
+                ),
                 const SizedBox(width: 4),
                 Text(
                   user['username'] ?? user['email'] ?? 'Anonymous',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDarkMode ? const Color(0xFFAAAAAA) : Colors.grey.shade600,
+                  ),
                 ),
                 const SizedBox(width: 12),
-                Icon(Icons.location_on_outlined, size: 14, color: Colors.grey.shade600),
+                Icon(
+                  Icons.location_on_outlined,
+                  size: 14,
+                  color: isDarkMode ? const Color(0xFF888888) : Colors.grey.shade600,
+                ),
                 const SizedBox(width: 4),
                 Text(
                   _getSectionDisplayName(section),
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDarkMode ? const Color(0xFFAAAAAA) : Colors.grey.shade600,
+                  ),
                 ),
               ],
             ),
@@ -294,22 +420,29 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.green.shade50,
+                  color: isDarkMode ? Colors.green.shade900.withOpacity(0.3) : Colors.green.shade50,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.green.shade100),
+                  border: Border.all(
+                    color: isDarkMode ? Colors.green.shade800 : Colors.green.shade100,
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Admin Response:',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: Colors.green,
+                        color: isDarkMode ? Colors.green.shade300 : Colors.green,
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(adminResponse['response'] ?? ''),
+                    Text(
+                      adminResponse['response'] ?? '',
+                      style: TextStyle(
+                        color: isDarkMode ? const Color(0xFFCCCCCC) : const Color(0xff333333),
+                      ),
+                    ),
                   ],
                 ),
               ),

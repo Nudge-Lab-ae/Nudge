@@ -13,7 +13,9 @@ class SocialUniverseImmersiveScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final apiService = Provider.of<ApiService>(context);
     
-    return StreamProvider<List<Contact>>.value(
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: StreamProvider<List<Contact>>.value(
       value: apiService.getContactsStream(),
       initialData: const [],
       child: Consumer<List<Contact>>(
@@ -44,6 +46,6 @@ class SocialUniverseImmersiveScreen extends StatelessWidget {
           );
         },
       ),
-    );
+    ));
   }
 }

@@ -285,6 +285,113 @@ class ApiService {
     }
   }
 
+    // Upvote/downvote feedback (feature requests)
+  Future<void> upvoteFeedback({
+    required String feedbackId,
+    required bool upvote, // true to upvote, false to remove upvote
+  }) async {
+    try {
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) throw Exception('No user logged in');
+      
+      final userId = currentUser.uid;
+      
+      // Get the feedback document
+      final feedbackDoc = await _firestore.collection('feedbacks').doc(feedbackId).get();
+      
+      if (!feedbackDoc.exists) {
+        throw Exception('Feedback not found');
+      }
+      
+      final feedbackData = feedbackDoc.data() as Map<String, dynamic>;
+      final currentUpvotes = List<Map<String, dynamic>>.from(feedbackData['upvotes'] ?? []);
+      
+      // Check if user already upvoted
+      final existingUpvoteIndex = currentUpvotes.indexWhere((upvote) => upvote['userId'] == userId);
+      
+      if (upvote) {
+        // Add upvote if user hasn't already upvoted
+        if (existingUpvoteIndex == -1) {
+          currentUpvotes.add({
+            'userId': userId,
+            'username': currentUser.displayName ?? currentUser.email?.split('@')[0] ?? 'User',
+            'timestamp': FieldValue.serverTimestamp(),
+          });
+          
+          await _firestore.collection('feedbacks').doc(feedbackId).update({
+            'upvotes': currentUpvotes,
+            'upvoteCount': currentUpvotes.length,
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+          
+          print('✅ User $userId upvoted feedback $feedbackId');
+        } else {
+          print('⚠️ User already upvoted this feedback');
+        }
+      } else {
+        // Remove upvote if user has upvoted
+        if (existingUpvoteIndex != -1) {
+          currentUpvotes.removeAt(existingUpvoteIndex);
+          
+          await _firestore.collection('feedbacks').doc(feedbackId).update({
+            'upvotes': currentUpvotes,
+            'upvoteCount': currentUpvotes.length,
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+          
+          print('✅ User $userId removed upvote from feedback $feedbackId');
+        } else {
+          print('⚠️ User hasn\'t upvoted this feedback');
+        }
+      }
+    } catch (e) {
+      print('❌ Error upvoting feedback: $e');
+      throw Exception('Failed to upvote feedback: $e');
+    }
+  }
+
+  // Check if current user has upvoted a specific feedback
+  Future<bool> hasUserUpvoted(String feedbackId) async {
+    try {
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) return false;
+      
+      final feedbackDoc = await _firestore.collection('feedbacks').doc(feedbackId).get();
+      
+      if (!feedbackDoc.exists) return false;
+      
+      final feedbackData = feedbackDoc.data() as Map<String, dynamic>;
+      final upvotes = List<Map<String, dynamic>>.from(feedbackData['upvotes'] ?? []);
+      
+      return upvotes.any((upvote) => upvote['userId'] == currentUser.uid);
+    } catch (e) {
+      print('Error checking if user upvoted: $e');
+      return false;
+    }
+  }
+
+  // Get upvote count for a feedback
+  Future<int> getUpvoteCount(String feedbackId) async {
+    try {
+      final feedbackDoc = await _firestore.collection('feedbacks').doc(feedbackId).get();
+      
+      if (!feedbackDoc.exists) return 0;
+      
+      final feedbackData = feedbackDoc.data() as Map<String, dynamic>;
+      final upvotes = feedbackData['upvotes'] as List?;
+      
+      return upvotes?.length ?? 0;
+    } catch (e) {
+      print('Error getting upvote count: $e');
+      return 0;
+    }
+  }
+
+  // Get current user ID (helper method for the UI)
+  String? getCurrentUserId() {
+    return _auth.currentUser?.uid;
+  }
+
   // Update user's FCM token (if it changes)
   Future<void> updateFCMToken(String token) async {
     try {

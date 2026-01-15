@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import '../models/contact.dart';
 import '../services/api_service.dart';
+import '../providers/theme_provider.dart'; // Add this import
+import 'package:provider/provider.dart'; // Add this import
 
 class ContactDetailsModal extends StatefulWidget {
   final Contact contact;
@@ -20,19 +22,23 @@ class ContactDetailsModal extends StatefulWidget {
 class _ContactDetailsModalState extends State<ContactDetailsModal> {
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDarkMode = themeProvider.isDarkMode;
+    
     final contact = widget.contact;
     final daysSinceLastContact = DateTime.now().difference(contact.lastContacted).inDays;
-    final ringColor = _getRingColor(contact.computedRing);
+    final ringColor = _getRingColor(contact.computedRing, isDarkMode);
     
     return Container(
       height: MediaQuery.of(context).size.height * 0.65,
       padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: isDarkMode 
+          ? const Color(0xFF1E1E1E) 
+          : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: ListView(
-        // crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header with close button
           Row(
@@ -43,12 +49,19 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xff555555),
+                  color: isDarkMode 
+                    ? const Color(0xFFCCCCCC)
+                    : const Color(0xff555555),
                   letterSpacing: 1.2,
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.close, color: Color(0xff555555)),
+                icon: Icon(
+                  Icons.close, 
+                  color: isDarkMode 
+                    ? const Color(0xFFCCCCCC)
+                    : const Color(0xff555555)
+                ),
                 onPressed: () => Navigator.pop(context),
               ),
             ],
@@ -67,13 +80,13 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      ringColor,
-                      ringColor.withOpacity(0.5),
+                      const Color(0xFFFFD600),
+                      const Color(0xFFFFAB00).withOpacity(0.5),
                     ],
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: ringColor.withOpacity(0.3),
+                      color: const Color(0xFFFFD600).withOpacity(isDarkMode ? 0.4 : 0.3),
                       blurRadius: 10,
                       spreadRadius: 2,
                     ),
@@ -99,10 +112,12 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                   children: [
                     Text(
                       contact.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xff333333),
+                        color: isDarkMode 
+                          ? Colors.white
+                          : const Color(0xff333333),
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -115,7 +130,7 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFFD700).withOpacity(0.1),
+                          color: const Color(0xFFFFD700).withOpacity(isDarkMode ? 0.2 : 0.1),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: const Color(0xFFFFD700)),
                         ),
@@ -133,7 +148,9 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xff555555),
+                                color: isDarkMode 
+                                  ? const Color(0xFFEEEEEE)
+                                  : const Color(0xff555555),
                               ),
                             ),
                           ],
@@ -158,6 +175,7 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                       ? contact.connectionType 
                       : 'Not specified',
                   color: const Color(0xFF3CB3E9),
+                  isDarkMode: isDarkMode,
                 ),
               ),
               
@@ -169,6 +187,7 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                   title: 'Social Ring',
                   value: contact.computedRing.toUpperCase(),
                   color: ringColor,
+                  isDarkMode: isDarkMode,
                 ),
               ),
             ],
@@ -190,8 +209,9 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                   color: daysSinceLastContact > 30 
                       ? Colors.redAccent 
                       : daysSinceLastContact > 7 
-                          ? Color(0xFFFFC107) 
+                          ? const Color(0xFFFFC107) 
                           : Colors.green,
+                  isDarkMode: isDarkMode,
                 ),
               ),
               
@@ -202,7 +222,8 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                   icon: Icons.phone,
                   title: 'Contact Priority',
                   value: contact.priority.toString(),
-                  color: Color(0xFF9C27B0),
+                  color: const Color(0xFF9C27B0),
+                  isDarkMode: isDarkMode,
                 ),
               ),
             ],
@@ -223,11 +244,12 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
+                elevation: 2,
               ),
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.add, size: 20, color: Colors.white,),
+                  Icon(Icons.add, size: 20, color: Colors.white),
                   SizedBox(width: 12),
                   Text(
                     'ADD TOUCHPOINT',
@@ -240,15 +262,23 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
               ),
             ),
           ),
-           const SizedBox(height: 24),
-           // Contact information section
+           
+          const SizedBox(height: 24),
+           
+          // Contact information section
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Color(0xFFF9FAFB),
+              color: isDarkMode 
+                ? const Color(0xFF2A2A2A)
+                : const Color(0xFFF9FAFB),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Color(0xFFEEEEEE)),
+              border: Border.all(
+                color: isDarkMode 
+                  ? const Color(0xFF444444)
+                  : const Color(0xFFEEEEEE),
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,7 +288,9 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xff555555),
+                    color: isDarkMode 
+                      ? const Color(0xFFCCCCCC)
+                      : const Color(0xff555555),
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -271,6 +303,7 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                     icon: Icons.phone,
                     label: 'Phone',
                     value: contact.phoneNumber,
+                    isDarkMode: isDarkMode,
                   ),
                 
                 if (contact.phoneNumber.isNotEmpty) const SizedBox(height: 12),
@@ -281,6 +314,7 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                     icon: Icons.email,
                     label: 'Email',
                     value: contact.email,
+                    isDarkMode: isDarkMode,
                   ),
                 
                 if (contact.email.isNotEmpty) const SizedBox(height: 12),
@@ -292,6 +326,7 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                     label: 'Notes',
                     value: contact.notes,
                     maxLines: 3,
+                    isDarkMode: isDarkMode,
                   ),
               ],
             ),
@@ -302,21 +337,38 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
     );
   }
 
-    void _logTouchpoint(BuildContext context, Contact contact) async {
+  void _logTouchpoint(BuildContext context, Contact contact) async {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    final isDarkMode = themeProvider.isDarkMode;
+    
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: _LogTouchpointModal(
-            apiService: widget.apiService,
-            contact: contact,
+        return Container(
+          color: Colors.transparent,
+          child: DraggableScrollableSheet(
+            initialChildSize: 0.85,
+            minChildSize: 0.5,
+            maxChildSize: 0.95,
+            builder: (context, scrollController) {
+              return Container(
+                decoration: BoxDecoration(
+                  color: isDarkMode 
+                    ? const Color(0xFF1E1E1E)
+                    : Colors.white,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(20),
+                  ),
+                ),
+                child: _LogTouchpointModal(
+                  apiService: widget.apiService,
+                  contact: contact,
+                  isDarkMode: isDarkMode,
+                ),
+              );
+            },
           ),
         );
       },
@@ -328,16 +380,23 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
     required String title,
     required String value,
     required Color color,
+    required bool isDarkMode,
   }) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDarkMode 
+          ? const Color(0xFF2A2A2A)
+          : Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Color(0xFFEEEEEE)),
+        border: Border.all(
+          color: isDarkMode 
+            ? const Color(0xFF444444)
+            : const Color(0xFFEEEEEE),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(isDarkMode ? 0.2 : 0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -349,7 +408,7 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withOpacity(isDarkMode ? 0.2 : 0.1),
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -372,7 +431,9 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: Color(0xff888888),
+                    color: isDarkMode 
+                      ? const Color(0xFFAAAAAA)
+                      : const Color(0xff888888),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -381,7 +442,9 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xff333333),
+                    color: isDarkMode 
+                      ? Colors.white
+                      : const Color(0xff333333),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -390,13 +453,15 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
             ),
           ),
         ],
-      ));
+      ),
+    );
   }
 
   Widget _buildContactInfoRow({
     required IconData icon,
     required String label,
     required String value,
+    required bool isDarkMode,
     int maxLines = 1,
   }) {
     return Row(
@@ -406,14 +471,14 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
           width: 32,
           height: 32,
           decoration: BoxDecoration(
-            color: Color(0xFF3CB3E9).withOpacity(0.1),
+            color: const Color(0xFF3CB3E9).withOpacity(isDarkMode ? 0.2 : 0.1),
             shape: BoxShape.circle,
           ),
           child: Center(
             child: Icon(
               icon,
               size: 16,
-              color: Color(0xFF3CB3E9),
+              color: const Color(0xFF3CB3E9),
             ),
           ),
         ),
@@ -429,7 +494,9 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  color: Color(0xff888888),
+                  color: isDarkMode 
+                    ? const Color(0xFFAAAAAA)
+                    : const Color(0xff888888),
                 ),
               ),
               const SizedBox(height: 4),
@@ -437,7 +504,9 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                 value,
                 style: TextStyle(
                   fontSize: 14,
-                  color: Color(0xff333333),
+                  color: isDarkMode 
+                    ? Colors.white
+                    : const Color(0xff333333),
                 ),
                 maxLines: maxLines,
                 overflow: TextOverflow.ellipsis,
@@ -449,16 +518,16 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
     );
   }
 
-  Color _getRingColor(String ring) {
+  Color _getRingColor(String ring, bool isDarkMode) {
     switch (ring) {
       case 'inner':
-        return Colors.green;
+        return isDarkMode ? const Color(0xFF4CAF50) : Colors.green;
       case 'middle':
-        return Color(0xFFFFC107);
+        return const Color(0xFFFFC107);
       case 'outer':
-        return Colors.redAccent;
+        return isDarkMode ? const Color(0xFFF44336) : Colors.redAccent;
       default:
-        return Colors.grey;
+        return isDarkMode ? const Color(0xFF757575) : Colors.grey;
     }
   }
 }
@@ -466,10 +535,12 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
 class _LogTouchpointModal extends StatefulWidget {
   final ApiService apiService;
   final Contact contact;
+  final bool isDarkMode;
   
   const _LogTouchpointModal({
     required this.apiService,
     required this.contact,
+    required this.isDarkMode,
   });
 
   @override
@@ -562,17 +633,24 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'LOG TOUCHPOINT',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xff555555),
+                  color: widget.isDarkMode 
+                    ? const Color(0xFFCCCCCC)
+                    : const Color(0xff555555),
                   letterSpacing: 1.2,
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.close, color: Color(0xff555555)),
+                icon: Icon(
+                  Icons.close, 
+                  color: widget.isDarkMode 
+                    ? const Color(0xFFCCCCCC)
+                    : const Color(0xff555555)
+                ),
                 onPressed: () => Navigator.pop(context),
               ),
             ],
@@ -584,18 +662,20 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF3CB3E9).withOpacity(0.1),
+              color: const Color(0xFF3CB3E9).withOpacity(widget.isDarkMode ? 0.2 : 0.1),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFF3CB3E9).withOpacity(0.3)),
+              border: Border.all(
+                color: const Color(0xFF3CB3E9).withOpacity(widget.isDarkMode ? 0.4 : 0.3),
+              ),
             ),
             child: Row(
               children: [
                 Container(
                   width: 40,
                   height: 40,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     shape: BoxShape.circle,
-                    color: const Color(0xFF3CB3E9),
+                    color: Color(0xFF3CB3E9),
                   ),
                   child: Center(
                     child: Text(
@@ -615,17 +695,21 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
                     children: [
                       Text(
                         widget.contact.name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xff333333),
+                          color: widget.isDarkMode 
+                            ? Colors.white
+                            : const Color(0xff333333),
                         ),
                       ),
                       Text(
                         widget.contact.connectionType,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: Color(0xff888888),
+                          color: widget.isDarkMode 
+                            ? const Color(0xFFAAAAAA)
+                            : const Color(0xff888888),
                         ),
                       ),
                     ],
@@ -643,7 +727,9 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Color(0xff888888),
+              color: widget.isDarkMode 
+                ? const Color(0xFFAAAAAA)
+                : const Color(0xff888888),
               letterSpacing: 0.5,
             ),
           ),
@@ -660,14 +746,24 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: isSelected ? Colors.white : Color(0xff333333),
+                    color: isSelected 
+                      ? Colors.white
+                      : widget.isDarkMode 
+                          ? Colors.white
+                          : const Color(0xff333333),
                   ),
                 ),
                 selected: isSelected,
                 selectedColor: const Color(0xFF3CB3E9),
-                backgroundColor: Colors.white,
+                backgroundColor: widget.isDarkMode 
+                  ? const Color(0xFF2A2A2A)
+                  : Colors.white,
                 side: BorderSide(
-                  color: isSelected ? const Color(0xFF3CB3E9) : const Color(0xFFEEEEEE),
+                  color: isSelected 
+                    ? const Color(0xFF3CB3E9)
+                    : widget.isDarkMode 
+                        ? const Color(0xFF444444)
+                        : const Color(0xFFEEEEEE),
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
@@ -686,15 +782,37 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
           // Notes Field
           TextField(
             controller: _notesController,
+            style: TextStyle(
+              color: widget.isDarkMode ? Colors.white : const Color(0xff333333),
+            ),
             maxLines: 3,
             decoration: InputDecoration(
               labelText: 'Notes (optional)',
+              labelStyle: TextStyle(
+                color: widget.isDarkMode 
+                  ? const Color(0xFFAAAAAA)
+                  : const Color(0xff888888),
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFFEEEEEE)),
+                borderSide: BorderSide(
+                  color: widget.isDarkMode 
+                    ? const Color(0xFF444444)
+                    : const Color(0xFFEEEEEE),
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: widget.isDarkMode 
+                    ? const Color(0xFF444444)
+                    : const Color(0xFFEEEEEE),
+                ),
               ),
               filled: true,
-              fillColor: Colors.white,
+              fillColor: widget.isDarkMode 
+                ? const Color(0xFF2A2A2A)
+                : Colors.white,
             ),
           ),
           
@@ -726,7 +844,7 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
                   : const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.add, size: 20, color: Colors.white,),
+                        Icon(Icons.add, size: 20, color: Colors.white),
                         SizedBox(width: 8),
                         Text(
                           'LOG TOUCHPOINT',

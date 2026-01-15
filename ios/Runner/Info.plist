@@ -46,6 +46,8 @@
 	<true/>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>This app needs access to make phone calls</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Nudge needs access to your calendar to analyze meeting frequency and suggest important contacts</string>
 	<key>NSContactsUsageDescription</key>
 	<string>This app needs access to your contacts to help you manage your relationships</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>

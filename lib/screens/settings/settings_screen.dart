@@ -1,27 +1,21 @@
+// settings_screen.dart - Updated with theme toggle and Feedback Forum link
 import 'dart:io';
 import 'dart:typed_data';
-
-// import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:crop_your_image/crop_your_image.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:google_sign_in/google_sign_in.dart';
-// import 'package:http/http.dart';
 import 'package:image_picker/image_picker.dart';
-// import 'package:nudge/helpers/auth_refresh_helper.dart';
 import 'package:nudge/helpers/deletion_retry_helper.dart';
-// import 'package:nudge/helpers/restart_helper.dart';
+import 'package:nudge/providers/theme_provider.dart';
 import 'package:nudge/screens/admin/feedback_management_screen.dart';
+import 'package:nudge/screens/feedback/feedback_forum_screen.dart';
 import 'package:nudge/services/auth_service.dart';
-// import 'package:nudge/theme/text_styles.dart';
-// import 'package:nudge/widgets/gradient_text.dart';
 import 'package:nudge/widgets/screen_tracker.dart';
 import 'package:provider/provider.dart';
 import '../../services/api_service.dart';
-import 'package:nudge/models/user.dart' as user;
-// import 'package:shared_preferences/shared_preferences.dart';
-// import '../goals/set_goals_screen.dart';
+import 'package:nudge/models/user.dart' as user; 
+
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -33,7 +27,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final _formKey = GlobalKey<FormState>();
   final _feedbackFormKey = GlobalKey<FormState>();
-   bool _weeklyDigestEnabled = true;
+  // bool _weeklyDigestEnabled = true;
   late TextEditingController _usernameController;
   late TextEditingController _emailController;
   late TextEditingController _oldPasswordController;
@@ -58,13 +52,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final FocusNode _oldPasswordFocusNode = FocusNode();
   final FocusNode _newPasswordFocusNode = FocusNode();
   
-  // Feedback types
   final List<String> _feedbackTypes = [
-    'Feedback',
+    'Feedback / Inquiry',
     'Bug Report',
     'Feature Request',
-    'General Inquiry',
-    'Complaint'
   ];
 
   @override
@@ -76,7 +67,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _newPasswordController = TextEditingController();
     _feedbackTypeController = TextEditingController(text: 'Feedback');
     _feedbackMessageController = TextEditingController();
-     _checkForRetryPrompt();
+    _checkForRetryPrompt();
     _loadUserData();
   }
 
@@ -85,7 +76,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final userData = await ApiService().getUser();
       final currentUser = FirebaseAuth.instance.currentUser;
       
-      // Check if user signed in with email/password
       if (currentUser != null) {
         final providers = currentUser.providerData;
         _isEmailPasswordUser = providers.any((provider) => 
@@ -98,7 +88,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _emailController.text = userData.email;
         _currentUser = userData;
         _currentProfileImageUrl = userData.photoUrl;
-        _weeklyDigestEnabled = userData.weeklyDigestEnabled;
+        // _weeklyDigestEnabled = userData.weeklyDigestEnabled;
         _isLoading = false;
       });
     } catch (e) {
@@ -188,18 +178,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       });
       
       try {
-        // Update user profile data
         await ApiService().updateUser({
           'username': _usernameController.text,
           'email': _emailController.text,
           'updatedAt': DateTime.now(),
         });
 
-        // Update password if provided and user is email/password
         if (_isEmailPasswordUser && _newPasswordController.text.isNotEmpty) {
           final user = FirebaseAuth.instance.currentUser;
           if (user != null) {
-            // Reauthenticate user before changing password
             final credential = EmailAuthProvider.credential(
               email: user.email!,
               password: _oldPasswordController.text,
@@ -214,7 +201,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SnackBar(content: Text('Profile updated successfully')),
         );
         
-        // Clear password fields
         _oldPasswordController.clear();
         _newPasswordController.clear();
       } on FirebaseAuthException catch (e) {
@@ -259,14 +245,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             'screen': 'SettingsScreen',
             'appSection': 'feedback_form',
           },
-          screenName: screenName, // Add screen tracking
+          screenName: screenName,
         );
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Thank you for your feedback!')),
         );
 
-        // Clear feedback form
         _feedbackMessageController.clear();
         _feedbackTypeController.text = 'Feedback';
 
@@ -286,34 +271,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
     FocusScope.of(context).unfocus();
   }
 
-  // ... rest of your existing methods remain the same ...
-
-  Widget _buildFeedbackForm() {
+  Widget _buildFeedbackForm(ThemeProvider themeProvider) {
+    // final themeProvider = Provider.of<ThemeProvider>(context);
+    final theme = Theme.of(context);
+    
     return Form(
       key: _feedbackFormKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Help / Feedback',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: Color(0xff555555)),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555)),
           ),
           const SizedBox(height: 15),
           
-          const Text('Type', style: TextStyle(fontWeight: FontWeight.w500, color: Color(0xff555555))),
+          Text('Type', style: TextStyle(fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555))),
           const SizedBox(height: 8),
           GestureDetector(
             onTap: () {
-              _dismissKeyboard(); // Dismiss keyboard when tapping feedback type
-              _showFeedbackTypeDialog();
+              _dismissKeyboard();
+              _showFeedbackTypeDialog(themeProvider);
             },
             child: AbsorbPointer(
               child: TextFormField(
                 controller: _feedbackTypeController,
-                style: const TextStyle(color: Color(0xff555555)),
+                style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555)),
                 decoration: InputDecoration(
                   suffixIcon: const Icon(Icons.arrow_drop_down),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: themeProvider.isDarkMode ? Colors.grey.shade600 : Colors.grey, width: 1),
+                    borderRadius: BorderRadius.circular(10)
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
+                    borderRadius: BorderRadius.circular(10)
+                  ),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -326,7 +320,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 20),
           
-          const Text('Comments', style: TextStyle(fontWeight: FontWeight.w500, color: Color(0xff555555))),
+          Text('Comments', style: TextStyle(fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555))),
           const SizedBox(height: 8),
           TextFormField(
             controller: _feedbackMessageController,
@@ -334,18 +328,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
             maxLines: 3,
             textInputAction: TextInputAction.done,
             onEditingComplete: () {
-              // Dismiss keyboard when done/return is pressed
               _dismissKeyboard();
             },
+            style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
             decoration: InputDecoration(
               hintText: 'Please share your feedback, suggestions, or issues...',
-              hintStyle: const TextStyle(color: Color(0xff555555)),
+              hintStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : const Color(0xff555555)),
               enabledBorder: OutlineInputBorder(
-                borderSide: const BorderSide(color: Colors.grey, width: 1),
+                borderSide: BorderSide(color: themeProvider.isDarkMode ? Colors.grey.shade600 : Colors.grey, width: 1),
                 borderRadius: BorderRadius.circular(10)
               ),
               focusedBorder: OutlineInputBorder(
-                borderSide: const BorderSide(color: Colors.blue, width: 2),
+                borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
                 borderRadius: BorderRadius.circular(10)
               ),
               errorBorder: OutlineInputBorder(
@@ -376,16 +370,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ? const Center(child: CircularProgressIndicator())
                 : ElevatedButton(
                     onPressed: () {
-                      _dismissKeyboard(); // Dismiss keyboard before submitting
+                      _dismissKeyboard();
                       _submitFeedback();
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xff3CB3E9),
+                      backgroundColor: theme.colorScheme.primary,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
-                    child: const Text(
+                    child: Text(
                       'SUBMIT FEEDBACK',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode?Colors.black:Colors.white),
                     ),
                   ),
           ),
@@ -394,13 +388,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-
-  void _showFeedbackTypeDialog() {
+  void _showFeedbackTypeDialog(ThemeProvider themeProvider) {
+    // final themeProvider = Provider.of<ThemeProvider>(context);
+    
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('SELECT FEEDBACK TYPE', style: TextStyle(color: Color(0xff555555)),),
+          title: Text('SELECT FEEDBACK TYPE', style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555))),
+          backgroundColor: themeProvider.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
           content: SizedBox(
             width: double.maxFinite,
             child: ListView.builder(
@@ -409,7 +405,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               itemBuilder: (context, index) {
                 final type = _feedbackTypes[index];
                 return ListTile(
-                  title: Text(type, style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555)),),
+                  title: Text(type, style: TextStyle(fontWeight: FontWeight.w600, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555))),
                   onTap: () {
                     setState(() {
                       _feedbackTypeController.text = type;
@@ -425,85 +421,84 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
- 
+  // Future<void> _updateWeeklyDigestSetting(bool enabled) async {
+  //   try {
+  //     await ApiService().updateUser({
+  //       'weeklyDigestEnabled': enabled,
+  //       'updatedAt': DateTime.now(),
+  //     });
+  //   } catch (e) {
+  //     print('Error updating weekly digest setting: $e');
+  //   }
+  // }
 
-Future<void> _updateWeeklyDigestSetting(bool enabled) async {
-  try {
-    await ApiService().updateUser({
-      'weeklyDigestEnabled': enabled,
-      'updatedAt': DateTime.now(),
-    });
-  } catch (e) {
-    print('Error updating weekly digest setting: $e');
-  }
-}
-
-void _showDeleteAccountConfirmation(AuthService authService) {
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: const Text('DELETE ACCOUNT', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555)),),
-      content: const Text(
-        'This action cannot be undone. All your data, contacts, groups, and settings will be permanently deleted.',
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+  void _showDeleteAccountConfirmation(AuthService authService, ThemeProvider themeProvider) {
+    // final themeProvider = Provider.of<ThemeProvider>(context);
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('DELETE ACCOUNT', style: TextStyle(fontWeight: FontWeight.w600, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555))),
+        content: const Text(
+          'This action cannot be undone. All your data, contacts, groups, and settings will be permanently deleted.',
         ),
-       TextButton(
-          onPressed: deleting ? null : () {
-            Navigator.pop(context);
-            deleteUser(authService);
-          },
-          style: TextButton.styleFrom(
-            foregroundColor: deleting ? Colors.grey : Colors.red,
+        backgroundColor: themeProvider.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
           ),
-          child: Text(deleting ? 'Deleting...' : 'Delete Account'),
-        ),
-      ],
-    ),
-  );
-}
-
-    void showDeletedMessage() {
-  // Show success message before navigation
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Deleted Account!',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                Text(
-                  'You have successfully deleted your account. Any data previously recorded has been removed.',
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
-                ),
-              ],
+          TextButton(
+            onPressed: deleting ? null : () {
+              Navigator.pop(context);
+              deleteUser(authService);
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: deleting ? Colors.grey : Colors.red,
             ),
+            child: Text(deleting ? 'Deleting...' : 'Delete Account'),
           ),
         ],
       ),
-      backgroundColor: Colors.green,
-      duration: const Duration(seconds: 4),
-    ),
-  );
+    );
+  }
 
-}
+  void showDeletedMessage() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Deleted Account!',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Text(
+                    'You have successfully deleted your account. Any data previously recorded has been removed.',
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
+
   Future<void> _checkForRetryPrompt() async {
     if (await DeletionRetryHelper.shouldShowRetryPrompt()) {
       await DeletionRetryHelper.clearRetryPromptFlag();
       
-      // Wait a moment for the screen to build
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _showRetryPrompt();
       });
@@ -511,6 +506,8 @@ void _showDeleteAccountConfirmation(AuthService authService) {
   }
 
   void _showRetryPrompt() {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -519,6 +516,7 @@ void _showDeleteAccountConfirmation(AuthService authService) {
         content: const Text(
           'Please try deleting your account again. The app state has been refreshed.',
         ),
+        backgroundColor: themeProvider.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -528,35 +526,7 @@ void _showDeleteAccountConfirmation(AuthService authService) {
       ),
     );
   }
-  // Future<void> _logoutUser(AuthService authService) async {
-  //   try {
-  //     await authService.signOut();
-  //     await FirebaseAuth.instance.signOut();
-      
-  //     // Clear navigation stack and go to welcome screen
-  //     WidgetsBinding.instance.addPostFrameCallback((_) {
-  //       Navigator.pushNamedAndRemoveUntil(
-  //         context, 
-  //         '/welcome', 
-  //         (route) => false
-  //       );
-  //     });
-  //   } catch (e) {
-  //     print('Error logging out: $e');
-  //     // Still try to navigate even if signout fails
-  //     WidgetsBinding.instance.addPostFrameCallback((_) {
-  //       Navigator.pushNamedAndRemoveUntil(
-  //         context, 
-  //         '/welcome', 
-  //         (route) => false
-  //       );
-  //     });
-  //   }
-  // }
 
-  // In _SettingsScreenState class
-
-  
   Future<bool> deleteUser(AuthService authService) async {
     FirebaseAuth _auth = FirebaseAuth.instance;
     ApiService apiService = ApiService();
@@ -574,21 +544,15 @@ void _showDeleteAccountConfirmation(AuthService authService) {
     });
     
     try {
-      // First delete Firestore data
-      
       await currentUser.getIdToken(true);
-
       apiService.cancelUserNotifications();
       
       bool deleted = await apiService.deleteUser();
       
-      // Then delete the auth user account
-      
       if (!deleted) return false;
-      // Clear any cached data
+      
       await _auth.signOut();
       
-      // Navigate to welcome screen and remove all routes
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Navigator.pushNamedAndRemoveUntil(
           context, 
@@ -603,7 +567,6 @@ void _showDeleteAccountConfirmation(AuthService authService) {
     } catch (error) {
       print('Error deleting user: $error');
       
-      // Fallback: Force logout on any error
       try {
         await authService.signOut();
         await _auth.signOut();
@@ -612,7 +575,6 @@ void _showDeleteAccountConfirmation(AuthService authService) {
         print('Error during signout: $e');
       }
       
-      // Always navigate to welcome screen on error
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Navigator.pushNamedAndRemoveUntil(
           context, 
@@ -629,8 +591,9 @@ void _showDeleteAccountConfirmation(AuthService authService) {
     }
   }
 
-    // Add this widget inside _SettingsScreenState class
   Widget _buildDeletionOverlay() {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    
     if (!deleting) return const SizedBox.shrink();
     
     return Container(
@@ -640,7 +603,7 @@ void _showDeleteAccountConfirmation(AuthService authService) {
           width: 300,
           height: 200,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: themeProvider.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
@@ -682,19 +645,22 @@ void _showDeleteAccountConfirmation(AuthService authService) {
     );
   }
 
- Widget _buildProfilePictureSection() {
+  Widget _buildProfilePictureSection() {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final theme = Theme.of(context);
+    
     return Column(
       children: [
         if (_isCropping) ...[
           const SizedBox(height: 20),
-          const Text(
+          Text(
             'Crop Your Profile Picture',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black),
           ),
           const SizedBox(height: 10),
-          const Text(
+          Text(
             'Adjust the square to frame your photo',
-            style: TextStyle(color: Colors.grey),
+            style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
           ),
           const SizedBox(height: 20),
           Expanded(
@@ -726,9 +692,9 @@ void _showDeleteAccountConfirmation(AuthService authService) {
                         }
                       },
                       withCircleUi: true,
-                      baseColor: Colors.blue.shade900,
-                      maskColor: Colors.white.withAlpha(100),
-                      cornerDotBuilder: (size, edgeAlignment) => const DotControl(color: Colors.blue),
+                      baseColor: theme.colorScheme.primary,
+                      maskColor: themeProvider.isDarkMode ? Colors.white.withAlpha(100) : Colors.black.withAlpha(100),
+                      cornerDotBuilder: (size, edgeAlignment) => DotControl(color: theme.colorScheme.primary),
                     )
                   : const Center(child: CircularProgressIndicator()),
             ),
@@ -748,15 +714,13 @@ void _showDeleteAccountConfirmation(AuthService authService) {
                     child: const Text('Cancel'),
                   ),
                 ),
-                SizedBox(
-                  width: 20,
-                ),
-                 Expanded(
+                const SizedBox(width: 20),
+                Expanded(
                   child: OutlinedButton(
                     onPressed: _cropImage,
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.blue,
-                      side: const BorderSide(color: Colors.blue),
+                      foregroundColor: theme.colorScheme.primary,
+                      side: BorderSide(color: theme.colorScheme.primary),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: const Text('Crop Image'),
@@ -777,9 +741,9 @@ void _showDeleteAccountConfirmation(AuthService authService) {
                     backgroundImage: _currentProfileImageUrl != null && _currentProfileImageUrl!.isNotEmpty
                         ? NetworkImage(_currentProfileImageUrl!)
                         : null,
-                    backgroundColor: const Color.fromRGBO(45, 161, 175, 0.1),
+                    backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
                     child: _currentProfileImageUrl == null || _currentProfileImageUrl!.isEmpty
-                        ? const Icon(Icons.person, size: 40, color: Color(0xff3CB3E9))
+                        ? Icon(Icons.person, size: 40, color: theme.colorScheme.primary)
                         : null,
                   ),
                   Positioned(
@@ -787,8 +751,8 @@ void _showDeleteAccountConfirmation(AuthService authService) {
                     right: 0,
                     child: Container(
                       padding: const EdgeInsets.all(6),
-                      decoration: const BoxDecoration(
-                        color: Color(0xff3CB3E9),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary,
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.edit, size: 16, color: Colors.white),
@@ -799,9 +763,9 @@ void _showDeleteAccountConfirmation(AuthService authService) {
             ),
           ),
           const SizedBox(height: 10),
-          const Text(
+          Text(
             'Tap to change profile picture',
-            style: TextStyle(color: Colors.grey, fontSize: 14),
+            style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey, fontSize: 14),
           ),
           const SizedBox(height: 30),
         ],
@@ -809,12 +773,15 @@ void _showDeleteAccountConfirmation(AuthService authService) {
     );
   }
 
-    void _showLogoutConfirmation(AuthService authService) {
+  void _showLogoutConfirmation(AuthService authService, ThemeProvider themeProvider) {
+    // final themeProvider = Provider.of<ThemeProvider>(context);
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('LOGGING OUT', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555))),
+        title: Text('LOGGING OUT', style: TextStyle(fontWeight: FontWeight.w600, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555))),
         content: const Text('Are you sure you want to log out of your account?', style: TextStyle(fontWeight: FontWeight.w500)),
+        backgroundColor: themeProvider.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context), 
@@ -824,7 +791,6 @@ void _showDeleteAccountConfirmation(AuthService authService) {
             onPressed: () async {
               Navigator.pop(context);
               await authService.signOut();
-              // Force navigation to welcome screen
               Navigator.pushNamedAndRemoveUntil(
                 context, 
                 '/welcome', 
@@ -839,32 +805,204 @@ void _showDeleteAccountConfirmation(AuthService authService) {
     );
   }
 
+  Widget _buildThemeToggleSection() {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final theme = Theme.of(context);
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'APPEARANCE',
+          style: TextStyle(
+            fontSize: 16,
+            color: themeProvider.isDarkMode ? Colors.grey.shade400 : const Color(0xff6e6e6e),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 15),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: themeProvider.isDarkMode ? const Color(0xFF2D2D2D) : Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        themeProvider.isDarkMode ? 'Dark Mode' : 'Light Mode',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        themeProvider.isDarkMode 
+                          ? 'Switch to light appearance'
+                          : 'Switch to dark appearance',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              Switch(
+                value: themeProvider.isDarkMode,
+                onChanged: (value) {
+                  themeProvider.toggleTheme(value);
+                },
+                activeColor: theme.colorScheme.primary,
+                activeTrackColor: theme.colorScheme.primary.withOpacity(0.5),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 
-@override
+  Widget _buildFeedbackForumSection(ThemeProvider themeProvider) {
+    // final theme = Theme.of(context);
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 30),
+        Text(
+          'FEATURE REQUESTS',
+          style: TextStyle(
+            fontSize: 16,
+            color: themeProvider.isDarkMode ? Colors.grey.shade400 : const Color(0xff6e6e6e),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 15),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: themeProvider.isDarkMode ? Colors.blue.shade900.withOpacity(0.3) : Colors.blue.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: themeProvider.isDarkMode ? Colors.blue.shade800 : Colors.blue.shade100,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.auto_awesome_outlined,
+                    color: themeProvider.isDarkMode ? Colors.blue.shade300 : Colors.blue,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Feature Requests Forum',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Browse, upvote, and track feature requests from other users. See what\'s being planned and vote for your favorite ideas!',
+                style: TextStyle(
+                  color: themeProvider.isDarkMode ? Colors.grey.shade300 : Colors.grey.shade700,
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: () {
+                    _dismissKeyboard();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const FeedbackForumScreen(),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.forum_outlined, color: Colors.white),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'VIEW FEATURE REQUESTS',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context, listen: false);
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final theme = Theme.of(context);
+    
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        backgroundColor: themeProvider.getBackgroundColor(context),
+        body: Center(child: CircularProgressIndicator(color: theme.colorScheme.primary)),
       );
     }
 
     return GestureDetector(
-      onTap: _dismissKeyboard, // Dismiss keyboard when tapping anywhere on screen
+      onTap: _dismissKeyboard,
       behavior: HitTestBehavior.translucent,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text(
-                'Adjust Settings',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xff555555),
-                ),
-              ),
+          title: Text(
+            'Adjust Settings',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555),
+            ),
+          ),
           centerTitle: true,
-          iconTheme: const IconThemeData(color: Color(0xff3CB3E9)),
-          backgroundColor: Colors.white,
+          iconTheme: IconThemeData(color: theme.colorScheme.primary),
+          backgroundColor: themeProvider.getSurfaceColor(context),
           surfaceTintColor: Colors.transparent,
         ),
         body: Stack(
@@ -873,70 +1011,65 @@ void _showDeleteAccountConfirmation(AuthService authService) {
               ? _buildProfilePictureSection()
               : SingleChildScrollView(
                   padding: const EdgeInsets.all(20),
-                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag, // iOS-specific
+                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildProfilePictureSection(),
-                      // Profile Settings Section
+                      
+                      // Theme Toggle Section
+                      _buildThemeToggleSection(),
+                      const SizedBox(height: 30),
+                      
+                      // Feature Requests Forum Section
+                      
                       Form(
                         key: _formKey,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Padding(
-                            //   padding: const EdgeInsets.only(left: 50),
-                            //   child: const Text(
-                            //     'ADJUST SETTINGS',
-                            //     style: TextStyle(
-                            //       fontSize: 20,
-                            //       fontWeight: FontWeight.w700,
-                            //       color: Color(0xff555555),
-                            //     ),
-                            //   ),
-                            // ),
-                            // const SizedBox(height: 35),
-                            const Text(
+                            Text(
                               'SUBSCRIPTION',
                               style: TextStyle(
                                 fontSize: 16,
-                                color: Color(0xff6e6e6e),
+                                color: themeProvider.isDarkMode ? Colors.grey.shade400 : const Color(0xff6e6e6e),
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
                             const SizedBox(height: 15),
-                            const Text(
+                            Text(
                               'You are on an exclusive access subscription.',
-                              style: TextStyle(fontSize: 16, color: Color(0xff555555)),
+                              style: TextStyle(fontSize: 16, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555)),
                             ),
                             const SizedBox(height: 30),
                             
-                            const Text(
+                            Text(
                               'GENERAL',
                               style: TextStyle(
                                 fontSize: 16,
-                                color: Color(0xff6e6e6e),
+                                color: themeProvider.isDarkMode ? Colors.grey.shade400 : const Color(0xff6e6e6e),
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
                             const SizedBox(height: 15),
                             
-                            const Text(
+                            Text(
                               'Username',
-                              style: TextStyle(fontWeight: FontWeight.w500, color: Color(0xff555555)),
+                              style: TextStyle(fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555)),
                             ),
                             const SizedBox(height: 8),
                             TextFormField(
                               controller: _usernameController,
                               focusNode: _usernameFocusNode,
                               textInputAction: TextInputAction.next,
+                              style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
                               decoration: InputDecoration(
                                 enabledBorder: OutlineInputBorder(
-                                  borderSide: const BorderSide(color: Colors.grey, width: 1),
+                                  borderSide: BorderSide(color: themeProvider.isDarkMode ? Colors.grey.shade600 : Colors.grey, width: 1),
                                   borderRadius: BorderRadius.circular(10)
                                 ),
                                 focusedBorder: OutlineInputBorder(
-                                  borderSide: const BorderSide(color: Colors.blue, width: 2),
+                                  borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
                                   borderRadius: BorderRadius.circular(10)
                                 ),
                                 errorBorder: OutlineInputBorder(
@@ -957,16 +1090,21 @@ void _showDeleteAccountConfirmation(AuthService authService) {
                             ),
                             const SizedBox(height: 20),
                             
-                            const Text(
+                            Text(
                               'Email',
-                              style: TextStyle(fontWeight: FontWeight.w500, color: Color(0xff555555)),
+                              style: TextStyle(fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555)),
                             ),
                             const SizedBox(height: 8),
                             TextFormField(
                               controller: _emailController,
                               enabled: false,
+                              style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600),
                               decoration: InputDecoration(
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                enabledBorder: OutlineInputBorder(
+                                  borderSide: BorderSide(color: themeProvider.isDarkMode ? Colors.grey.shade600 : Colors.grey, width: 1),
+                                  borderRadius: BorderRadius.circular(10)
+                                ),
                               ),
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
@@ -979,22 +1117,21 @@ void _showDeleteAccountConfirmation(AuthService authService) {
                               },
                             ),
                             
-                            // Only show password fields for email/password users
                             if (_isEmailPasswordUser) ...[
-                              const SizedBox(height: 20),
-                              const Text(
-                                'Change Password',
+                              const SizedBox(height: 40),
+                              Text(
+                                'CHANGE PASSWORD',
                                 style: TextStyle(
-                                  fontSize: 18,
-                                  color: Color(0xff555555),
+                                  fontSize: 16,
+                                  color: themeProvider.isDarkMode ? Colors.grey.shade400 : const Color(0xff6e6e6e),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              const SizedBox(height: 15),
+                              const SizedBox(height: 25),
                               
-                              const Text(
+                              Text(
                                 'Current Password',
-                                style: TextStyle(fontWeight: FontWeight.w500, color: Color(0xff555555)),
+                                style: TextStyle(fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555)),
                               ),
                               const SizedBox(height: 8),
                               TextFormField(
@@ -1003,19 +1140,18 @@ void _showDeleteAccountConfirmation(AuthService authService) {
                                 obscureText: true,
                                 textInputAction: TextInputAction.next,
                                 onEditingComplete: () {
-                                  // Move to next field
                                   FocusScope.of(context).requestFocus(_newPasswordFocusNode);
                                 },
+                                style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
                                 decoration: InputDecoration(
                                   hintText: 'Enter your current password',
-                                  hintStyle: const TextStyle(color: Color(0xff555555)),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                  hintStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : const Color(0xff555555)),
                                   enabledBorder: OutlineInputBorder(
-                                    borderSide: const BorderSide(color: Colors.grey, width: 1),
+                                    borderSide: BorderSide(color: themeProvider.isDarkMode ? Colors.grey.shade600 : Colors.grey, width: 1),
                                     borderRadius: BorderRadius.circular(10)
                                   ),
                                   focusedBorder: OutlineInputBorder(
-                                    borderSide: const BorderSide(color: Colors.blue, width: 2),
+                                    borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
                                     borderRadius: BorderRadius.circular(10)
                                   ),
                                   errorBorder: OutlineInputBorder(
@@ -1037,9 +1173,9 @@ void _showDeleteAccountConfirmation(AuthService authService) {
                               ),
                               const SizedBox(height: 20),
                               
-                              const Text(
+                              Text(
                                 'New Password',
-                                style: TextStyle(fontWeight: FontWeight.w500, color: Color(0xff555555)),
+                                style: TextStyle(fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555)),
                               ),
                               const SizedBox(height: 8),
                               TextFormField(
@@ -1048,16 +1184,16 @@ void _showDeleteAccountConfirmation(AuthService authService) {
                                 obscureText: true,
                                 textInputAction: TextInputAction.done,
                                 onEditingComplete: _dismissKeyboard,
+                                style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
                                 decoration: InputDecoration(
                                   hintText: 'Enter your new password',
-                                  hintStyle: const TextStyle(color: Color(0xff555555)),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                  hintStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : const Color(0xff555555)),
                                   enabledBorder: OutlineInputBorder(
-                                    borderSide: const BorderSide(color: Colors.grey, width: 1),
+                                    borderSide: BorderSide(color: themeProvider.isDarkMode ? Colors.grey.shade600 : Colors.grey, width: 1),
                                     borderRadius: BorderRadius.circular(10)
                                   ),
                                   focusedBorder: OutlineInputBorder(
-                                    borderSide: const BorderSide(color: Colors.blue, width: 2),
+                                    borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
                                     borderRadius: BorderRadius.circular(10)
                                   ),
                                   errorBorder: OutlineInputBorder(
@@ -1078,67 +1214,67 @@ void _showDeleteAccountConfirmation(AuthService authService) {
                               ),
                             ],
 
-                            // Weekly Digest Section
-                            const SizedBox(height: 30),
-                            const Text(
-                              'NOTIFICATIONS',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xff6e6e6e)),
-                            ),
-                            const SizedBox(height: 15),
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Weekly Digest',
-                                        style: TextStyle(fontWeight: FontWeight.w500, color: Color(0xff555555)),
-                                      ),
-                                      Text(
-                                        'Receive weekly summary of relationships needing attention',
-                                        style: TextStyle(fontSize: 14, color: Colors.grey),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Container(
-                                  width: 100,
-                                  child: Switch(
-                                    value: _weeklyDigestEnabled,
-                                    inactiveThumbColor: Colors.white,
-                                    inactiveTrackColor: const Color(0xffdddddd),
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _weeklyDigestEnabled = value;
-                                      });
-                                      _updateWeeklyDigestSetting(value);
-                                    },
-                                    activeColor: const Color(0xff3CB3E9),
-                                  ),
-                                )
-                              ],
-                            ),
+                            // // Weekly Digest Section
+                            // const SizedBox(height: 30),
+                            // Text(
+                            //   'NOTIFICATIONS',
+                            //   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.grey.shade400 : const Color(0xff6e6e6e)),
+                            // ),
+                            // const SizedBox(height: 15),
+                            // Row(
+                            //   crossAxisAlignment: CrossAxisAlignment.start,
+                            //   children: [
+                            //     Expanded(
+                            //       child: Column(
+                            //         crossAxisAlignment: CrossAxisAlignment.start,
+                            //         children: [
+                            //           Text(
+                            //             'Weekly Digest',
+                            //             style: TextStyle(fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555)),
+                            //           ),
+                            //           Text(
+                            //             'Receive weekly summary of relationships needing attention',
+                            //             style: TextStyle(fontSize: 14, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+                            //           ),
+                            //         ],
+                            //       ),
+                            //     ),
+                            //     Container(
+                            //       width: 100,
+                            //       child: Switch(
+                            //         value: _weeklyDigestEnabled,
+                            //         inactiveThumbColor: themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.white,
+                            //         inactiveTrackColor: themeProvider.isDarkMode ? Colors.grey.shade700 : const Color(0xffdddddd),
+                            //         onChanged: (value) {
+                            //           setState(() {
+                            //             _weeklyDigestEnabled = value;
+                            //           });
+                            //           _updateWeeklyDigestSetting(value);
+                            //         },
+                            //         activeColor: theme.colorScheme.primary,
+                            //       ),
+                            //     )
+                            //   ],
+                            // ),
                             
                             const SizedBox(height: 30),
                             SizedBox(
                               width: double.infinity,
-                              height: 50,
+                              height: 55,
                               child: _isChangingPassword
-                                  ? const Center(child: CircularProgressIndicator())
+                                  ? Center(child: CircularProgressIndicator(color: theme.colorScheme.primary))
                                   : ElevatedButton(
                                       onPressed: () {
-                                        _dismissKeyboard(); // Dismiss keyboard before updating
+                                        _dismissKeyboard();
                                         _updateUserData();
                                       },
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xff3CB3E9),
+                                        backgroundColor: theme.colorScheme.primary,
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                       ),
-                                      child: const Text(
+                                      child: Text(
                                         'CONFIRM CHANGES',
-                                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ?Colors.black:Colors.white),
                                       ),
                                     ),
                             ),
@@ -1148,9 +1284,9 @@ void _showDeleteAccountConfirmation(AuthService authService) {
                       
                       // Delete Account Section
                       const SizedBox(height: 40),
-                      const Text(
+                      Text(
                         'ACCOUNT ACTIONS',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xff6e6e6e)),
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.grey.shade400 : const Color(0xff6e6e6e)),
                       ),
                       const SizedBox(height: 35),
                       SizedBox(
@@ -1158,13 +1294,12 @@ void _showDeleteAccountConfirmation(AuthService authService) {
                         height: 50,
                         child: OutlinedButton(
                           onPressed: () {
-                            _dismissKeyboard(); // Dismiss keyboard before showing dialog
-                            // _showDeleteAccountConfirmation(authService);
-                            _showLogoutConfirmation(authService);
+                            _dismissKeyboard();
+                            _showLogoutConfirmation(authService, themeProvider);
                           },
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: Color(0xff3CB3E9),
-                            side: const BorderSide(color: Color(0xff3CB3E9)),
+                            foregroundColor: theme.colorScheme.primary,
+                            side: BorderSide(color: theme.colorScheme.primary),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
                           child: const Text(
@@ -1179,8 +1314,8 @@ void _showDeleteAccountConfirmation(AuthService authService) {
                         height: 50,
                         child: OutlinedButton(
                           onPressed: () {
-                            _dismissKeyboard(); // Dismiss keyboard before showing dialog
-                            _showDeleteAccountConfirmation(authService);
+                            _dismissKeyboard();
+                            _showDeleteAccountConfirmation(authService, themeProvider);
                           },
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.red,
@@ -1197,7 +1332,11 @@ void _showDeleteAccountConfirmation(AuthService authService) {
                       const SizedBox(height: 30),
                       
                       // Feedback Section
-                      _buildFeedbackForm(),
+                        _buildFeedbackForumSection(themeProvider),
+                      
+                      const SizedBox(height: 30),
+
+                      _buildFeedbackForm(themeProvider),
                       
                       const SizedBox(height: 30),
                       
@@ -1207,20 +1346,20 @@ void _showDeleteAccountConfirmation(AuthService authService) {
                           width: double.infinity,
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.grey.shade50,
+                            color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.grey.shade50,
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
+                              Text(
                                 'FEEDBACK MANAGEMENT',
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xff6e6e6e)),
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.grey.shade400 : const Color(0xff6e6e6e)),
                               ),
                               const SizedBox(height: 8),
-                              const Text(
+                              Text(
                                 'View and manage user feedback submissions',
-                                style: TextStyle(color: Colors.grey),
+                                style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
                               ),
                               const SizedBox(height: 12),
                               SizedBox(
@@ -1228,7 +1367,7 @@ void _showDeleteAccountConfirmation(AuthService authService) {
                                 height: 50,
                                 child: ElevatedButton(
                                   onPressed: () {
-                                    _dismissKeyboard(); // Dismiss keyboard before navigation
+                                    _dismissKeyboard();
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
@@ -1256,6 +1395,8 @@ void _showDeleteAccountConfirmation(AuthService authService) {
                           ),
                         )
                       : const SizedBox(),
+                      
+                      const SizedBox(height: 20),
                     ],
                   ),
                 ),
@@ -1268,7 +1409,7 @@ void _showDeleteAccountConfirmation(AuthService authService) {
   
   @override
   void dispose() {
-     _feedbackMessageFocusNode.dispose();
+    _feedbackMessageFocusNode.dispose();
     _usernameFocusNode.dispose();
     _oldPasswordFocusNode.dispose();
     _newPasswordFocusNode.dispose();

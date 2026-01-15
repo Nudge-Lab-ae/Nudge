@@ -26,7 +26,7 @@ class ScreenTracker {
   
   // For dashboard tabs
   static String getDashboardSection(int currentIndex) {
-    final sections = ['Dashboard', 'Contacts', 'Groups', 'Nudges'];
+    final sections = ['Dashboard', 'Social Universe', 'Contacts', 'Groups', 'Nudges'];
     return sections[currentIndex];
   }
 }

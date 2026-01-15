@@ -1,42 +1,77 @@
 import 'package:flutter/material.dart';
 import 'package:nudge/screens/feedback/feedback_forum_screen.dart';
 import 'package:nudge/services/api_service.dart';
+import 'package:provider/provider.dart';
+import '../providers/theme_provider.dart';
 
 class FeedbackForumPreview extends StatelessWidget {
   const FeedbackForumPreview({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDarkMode = themeProvider.isDarkMode;
+    
     return StreamBuilder<List<Map<String, dynamic>>>(
       stream: ApiService().getFeedbacksStream(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return Center(
+            child: CircularProgressIndicator(
+              color: isDarkMode ? const Color(0xFF3CB3E9) : const Color(0xff3CB3E9),
+            ),
+          );
         }
         
         if (snapshot.hasError || snapshot.data == null) {
-          return const Center(
-            child: Text('Unable to load feedback forum'),
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 64,
+                  color: isDarkMode ? const Color(0xFFAAAAAA) : Colors.grey,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Unable to load feedback forum',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: isDarkMode ? const Color(0xFFAAAAAA) : Colors.grey,
+                  ),
+                ),
+              ],
+            ),
           );
         }
         
         final feedbacks = snapshot.data!;
         
         if (feedbacks.isEmpty) {
-          return const Center(
+          return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.forum_outlined, size: 64, color: Colors.grey),
-                SizedBox(height: 16),
+                Icon(
+                  Icons.forum_outlined,
+                  size: 64,
+                  color: isDarkMode ? const Color(0xFF555555) : Colors.grey,
+                ),
+                const SizedBox(height: 16),
                 Text(
                   'No feedback yet',
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: isDarkMode ? const Color(0xFFCCCCCC) : Colors.grey,
+                  ),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
                   'Be the first to share your thoughts!',
-                  style: TextStyle(color: Colors.grey),
+                  style: TextStyle(
+                    color: isDarkMode ? const Color(0xFFAAAAAA) : Colors.grey,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -51,11 +86,12 @@ class FeedbackForumPreview extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Row(
                 children: [
-                  const Text(
+                  Text(
                     'Recent Feedback',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
+                      color: isDarkMode ? Colors.white : const Color(0xff333333),
                     ),
                   ),
                   const Spacer(),
@@ -68,7 +104,13 @@ class FeedbackForumPreview extends StatelessWidget {
                         ),
                       );
                     },
-                    child: const Text('View All'),
+                    child: Text(
+                      'View All',
+                      style: TextStyle(
+                        color: const Color(0xff3CB3E9),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -79,7 +121,7 @@ class FeedbackForumPreview extends StatelessWidget {
               child: ListView.builder(
                 itemCount: feedbacks.length,
                 itemBuilder: (context, index) {
-                  return _buildPreviewItem(feedbacks[index]);
+                  return _buildPreviewItem(feedbacks[index], isDarkMode);
                 },
               ),
             ),
@@ -89,16 +131,22 @@ class FeedbackForumPreview extends StatelessWidget {
     );
   }
 
-  // In feedback_forum_preview.dart - Update _buildPreviewItem method
-  Widget _buildPreviewItem(Map<String, dynamic> feedback) {
+  Widget _buildPreviewItem(Map<String, dynamic> feedback, bool isDarkMode) {
     final title = feedback['adminTitle'] ?? 'No Title';
     final message = feedback['message'] ?? '';
     final status = feedback['status'] ?? 'received';
-    // final votes = feedback['votes'] ?? 0;
     final screen = feedback['screen'] ?? 'Unknown Screen';
     
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
+      color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isDarkMode ? const Color(0xFF444444) : const Color(0xFFEEEEEE),
+          width: 1,
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -110,7 +158,7 @@ class FeedbackForumPreview extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: _getStatusColor(status).withOpacity(0.1),
+                    color: _getStatusColor(status).withOpacity(isDarkMode ? 0.2 : 0.1),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
@@ -127,33 +175,26 @@ class FeedbackForumPreview extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: Colors.blue.withOpacity(isDarkMode ? 0.2 : 0.1),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
                     screen,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 10,
                       color: Colors.blue,
                     ),
                   ),
                 ),
                 const Spacer(),
-                // Votes
-                // Row(
-                //   children: [
-                //     Icon(Icons.thumb_up, size: 14, color: Colors.grey.shade600),
-                //     const SizedBox(width: 4),
-                //     Text('$votes', style: const TextStyle(fontSize: 12)),
-                //   ],
-                // ),
               ],
             ),
             const SizedBox(height: 8),
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w500,
+                color: isDarkMode ? Colors.white : const Color(0xff333333),
               ),
             ),
             if (message.isNotEmpty) ...[
@@ -164,7 +205,7 @@ class FeedbackForumPreview extends StatelessWidget {
                   : message,
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey.shade700,
+                  color: isDarkMode ? const Color(0xFFAAAAAA) : Colors.grey.shade700,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,

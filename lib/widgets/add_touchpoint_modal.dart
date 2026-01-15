@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../models/contact.dart';
+import 'package:provider/provider.dart';
+import '../providers/theme_provider.dart';
 
 class AddTouchpointModal extends StatefulWidget {
   final ApiService apiService;
@@ -143,11 +145,29 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final theme = Theme.of(context);
+    
+    final primaryColor = theme.colorScheme.primary;
+    // final backgroundColor = themeProvider.getBackgroundColor(context);
+    final surfaceColor = themeProvider.getSurfaceColor(context);
+    final textColor = themeProvider.isDarkMode ? Colors.white : const Color(0xff333333);
+    final secondaryTextColor = themeProvider.isDarkMode ? Colors.grey.shade400 : const Color(0xff888888);
+    final borderColor = themeProvider.isDarkMode ? Colors.grey.shade600 : const Color(0xFFEEEEEE);
+    final iconColor = themeProvider.isDarkMode ? Colors.white : const Color(0xff555555);
+
     return Container(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.85,
       ),
       padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: surfaceColor,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -156,17 +176,17 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'LOG TOUCHPOINT',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xff555555),
+                  color: textColor,
                   letterSpacing: 1.2,
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.close, color: Color(0xff555555)),
+                icon: Icon(Icons.close, color: iconColor),
                 onPressed: () => Navigator.pop(context),
               ),
             ],
@@ -177,15 +197,25 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
           // Contact Search
           TextField(
             controller: _searchController,
+            style: TextStyle(color: textColor),
             decoration: InputDecoration(
               labelText: 'Search Contacts',
-              prefixIcon: const Icon(Icons.search, color: Color(0xff3CB3E9)),
+              labelStyle: TextStyle(color: secondaryTextColor),
+              prefixIcon: Icon(Icons.search, color: primaryColor),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFFEEEEEE)),
+                borderSide: BorderSide(color: borderColor),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: borderColor),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: primaryColor, width: 2),
               ),
               filled: true,
-              fillColor: Colors.white,
+              fillColor: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
             ),
           ),
           
@@ -196,9 +226,9 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF3CB3E9).withOpacity(0.1),
+                color: primaryColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF3CB3E9).withOpacity(0.3)),
+                border: Border.all(color: primaryColor.withOpacity(0.3)),
               ),
               child: Row(
                 children: [
@@ -207,7 +237,7 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
                     height: 40,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: const Color(0xFF3CB3E9),
+                      color: primaryColor,
                     ),
                     child: Center(
                       child: Text(
@@ -227,24 +257,24 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
                       children: [
                         Text(
                           _selectedContact!.name,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xff333333),
+                            color: textColor,
                           ),
                         ),
                         Text(
                           _selectedContact!.connectionType,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: Color(0xff888888),
+                            color: secondaryTextColor,
                           ),
                         ),
                       ],
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.clear, size: 20, color: Color(0xff888888)),
+                    icon: Icon(Icons.clear, size: 20, color: secondaryTextColor),
                     onPressed: () {
                       setState(() {
                         _selectedContact = null;
@@ -264,7 +294,7 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: Color(0xff888888),
+                color: secondaryTextColor,
                 letterSpacing: 0.5,
               ),
             ),
@@ -272,24 +302,31 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
             
             Expanded(
               child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? Center(
+                      child: CircularProgressIndicator(
+                        color: primaryColor,
+                      ),
+                    )
                   : _filteredContacts.isEmpty
                       ? Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.people_outline, size: 48, color: Color(0xff888888)),
+                              Icon(Icons.people_outline, size: 48, color: secondaryTextColor),
                               const SizedBox(height: 16),
-                              const Text(
+                              Text(
                                 'No contacts found',
-                                style: TextStyle(color: Color(0xff888888)),
+                                style: TextStyle(color: secondaryTextColor),
                               ),
                               if (_searchController.text.isNotEmpty)
                                 TextButton(
                                   onPressed: () {
                                     _searchController.clear();
                                   },
-                                  child: const Text('Clear search'),
+                                  child: Text(
+                                    'Clear search',
+                                    style: TextStyle(color: primaryColor),
+                                  ),
                                 ),
                             ],
                           ),
@@ -305,13 +342,13 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
                                 height: 40,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: const Color(0xFF3CB3E9).withOpacity(0.2),
+                                  color: primaryColor.withOpacity(0.2),
                                 ),
                                 child: Center(
                                   child: Text(
                                     contact.name.substring(0, 1).toUpperCase(),
-                                    style: const TextStyle(
-                                      color: Color(0xFF3CB3E9),
+                                    style: TextStyle(
+                                      color: primaryColor,
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -320,20 +357,20 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
                               ),
                               title: Text(
                                 contact.name,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w500,
-                                  color: Color(0xff333333),
+                                  color: textColor,
                                 ),
                               ),
                               subtitle: Text(
                                 contact.connectionType,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
-                                  color: Color(0xff888888),
+                                  color: secondaryTextColor,
                                 ),
                               ),
-                              trailing: const Icon(Icons.chevron_right, color: Color(0xff888888)),
+                              trailing: Icon(Icons.chevron_right, color: secondaryTextColor),
                               onTap: () {
                                 setState(() {
                                   _selectedContact = contact;
@@ -353,7 +390,7 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: Color(0xff888888),
+                color: secondaryTextColor,
                 letterSpacing: 0.5,
               ),
             ),
@@ -370,14 +407,14 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: isSelected ? Colors.white : Color(0xff333333),
+                      color: isSelected ? Colors.white : textColor,
                     ),
                   ),
                   selected: isSelected,
-                  selectedColor: const Color(0xFF3CB3E9),
-                  backgroundColor: Colors.white,
+                  selectedColor: primaryColor,
+                  backgroundColor: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
                   side: BorderSide(
-                    color: isSelected ? const Color(0xFF3CB3E9) : const Color(0xFFEEEEEE),
+                    color: isSelected ? primaryColor : borderColor,
                   ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
@@ -397,14 +434,24 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
             TextField(
               controller: _notesController,
               maxLines: 3,
+              style: TextStyle(color: textColor),
               decoration: InputDecoration(
                 labelText: 'Notes (optional)',
+                labelStyle: TextStyle(color: secondaryTextColor),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFEEEEEE)),
+                  borderSide: BorderSide(color: borderColor),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: borderColor),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: primaryColor, width: 2),
                 ),
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
               ),
             ),
             
@@ -416,8 +463,8 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _logTouchpoint,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF3CB3E9),
-                  foregroundColor: Colors.white,
+                  backgroundColor: primaryColor,
+                  foregroundColor: themeProvider.isDarkMode ? Colors.black : Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -425,24 +472,27 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
                   elevation: 2,
                 ),
                 child: _isLoading
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            themeProvider.isDarkMode ? Colors.black : Colors.white,
+                          ),
                         ),
                       )
-                    : const Row(
+                    : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.add, size: 20, color: Colors.white,),
-                          SizedBox(width: 8),
+                          Icon(Icons.add, size: 20, color: themeProvider.isDarkMode ? Colors.black : Colors.white),
+                          const SizedBox(width: 8),
                           Text(
                             'LOG TOUCHPOINT',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
+                              color: themeProvider.isDarkMode ? Colors.black : Colors.white,
                             ),
                           ),
                         ],

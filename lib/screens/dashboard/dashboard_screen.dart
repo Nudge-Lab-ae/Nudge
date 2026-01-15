@@ -1,3 +1,4 @@
+// dashboard_screen.dart - Updated for theme support
 // import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -5,6 +6,7 @@ import 'package:nudge/helpers/deletion_retry_helper.dart';
 import 'package:nudge/models/analytics.dart';
 import 'package:nudge/models/nudge.dart';
 import 'package:nudge/models/social_group.dart';
+import 'package:nudge/providers/theme_provider.dart';
 import 'package:nudge/screens/contacts/contact_detail_screen.dart';
 import 'package:nudge/screens/contacts/contacts_list_screen.dart';
 import 'package:nudge/screens/groups/groups_list_screen.dart';
@@ -13,6 +15,7 @@ import 'package:nudge/screens/social_universe/social_universe_immersive.dart';
 // import 'package:nudge/screens/settings/settings_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/services/social_universe_service.dart';
+import 'package:nudge/theme/app_theme.dart';
 import 'package:nudge/widgets/add_touchpoint_modal.dart';
 import 'package:nudge/widgets/contact_detail_modal.dart';
 // import 'package:nudge/widgets/contact_quick_panel.dart';
@@ -67,7 +70,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _checkDeletionRetry();
     _currentIndex = widget.initialTab;
     _initializeNotifications();
-     _initializeSocialUniverse();
+    _initializeSocialUniverse();
     _scrollController.addListener(() {
       _handleScroll();
     });
@@ -137,7 +140,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _lastOffset = currentOffset;
   }
 
-
   Future<void> _initializeNotifications() async {
     await nudgeService.initialize();
   }
@@ -162,64 +164,92 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }).toList();
   }
 
-  
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
     final user = authService.currentUser;
     final apiService = Provider.of<ApiService>(context);
-
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    // final theme = Theme.of(context);
+    
     print('DashboardScreen building with _currentIndex: $_currentIndex, initialTab: ${widget.initialTab}');
     
     if (user == null) {
-      return const Scaffold(
-        body: Center(child: Text('Please log in to view dashboard')),
+      return Scaffold(
+        backgroundColor: themeProvider.getBackgroundColor(context),
+        body: Center(
+          child: Text(
+            'Please log in to view dashboard',
+            style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans',),
+          ),
+        ),
       );
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
-      body: StreamProvider<List<Contact>>.value(
-        value: apiService.getContactsStream(),
-        initialData: const [],
-        child: StreamProvider<List<SocialGroup>>.value(
-          value: apiService.getGroupsStream(),
-          initialData: const [],
-          child: Consumer2<List<Contact>, List<SocialGroup>>(
-            builder: (context, contacts, groups, child) {
-              totalContacts = contacts;
-              
-              // Return different screens based on current index
-              switch (_currentIndex) {
-              case 0:
-                return _buildDashboardWithSliver(context, contacts, groups, apiService);
-              case 1:
-                return ContactsListScreen(
-                  showAppBar: false,
-                  filter: vipFilter ? 'vip' : attentionFilter ? 'needs_attention' : '',
-                  hideButton: hideButton,
-                );
-              case 2:
-                return const GroupsListScreen(showAppBar: false);
-              case 3:
-                return const NotificationsScreen(showAppBar: false);
-              case 4: // NEW: Immersive Social Universe
-                return const SocialUniverseImmersiveScreen();
-              default:
-                return _buildDashboardWithSliver(context, contacts, groups, apiService);
-            }
-            },
+      backgroundColor: themeProvider.getBackgroundColor(context),
+      body: Stack(
+        children: [
+          StreamProvider<List<Contact>>.value(
+            value: apiService.getContactsStream(),
+            initialData: const [],
+            child: StreamProvider<List<SocialGroup>>.value(
+              value: apiService.getGroupsStream(),
+              initialData: const [],
+              child: Consumer2<List<Contact>, List<SocialGroup>>(
+                builder: (context, contacts, groups, child) {
+                  totalContacts = contacts;
+                  
+                  // Return different screens based on current index
+                  switch (_currentIndex) {
+                    case 0:
+                      return _buildDashboardWithSliver(themeProvider, contacts, groups, apiService);
+                    case 1: // Social Universe is now at index 1
+                      return const SocialUniverseImmersiveScreen();
+                    case 2: // Contacts moved to index 2
+                      return ContactsListScreen(
+                        showAppBar: false,
+                        filter: vipFilter ? 'vip' : attentionFilter ? 'needs_attention' : '',
+                        hideButton: hideButton,
+                      );
+                    case 3: // Groups moved to index 3
+                      return const GroupsListScreen(showAppBar: false);
+                    case 4: // Notifications moved to index 4
+                      return const NotificationsScreen(showAppBar: false);
+                    default:
+                      return _buildDashboardWithSliver(themeProvider, contacts, groups, apiService);
+                  }
+                },
+              ),
+            ),
           ),
-        ),
+          
+          // Floating Navigation Bar
+          Positioned(
+            bottom: 20,
+            left: 16,
+            right: 16,
+            child: _buildFloatingNavigationBar(context, themeProvider),
+          ),
+          _currentIndex==0 || _currentIndex==1
+          ? Positioned(
+          bottom: 90,
+          right: 20,
+          child: FeedbackFloatingButton(
+            currentSection: getCurrentSection(),
+          ),
+        ):Center(),
+        ],
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
 
-
-  Widget _buildDashboardWithSliver(BuildContext context, List<Contact> contacts, List<SocialGroup> groups, ApiService apiService) {
+  Widget _buildDashboardWithSliver(ThemeProvider themeProvider, List<Contact> contacts, List<SocialGroup> groups, ApiService apiService) {
+    // final themeProvider = Provider.of<ThemeProvider>(context);
+    final theme = Theme.of(context);
+    
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: themeProvider.getBackgroundColor(context),
       body: StreamBuilder<List<Nudge>>(
         stream: NudgeService().getNudgesStream(Provider.of<AuthService>(context).currentUser!.uid),
         builder: (context, nudgeSnapshot) {
@@ -227,41 +257,58 @@ class _DashboardScreenState extends State<DashboardScreen> {
           final analytics = _calculateAnalytics(contacts, nudges);
           final weeklyNudgePerformance = _calculateWeeklyNudgePerformance(nudges);
           final vipContacts = contacts.where((c) => c.isVIP).toList();
-          final needsAttention = contacts.where((c) => c.lastContacted.isBefore(DateTime.now().subtract(const Duration(days: 30)))).toList();
+          // final needsAttention = contacts.where((c) => c.lastContacted.isBefore(DateTime.now().subtract(const Duration(days: 30)))).toList();
 
           return CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
-              // Sliver App Bar - This is the smooth collapsing app bar
+              // Sliver App Bar
               SliverAppBar(
                 title: Padding(
-                  padding: EdgeInsets.only(left: 0),
-                  child: Text( 'Dashboard',style: TextStyle(fontSize: 22, fontFamily: 'Inter', fontWeight: FontWeight.bold, color: Color(0xff555555))),
+                  padding: const EdgeInsets.only(left: 0),
+                  child: Text(
+                    'Dashboard',
+                    style: TextStyle(
+                      fontSize: 22, 
+                      fontFamily: 'Inter', 
+                      fontWeight: FontWeight.w800,
+                      color: themeProvider.getTextPrimaryColor(context),
+                    ),
                   ),
-                backgroundColor: Color(0xFFF9FAFB),
-                leading: Center(),
-                iconTheme: const IconThemeData(color: Color(0xff3CB3E9)),
+                ),
+                backgroundColor: themeProvider.getBackgroundColor(context),
+                leading: const Center(),
+                iconTheme: IconThemeData(color: theme.colorScheme.primary),
                 elevation: 0,
                 actions: [
-                 Padding(
-                  padding: EdgeInsets.only(right: 0),
-                  child: MaterialButton(
-                        child: const Icon(Icons.settings, color:  Color(0xff3CB3E9),),
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/settings');
-                        },
-                        onLongPress: () {
-                          apiService.cancelHourlyNotifications();
-                        },
-                        // tooltip: 'Notifications',
+                  Padding(
+                    padding: const EdgeInsets.only(right: 0),
+                    child: MaterialButton(
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: themeProvider.isDarkMode 
+                            ? Colors.white.withOpacity(0.1)
+                            : Colors.black.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.white24),
+                        ),
+                        child: Icon(Icons.settings, color: themeProvider.isDarkMode ? Colors.white : theme.colorScheme.primary, size: 20),
                       ),
-                 )
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/settings');
+                      },
+                      onLongPress: () {
+                        apiService.cancelHourlyNotifications();
+                      },
+                    ),
+                  )
                 ],
                 surfaceTintColor: Colors.transparent,
                 centerTitle: false,
-                floating: true, // Makes the app bar appear immediately when scrolling up
-                snap: true, // Makes the app bar snap into view when scrolling up
-                pinned: false, // Don't pin - let it fully disappear when scrolling down
+                floating: true,
+                snap: true,
+                pinned: false,
               ),
               
               // Main content
@@ -269,126 +316,132 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 10),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
-                    // Social Universe
-                    SocialUniverseWidget(
-                      contacts: contacts,
-                      onContactView: (contact) {
-                        _showContactQuickPanel(context, contact, apiService);
-                      },
-                      height: 500,
-                       onFullScreenPressed: () {
+                    // Social Universe - Updated with consistent spacing
+                    Container(
+                      margin: const EdgeInsets.only(top: 4, left: 4),
+                      child: SocialUniverseWidget(
+                        contacts: contacts,
+                        onContactView: (contact) {
+                          _showContactQuickPanel(themeProvider, contact, apiService);
+                        },
+                        height: 550,
+                        onFullScreenPressed: () {
                           setState(() {
-                            _currentIndex = 4; // Navigate to immersive universe
+                            _currentIndex = 1; // Navigate to immersive universe
                           });
                         },
+                      ),
                     ),
                     const SizedBox(height: 20),
                     
-                    // Quick Insights
-                    _buildQuickInsights(analytics, contacts.length),
+                    // Quick Insights - Now in card
+                    _buildQuickInsightsCard(analytics, contacts.length, context),
                     const SizedBox(height: 20),
 
                     // Nudge Performance
-                    _buildWeeklyNudgePerformanceSection(weeklyNudgePerformance),
+                    _buildWeeklyNudgePerformanceSection(weeklyNudgePerformance, context),
                     const SizedBox(height: 20),
 
-                    // Quick Actions
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8.0),
-                      child: Text(
-                        'QUICK ACTIONS',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xff6e6e6e),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    _buildCenteredQuickActions(context),
+                    // Quick Actions - Now in card
+                    _buildQuickActionsCard(context, themeProvider),
                     const SizedBox(height: 20),
 
                     // VIP Contacts
                     if (vipContacts.isNotEmpty) ...[
-                      Row(
-                        children: [
-                          Text(
-                            'CLOSE CIRCLE',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xff6e6e6e),
+                      Container(
+                        margin: const EdgeInsets.only(top: 4, left: 24, right: 4),
+                        child: Row(
+                          children: [
+                            Text(
+                              'CLOSE CIRCLE',
+                              style: TextStyle(
+                                fontFamily: 'OpenSans',
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                                color: themeProvider.getTextSecondaryColor(context),
+                              ),
                             ),
-                          ),
-                          const Spacer(),
-                          TextButton(
-                            onPressed: () {
-                              setState(() {
-                                _currentIndex = 1;
-                                attentionFilter = false;
-                                vipFilter = true;
-                              });
-                            },
-                            child: const Text('View All', style: TextStyle(color: Color(0xff3CB3E9))),
-                          ),
-                        ],
+                            const Spacer(),
+                            TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  _currentIndex = 2;
+                                  attentionFilter = false;
+                                  vipFilter = true;
+                                });
+                              },
+                              child: Text('View All', style: TextStyle(color: theme.colorScheme.primary, fontFamily: 'OpenSans',)),
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 10),
                       SizedBox(
                         height: 140,
-                        child: ListView.builder(
+                        child: Padding(
+                          padding: EdgeInsets.only(left: 15),
+                          child: ListView.builder(
                           scrollDirection: Axis.horizontal,
                           itemCount: vipContacts.length,
                           itemBuilder: (context, index) {
                             final contact = vipContacts[index];
-                            return _buildContactCard(contact, apiService, showConnectionType: true);
+                            return _buildContactCard(contact, apiService, showConnectionType: true, context: context);
                           },
                         ),
+                          )
                       ),
                       const SizedBox(height: 20),
                     ],
 
                     // Needs Care Section
-                    if (needsAttention.isNotEmpty) ...[
-                      Row(
-                        children: [
-                          Text(
-                            'NEEDS CARE',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xff6e6e6e),
-                            ),
-                          ),
-                          const Spacer(),
-                          TextButton(
-                            onPressed: () {
-                              setState(() => _currentIndex = 1);
-                            },
-                            child: const Text(
-                              'View All',
-                              style: TextStyle(color: Color(0xff3CB3E9)),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      SizedBox(
-                        height: 120,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: needsAttention.length,
-                          itemBuilder: (context, index) {
-                            final contact = needsAttention[index];
-                            return _buildContactCard(contact, apiService, showConnectionType: false);
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                    ],
+                    // if (needsAttention.isNotEmpty) ...[
+                    //   Container(
+                    //     margin: const EdgeInsets.only(top: 4, left: 4),
+                    //     child: Row(
+                    //       children: [
+                    //         Text(
+                    //           'NEEDS CARE',
+                    //           style: TextStyle(
+                    //             fontSize: 16,
+                    //             fontFamily: 'OpenSans',
+                    //             fontWeight: FontWeight.w500,
+                    //             color: themeProvider.getTextSecondaryColor(context),
+                    //           ),
+                    //         ),
+                    //         const Spacer(),
+                    //         TextButton(
+                    //           onPressed: () {
+                    //             setState(() => _currentIndex = 2);
+                    //           },
+                    //           child: Text(
+                    //             'View All',
+                    //             style: TextStyle(color: theme.colorScheme.primary, fontFamily: 'OpenSans',),
+                    //           ),
+                    //         ),
+                    //       ],
+                    //     ),
+                    //   ),
+                    //   const SizedBox(height: 10),
+                    //   SizedBox(
+                    //     height: 120,
+                    //     child: ListView.builder(
+                    //       scrollDirection: Axis.horizontal,
+                    //       itemCount: needsAttention.length,
+                    //       itemBuilder: (context, index) {
+                    //         final contact = needsAttention[index];
+                    //         return _buildContactCard(contact, apiService, showConnectionType: false, context: context);
+                    //       },
+                    //     ),
+                    //   ),
+                    //   const SizedBox(height: 20),
+                    // ],
 
                     // Pie Chart
-                    _buildInteractivePieChartSection(contacts),
-                    const SizedBox(height: 20), // Bottom padding for FAB
+                    Container(
+                      margin: const EdgeInsets.only(top: 4, left: 4),
+                      child: _buildInteractivePieChartSection(contacts, context),
+                    ),
+                    const SizedBox(height: 40),
                   ]),
                 ),
               ),
@@ -396,16 +449,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           );
         },
       ),
-      
-      // Feedback button for dashboard only
-      floatingActionButton: _currentIndex == 0
-          ? Padding(
-        padding: EdgeInsets.only(right: 6,bottom: 30,),
-        child: FeedbackFloatingButton(
-                currentSection: getCurrentSection(),
-              ),
-            )
-          : null,
     );
   }
 
@@ -424,157 +467,45 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-//   List<Color> _getGradientPair(int index) {
-//   final List<List<Color>> gradientColors = [
-//     [Color(0xFF2D85F6), Color(0xFF5CDEE5)], // Blue gradient
-//     [Color(0xFF4CAF50), Color(0xFF8BC34A)], // Green gradient
-//     [Color(0xFF9C27B0), Color(0xFFE040FB)], // Purple gradient
-//     [Color(0xFFFF9800), Color(0xFFFFC107)], // Orange gradient
-//     [Color(0xFFF44336), Color(0xFFFF5252)], // Red gradient
-//     [Color(0xFF2196F3), Color(0xFF64B5F6)], // Light blue gradient
-//     [Color(0xFFFFC107), Color(0xFFFFEB3B)], // Yellow gradient
-//     [Color(0xFF795548), Color(0xFFA1887F)], // Brown gradient
-//     [Color(0xFF607D8B), Color(0xFF90A4AE)], // Blue grey gradient
-//     [Color(0xFFE91E63), Color(0xFFF06292)], // Pink gradient
-//     [Color(0xFF00BCD4), Color(0xFF4DD0E1)], // Cyan gradient
-//     [Color(0xFF8BC34A), Color(0xFFAED581)], // Light green gradient
-//     [Color(0xFF673AB7), Color(0xFF9575CD)], // Deep purple gradient
-//     [Color(0xFFFF5722), Color(0xFFFF8A65)], // Deep orange gradient
-//     [Color(0xFF009688), Color(0xFF4DB6AC)], // Teal gradient
-//     [Color(0xFF3F51B5), Color(0xFF7986CB)], // Indigo gradient
-//     [Color(0xFFCDDC39), Color(0xFFE6EE9C)], // Lime gradient
-//     [Color(0xFFFFEB3B), Color(0xFFFFF59D)], // Amber gradient
-//     [Color(0xFF9E9E9E), Color(0xFFE0E0E0)], // Grey gradient
-//     [Color(0xFF00E676), Color(0xFF69F0AE)], // Green accent gradient
-//   ];
-  
-//   final int colorIndex = index % gradientColors.length;
-//   return gradientColors[colorIndex];
-// }
-
-  //   AppBar? _buildAppBar(ApiService apiService) {
-  //   // final hasOverdueNudges = _hasOverdueNudges();
+  void _showAddContactOptions(BuildContext context, ThemeProvider themeProvider) {
+    // final themeProvider = Provider.of<ThemeProvider>(context);
     
-  //   // final overdueNudges = _getOverdueNudges(allNudges);
-  //   // final hasOverdue = overdueNudges.isNotEmpty;
-
-  //   if (!_showAppBar && _currentIndex == 0) {
-  //     return null;
-  //   }
-
-  //   String title = 'Dashboard';
-  //   if (_currentIndex == 1) {
-  //     title = 'Contacts';
-  //   } else if (_currentIndex == 2) {
-  //     title = 'Social Groups';
-  //   } else if (_currentIndex == 3) {
-  //     title = 'Nudges';
-  //   }
-   
-  //   return AppBar(
-  //     title: Text(
-  //       title, style: TextStyle(
-  //         fontSize: 25,
-  //         fontFamily: 'Inter',
-  //         fontWeight: FontWeight.bold,
-  //         color: Color(0xff555555)
-  //       ),
-  //     ),
-  //     backgroundColor: Color(0xFFF9FAFB),
-  //     iconTheme: const IconThemeData(color: Color(0xff3CB3E9)),
-  //     elevation: 0,
-  //     leading: Center(),
-  //     actions: _currentIndex == 0
-  //       ?[Stack(
-  //             children: [
-  //               IconButton(
-  //                 icon: const Icon(Icons.settings),
-  //                 onPressed: () {
-  //                   Navigator.pushNamed(context, '/settings');
-  //                 },
-  //                 tooltip: 'Notifications',
-  //               ),
-  //             ],
-  //           )
-  //     ]:null,
-  //     surfaceTintColor: Colors.transparent,
-  //     centerTitle: false,
-  //   );
-  // }
-
-  // Widget _buildCurrentView(BuildContext context, List<Contact> contacts, List<SocialGroup> groups, ApiService apiService) {
-  //   switch (_currentIndex) {
-  //     case 0:
-  //       return _buildDashboardContent(context, contacts, groups, apiService);
-  //     case 1:
-  //       return ContactsListScreen(
-  //         showAppBar: false,
-  //         filter: vipFilter ? 'vip' : attentionFilter ? 'needs_attention' : '',
-  //         hideButton: hideButton,
-  //       );
-  //     case 2:
-  //       return const GroupsListScreen(showAppBar: false);
-  //     case 3:
-  //       return const NotificationsScreen(showAppBar: false);
-  //     default:
-  //       return _buildDashboardContent(context, contacts, groups, apiService);
-  //   }
-  // }
-
-  // Widget _buildFloatingActionButton(BuildContext context) {
-  //   switch (_currentIndex) {
-  //     case 0:
-  //       return Container();
-  //     case 1:
-  //       return FloatingActionButton(
-  //         onPressed: () {
-  //           _showAddContactOptions(context);
-  //         },
-  //         backgroundColor: const Color(0xff3CB3E9),
-  //         child: const Icon(Icons.add, color: Colors.white),
-  //       );
-  //     case 2:
-  //       return Container();
-  //     default:
-  //       return Container();
-  //   }
-  // }
-
-  void _showAddContactOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
+      backgroundColor: themeProvider.getSurfaceColor(context),
       builder: (context) {
         return SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Padding(
-                padding: EdgeInsets.all(16.0),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
                 child: Text(
                   'ADD CONTACTS',
                   style: TextStyle(
-                    color: Color(0xff555555),
+                    color: themeProvider.getTextPrimaryColor(context),
                     fontSize: 18,
+                    fontFamily: 'OpenSans',
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
               ListTile(
-                leading: const Icon(Icons.person_add, color: Color(0xff3CB3E9)),
-                title: const Text('ADD CONTACT MANUALLY', style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xff555555)),),
-                subtitle: const Text('Create a new contact from scratch', style: TextStyle(color: Color(0xff555555)),),
+                leading: Icon(Icons.person_add, color: themeProvider.isDarkMode ? AppTheme.darkIconColor : AppTheme.primaryColor),
+                title: Text('ADD CONTACT MANUALLY', style: TextStyle(fontWeight: FontWeight.w700, fontFamily: 'OpenSans', color: themeProvider.getTextPrimaryColor(context))),
+                subtitle: Text('Create a new contact from scratch', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans',)),
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.pushNamed(context, '/add_contact');
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.import_contacts, color: Color(0xff3CB3E9)),
-                title: const Text('IMPORT CONTACTS', style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xff555555)),),
-                subtitle: const Text('Import from your device contacts', style: TextStyle(color: Color(0xff555555)),),
+                leading: Icon(Icons.import_contacts, color: themeProvider.isDarkMode ? AppTheme.darkIconColor : AppTheme.primaryColor),
+                title: Text('IMPORT CONTACTS', style: TextStyle(fontWeight: FontWeight.w700, fontFamily: 'OpenSans', color: themeProvider.getTextPrimaryColor(context))),
+                subtitle: Text('Import from your device contacts', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans',)),
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.pushNamed(context, '/import_contacts');
@@ -594,133 +525,271 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
-  Widget _buildBottomNavigationBar() {
+  Widget _buildFloatingNavigationBar(BuildContext context, ThemeProvider themeProvider) {
     final overdueNudges = _getOverdueNudges(allNudges);
     final hasOverdue = overdueNudges.isNotEmpty;
     
     return Container(
-      height: 70, // Slightly taller for 5 icons
-      decoration: const BoxDecoration(
-        color: Colors.white,
-      ),
-      child: Theme(
-        data: Theme.of(context).copyWith(
-          bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-            elevation: 0,
-            backgroundColor: Colors.transparent,
+      height: 56,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        color: themeProvider.isDarkMode
+            ? Colors.white.withOpacity(0.1)
+            : Colors.white.withOpacity(themeProvider.isDarkMode ? 0.3 : 0.9),
+        border: Border.all(color: themeProvider.isDarkMode ? Colors.white.withOpacity(0.2) : Colors.white.withOpacity(0.4)),
+        boxShadow: [
+          BoxShadow(
+            color: themeProvider.isDarkMode ? Colors.black.withOpacity(0.5) : Colors.white.withOpacity(0.6),
+            blurRadius: 25,
+            spreadRadius: 3,
           ),
-          canvasColor: Colors.transparent,
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          showSelectedLabels: false,
-          showUnselectedLabels: false,
-          selectedItemColor: const Color(0xFF3CB3E9),
-          unselectedItemColor: const Color(0xFF8A8A8A),
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-              hideFloatingActionButton = false;
-              attentionFilter = false;
-              vipFilter = false;
-            });
-          },
-          selectedIconTheme: const IconThemeData(size: 24),
-          unselectedIconTheme: const IconThemeData(size: 24),
-          selectedFontSize: 0,
-          unselectedFontSize: 0,
-          items: [
-            BottomNavigationBarItem(
-              icon: Container(
-                margin: const EdgeInsets.only(top: 10),
-                child: SvgPicture.asset(
-                  'assets/navbar-icons/home-icon.svg',
-                  width: 24,
-                  height: 24,
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          // Home
+          _buildNavItem(
+            index: 0,
+            icon: SvgPicture.asset(
+              'assets/navbar-icons/home-icon.svg',
+              width: 22,
+              height: 22,
+              colorFilter: ColorFilter.mode(
+                _currentIndex == 0 
+                  ? themeProvider.isDarkMode ? AppTheme.darkIconColor : AppTheme.primaryColor 
+                  : themeProvider.getTextHintColor(context),
+                BlendMode.srcIn,
+              ),
+            ),
+            themeProvider: themeProvider,
+          ),
+          
+          // Social Universe
+          _buildNavItem(
+            index: 1,
+            icon: Icon(
+              Icons.star_border,
+              size: 20,
+              color: _currentIndex == 1 
+                ? (themeProvider.isDarkMode ? const Color.fromARGB(255, 32, 144, 196) : AppTheme.primaryColor)
+                : themeProvider.getTextHintColor(context),
+            ),
+            themeProvider: themeProvider,
+          ),
+          
+          // Contacts
+          _buildNavItem(
+            index: 2,
+            icon: SvgPicture.asset(
+              'assets/navbar-icons/contacts-icon.svg',
+              width: 22,
+              height: 22,
+              colorFilter: ColorFilter.mode(
+                _currentIndex == 2 
+                  ? themeProvider.isDarkMode ? AppTheme.darkIconColor : AppTheme.primaryColor 
+                  : themeProvider.getTextHintColor(context),
+                BlendMode.srcIn,
+              ),
+            ),
+            themeProvider: themeProvider,
+          ),
+          
+          // Groups
+          _buildNavItem(
+            index: 3,
+            icon: SvgPicture.asset(
+              'assets/navbar-icons/groups-icon.svg',
+              width: 22,
+              height: 22,
+              colorFilter: ColorFilter.mode(
+                _currentIndex == 3 
+                  ? themeProvider.isDarkMode ? AppTheme.darkIconColor : AppTheme.primaryColor 
+                  : themeProvider.getTextHintColor(context),
+                BlendMode.srcIn,
+              ),
+            ),
+            themeProvider: themeProvider,
+          ),
+          
+          // Notifications
+          _buildNavItem(
+            index: 4,
+            icon: Stack(
+              children: [
+                SvgPicture.asset(
+                  'assets/navbar-icons/notifications-icon.svg',
+                  width: 22,
+                  height: 22,
                   colorFilter: ColorFilter.mode(
-                    _currentIndex == 0 ? const Color(0xFF3CB3E9) : const Color(0xFF8A8A8A),
+                    _currentIndex == 4 
+                      ? themeProvider.isDarkMode ? AppTheme.darkIconColor : AppTheme.primaryColor 
+                      : themeProvider.getTextHintColor(context),
                     BlendMode.srcIn,
                   ),
                 ),
-              ),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: Container(
-                margin: const EdgeInsets.only(top: 10),
-                child: SvgPicture.asset(
-                  'assets/navbar-icons/contacts-icon.svg',
-                  width: 24,
-                  height: 24,
-                  colorFilter: ColorFilter.mode(
-                    _currentIndex == 1 ? const Color(0xFF3CB3E9) : const Color(0xFF8A8A8A),
-                    BlendMode.srcIn,
-                  ),
-                ),
-              ),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: Container(
-                margin: const EdgeInsets.only(top: 10),
-                child: SvgPicture.asset(
-                  'assets/navbar-icons/groups-icon.svg',
-                  width: 24,
-                  height: 24,
-                  colorFilter: ColorFilter.mode(
-                    _currentIndex == 2 ? const Color(0xFF3CB3E9) : const Color(0xFF8A8A8A),
-                    BlendMode.srcIn,
-                  ),
-                ),
-              ),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: Container(
-                margin: const EdgeInsets.only(top: 10),
-                child: Stack(
-                  children: [
-                    SvgPicture.asset(
-                      'assets/navbar-icons/notifications-icon.svg',
-                      width: 24,
-                      height: 24,
-                      colorFilter: ColorFilter.mode(
-                        _currentIndex == 3 ? const Color(0xFF3CB3E9) : const Color(0xFF8A8A8A),
-                        BlendMode.srcIn,
+                if (hasOverdue)
+                  Positioned(
+                    right: -1,
+                    top: -1,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: themeProvider.isDarkMode ? Colors.black : Colors.white,
+                            blurRadius: 1,
+                            spreadRadius: 1,
+                          ),
+                        ],
                       ),
                     ),
-                    if (hasOverdue)
-                      Positioned(
-                        right: 0,
-                        top: 0,
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                            color: Colors.red,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              label: '',
+                  ),
+              ],
             ),
-            // NEW: Immersive Universe Icon
-            BottomNavigationBarItem(
-              icon: Container(
-                margin: const EdgeInsets.only(top: 10),
-                child: Icon(
-                        Icons.star_border,
-                        size: 22,
-                        color: _currentIndex == 4 ? const Color(0xFF3CB3E9) : const Color(0xFF8A8A8A),
-                      ),
+            themeProvider: themeProvider,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavItem({
+    required int index,
+    required Widget icon,
+    required ThemeProvider themeProvider,
+  }) {
+    final theme = Theme.of(context);
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _currentIndex = index;
+          hideFloatingActionButton = false;
+          attentionFilter = false;
+          vipFilter = false;
+        });
+      },
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: _currentIndex == index 
+              ? theme.colorScheme.primary.withOpacity(0.1)
+              : Colors.transparent,
+        ),
+        child: Center(child: icon),
+      ),
+    );
+  }
+
+  void _showContactQuickPanel(ThemeProvider themeProvider, Contact contact, ApiService apiService) {
+    // final themeProvider = Provider.of<ThemeProvider>(context);
+    
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      isScrollControlled: true,
+      backgroundColor: themeProvider.getSurfaceColor(context),
+      builder: (context) {
+        return ContactDetailsModal(
+          contact: contact,
+          apiService: apiService,
+        );
+      },
+    );
+  }
+
+  // QUICK INSIGHTS card
+  Widget _buildQuickInsightsCard(Analytics analytics, int totalContacts, BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final theme = Theme.of(context);
+    
+    return Container(
+      margin: const EdgeInsets.only(top: 4, left: 4),
+      decoration: BoxDecoration(
+        color: themeProvider.getSurfaceColor(context),
+        border: Border.all(color: themeProvider.isDarkMode ? AppTheme.darkCardBorder : AppTheme.lightCardBorder, width: 0.6),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(themeProvider.isDarkMode ? 0.15 : 0.08),
+            offset: const Offset(0, 2),
+            blurRadius: 4,
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'QUICK INSIGHTS',
+              style: TextStyle(
+                fontFamily: 'OpenSans',
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: themeProvider.getTextSecondaryColor(context),
               ),
-              label: '',
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildStatCard(
+                  title: 'Total Contacts',
+                  value: totalContacts.toString(),
+                  iconSize: 35,
+                  iconAsset: 'assets/quick-insights/total-contacts.svg',
+                  backgroundAsset: null,
+                  iconColor: theme.colorScheme.primary,
+                  onTap: () => setState(() => _currentIndex = 2),
+                  context: context,
+                ),
+                _buildStatCard(
+                  title: 'Close Circle',
+                  value: analytics.vipContacts.toString(),
+                  iconSize: 35,
+                  iconAsset: 'assets/quick-insights/close circle-star.svg',
+                  backgroundAsset: 'assets/card-backgrounds/close-circle.png',
+                  iconColor: themeProvider.isDarkMode ? theme.colorScheme.primary : Colors.white,
+                  onTap: () {
+                    setState(() {
+                      _currentIndex = 2;
+                      vipFilter = true;
+                      attentionFilter = false;
+                    });
+                  },
+                  context: context,
+                ),
+                _buildStatCard(
+                  title: 'Needs Care',
+                  value: analytics.contactsNeedingAttention.toString(),
+                  iconSize: 35,
+                  iconAsset: 'assets/quick-insights/needs care.svg',
+                  backgroundAsset: 'assets/card-backgrounds/needs-care.png',
+                  iconColor: themeProvider.isDarkMode ? theme.colorScheme.primary : Colors.white,
+                  onTap: () {
+                    setState(() {
+                      _currentIndex = 2;
+                      attentionFilter = true;
+                      vipFilter = false;
+                    });
+                  },
+                  context: context,
+                ),
+              ],
             ),
           ],
         ),
@@ -728,323 +797,144 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-void _showContactQuickPanel(BuildContext context, Contact contact, ApiService apiService) {
-  showModalBottomSheet(
-    context: context,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
-    isScrollControlled: true,
-    backgroundColor: Colors.white,
-    builder: (context) {
-      return ContactDetailsModal(
-        contact: contact,
-        apiService: apiService,
-      );
-    },
-  );
-}
-  // DASHBOARD CONTENT
-
-  // Widget _buildDashboardContent(BuildContext context, List<Contact> contacts, List<SocialGroup> groups, ApiService apiService) {
-  //   return StreamBuilder<List<Nudge>>(
-  //     stream: NudgeService().getNudgesStream(Provider.of<AuthService>(context).currentUser!.uid),
-  //     builder: (context, nudgeSnapshot) {
-  //       final nudges = nudgeSnapshot.data ?? [];
-  //       final analytics = _calculateAnalytics(contacts, nudges);
-  //       final weeklyNudgePerformance = _calculateWeeklyNudgePerformance(nudges);
-
-  //       final vipContacts = contacts.where((c) => c.isVIP).toList();
-  //       final needsAttention = contacts.where((c) => c.lastContacted.isBefore(DateTime.now().subtract(const Duration(days: 30)))).toList();
-
-  //        return NotificationListener<ScrollNotification>(
-  //         onNotification: (scrollNotification) {
-  //           // Handle scroll for app bar visibility
-  //           if (scrollNotification is ScrollUpdateNotification) {
-  //             final currentOffset = _scrollController.offset;
-  //             if (currentOffset > _lastOffset && currentOffset > 50) {
-  //               if (_showAppBar) {
-  //                 setState(() {
-  //                   _showAppBar = false;
-  //                 });
-  //               }
-  //             } else if (currentOffset < _lastOffset && _scrollController.offset <= 50) {
-  //               if (!_showAppBar) {
-  //                 setState(() {
-  //                   _showAppBar = true;
-  //                 });
-  //               }
-  //             }
-  //             _lastOffset = currentOffset;
-  //           }
-  //           return false;
-  //         },
-  //         child: SingleChildScrollView(
-  //           controller: _scrollController,
-  //           physics: const BouncingScrollPhysics(),
-  //           padding: const EdgeInsets.only(left: 16.0, right: 16.0),
-  //           child: Column(
-  //             crossAxisAlignment: CrossAxisAlignment.start,
-  //             children: [
-  //               const SizedBox(height: 10),
-  //               const SizedBox(height: 10),
-  //               SocialUniverseWidget(
-  //                 contacts: contacts,
-  //                 onContactView: (contact) {
-  //                   _showContactQuickPanel(context, contact, apiService);
-  //                 },
-  //                 height: 500,
-  //               ),
-  //           const SizedBox(height: 20),
-  //             // Quick Insights (cards with icon + value + label)
-  //             _buildQuickInsights(analytics, contacts.length),
-  //             const SizedBox(height: 20),
-
-  //             // Nudge Performance (cards + gradient bar)
-  //             _buildWeeklyNudgePerformanceSection(weeklyNudgePerformance),
-  //             const SizedBox(height: 20),
-
-  //             // Quick Actions BELOW nudges (per your latest screenshot)
-  //             Padding(
-  //               padding: EdgeInsets.symmetric(horizontal: 8.0),
-  //               child: Text('QUICK ACTIONS', style: TextStyle(
-  //                 fontWeight: FontWeight.w500,
-  //             color: Color(0xff6e6e6e),
-  //               )),
-  //             ),
-  //             const SizedBox(height: 10),
-  //             _buildCenteredQuickActions(context),
-  //             const SizedBox(height: 20),
-
-  //             if (vipContacts.isNotEmpty) ...[
-  //               Row(
-  //                 children: [
-  //                    Text('CLOSE CIRCLE', style: TextStyle(
-  //                     fontSize: 15,
-  //                     fontWeight: FontWeight.w500,
-  //                     color: Color(0xff6e6e6e),
-  //                   )),
-  //                   const Spacer(),
-  //                   TextButton(
-  //                     onPressed: () {
-  //                       setState(() {
-  //                         _currentIndex = 1;
-  //                         attentionFilter = false;
-  //                         vipFilter = true;
-  //                       });
-  //                     },
-  //                     child: const Text('View All', style: TextStyle(color: Color(0xff3CB3E9))),
-  //                   ),
-  //                 ],
-  //               ),
-  //               const SizedBox(height: 10),
-  //               SizedBox(
-  //                 height: 140,
-  //                 child: ListView.builder(
-  //                   scrollDirection: Axis.horizontal,
-  //                   itemCount: vipContacts.length,
-  //                   itemBuilder: (context, index) {
-  //                     final contact = vipContacts[index];
-  //                     return _buildContactCard(contact, apiService, showConnectionType: true);
-  //                   },
-  //                 ),
-  //               ),
-  //               const SizedBox(height: 20),
-  //             ],
-
-  //             // Needs Care Section
-  //             if (needsAttention.isNotEmpty) ...[
-  //               Row(
-  //                 children: [
-  //                    Text(
-  //                     'NEEDS CARE',
-  //                     style: TextStyle(
-  //                       fontSize: 16,
-  //                       fontWeight: FontWeight.w500,
-  //                       color: Color(0xff6e6e6e),
-  //                     ),
-  //                   ),
-  //                   const Spacer(),
-  //                   TextButton(
-  //                     onPressed: () {
-  //                       setState(() => _currentIndex = 1);
-  //                     },
-  //                     child: const Text(
-  //                       'View All',
-  //                       style: TextStyle(color: Color(0xff3CB3E9)),
-  //                     ),
-  //                   ),
-  //                 ],
-  //               ),
-  //               const SizedBox(height: 10),
-  //                SizedBox(
-  //                 height: 120,
-  //                 child: ListView.builder(
-  //                   scrollDirection: Axis.horizontal,
-  //                   itemCount: needsAttention.length,
-  //                   itemBuilder: (context, index) {
-  //                     final contact = needsAttention[index];
-  //                     return _buildContactCard(contact, apiService, showConnectionType: false);
-  //                   },
-  //                 ),
-  //               ),
-  //               const SizedBox(height: 20),
-  //             ],
-
-  //             _buildInteractivePieChartSection(contacts),
-  //             const SizedBox(height: 20),
-  //           ],
-  //         ),
-  //       ));
-  //     },
-  //   );
-  // }
-
-  // QUICK INSIGHTS row with stat cards
-  Widget _buildQuickInsights(Analytics analytics, int totalContacts) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(
-            'QUICK INSIGHTS',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              color: Color(0xff6e6e6e),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: [
-        _buildStatCard(
-          title: 'Total Contacts',
-          value: totalContacts.toString(),
-          iconSize: 35,
-          iconAsset: 'assets/quick-insights/total-contacts.svg',
-          backgroundAsset: null,
-          iconColor: const Color(0xff3CB3E9),
-          onTap: () => setState(() => _currentIndex = 1),
-        ),
-        _buildStatCard(
-          title: 'Close Circle',
-          value: analytics.vipContacts.toString(),
-          iconSize: 30,
-          iconAsset: 'assets/quick-insights/close circle-star.svg',
-          backgroundAsset: 'assets/card-backgrounds/close-circle.png',
-          iconColor: Colors.white,
-          onTap: () {
-            setState(() {
-              _currentIndex = 1;
-              vipFilter = true;
-              attentionFilter = false;
-            });
-          },
-        ),
-        _buildStatCard(
-          title: 'Needs Care',
-          value: analytics.contactsNeedingAttention.toString(),
-          iconSize: 30,
-          iconAsset: 'assets/quick-insights/needs care.svg',
-          backgroundAsset: 'assets/card-backgrounds/needs-care.png',
-          iconColor: Colors.white,
-          onTap: () {
-            setState(() {
-              _currentIndex = 1;
-              attentionFilter = true;
-              vipFilter = false;
-            });
-          },
-        ),
-      ],
-    )]);
-  }
-
-  // WEEKLY NUDGE PERFORMANCE with stat cards and gradient bar
-  Widget _buildWeeklyNudgePerformanceSection(Map<String, int> weeklyNudgePerformance) {
+  // WEEKLY NUDGE PERFORMANCE card
+  Widget _buildWeeklyNudgePerformanceSection(Map<String, int> weeklyNudgePerformance, BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final theme = Theme.of(context);
+    
     return Container(
+      margin: const EdgeInsets.only(top: 4, left: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF),
-        border: Border.all(color: const Color(0xFFFEFEFE), width: 0.6),
+        color: themeProvider.getSurfaceColor(context),
+        border: Border.all(color: themeProvider.isDarkMode ? AppTheme.darkCardBorder : AppTheme.lightCardBorder, width: 0.6),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withOpacity(themeProvider.isDarkMode ? 0.15 : 0.08),
             offset: const Offset(0, 2),
             blurRadius: 4,
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(5.0),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(
-            'NUDGES THIS WEEK',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              color: Color(0xff6e6e6e),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildStatCard(
-                title: 'Scheduled',
-                value: (weeklyNudgePerformance['scheduled'] ?? 0).toString(),
-                iconSize: 35,
-                iconAsset: 'assets/performance-icons/clock-scheduled.svg',
-                backgroundAsset: 'assets/card-backgrounds/scheduled.png',
-                iconColor: Colors.white,
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'NUDGES THIS WEEK',
+              style: TextStyle(
+                fontFamily: 'OpenSans',
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: themeProvider.getTextSecondaryColor(context),
               ),
-              _buildStatCard(
-                title: 'Completed',
-                value: (weeklyNudgePerformance['completed'] ?? 0).toString(),
-                iconSize: 35,
-                iconAsset: 'assets/performance-icons/check-completed.svg',
-                backgroundAsset: null,
-                iconColor: Color(0xff00dd00),
-              ),
-              _buildStatCard(
-                title: 'Missed',
-                value: (weeklyNudgePerformance['missed'] ?? 0).toString(),
-                iconSize: 35,
-                iconAsset: 'assets/performance-icons/x-missed.svg',
-                backgroundAsset: 'assets/card-backgrounds/missed.png',
-                iconColor: Colors.white,
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            '      Nudge Completion Rate',
-            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xff3CB3E9)),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          LinearPercentIndicator(
-            animation: true,
-            lineHeight: 20.0,
-            animationDuration: 1000,
-            percent: (weeklyNudgePerformance['completionRate'] ?? 0) / 100,
-            center: Text(
-              "${(weeklyNudgePerformance['completionRate'] ?? 0).toStringAsFixed(1)}%",
-              style: const TextStyle(color: Colors.black, fontSize: 12),
             ),
-            barRadius: const Radius.circular(10),
-            linearGradient: const LinearGradient(
-              colors: [Color(0xFF2D85F6), Color(0xFF5CDEE5)],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildStatCard(
+                  title: 'Scheduled',
+                  value: (weeklyNudgePerformance['scheduled'] ?? 0).toString(),
+                  iconSize: 35,
+                  iconAsset: 'assets/performance-icons/clock-scheduled.svg',
+                  backgroundAsset: 'assets/card-backgrounds/scheduled.png',
+                  iconColor: themeProvider.isDarkMode ? theme.colorScheme.primary : Colors.white,
+                  context: context,
+                ),
+                _buildStatCard(
+                  title: 'Completed',
+                  value: (weeklyNudgePerformance['completed'] ?? 0).toString(),
+                  iconSize: 35,
+                  iconAsset: 'assets/performance-icons/check-completed.svg',
+                  backgroundAsset: null,
+                  iconColor: AppTheme.successColor,
+                  context: context,
+                ),
+                _buildStatCard(
+                  title: 'Missed',
+                  value: (weeklyNudgePerformance['missed'] ?? 0).toString(),
+                  iconSize: 35,
+                  iconAsset: 'assets/performance-icons/x-missed.svg',
+                  backgroundAsset: 'assets/card-backgrounds/missed.png',
+                  iconColor: themeProvider.isDarkMode ? theme.colorScheme.primary : Colors.white,
+                  context: context,
+                ),
+              ],
             ),
-            backgroundColor: Colors.grey[300],
-          ),
-        ]),
+            const SizedBox(height: 16),
+            Text(
+              'Nudge Completion Rate',
+              style: TextStyle(fontSize: 10, fontFamily: 'OpenSans', fontWeight: FontWeight.w700, color: theme.colorScheme.primary),
+            ),
+            const SizedBox(height: 8),
+            LinearPercentIndicator(
+              animation: true,
+              lineHeight: 20.0,
+              animationDuration: 1000,
+              percent: (weeklyNudgePerformance['completionRate'] ?? 0) / 100,
+              center: Text(
+                "${(weeklyNudgePerformance['completionRate'] ?? 0).toStringAsFixed(1)}%",
+                style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans', fontSize: 12),
+              ),
+              barRadius: const Radius.circular(10),
+              linearGradient: const LinearGradient(
+                colors: [Color(0xFF2D85F6), Color(0xFF5CDEE5)],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
+              backgroundColor: themeProvider.isDarkMode ? Colors.grey[800] : Colors.grey[300],
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
       ),
     );
   }
 
-  // GENERIC STAT CARD (used for Quick Insights + Performance)
+  // QUICK ACTIONS card
+  Widget _buildQuickActionsCard(BuildContext context, ThemeProvider themeProvider) {
+    // final themeProvider = Provider.of<ThemeProvider>(context);
+    // final theme = Theme.of(context);
+    
+    return Container(
+      margin: const EdgeInsets.only(top: 4, left: 4),
+      decoration: BoxDecoration(
+        color: themeProvider.getSurfaceColor(context),
+        border: Border.all(color: themeProvider.isDarkMode ? AppTheme.darkCardBorder : AppTheme.lightCardBorder, width: 0.6),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(themeProvider.isDarkMode ? 0.15 : 0.08),
+            offset: const Offset(0, 2),
+            blurRadius: 4,
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'QUICK ACTIONS',
+              style: TextStyle(
+                fontFamily: 'OpenSans',
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: themeProvider.getTextSecondaryColor(context),
+              ),
+            ),
+            const SizedBox(height: 16),
+            _buildCenteredQuickActions(context, themeProvider),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // GENERIC STAT CARD
   Widget _buildStatCard({
     required String title,
     required String value,
@@ -1053,15 +943,34 @@ void _showContactQuickPanel(BuildContext context, Contact contact, ApiService ap
     String? backgroundAsset,
     double? iconSize,
     VoidCallback? onTap,
+    required BuildContext context,
   }) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
     var size = MediaQuery.of(context).size;
+    
     final card = Container(
-      width: size.width*0.28,
+      width: size.width * 0.25,
       height: 120,
       decoration: BoxDecoration(
-        color: backgroundAsset == null ? Colors.white : null,
+        // Always show the background image if available, regardless of theme
         image: backgroundAsset != null
-            ? DecorationImage(image: AssetImage(backgroundAsset), fit: BoxFit.cover)
+          ? DecorationImage(
+              image: AssetImage(backgroundAsset), 
+              fit: BoxFit.cover,
+              // Add opacity overlay for dark mode to make text more readable
+              colorFilter: themeProvider.isDarkMode
+                  ? ColorFilter.mode(
+                      Colors.black.withOpacity(0.6),
+                      BlendMode.darken,
+                    )
+                  : null,
+            )
+          : null,
+        // Fallback background color when no image
+        color: backgroundAsset == null
+            ? (themeProvider.isDarkMode 
+                ? AppTheme.darkSurfaceVariant 
+                : Colors.white)
             : null,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
@@ -1071,64 +980,83 @@ void _showContactQuickPanel(BuildContext context, Contact contact, ApiService ap
             blurRadius: 4,
           ),
         ],
-        border: backgroundAsset == null
-            ? Border.all(color: const Color(0xFFFEFEFE), width: 0.6)
-            : null,
+        border: Border.all(
+          color: themeProvider.isDarkMode 
+              ? AppTheme.darkCardBorder 
+              : AppTheme.lightCardBorder, 
+          width: 0.6
+        ),
       ),
       child: Stack(
         children: [
-          if (backgroundAsset != null)
+          // Add an additional gradient overlay for dark mode to improve text contrast
+          if (backgroundAsset != null && themeProvider.isDarkMode)
             Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
                 gradient: LinearGradient(
-                  colors: [Colors.black.withOpacity(0.15), Colors.black.withOpacity(0.35)],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withOpacity(0.7),
+                  ],
                 ),
               ),
             ),
           Center(
             child: Padding(
-            padding: const EdgeInsets.all(5.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Icon at top
-                SvgPicture.asset(
-                  iconAsset,
-                  width: iconSize,
-                  height: iconSize,
-                  colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-                ),
-                const SizedBox(height: 8),
-                // Value
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: backgroundAsset == null ? Color(0xff555555) : Colors.white,
+              padding: const EdgeInsets.all(5.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SvgPicture.asset(
+                    iconAsset,
+                    width: iconSize,
+                    height: iconSize,
+                    colorFilter: ColorFilter.mode(
+                      // Use white icons for dark mode with background images
+                      backgroundAsset != null && themeProvider.isDarkMode
+                          ? Colors.white
+                          : iconColor,
+                      BlendMode.srcIn,
+                    ),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                // Title
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: backgroundAsset == null ? const Color(0xFF444444) : Colors.white,
+                  const SizedBox(height: 8),
+                  Text(
+                    value,
+                    style: TextStyle(
+                      fontFamily: 'OpenSans',
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: backgroundAsset != null
+                          // White text for cards with background images
+                          ? Colors.white
+                          : themeProvider.getTextPrimaryColor(context),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+                  const SizedBox(height: 2),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontFamily: 'OpenSans',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: backgroundAsset != null
+                          // White text for cards with background images
+                          ? Colors.white
+                          : themeProvider.getTextSecondaryColor(context),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
-          )),
+          ),
         ],
       ),
     );
@@ -1136,123 +1064,139 @@ void _showContactQuickPanel(BuildContext context, Contact contact, ApiService ap
     return GestureDetector(onTap: onTap, child: MouseRegion(cursor: SystemMouseCursors.click, child: card));
   }
 
-// Quick actions row (uses SVG icons from assets/quick-icons/)
-Widget _buildCenteredQuickActions(BuildContext context) {
-  return Center(
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _buildQuickActionButton(
-          svgAsset: 'assets/quick-actions/add contact icon.svg',
-          label: 'Add Contacts',
-          onPressed: () {
-            _showAddContactOptions(context);
-          },
-        ),
-        const SizedBox(width: 12),
-        _buildQuickActionButton(
-          svgAsset: 'assets/quick-actions/add group-icon.svg',
-          label: 'Create Group',
-          onPressed: () {
-            setState(() {
-              _currentIndex = 2;
-              attentionFilter = false;
-              vipFilter = false;
-            });
-          },
-        ),
-        const SizedBox(width: 12),
-        _buildQuickActionButton(
-          svgAsset: 'assets/quick-actions/touchpoint-icon.svg',
-          label: 'Add Touchpoint',
-          onPressed: () {
-            _showAddTouchpointModal(context);
-          },
-        ),
-      ],
-    ),
-  );
-}
-
-void _showAddTouchpointModal(BuildContext context) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
-    builder: (context) {
-      return Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: AddTouchpointModal(
-          apiService: Provider.of<ApiService>(context, listen: false),
-        ),
-      );
-    },
-  );
-}
-
-Widget _buildQuickActionButton({
-  required String svgAsset,
-  required String label,
-  required VoidCallback onPressed,
-}) {
-  var size = MediaQuery.of(context).size;
-  return SizedBox(
-    width: size.width*0.28,
-    height: 120,
-    child: Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+  // Quick actions row
+  Widget _buildCenteredQuickActions(BuildContext context, ThemeProvider themeProvider) {
+    // final themeProvider = Provider.of<ThemeProvider>(context);
+    // final theme = Theme.of(context);
+    
+    return Center(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _buildQuickActionButton(
+            svgAsset: 'assets/quick-actions/add contact icon.svg',
+            label: 'Add Contacts',
+            onPressed: () {
+              _showAddContactOptions(context, themeProvider);
+            },
+            context: context,
+            themeProvider: themeProvider
+          ),
+          const SizedBox(width: 8),
+          _buildQuickActionButton(
+            svgAsset: 'assets/quick-actions/add group-icon.svg',
+            label: 'Create Group',
+            onPressed: () {
+              setState(() {
+                _currentIndex = 3; // Groups is now at index 3
+                attentionFilter = false;
+                vipFilter = false;
+              });
+            },
+            context: context,
+            themeProvider: themeProvider
+          ),
+          const SizedBox(width: 8),
+          _buildQuickActionButton(
+            svgAsset: 'assets/quick-actions/touchpoint-icon.svg',
+            label: 'Add Touchpoint',
+            onPressed: () {
+              _showAddTouchpointModal(context, themeProvider);
+            },
+            context: context,
+            themeProvider: themeProvider
+          ),
+        ],
       ),
-      color: Colors.white,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SvgPicture.asset(
-                svgAsset,
-                width: 52,
-                height: 52,
-                colorFilter: const ColorFilter.mode(
-                  Colors.grey,
-                  BlendMode.srcIn,
+    );
+  }
+
+  void _showAddTouchpointModal(BuildContext context, ThemeProvider themeProvider) {
+    // final themeProvider = Provider.of<ThemeProvider>(context);
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      backgroundColor: themeProvider.getSurfaceColor(context),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: AddTouchpointModal(
+            apiService: Provider.of<ApiService>(context, listen: false),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildQuickActionButton({
+    required String svgAsset,
+    required String label,
+    required VoidCallback onPressed,
+    required BuildContext context,
+    required ThemeProvider themeProvider,
+  }) {
+    // final themeProvider = Provider.of<ThemeProvider>(context);
+    final theme = Theme.of(context);
+    var size = MediaQuery.of(context).size;
+    
+    return SizedBox(
+      width: size.width * 0.25,
+      height: 120,
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        color: themeProvider.getCardColor(context),
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SvgPicture.asset(
+                  svgAsset,
+                  width: label == 'Add Touchpoint'?42:32,
+                  height: label == 'Add Touchpoint'?42:32,
+                  colorFilter: ColorFilter.mode(
+                    themeProvider.isDarkMode ? theme.colorScheme.primary : const Color(0xff999999),
+                    BlendMode.srcIn,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xff555555),
+                const SizedBox(height: 8),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: 'OpenSans',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: themeProvider.getTextPrimaryColor(context),
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   int _getCachedRandomIndex(String seed) {
     if (seed.isEmpty) return 1;
     
-    // Return cached index if exists
     if (_cachedAvatarIndices.containsKey(seed)) {
       return _cachedAvatarIndices[seed]!;
     }
     
-    // Generate new index based on seed
     var hash = 0;
     for (var i = 0; i < seed.length; i++) {
       hash = seed.codeUnitAt(i) + ((hash << 5) - hash);
@@ -1267,100 +1211,30 @@ Widget _buildQuickActionButton({
   String _getContactInitials(String name) {
     if (name.isEmpty) return '?';
     
-    // Trim and split the name by spaces
     final parts = name.trim().split(' ').where((part) => part.isNotEmpty).toList();
     
     if (parts.length >= 2) {
-      // Has at least first and last name - get first letter of first and last name
       return '${parts.first[0].toUpperCase()}${parts.last[0].toUpperCase()}';
     } else if (parts.length == 1) {
-      // Only first name available
       return parts.first[0].toUpperCase();
     }
     
     return '?';
   }
 
-    // Contact avatar with randomized background for no-image, and star overlay for VIP
-  // Widget _buildContactAvatar(Contact contact) {
-  //   final hasImage = contact.imageUrl.isNotEmpty;
-  //   final cachedIndex = _getCachedRandomIndex(contact.id);
-  //   final fallbackAsset = 'assets/contact-icons/$cachedIndex.png';
-  //   final firstLetter = contact.name.isNotEmpty ? contact.name[0].toUpperCase() : '?';
-
-  //   final avatar = Container(
-  //     width: 56,
-  //     height: 56,
-  //     decoration: BoxDecoration(
-  //       shape: BoxShape.circle,
-  //       image: DecorationImage(
-  //         image: hasImage 
-  //             ? NetworkImage(contact.imageUrl) as ImageProvider
-  //             : AssetImage(fallbackAsset),
-  //         fit: BoxFit.cover,
-  //       ),
-  //     ),
-  //     child: !hasImage
-  //         ? Center(
-  //             child: Text(
-  //               firstLetter,
-  //               style: const TextStyle(
-  //                 fontSize: 20,
-  //                 fontWeight: FontWeight.bold,
-  //                 color: Colors.white,
-  //               ),
-  //             ),
-  //           )
-  //         : null,
-  //   );
-
-  //   if (contact.isVIP) {
-  //     return Stack(
-  //       clipBehavior: Clip.none,
-  //       alignment: Alignment.center,
-  //       children: [
-  //         avatar,
-  //         Positioned(
-  //           bottom: -4,
-  //           child: Container(
-  //             decoration: BoxDecoration(
-  //               boxShadow: [
-  //                 BoxShadow(
-  //                   color: Colors.black.withOpacity(0.4),
-  //                   blurRadius: 4,
-  //                   offset: const Offset(0, 2),
-  //                 ),
-  //               ],
-  //             ),
-  //             child: SvgPicture.asset(
-  //               'assets/quick-insights/close circle-star.svg',
-  //               width: 12,
-  //               height: 12,
-  //               colorFilter: const ColorFilter.mode(
-  //                 Color(0xFFFFC500),
-  //                 BlendMode.srcIn,
-  //               ),
-  //             ),
-  //           ),
-  //         ),
-  //       ],
-  //     );
-  //   } else {
-  //     return avatar;
-  //   }
-  // }
   // Pie chart section
-  Widget _buildInteractivePieChartSection(List<Contact> contacts) {
+  Widget _buildInteractivePieChartSection(List<Contact> contacts, BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
     final distributionData = _calculateContactDistribution(contacts);
 
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF),
-        border: Border.all(color: const Color(0xFFFEFEFE), width: 0.6),
+        color: themeProvider.getSurfaceColor(context),
+        border: Border.all(color: themeProvider.isDarkMode ? AppTheme.darkCardBorder : AppTheme.lightCardBorder, width: 0.6),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withOpacity(themeProvider.isDarkMode ? 0.15 : 0.08),
             offset: const Offset(0, 2),
             blurRadius: 4,
           ),
@@ -1368,44 +1242,52 @@ Widget _buildQuickActionButton({
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('YOUR SOCIAL LANDSCAPE',
-           style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              color: Color(0xff6e6e6e),
-              )),
-          const SizedBox(height: 16),
-          if (distributionData.isEmpty)
-            const Center(
-              child: Column(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'YOUR SOCIAL LANDSCAPE',
+              style: TextStyle(
+                fontFamily: 'OpenSans',
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: themeProvider.getTextSecondaryColor(context),
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (distributionData.isEmpty)
+              Center(
+                child: Column(
+                  children: [
+                    Icon(Icons.people_outline, size: 64, color: themeProvider.isDarkMode ? AppTheme.darkTextHint : Colors.grey),
+                    const SizedBox(height: 16),
+                    Text('No contacts yet', style: TextStyle(fontSize: 16, fontFamily: 'OpenSans', color: themeProvider.isDarkMode ? AppTheme.darkTextHint : Colors.grey)),
+                  ],
+                ),
+              )
+            else
+              Column(
                 children: [
-                  Icon(Icons.people_outline, size: 64, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text('No contacts yet', style: TextStyle(fontSize: 16, color: Colors.grey)),
+                  SizedBox(
+                    height: 370,
+                    child: InteractiveDonutChart(distributionData: distributionData),
+                  ),
+                  if (_explodedCategory != null && _selectedPieSegmentIndex >= 0)
+                    _buildSegmentDetails(
+                      distributionData[_selectedPieSegmentIndex],
+                      distributionData.fold(0, (sum, item) => sum + (item['count'] as int)),
+                      context,
+                    ),
                 ],
               ),
-            )
-          else
-            Column(
-              children: [
-                SizedBox(
-                  height: 370,
-                  child: InteractiveDonutChart(distributionData: distributionData)
-                  ),
-                if (_explodedCategory != null && _selectedPieSegmentIndex >= 0)
-                  _buildSegmentDetails(
-                    distributionData[_selectedPieSegmentIndex],
-                    distributionData.fold(0, (sum, item) => sum + (item['count'] as int)),
-                  ),
-              ],
-            ),
-        ]),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildSegmentDetails(Map<String, dynamic> segmentData, int totalContacts) {
+  Widget _buildSegmentDetails(Map<String, dynamic> segmentData, int totalContacts, BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
     final count = segmentData['count'] as int;
     final percentage = ((count / totalContacts) * 100).toStringAsFixed(2);
     final category = segmentData['category'];
@@ -1421,20 +1303,23 @@ Widget _buildQuickActionButton({
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(category, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
-            Text('$count contact${count != 1 ? 's' : ''}', style: const TextStyle(fontSize: 14, color: Colors.grey)),
-          ]),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(category, style: TextStyle(fontSize: 16, fontFamily: 'OpenSans', fontWeight: FontWeight.bold, color: themeProvider.getTextPrimaryColor(context))),
+              const SizedBox(height: 4),
+              Text('$count contact${count != 1 ? 's' : ''}', style: TextStyle(fontSize: 14, fontFamily: 'OpenSans', color: themeProvider.getTextSecondaryColor(context))),
+            ],
+          ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
                 '$percentage%',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xff3CB3E9)),
+                style: TextStyle(fontSize: 18, fontFamily: 'OpenSans', fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
               ),
               const SizedBox(height: 4),
-              const Text('of total contacts', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              Text('of total contacts', style: TextStyle(fontSize: 12, fontFamily: 'OpenSans', color: themeProvider.getTextSecondaryColor(context))),
             ],
           ),
         ],
@@ -1485,32 +1370,30 @@ Widget _buildQuickActionButton({
   }
 
   Color _getCategoryColor(String category, int index) {
-    // Create gradient colors for each category
     final List<List<Color>> gradientColors = const [
-      [Color(0xFF2D85F6), Color(0xFF5CDEE5)], // Blue gradient
-      [Color(0xFF4CAF50), Color(0xFF8BC34A)], // Green gradient
-      [Color(0xFF9C27B0), Color(0xFFE040FB)], // Purple gradient
-      [Color(0xFFFF9800), Color(0xFFFFC107)], // Orange gradient
-      [Color(0xFFF44336), Color(0xFFFF5252)], // Red gradient
-      [Color(0xFF2196F3), Color(0xFF64B5F6)], // Light blue gradient
-      [Color(0xFFFFC107), Color(0xFFFFEB3B)], // Yellow gradient
-      [Color(0xFF795548), Color(0xFFA1887F)], // Brown gradient
-      [Color(0xFF607D8B), Color(0xFF90A4AE)], // Blue grey gradient
-      [Color(0xFFE91E63), Color(0xFFF06292)], // Pink gradient
-      [Color(0xFF00BCD4), Color(0xFF4DD0E1)], // Cyan gradient
-      [Color(0xFF8BC34A), Color(0xFFAED581)], // Light green gradient
-      [Color(0xFF673AB7), Color(0xFF9575CD)], // Deep purple gradient
-      [Color(0xFFFF5722), Color(0xFFFF8A65)], // Deep orange gradient
-      [Color(0xFF009688), Color(0xFF4DB6AC)], // Teal gradient
-      [Color(0xFF3F51B5), Color(0xFF7986CB)], // Indigo gradient
-      [Color(0xFFCDDC39), Color(0xFFE6EE9C)], // Lime gradient
-      [Color(0xFFFFEB3B), Color(0xFFFFF59D)], // Amber gradient
-      [Color(0xFF9E9E9E), Color(0xFFE0E0E0)], // Grey gradient
-      [Color(0xFF00E676), Color(0xFF69F0AE)], // Green accent gradient
+      [Color(0xFF2D85F6), Color(0xFF5CDEE5)],
+      [Color(0xFF4CAF50), Color(0xFF8BC34A)],
+      [Color(0xFF9C27B0), Color(0xFFE040FB)],
+      [Color(0xFFFF9800), Color(0xFFFFC107)],
+      [Color(0xFFF44336), Color(0xFFFF5252)],
+      [Color(0xFF2196F3), Color(0xFF64B5F6)],
+      [Color(0xFFFFC107), Color(0xFFFFEB3B)],
+      [Color(0xFF795548), Color(0xFFA1887F)],
+      [Color(0xFF607D8B), Color(0xFF90A4AE)],
+      [Color(0xFFE91E63), Color(0xFFF06292)],
+      [Color(0xFF00BCD4), Color(0xFF4DD0E1)],
+      [Color(0xFF8BC34A), Color(0xFFAED581)],
+      [Color(0xFF673AB7), Color(0xFF9575CD)],
+      [Color(0xFFFF5722), Color(0xFFFF8A65)],
+      [Color(0xFF009688), Color(0xFF4DB6AC)],
+      [Color(0xFF3F51B5), Color(0xFF7986CB)],
+      [Color(0xFFCDDC39), Color(0xFFE6EE9C)],
+      [Color(0xFFFFEB3B), Color(0xFFFFF59D)],
+      [Color(0xFF9E9E9E), Color(0xFFE0E0E0)],
+      [Color(0xFF00E676), Color(0xFF69F0AE)],
     ];
     
     final int colorIndex = index % gradientColors.length;
-    // Return the base color (darker shade) for the segment
     return gradientColors[colorIndex][0];
   }
 
@@ -1536,7 +1419,9 @@ Widget _buildQuickActionButton({
     );
   }
 
-  Widget _buildContactCard(Contact contact, ApiService apiService, {bool showConnectionType = false}) {
+  Widget _buildContactCard(Contact contact, ApiService apiService, {bool showConnectionType = false, required BuildContext context}) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final theme = Theme.of(context);
     final cachedIndex = _getCachedRandomIndex(contact.id);
     final fallbackAsset = 'assets/contact-icons/$cachedIndex.png';
     final hasImage = contact.imageUrl.isNotEmpty;
@@ -1551,72 +1436,76 @@ Widget _buildQuickActionButton({
         );
       },
       child: Container(
-        width: size.width*0.3,
+        width: size.width * 0.3,
         margin: const EdgeInsets.only(right: 10),
         child: Card(
+          color: themeProvider.getSurfaceColor(context),
           child: Padding(
             padding: const EdgeInsets.all(8.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-             Stack(
-              clipBehavior: Clip.none,
-              alignment: Alignment.center,
-              children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    image: DecorationImage(
-                      image: hasImage
-                          ? NetworkImage(contact.imageUrl) as ImageProvider
-                          : AssetImage(fallbackAsset),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  child: !hasImage
-                    ? Center(
-                        child: Text(
-                          initials,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+                Stack(
+                  clipBehavior: Clip.none,
+                  alignment: Alignment.center,
+                  children: [
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        image: DecorationImage(
+                          image: hasImage
+                              ? NetworkImage(contact.imageUrl) as ImageProvider
+                              : AssetImage(fallbackAsset),
+                          fit: BoxFit.cover,
                         ),
-                      )
-                    : null,
-                ),
-                contact.isVIP
-                ?Positioned(
-                  bottom: -4,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: SvgPicture.asset(
-                      'assets/quick-insights/close circle-star.svg',
-                      width: 18,
-                      height: 18,
-                      colorFilter: const ColorFilter.mode(
-                        Color(0xFFFFD500),
-                        BlendMode.srcIn,
                       ),
+                      child: !hasImage
+                          ? Center(
+                              child: Text(
+                                initials,
+                                style: const TextStyle(
+                                  fontFamily: 'OpenSans',
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            )
+                          : null,
                     ),
-                  ),
-                ):Center(),
-                ]),
+                    contact.isVIP
+                        ? Positioned(
+                            bottom: -4,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: SvgPicture.asset(
+                                'assets/quick-insights/close circle-star.svg',
+                                width: 18,
+                                height: 18,
+                                colorFilter: const ColorFilter.mode(
+                                  Color(0xFFFFD500),
+                                  BlendMode.srcIn,
+                                ),
+                              ),
+                            ),
+                          )
+                        : Center(),
+                  ],
+                ),
                 const SizedBox(height: 8),
                 Text(
                   contact.name.split(' ').first,
-                  style: const TextStyle(fontSize: 12),
+                  style: TextStyle(fontSize: 12, fontFamily: 'OpenSans', color: themeProvider.getTextPrimaryColor(context)),
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                 ),
@@ -1626,13 +1515,14 @@ Widget _buildQuickActionButton({
                     margin: const EdgeInsets.only(top: 4),
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: const Color(0xff3CB3E9).withOpacity(0.1),
+                      color: theme.colorScheme.primary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
                       contact.connectionType,
-                      style: const TextStyle(
-                        color: Color(0xff3CB3E9),
+                      style: TextStyle(
+                        fontFamily: 'OpenSans',
+                        color: theme.colorScheme.primary,
                         fontSize: 10,
                         fontWeight: FontWeight.w500,
                       ),
@@ -1645,5 +1535,17 @@ Widget _buildQuickActionButton({
         ),
       ),
     );
+  }
+
+  // Helper method to get text hint color based on theme
+  // Color _getTextHintColor(BuildContext context, ThemeProvider themeProvider) {
+  //   return themeProvider.isDarkMode ? AppTheme.darkTextHint : AppTheme.lightTextHint;
+  // }
+}
+
+// Add extension method to ThemeProvider for convenience
+extension ThemeProviderExtension on ThemeProvider {
+  Color getTextHintColor(BuildContext context) {
+    return isDarkMode ? AppTheme.darkTextHint : AppTheme.lightTextHint;
   }
 }

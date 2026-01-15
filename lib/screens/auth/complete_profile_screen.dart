@@ -10,7 +10,7 @@ import 'package:crop_your_image/crop_your_image.dart';
 import 'package:country_code_picker/country_code_picker.dart';
 import 'package:nudge/models/contact.dart';
 import 'package:nudge/models/social_group.dart';
-import 'package:nudge/services/nudge_service.dart';
+// import 'package:nudge/services/nudge_service.dart';
 // import 'package:nudge/models/user.dart';
 // import 'package:nudge/theme/text_styles.dart';
 import 'package:nudge/widgets/gradient_text.dart';
@@ -27,6 +27,7 @@ import '../contacts/import_contacts_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_contacts/flutter_contacts.dart' as fContacts;
 import '../../services/contact_sync_service.dart';
+import '../../providers/theme_provider.dart';
 
 class CompleteProfileScreen extends StatefulWidget {
   const CompleteProfileScreen({super.key});
@@ -87,80 +88,85 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
     _initializeDefaultGroups();
   }
 
-void _initializeDefaultGroups() {
-  _userGroups.addAll([
-    SocialGroup(
-      id: 'family', 
-      name: 'Family', 
-      frequency: 2,
-      period: 'Monthly',
-      colorCode: '#4FC3F7', 
-      description: '', 
-      memberCount: 0, 
-      memberIds: [], 
-      lastInteraction: DateTime.now(), 
-      birthdayNudgesEnabled: true,
-      anniversaryNudgesEnabled: true,
-      orderIndex: 0,
-    ),
-    SocialGroup(
-      id: 'friend', 
-      name: 'Friend', 
-      frequency: 2,
-      period: 'Weekly',
-      colorCode: '#FF6F61', 
-      description: '', 
-      memberCount: 0, 
-      memberIds: [], 
-      lastInteraction: DateTime.now(), 
-      birthdayNudgesEnabled: true,
-      anniversaryNudgesEnabled: true,
-      orderIndex: 1
-    ),
-    SocialGroup(
-      id: 'colleague', 
-      name: 'Colleague', 
-      frequency: 2,
-      period: 'Monthly',
-      colorCode: '#81C784', 
-      description: '', 
-      memberCount: 0, 
-      memberIds: [], 
-      lastInteraction: DateTime.now(), 
-      birthdayNudgesEnabled: true,
-      anniversaryNudgesEnabled: true,
-      orderIndex: 2
-    ),
-    SocialGroup(
-      id: 'client', 
-      name: 'Client', 
-      frequency: 1,
-      period: 'Quarterly',
-      colorCode: '#FFC107', 
-      description: '', 
-      memberCount: 0, 
-      memberIds: [], 
-      lastInteraction: DateTime.now(), 
-      birthdayNudgesEnabled: true,
-      anniversaryNudgesEnabled: true,
-      orderIndex: 3
-    ),
-    SocialGroup(
-      id: 'mentor', 
-      name: 'Mentor', 
-      frequency: 2,
-      period: 'Annually',
-      colorCode: '#607D8B', 
-      description: '', 
-      memberCount: 0, 
-      memberIds: [], 
-      lastInteraction: DateTime.now(), 
-      birthdayNudgesEnabled: true,
-      anniversaryNudgesEnabled: true,
-      orderIndex: 4
-    ),
-  ]);
-}
+  void _dismissKeyboard() {
+    FocusScope.of(context).unfocus();
+  }
+
+  void _initializeDefaultGroups() {
+    _userGroups.addAll([
+      SocialGroup(
+        id: 'family', 
+        name: 'Family', 
+        frequency: 2,
+        period: 'Monthly',
+        colorCode: '#4FC3F7', 
+        description: '', 
+        memberCount: 0, 
+        memberIds: [], 
+        lastInteraction: DateTime.now(), 
+        birthdayNudgesEnabled: true,
+        anniversaryNudgesEnabled: true,
+        orderIndex: 0,
+      ),
+      SocialGroup(
+        id: 'friend', 
+        name: 'Friend', 
+        frequency: 2,
+        period: 'Weekly',
+        colorCode: '#FF6F61', 
+        description: '', 
+        memberCount: 0, 
+        memberIds: [], 
+        lastInteraction: DateTime.now(), 
+        birthdayNudgesEnabled: true,
+        anniversaryNudgesEnabled: true,
+        orderIndex: 1
+      ),
+      SocialGroup(
+        id: 'colleague', 
+        name: 'Colleague', 
+        frequency: 2,
+        period: 'Monthly',
+        colorCode: '#81C784', 
+        description: '', 
+        memberCount: 0, 
+        memberIds: [], 
+        lastInteraction: DateTime.now(), 
+        birthdayNudgesEnabled: true,
+        anniversaryNudgesEnabled: true,
+        orderIndex: 2
+      ),
+      SocialGroup(
+        id: 'client', 
+        name: 'Client', 
+        frequency: 1,
+        period: 'Quarterly',
+        colorCode: '#FFC107', 
+        description: '', 
+        memberCount: 0, 
+        memberIds: [], 
+        lastInteraction: DateTime.now(), 
+        birthdayNudgesEnabled: true,
+        anniversaryNudgesEnabled: true,
+        orderIndex: 3
+      ),
+      SocialGroup(
+        id: 'mentor', 
+        name: 'Mentor', 
+        frequency: 2,
+        period: 'Annually',
+        colorCode: '#607D8B', 
+        description: '', 
+        memberCount: 0, 
+        memberIds: [], 
+        lastInteraction: DateTime.now(), 
+        birthdayNudgesEnabled: true,
+        anniversaryNudgesEnabled: true,
+        orderIndex: 4
+      ),
+    ]);
+  }
+
   Future<void> _pickImage() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
@@ -237,29 +243,29 @@ void _initializeDefaultGroups() {
   }
 
   Future<String> uploadImageToFirebase(Uint8List imageBytes, String fileName) async {
-  try {
-    // Reference to Firebase Storage
-    final storageRef = FirebaseStorage.instance.ref();
+    try {
+      // Reference to Firebase Storage
+      final storageRef = FirebaseStorage.instance.ref();
 
-    // Create a child reference (folder + filename)
-    final imagesRef = storageRef.child('uploads/$fileName');
+      // Create a child reference (folder + filename)
+      final imagesRef = storageRef.child('uploads/$fileName');
 
-    // Upload raw data
-    UploadTask uploadTask = imagesRef.putData(
-      imageBytes,
-      SettableMetadata(contentType: 'image/png'), // or 'image/jpeg'
-    );
+      // Upload raw data
+      UploadTask uploadTask = imagesRef.putData(
+        imageBytes,
+        SettableMetadata(contentType: 'image/png'), // or 'image/jpeg'
+      );
 
-    // Wait until upload completes
-    TaskSnapshot snapshot = await uploadTask;
+      // Wait until upload completes
+      TaskSnapshot snapshot = await uploadTask;
 
-    // Get the download URL
-    String downloadUrl = await snapshot.ref.getDownloadURL();
-    return downloadUrl;
-  } catch (e) {
-    throw Exception('Upload failed: $e');
+      // Get the download URL
+      String downloadUrl = await snapshot.ref.getDownloadURL();
+      return downloadUrl;
+    } catch (e) {
+      throw Exception('Upload failed: $e');
+    }
   }
-}
 
   Future<void> _completeOnboarding() async {
     setState(() => _isLoading = true);
@@ -323,7 +329,7 @@ void _initializeDefaultGroups() {
           // Schedule nudges in background without waiting
           //  apiService.scheduleHourlyNotifications();
            apiService.scheduleRegularNotifications();
-          _scheduleNudgesForImportedContacts();
+          // _scheduleNudgesForImportedContacts();
         }
         
         print('Final Stage 4');
@@ -382,14 +388,6 @@ void _initializeDefaultGroups() {
     });
   }
 
-  // void _reorderGroups(int oldIndex, int newIndex) {
-  //   setState(() {
-  //     if (oldIndex < newIndex) newIndex -= 1;
-  //     final item = _userGroups.removeAt(oldIndex);
-  //     _userGroups.insert(newIndex, item);
-  //   });
-  // }
-
   void _toggleCloseCircleContact(Contact contact) {
     print(contact.toMap()); print(' is the contact');
     setState(() {
@@ -400,206 +398,6 @@ void _initializeDefaultGroups() {
       }
     });
   }
-
-  // New method for manual contact picking (replaces the old navigation)
-  // Future<void> _pickContactsManually() async {
-  //   final permissionOk = await fContacts.FlutterContacts.requestPermission();
-  //   if (!permissionOk) {
-  //     _showSettingsDialog('Contacts permission is required to pick contacts');
-  //     return;
-  //   }
-
-  //   final contacts = await fContacts.FlutterContacts.getContacts(withProperties: true);
-
-  //   final selectedContacts = await showDialog<List<fContacts.Contact>>(
-  //     context: context,
-  //     builder: (context) {
-  //       final tempSelected = <fContacts.Contact>[];
-  //       final searchController = TextEditingController();
-  //       List<fContacts.Contact> filtered = List.of(contacts);
-
-  //       void applyFilter(String query) {
-  //         final q = query.trim().toLowerCase();
-  //         filtered = q.isEmpty
-  //             ? List.of(contacts)
-  //             : contacts.where((c) {
-  //                 final name = c.displayName.toLowerCase();
-  //                 final phones = c.phones.map((p) => p.number.toLowerCase()).join(' ');
-  //                 final emails = c.emails.map((e) => e.address.toLowerCase()).join(' ');
-  //                 return name.contains(q) || phones.contains(q) || emails.contains(q);
-  //               }).toList();
-  //       }
-
-  //       return StatefulBuilder(
-  //         builder: (context, setStateDialog) {
-  //           return AlertDialog(
-  //             title: const Text('Select Contacts'),
-  //             content: SizedBox(
-  //               width: double.maxFinite,
-  //               height: 520,
-  //               child: Column(
-  //                 children: [
-  //                   // Search bar
-  //                   TextField(
-  //                     controller: searchController,
-  //                     decoration: const InputDecoration(
-  //                       prefixIcon: Icon(Icons.search),
-  //                       hintText: 'Search by name, phone, or email',
-  //                       border: OutlineInputBorder(),
-  //                       isDense: true,
-  //                     ),
-  //                     onChanged: (val) {
-  //                       setStateDialog(() {
-  //                         applyFilter(val);
-  //                       });
-  //                     },
-  //                   ),
-  //                   const SizedBox(height: 12),
-  //                   // Info + select all
-  //                   Row(
-  //                     children: [
-  //                       Expanded(
-  //                         child: Text(
-  //                           'Showing ${filtered.length} of ${contacts.length}',
-  //                           style: const TextStyle(fontSize: 12, color: Colors.grey),
-  //                         ),
-  //                       ),
-  //                       TextButton.icon(
-  //                         onPressed: () {
-  //                           setStateDialog(() {
-  //                             // Select all filtered
-  //                             for (final c in filtered) {
-  //                               if (!tempSelected.contains(c)) {
-  //                                 tempSelected.add(c);
-  //                               }
-  //                             }
-  //                           });
-  //                         },
-  //                         icon: const Icon(Icons.select_all),
-  //                         label: const Text('Select all'),
-  //                       ),
-  //                       TextButton(
-  //                         onPressed: () {
-  //                           setStateDialog(() {
-  //                             // Clear only filtered from selection
-  //                             tempSelected.removeWhere((c) => filtered.contains(c));
-  //                           });
-  //                         },
-  //                         child: const Text('Clear'),
-  //                       ),
-  //                     ],
-  //                   ),
-  //                   const SizedBox(height: 8),
-  //                   // List of contacts
-  //                   Expanded(
-  //                     child: filtered.isEmpty
-  //                         ? const Center(child: Text('No contacts found'))
-  //                         : ListView.separated(
-  //                             itemCount: filtered.length,
-  //                             separatorBuilder: (_, __) => const Divider(height: 1),
-  //                             itemBuilder: (context, index) {
-  //                               final contact = filtered[index];
-  //                               final isSelected = tempSelected.contains(contact);
-  //                               final primaryPhone = contact.phones.isNotEmpty
-  //                                   ? contact.phones.first.number
-  //                                   : '';
-  //                               final primaryEmail = contact.emails.isNotEmpty
-  //                                   ? contact.emails.first.address
-  //                                   : '';
-  //                               return CheckboxListTile(
-  //                                 title: Text(contact.displayName),
-  //                                 subtitle: Text(
-  //                                   [primaryPhone, primaryEmail]
-  //                                       .where((s) => s.isNotEmpty)
-  //                                       .join(' • '),
-  //                                 ),
-  //                                 value: isSelected,
-  //                                 onChanged: (checked) {
-  //                                   setStateDialog(() {
-  //                                     if (checked == true) {
-  //                                       tempSelected.add(contact);
-  //                                     } else {
-  //                                       tempSelected.remove(contact);
-  //                                     }
-  //                                   });
-  //                                 },
-  //                                 controlAffinity: ListTileControlAffinity.leading,
-  //                               );
-  //                             },
-  //                           ),
-  //                   ),
-  //                   // Selection count
-  //                   Align(
-  //                     alignment: Alignment.centerRight,
-  //                     child: Text(
-  //                       'Selected: ${tempSelected.length}',
-  //                       style: const TextStyle(fontSize: 12, color: Colors.grey),
-  //                     ),
-  //                   ),
-  //                 ],
-  //               ),
-  //             ),
-  //             actions: [
-  //               TextButton(
-  //                 onPressed: () => Navigator.pop(context),
-  //                 child: const Text('Cancel'),
-  //               ),
-  //               ElevatedButton.icon(
-  //                 onPressed: () => Navigator.pop(context, tempSelected),
-  //                 icon: const Icon(Icons.download),
-  //                 label: const Text('Import Selected'),
-  //               ),
-  //             ],
-  //           );
-  //         },
-  //       );
-  //     },
-  //   );
-
-  //   if (selectedContacts == null || selectedContacts.isEmpty) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text('No contacts selected')),
-  //     );
-  //     return;
-  //   }
-
-  //   final authService = Provider.of<AuthService>(context, listen: false);
-  //   final apiService = Provider.of<ApiService>(context, listen: false);
-  //   final user = authService.currentUser;
-  //   if (user == null) return;
-
-  //   final syncService = ContactSyncService(apiService: apiService);
-
-  //   setState(() {
-  //     _isLoading = true;
-  //   });
-
-  //   final result = await syncService.importFromContactPicker(
-  //     pickedContacts: selectedContacts,
-  //     onProgress: (processed, total) {
-  //       // Progress callback if needed
-  //     },
-  //   );
-
-  //   setState(() => _isLoading = false);
-
-  //   if (result['success'] == true) {
-  //     final updatedContacts = await apiService.getAllContacts();
-  //   setState(() {
-  //     _selectedContacts = updatedContacts;
-  //   });
-
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('Successfully imported ${result['importedCount']} contacts!')),
-  //     );
-  //     // Update selected contacts count in UI
-  //     setState(() {});
-  //   } else {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('Failed to import contacts: ${result['message']}')),
-  //     );
-  //   }
-  // }
 
 Future<void> _pickContactsManually() async {
   FocusScope.of(context).unfocus();
@@ -656,16 +454,24 @@ Future<void> _pickContactsManually() async {
     );
   }
 
-  Widget _buildStepIndicator() {
+  Widget _buildStepIndicator(ThemeProvider themeProvider) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+      decoration: BoxDecoration(
+        color: themeProvider.getSurfaceColor(context),
+        border: Border(
+          bottom: BorderSide(
+            color: themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade300,
+          ),
+        ),
+      ),
       child: Column(
         children: [
           // Progress bar
           Container(
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.grey[300],
               borderRadius: BorderRadius.circular(2),
             ),
             child: Stack(
@@ -691,15 +497,15 @@ Future<void> _pickContactsManually() async {
             children: [
               Text(
                 'Step ${_currentStep + 1} of ${_steps.length}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xff3CB3E9),
+                  color: const Color(0xff3CB3E9),
                 ),
               ),
               Text(
                 _steps[_currentStep]['title'],
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.grey),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
               ),
             ],
           ),
@@ -724,51 +530,51 @@ Future<void> _pickContactsManually() async {
   }
 
   Future<void> _importContactsWithGroup(List<fContacts.Contact> deviceContacts, SocialGroup group) async {
-  final authService = Provider.of<AuthService>(context, listen: false);
-  final apiService = Provider.of<ApiService>(context, listen: false);
-  final user = authService.currentUser;
-  if (user == null) return;
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final apiService = Provider.of<ApiService>(context, listen: false);
+    final user = authService.currentUser;
+    if (user == null) return;
 
-  final syncService = ContactSyncService(apiService: apiService);
+    final syncService = ContactSyncService(apiService: apiService);
 
-  setState(() {
-    _isLoading = true;
-  });
+    setState(() {
+      _isLoading = true;
+    });
 
-  try {
-    // Import contacts and assign to the selected group
-    final result = await syncService.importContactsWithGroup(
-      pickedContacts: deviceContacts,
-      groupId: group.name,
-      onProgress: (processed, total) {
-        // Progress callback if needed
-      },
-    );
-
-    setState(() => _isLoading = false);
-
-    if (result['success'] == true) {
-      // Update the selected contacts list
-      final updatedContacts = await apiService.getAllContacts();
-      setState(() {
-        _selectedContacts = updatedContacts;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Successfully imported contacts to ${group.name}!')),
+    try {
+      // Import contacts and assign to the selected group
+      final result = await syncService.importContactsWithGroup(
+        pickedContacts: deviceContacts,
+        groupId: group.name,
+        onProgress: (processed, total) {
+          // Progress callback if needed
+        },
       );
-    } else {
+
+      setState(() => _isLoading = false);
+
+      if (result['success'] == true) {
+        // Update the selected contacts list
+        final updatedContacts = await apiService.getAllContacts();
+        setState(() {
+          _selectedContacts = updatedContacts;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Successfully imported contacts to ${group.name}!')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to import contacts: ${result['message']}')),
+        );
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to import contacts: ${result['message']}')),
+        SnackBar(content: Text('Error importing contacts: $e')),
       );
     }
-  } catch (e) {
-    setState(() => _isLoading = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error importing contacts: $e')),
-    );
   }
-}
 
   onUserNameChange(String username) {
     setState(() {
@@ -789,17 +595,20 @@ Future<void> _pickContactsManually() async {
   }
 
   Widget _buildCropScreen() {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final theme = Theme.of(context);
+    
     return Column(
       children: [
         const SizedBox(height: 20),
-        const Text(
+        Text(
           'Crop Your Profile Picture',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black),
         ),
         const SizedBox(height: 10),
-        const Text(
+        Text(
           'Adjust the square to frame your photo',
-          style: TextStyle(color: Colors.grey),
+          style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
         ),
         const SizedBox(height: 20),
         Expanded(
@@ -820,7 +629,7 @@ Future<void> _pickContactsManually() async {
                                 showDialog(
                                   context: context,
                                   builder: (context) => AlertDialog(
-                                    title: Text('Error'),
+                                    title: const Text('Error'),
                                     content:
                                         Text('Failed to crop image: ${cause}'),
                                     actions: [
@@ -835,9 +644,9 @@ Future<void> _pickContactsManually() async {
                             setState(() => _isCropping = false);
                           },
                     withCircleUi: true,
-                    baseColor: Colors.blue.shade900,
-                    maskColor: Colors.white.withAlpha(100),
-                    cornerDotBuilder: (size, edgeAlignment) => const DotControl(color: Colors.blue),
+                    baseColor: theme.colorScheme.primary,
+                    maskColor: themeProvider.isDarkMode ? Colors.white.withAlpha(100) : Colors.black.withAlpha(100),
+                    cornerDotBuilder: (size, edgeAlignment) => DotControl(color: theme.colorScheme.primary),
                   )
                 : const Center(child: CircularProgressIndicator()),
           ),
@@ -876,6 +685,9 @@ Future<void> _pickContactsManually() async {
   }
 
   Widget _buildProfileStep() {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final theme = Theme.of(context);
+    
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Form(
@@ -894,17 +706,17 @@ Future<void> _pickContactsManually() async {
                     CircleAvatar(
                       radius: 50,
                       backgroundImage: _imageBytes != null ? MemoryImage(_imageBytes!) : null,
-                      backgroundColor: const Color.fromRGBO(45, 161, 175, 0.1),
+                      backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
                       child: _imageBytes == null 
-                          ? const Icon(Icons.camera_alt, size: 40, color: Color(0xff3CB3E9))
+                          ? Icon(Icons.camera_alt, size: 40, color: theme.colorScheme.primary)
                           : null,
                     ),
                     Positioned(
                       bottom: 0, right: 0,
                       child: Container(
                         padding: const EdgeInsets.all(6),
-                        decoration: const BoxDecoration(
-                          color: Color(0xff3CB3E9),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary,
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.edit, size: 16, color: Colors.white),
@@ -917,19 +729,22 @@ Future<void> _pickContactsManually() async {
             const SizedBox(height: 30),
             
             // Username
-            const Text('USERNAME *', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555), fontSize: 16)),
+            Text('USERNAME *', style: TextStyle(fontWeight: FontWeight.w600, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555), fontSize: 16)),
             const SizedBox(height: 8),
             TextFormField(
               controller: _usernameController,
               textCapitalization: TextCapitalization.words,
+              onTap: () => _dismissKeyboard(),
+              style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
               decoration: InputDecoration(
                 hintText: 'Enter your username',
+                hintStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
                 enabledBorder: OutlineInputBorder(
-                  borderSide: const BorderSide(color: Colors.grey, width: 1),
+                  borderSide: BorderSide(color: themeProvider.isDarkMode ? Colors.grey.shade600 : Colors.grey, width: 1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderSide: const BorderSide(color: Colors.blue, width: 2),
+                  borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 errorBorder: OutlineInputBorder(
@@ -940,6 +755,8 @@ Future<void> _pickContactsManually() async {
                   borderSide: const BorderSide(color: Colors.red, width: 2),
                   borderRadius: BorderRadius.circular(10),
                 ),
+                fillColor: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+                filled: true,
               ),
               validator: (value) => value == null || value.isEmpty ? 'Please enter a username' : null,
               onChanged: onUserNameChange,
@@ -947,7 +764,7 @@ Future<void> _pickContactsManually() async {
             const SizedBox(height: 20),
             
             // Phone Number with Country Code
-            const Text('PHONE NUMBER *', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555), fontSize: 16)),
+            Text('PHONE NUMBER *', style: TextStyle(fontWeight: FontWeight.w600, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555), fontSize: 16)),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -955,7 +772,7 @@ Future<void> _pickContactsManually() async {
                   padding: EdgeInsets.only(bottom: 0),
                   child: Container(
                     decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey, width: 1),
+                      border: Border.all(color: themeProvider.isDarkMode ? Colors.grey.shade600 : Colors.grey, width: 1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: CountryCodePicker(
@@ -970,7 +787,11 @@ Future<void> _pickContactsManually() async {
                       showOnlyCountryWhenClosed: false,
                       alignLeft: false,
                       // Key to force rebuild when selection changes
-                      key: Key(_selectedCountry.code!), 
+                      key: Key(_selectedCountry.code!),
+                      textStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
+                      searchStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
+                      dialogTextStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
+                      dialogBackgroundColor: themeProvider.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
                     ),
                   )
                 ),
@@ -983,11 +804,14 @@ Future<void> _pickContactsManually() async {
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly, // Only allow digits
                     ],
+                    onTap: () => _dismissKeyboard(),
+                    style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
                     decoration: InputDecoration(
                       hintText: 'Phone number',
+                      hintStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
                       counterText: '',
                       enabledBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.grey, width: 1),
+                        borderSide: BorderSide(color: themeProvider.isDarkMode ? Colors.grey.shade600 : Colors.grey, width: 1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       focusedBorder: OutlineInputBorder(
@@ -1003,6 +827,8 @@ Future<void> _pickContactsManually() async {
                         borderRadius: BorderRadius.circular(10),
                       ),
                       errorStyle: const TextStyle(fontSize: 12),
+                      fillColor: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+                      filled: true,
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -1027,22 +853,27 @@ Future<void> _pickContactsManually() async {
             const SizedBox(height: 20),
             
             // Bio
-            const Text('BIO', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xff555555), fontSize: 16)),
+            Text('BIO', style: TextStyle(fontWeight: FontWeight.w600, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555), fontSize: 16)),
             const SizedBox(height: 8),
             TextFormField(
               controller: _bioController,
               textCapitalization: TextCapitalization.sentences,
               maxLines: 3,
+              onTap: () => _dismissKeyboard(),
+              style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
               decoration: InputDecoration(
                 hintText: 'Tell us a bit about yourself...',
+                hintStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
                 enabledBorder: OutlineInputBorder(
-                  borderSide: const BorderSide(color: Colors.grey, width: 1),
+                  borderSide: BorderSide(color: themeProvider.isDarkMode ? Colors.grey.shade600 : Colors.grey, width: 1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderSide: const BorderSide(color: Colors.blue, width: 2),
+                  borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
                   borderRadius: BorderRadius.circular(10),
                 ),
+                fillColor: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+                filled: true,
               ),
               onChanged: onBioChange,
             ),
@@ -1053,21 +884,20 @@ Future<void> _pickContactsManually() async {
     );
   }
 
-  // [Rest of the methods remain exactly the same as previous implementation]
-  // _buildGroupsStep, _buildContactsStep, _buildCloseCircleStep, _buildReviewStep
-  // _buildSummaryItem, _reorderGroups, _toggleCloseCircleContact
-
 Widget _buildGroupsStep() {
+  final themeProvider = Provider.of<ThemeProvider>(context);
+  // final theme = Theme.of(context);
+  
   return SingleChildScrollView(
     padding: const EdgeInsets.symmetric(horizontal: 16),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 20),
-        const Text('CUSTOMIZE YOUR SOCIAL GROUPS', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        Text('CUSTOMIZE YOUR SOCIAL GROUPS', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
         const SizedBox(height: 10),
-        const Text('Drag to reorder groups by priority. Add, edit, or remove groups.', 
-          style: TextStyle(fontSize: 14, color: Colors.grey)),
+        Text('Drag to reorder groups by priority. Add, edit, or remove groups.', 
+          style: TextStyle(fontSize: 14, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey)),
         const SizedBox(height: 30),
         
         // Add new group button
@@ -1089,8 +919,9 @@ Widget _buildGroupsStep() {
         // Reorderable list of groups
         Container(
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(color: themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade300),
             borderRadius: BorderRadius.circular(10),
+            color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
           ),
           child: ReorderableListView.builder(
             shrinkWrap: true,
@@ -1102,7 +933,7 @@ Widget _buildGroupsStep() {
                 key: Key(group.id),
                 decoration: BoxDecoration(
                   border: index < _userGroups.length - 1 
-                      ? Border(bottom: BorderSide(color: Colors.grey.shade200))
+                      ? Border(bottom: BorderSide(color: themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200))
                       : null,
                 ),
                 child: _buildEditableGroupItem(group, index),
@@ -1130,17 +961,9 @@ Widget _buildGroupsStep() {
 
 // Update the _buildEditableGroupItem to include drag handle
   Widget _buildEditableGroupItem(SocialGroup group, int index) {
-    // List of conversational frequency options
-    // final List<String> frequencyOptions = [
-    //   'Every few days',
-    //   'Weekly', 
-    //   'Every 2 weeks',
-    //   'Monthly',
-    //   'Quarterly',
-    //   'Twice a year',
-    //   'Once a year'
-    // ];
-
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    // final theme = Theme.of(context);
+    
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -1151,17 +974,21 @@ Widget _buildGroupsStep() {
             children: [
               ReorderableDragStartListener(
                 index: index,
-                child: const Icon(Icons.drag_handle, color: Colors.grey),
+                child: Icon(Icons.drag_handle, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: TextFormField(
                   initialValue: group.name,
-                  decoration: const InputDecoration(
+                  onTap: () => _dismissKeyboard(),
+                  style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
+                  decoration: InputDecoration(
                     labelText: 'GROUP NAME',
-                    labelStyle: TextStyle(color: Color(0xff555555)),
-                    border: OutlineInputBorder(),
+                    labelStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : const Color(0xff555555)),
+                    border: const OutlineInputBorder(),
                     isDense: true,
+                    filled: true,
+                    fillColor: themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade50,
                   ),
                   onChanged: (value) {
                     setState(() {
@@ -1180,18 +1007,22 @@ Widget _buildGroupsStep() {
           const SizedBox(height: 15),
           
           // Frequency Dropdown
-          const Text('CONTACT FREQUENCY:', style: TextStyle(fontWeight: FontWeight.w500, color: Color(0xff555555))),
+          Text('CONTACT FREQUENCY:', style: TextStyle(fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555))),
           const SizedBox(height: 8),
          DropdownButtonFormField<String>(
             value: _getCurrentFrequencyChoice(group),
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
+            onTap: () => _dismissKeyboard(),
+            style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555)),
+            decoration: InputDecoration(
+              border: const OutlineInputBorder(),
               isDense: true,
+              filled: true,
+              fillColor: themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade50,
             ),
             items: FrequencyPeriodMapper.frequencyMapping.keys.map((String value) {
               return DropdownMenuItem<String>(
                 value: value,
-                child: Text(value, style: TextStyle(color: Color(0xff555555)),),
+                child: Text(value, style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555)),),
               );
             }).toList(),
             onChanged: (String? newValue) {
@@ -1209,57 +1040,11 @@ Widget _buildGroupsStep() {
           
           const SizedBox(height: 20),
           
-          // Date Nudges Section
-          // const Text('Date Nudges:', style: TextStyle(fontWeight: FontWeight.w500, color: Color(0xff555555))),
-          // const SizedBox(height: 8),
-          
-          // // Birthday Nudges Toggle
-          // Row(
-          //   children: [
-          //     Expanded(
-          //       child: Text(
-          //         'Send a nudge for birthdays',
-          //         style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-          //       ),
-          //     ),
-          //     Switch(
-          //       value: group.birthdayNudgesEnabled,
-          //       onChanged: (value) {
-          //         setState(() {
-          //           _userGroups[index] = group.copyWith(birthdayNudgesEnabled: value);
-          //         });
-          //       },
-          //     ),
-          //   ],
-          // ),
-          
-          // // Anniversary Nudges Toggle
-          // Row(
-          //   children: [
-          //     Expanded(
-          //       child: Text(
-          //         'Send a nudge for anniversaries',
-          //         style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-          //       ),
-          //     ),
-          //     Switch(
-          //       value: group.anniversaryNudgesEnabled,
-          //       onChanged: (value) {
-          //         setState(() {
-          //           _userGroups[index] = group.copyWith(anniversaryNudgesEnabled: value);
-          //         });
-          //       },
-          //     ),
-          //   ],
-          // ),
-          
-          // const SizedBox(height: 10),
-          
           // Members section
           Text(
             '${group.memberIds.length} members',
-            style: const TextStyle(
-              color: Colors.grey,
+            style: TextStyle(
+              color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey,
               fontWeight: FontWeight.bold,
               fontSize: 12,
             ),
@@ -1291,6 +1076,8 @@ Widget _buildGroupsStep() {
   }
 
     Widget _buildPhoneValidationMessage() {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    
     if (myPhone.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -1300,7 +1087,7 @@ Widget _buildGroupsStep() {
         margin: const EdgeInsets.only(top: 8),
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFF5F5),
+          color: themeProvider.isDarkMode ? Colors.red.shade900.withOpacity(0.3) : const Color(0xFFFFF5F5),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: Colors.red.shade100),
         ),
@@ -1328,7 +1115,7 @@ Widget _buildGroupsStep() {
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: const Color(0xFFF0F9FF),
+        color: themeProvider.isDarkMode ? const Color(0xFF0A3A62) : const Color(0xFFF0F9FF),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: const Color(0xff3CB3E9).withOpacity(0.3)),
       ),
@@ -1350,57 +1137,28 @@ Widget _buildGroupsStep() {
     );
   }
 
-  // Widget _buildPeriodButton(String period, bool isSelected, int groupIndex) {
-  //   return Expanded(
-  //     child: Container(
-  //       margin: const EdgeInsets.symmetric(horizontal: 2),
-  //       child: ElevatedButton(
-  //         onPressed: () {
-  //           setState(() {
-  //             final range = {
-  //               'Weekly': {'min': 1, 'max': 7, 'divisions': 6},
-  //               'Monthly': {'min': 1, 'max': 7, 'divisions': 6},
-  //               'Quarterly': {'min': 1, 'max': 7, 'divisions': 6},
-  //               'Annually': {'min': 1, 'max': 7, 'divisions': 6},
-  //             }[period]!;
-              
-  //             _userGroups[groupIndex] = _userGroups[groupIndex].copyWith(
-  //               period: period,
-  //               frequency: ((range['min']! + range['max']!) / 2).toInt(),
-  //             );
-  //           });
-  //         },
-  //         style: ElevatedButton.styleFrom(
-  //           backgroundColor: isSelected ? const Color(0xff3CB3E9) : Colors.grey[200],
-  //           foregroundColor: isSelected ? Colors.white : Colors.black,
-  //           padding: const EdgeInsets.symmetric(vertical: 8),
-  //         ),
-  //         child: Text(period, style: const TextStyle(fontSize: 12)),
-  //       ),
-  //     ),
-  //   );
-  // }
-
   void _addNewGroup() {
-  setState(() {
-    _userGroups.add(SocialGroup(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: 'New Group',
-      description: '',
-      period: 'Monthly',
-      frequency: 2, // Default frequency
-      memberIds: [],
-      memberCount: 0,
-      lastInteraction: DateTime.now(),
-      colorCode: '#2596BE',
-      birthdayNudgesEnabled: true, // Default enabled
-      anniversaryNudgesEnabled: true, // Default enabled
-      orderIndex: _userGroups.length
-    ));
-  });
-}
+    _dismissKeyboard();
+    setState(() {
+      _userGroups.add(SocialGroup(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        name: 'New Group',
+        description: '',
+        period: 'Monthly',
+        frequency: 2, // Default frequency
+        memberIds: [],
+        memberCount: 0,
+        lastInteraction: DateTime.now(),
+        colorCode: '#2596BE',
+        birthdayNudgesEnabled: true, // Default enabled
+        anniversaryNudgesEnabled: true, // Default enabled
+        orderIndex: _userGroups.length
+      ));
+    });
+  }
 
   void _deleteGroup(int index) {
+    _dismissKeyboard();
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -1425,32 +1183,19 @@ Widget _buildGroupsStep() {
     );
   }
 
-  // String _getFrequencyLabel(String period, double frequency) {
-  //   switch (period) {
-  //     case 'Weekly':
-  //       return '${frequency.toInt()} times per week';
-  //     case 'Monthly':
-  //       return '${frequency.toInt()} times per month';
-  //     case 'Quarterly':
-  //       return '${frequency.toInt()} times per quarter';
-  //     case 'Annually':
-  //       return '${frequency.toInt()} times per year';
-  //     default:
-  //       return '${frequency.toInt()} times';
-  //   }
-  // }
-
   Widget _buildContactsStep() {
+    final themeProvider = Provider.of<ThemeProvider>(context);
     var size = MediaQuery.of(context).size;
+    
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         children: [
           const SizedBox(height: 20),
-          const Text('ADD YOUR CONTACTS', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xff555555))),
+          Text('ADD YOUR CONTACTS', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555))),
           const SizedBox(height: 10),
-          const Text('Import your contacts or add them manually. You can skip this and do it later.', 
-            style: TextStyle(fontSize: 14, color: Colors.grey), textAlign: TextAlign.center),
+          Text('Import your contacts or add them manually. You can skip this and do it later.', 
+            style: TextStyle(fontSize: 14, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey), textAlign: TextAlign.center),
           const SizedBox(height: 40),
           
           // Import Options - Fixed layout
@@ -1458,65 +1203,65 @@ Widget _buildGroupsStep() {
           ? Container(
             width: size.width*0.7,
             height: size.height*0.4,
-            child: Expanded(
-                child: Card(
-                  child: Padding(
-                     padding: const EdgeInsets.only(left: 5, right: 5, bottom: 20, top: 20),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.person_add, size: 60, color: Colors.grey),
-                        const SizedBox(height: 16),
-                        const Text('ADD MANUALLY', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 8),
-                        const Text('Select specific contacts to import', 
-                          textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
-                        const SizedBox(height: 20),
-                        OutlinedButton(
-                          onPressed: () {
-                            FocusScope.of(context).unfocus();
-                            _pickContactsManually();
-                          },
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xff3CB3E9),
-                            side: const BorderSide(color: Color(0xff3CB3E9)),
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                          ),
-                          child: const Text('Pick Contacts', style: TextStyle(fontSize: 14)),
-                        ),
-                      ],
+            child: Card(
+              color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+              child: Padding(
+                 padding: const EdgeInsets.only(left: 5, right: 5, bottom: 20, top: 20),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.person_add, size: 60, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+                    const SizedBox(height: 16),
+                    Text('ADD MANUALLY', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
+                    const SizedBox(height: 8),
+                    Text('Select specific contacts to import', 
+                      textAlign: TextAlign.center, style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey)),
+                    const SizedBox(height: 20),
+                    OutlinedButton(
+                      onPressed: () {
+                        _dismissKeyboard();
+                        _pickContactsManually();
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xff3CB3E9),
+                        side: const BorderSide(color: Color(0xff3CB3E9)),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      ),
+                      child: const Text('Pick Contacts', style: TextStyle(fontSize: 14)),
                     ),
-                  ),
+                  ],
                 ),
-              ))
+              ),
+            ),
+          )
           : Row(
             children: [
               Expanded(
                 child: Card(
+                  color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
                   child: Padding(
                     padding: const EdgeInsets.only(left: 5, right: 5, bottom: 20, top: 20),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.import_contacts, size: 60, color: Color(0xff3CB3E9)),
+                        Icon(Icons.import_contacts, size: 60, color: const Color(0xff3CB3E9)),
                         const SizedBox(height: 16),
-                        const Text('QUICK IMPORT', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        Text('QUICK IMPORT', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
                         const SizedBox(height: 8),
-                        const Text('Import your existing contacts', 
-                          textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+                        Text('Import your existing contacts', 
+                          textAlign: TextAlign.center, style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey)),
                         const SizedBox(height: 20),
                         ElevatedButton(
                           onPressed: () async {
-                            FocusScope.of(context).unfocus();
+                            _dismissKeyboard();
                             final result = await Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const ImportContactsScreen(),
-                                settings: RouteSettings(arguments: {
-                                  'groups': _getOrderedGroupsForSelection(),
-                                  'onboarding': true, // Add this flag
-                                }),
-                              ),
+                                builder: (context) =>  ImportContactsScreen(
+                                  groups: _getOrderedGroupsForSelection(),
+                                  isOnboarding: true,
+                                ),
+                               ),
                             );
                             
                             if (result != null && result is List<Contact>) {
@@ -1542,21 +1287,22 @@ Widget _buildGroupsStep() {
               const SizedBox(width: 16),
               Expanded(
                 child: Card(
+                  color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
                   child: Padding(
                      padding: const EdgeInsets.only(left: 5, right: 5, bottom: 20, top: 20),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.person_add, size: 60, color: Colors.grey),
+                        Icon(Icons.person_add, size: 60, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
                         const SizedBox(height: 16),
-                        const Text('ADD MANUALLY', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        Text('ADD MANUALLY', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
                         const SizedBox(height: 8),
-                        const Text('Select specific contacts to import', 
-                          textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+                        Text('Select specific contacts to import', 
+                          textAlign: TextAlign.center, style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey)),
                         const SizedBox(height: 20),
                         OutlinedButton(
                           onPressed: () {
-                            FocusScope.of(context).unfocus();
+                            _dismissKeyboard();
                             _pickContactsManually();
                           },
                           style: OutlinedButton.styleFrom(
@@ -1585,34 +1331,37 @@ Widget _buildGroupsStep() {
   }
 
   Widget _buildCloseCircleStep() {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final theme = Theme.of(context);
+    
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 20),
-          const Text('Identify Your Close Circle', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text('Identify Your Close Circle', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
           const SizedBox(height: 10),
           
           // Explanation
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color.fromRGBO(45, 161, 175, 0.1),
+              color: theme.colorScheme.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(children: [
-                  Icon(Icons.info, color: Color(0xff3CB3E9)),
-                  SizedBox(width: 8),
-                  Text('What is a Close Circle?', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xff3CB3E9))),
+                  Icon(Icons.info, color: theme.colorScheme.primary),
+                  const SizedBox(width: 8),
+                  Text('What is a Close Circle?', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
                 ]),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
                   'Your Close Circle is for people you naturally connect with often — those relationships don\'t need reminders. NUDGE will include them in your weekly reflection so you can note how things are going.',
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                  style: TextStyle(fontSize: 14, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
                 ),
               ],
             ),
@@ -1622,16 +1371,17 @@ Widget _buildGroupsStep() {
           
           // Contact Selection
           if (_selectedContacts.isNotEmpty) ...[
-            const Text('Select your Close Circle members:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            Text('Select your Close Circle members:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
             const SizedBox(height: 10),
             
             ..._selectedContacts.map((contact) => Card(
+              color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
               margin: const EdgeInsets.only(bottom: 8),
               child: CheckboxListTile(
-                title: Text(contact.name, style: const TextStyle(fontWeight: FontWeight.w500)),
-                subtitle: contact.phoneNumber.isNotEmpty ? Text(contact.phoneNumber) : null,
+                title: Text(contact.name, style: TextStyle(fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
+                subtitle: contact.phoneNumber.isNotEmpty ? Text(contact.phoneNumber, style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey)) : null,
                 secondary: CircleAvatar(
-                  backgroundColor: const Color(0xff3CB3E9),
+                  backgroundColor: theme.colorScheme.primary,
                   child: Text(contact.name.isNotEmpty ? contact.name[0].toUpperCase() : '?', style: const TextStyle(color: Colors.white)),
                 ),
                 value: _closeCircleContacts.contains(contact),
@@ -1640,15 +1390,16 @@ Widget _buildGroupsStep() {
               ),
             )).toList(),
           ] else ...[
-            const Card(
+            Card(
+              color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
               child: Padding(
-                padding: EdgeInsets.all(20),
+                padding: const EdgeInsets.all(20),
                 child: Column(children: [
-                  Icon(Icons.people_outline, size: 60, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text('No Contacts Yet', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  SizedBox(height: 8),
-                  Text('You haven\'t added any contacts yet. You can add them later from the dashboard.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+                  Icon(Icons.people_outline, size: 60, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+                  const SizedBox(height: 16),
+                  Text('No Contacts Yet', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
+                  const SizedBox(height: 8),
+                  Text('You haven\'t added any contacts yet. You can add them later from the dashboard.', textAlign: TextAlign.center, style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey)),
                 ]),
               ),
             ),
@@ -1660,6 +1411,9 @@ Widget _buildGroupsStep() {
   }
 
   Widget _buildReviewStep() {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final theme = Theme.of(context);
+    
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -1673,24 +1427,24 @@ Widget _buildGroupsStep() {
               Container(
                 width: 100, height: 100,
                 decoration: BoxDecoration(
-                  color: const Color.fromRGBO(45, 161, 175, 0.1),
+                  color: theme.colorScheme.primary.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.check, size: 50, color: Color(0xff3CB3E9)),
+                child: Icon(Icons.check, size: 50, color: theme.colorScheme.primary),
               ),
               const SizedBox(height: 20),
-              const Text('You\'re all set! 🎉', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+              Text('You\'re all set! 🎉', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'We\'ve created your groups and scheduled your first nudges. You\'ll start seeing reminders soon — and get your first Weekly Digest this Sunday!',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, color: Colors.grey, height: 1.5),
+                style: TextStyle(fontSize: 16, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey, height: 1.5),
               ),
             ]),
           ),
           
           const SizedBox(height: 40),
-          const Text('Your Nudge Setup:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text('Your Nudge Setup:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
           const SizedBox(height: 20),
           
           _buildSummaryItem(Icons.person, 'Profile Complete', 'Username: ${_usernameController.text}'),
@@ -1706,126 +1460,97 @@ Widget _buildGroupsStep() {
   }
 
   Widget _buildSummaryItem(IconData icon, String title, String subtitle) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final theme = Theme.of(context);
+    
     return ListTile(
-      leading: Icon(icon, color: const Color(0xff3CB3E9)),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
-      subtitle: Text(subtitle, style: const TextStyle(color: Colors.grey)),
+      leading: Icon(icon, color: theme.colorScheme.primary),
+      title: Text(title, style: TextStyle(fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
+      subtitle: Text(subtitle, style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey)),
     );
   }
 
-  Future<void> _scheduleNudgesForImportedContacts() async {
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final nudgeService = NudgeService();
-    final user = authService.currentUser;
-    
-    if (user == null || _selectedContacts.isEmpty) return;
-
-    try {
-      print('Starting spaced scheduling for ${_selectedContacts.length} contacts');
-      
-      // Use the new grouped scheduling with proper spacing
-      final result = await nudgeService.scheduleGroupedNudgesWithSpacing(
-        _selectedContacts,
-        user.uid,
-      );
-      
-      if (result['successCount'] as int > 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Scheduled ${result['successCount']} nudges with proper spacing',
-            ),
-            backgroundColor: Colors.green,
-          ),
-        );
-        
-        // Log the scheduling
-        print('Successfully scheduled ${result['successCount']} nudges');
-        print('Failed: ${result['failCount']}');
-        
-        if (result['failedContacts'] != null) {
-          final failed = result['failedContacts'] as List<String>;
-          if (failed.isNotEmpty) {
-            print('Failed contacts: ${failed.join(', ')}');
-          }
-        }
-      }
-    } catch (e) {
-      print('Error scheduling grouped nudges: $e');
-      // Don't show error to user as this is background process
-    }
-  }
-    
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final theme = Theme.of(context);
+    
     return GestureDetector(
-    onTap: () => FocusScope.of(context).unfocus(),
-    child: Scaffold(
-      appBar: AppBar(
-        title: GradientText( text: 'NUDGE', style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
+      onTap: _dismissKeyboard,
+      behavior: HitTestBehavior.translucent,
+      child: Scaffold(
+        backgroundColor: themeProvider.getBackgroundColor(context),
+        appBar: AppBar(
+          title: GradientText( text: 'NUDGE', style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
                gradient: const LinearGradient(
                   colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
             ),
-        ),
-        // Text('NUDGE', style: AppTextStyles.title2.copyWith(color: const Color(0xff3CB3E9), fontFamily: 'RobotoMono')),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
-        automaticallyImplyLeading: false, // Remove back button
-        elevation: 0,
-      ),
-      body: Column(children: [
-        if (!_isCropping) _buildStepIndicator(),
-        Expanded(child: _buildCurrentStep()),
-        if (!_isCropping) Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, -2))],
           ),
-          child: Row(children: [
-            if (_currentStep > 0) Expanded(
-              child: OutlinedButton(
-                onPressed: _previousStep,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xff3CB3E9),
-                  side: const BorderSide(color: Color(0xff3CB3E9)),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          centerTitle: true,
+          backgroundColor: themeProvider.getSurfaceColor(context),
+          surfaceTintColor: Colors.transparent,
+          automaticallyImplyLeading: false, // Remove back button
+          elevation: 0,
+        ),
+        body: Column(children: [
+          if (!_isCropping) _buildStepIndicator(themeProvider),
+          Expanded(child: _buildCurrentStep()),
+          if (!_isCropping) Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: themeProvider.getSurfaceColor(context),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, -2))],
+              border: Border(
+                top: BorderSide(
+                  color: themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade300,
                 ),
-                child: const Text('Back'),
               ),
             ),
-            if (_currentStep > 0) const SizedBox(width: 10),
-            Expanded(
-              child: ElevatedButton(
-                autofocus: true,
-                onPressed: () {
-                  if (_currentStep == 0) {
-                    // Validate form for profile step
-                    if (_formKey.currentState!.validate()) {
+            child: Row(children: [
+              if (_currentStep > 0) Expanded(
+                child: OutlinedButton(
+                  onPressed: _previousStep,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: theme.colorScheme.primary,
+                    side: BorderSide(color: theme.colorScheme.primary),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: const Text('Back'),
+                ),
+              ),
+              if (_currentStep > 0) const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton(
+                  autofocus: true,
+                  onPressed: () {
+                    _dismissKeyboard();
+                    if (_currentStep == 0) {
+                      // Validate form for profile step
+                      if (_formKey.currentState!.validate()) {
+                        _nextStep();
+                      }
+                    } else if (_isStepValid(_currentStep)) {
                       _nextStep();
                     }
-                  } else if (_isStepValid(_currentStep)) {
-                    _nextStep();
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xff3CB3E9),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : Text(_currentStep == _steps.length - 1 ? 'Go to Dashboard' : 'Continue', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                 ),
-                child: _isLoading
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : Text(_currentStep == _steps.length - 1 ? 'Go to Dashboard' : 'Continue', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
               ),
-            ),
-          ]),
-        ),
-      ]),
-    ));
+            ]),
+          ),
+        ]),
+      ),
+    );
   }
 
   @override
@@ -1857,6 +1582,10 @@ class _ContactPickerDialogState extends State<ContactPickerDialog> {
     _filteredContacts = widget.contacts;
   }
 
+  void _dismissKeyboard() {
+    FocusScope.of(context).unfocus();
+  }
+
   void _applyFilter(String query) {
     final q = query.trim().toLowerCase();
     setState(() {
@@ -1886,197 +1615,199 @@ class _ContactPickerDialogState extends State<ContactPickerDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('SELECT CONTACTS', style: TextStyle(color: Color(0xff555555)),),
-        actions: [
-          // Selection info
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Center(
-              child: Text(
-                '${_selectedContacts.length} selected',
-                style: const TextStyle(fontSize: 16),
-              ),
-            ),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Search bar
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _searchController,
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.search),
-                hintText: 'Search by name, phone, or email...',
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.symmetric(vertical: 12),
-              ),
-              onChanged: _applyFilter,
-            ),
-          ),
-          
-          // Selection actions
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '${_filteredContacts.length} contacts found',
-                  style: const TextStyle(color: Colors.grey),
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final theme = Theme.of(context);
+    
+    return GestureDetector(
+      onTap: _dismissKeyboard,
+      behavior: HitTestBehavior.translucent,
+      child: Scaffold(
+        backgroundColor: themeProvider.getBackgroundColor(context),
+        appBar: AppBar(
+          title: Text('SELECT CONTACTS', style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555)),),
+          backgroundColor: themeProvider.getSurfaceColor(context),
+          actions: [
+            // Selection info
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Center(
+                child: Text(
+                  '${_selectedContacts.length} selected',
+                  style: TextStyle(fontSize: 16, color: themeProvider.isDarkMode ? Colors.white : Colors.black),
                 ),
-                Row(
-                  children: [
-                    TextButton(
-                      onPressed: _selectAll,
-                      child: const Text('Select All'),
-                    ),
-                    TextButton(
-                      onPressed: _clearSelection,
-                      child: const Text('Clear'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          
-          const SizedBox(height: 8),
-          
-          // Contacts list
-          Expanded(
-            child: _filteredContacts.isEmpty
-                ? const Center(
-                    child: Text(
-                      'No contacts found',
-                      style: TextStyle(fontSize: 16, color: Colors.grey),
-                    ),
-                  )
-                : ListView.builder(
-                    itemCount: _filteredContacts.length,
-                    itemBuilder: (context, index) {
-                      final contact = _filteredContacts[index];
-                      final isSelected = _selectedContacts.contains(contact);
-                      
-                      // Extract contact information
-                      final primaryPhone = contact.phones.isNotEmpty
-                          ? contact.phones.first.number
-                          : '';
-                      final primaryEmail = contact.emails.isNotEmpty
-                          ? contact.emails.first.address
-                          : '';
-                      
-                      // Extract important dates
-                      // final birthday = contact.events.firstWhere(
-                      //   (e) => e.label.name.toLowerCase().contains('birthday'),
-                      //   orElse: () => fContacts.Event('', ''),
-                      // );
-                      
-                      // final anniversary = contact.events.firstWhere(
-                      //   (e) => e.label.name.toLowerCase().contains('anniversary'),
-                      //   orElse: () => fContacts.Event('', ''),
-                      // );
-
-                      return Card(
-                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                        child: CheckboxListTile(
-                          title: Text(
-                            contact.displayName,
-                            style: const TextStyle(fontWeight: FontWeight.w500),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (primaryPhone.isNotEmpty) Text(primaryPhone),
-                              if (primaryEmail.isNotEmpty) Text(primaryEmail),
-                              // if (birthday.date != null) 
-                              //   Text('🎂 Birthday: ${_formatDate(birthday.date!)}'),
-                              // if (anniversary.date != null)
-                              //   Text('💑 Anniversary: ${_formatDate(anniversary.date!)}'),
-                            ],
-                          ),
-                          secondary: CircleAvatar(
-                            backgroundColor: const Color(0xff3CB3E9),
-                            child: contact.photoOrThumbnail != null
-                                ? ClipOval(
-                                    child: Image.memory(
-                                      contact.photoOrThumbnail!,
-                                      width: 40,
-                                      height: 40,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  )
-                                : Text(
-                                    contact.displayName.isNotEmpty 
-                                        ? contact.displayName[0].toUpperCase() 
-                                        : '?',
-                                    style: const TextStyle(color: Colors.white),
-                                  ),
-                          ),
-                          value: isSelected,
-                          onChanged: (checked) {
-                            setState(() {
-                              if (checked == true) {
-                                _selectedContacts.add(contact);
-                              } else {
-                                _selectedContacts.remove(contact);
-                              }
-                            });
-                          },
-                          controlAffinity: ListTileControlAffinity.leading,
-                        ),
-                      );
-                    },
-                  ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
-              blurRadius: 8,
-              offset: const Offset(0, -2),
+              ),
             ),
           ],
         ),
-        child: Row(
+        body: Column(
           children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () => Navigator.pop(context),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xff3CB3E9),
-                  side: const BorderSide(color: Color(0xff3CB3E9)),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+            // Search bar
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: TextField(
+                controller: _searchController,
+                onTap: () => _dismissKeyboard(),
+                style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.search),
+                  hintText: 'Search by name, phone, or email...',
+                  hintStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+                  border: const OutlineInputBorder(),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                  filled: true,
+                  fillColor: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
                 ),
-                child: const Text('Cancel'),
+                onChanged: _applyFilter,
               ),
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: ElevatedButton(
-                onPressed: _selectedContacts.isEmpty
-                    ? null
-                    : () => Navigator.pop(context, _selectedContacts),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xff3CB3E9),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-                child: Text(
-                  'Import (${_selectedContacts.length})',
-                  style: const TextStyle(color: Colors.white),
-                ),
+            
+            // Selection actions
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '${_filteredContacts.length} contacts found',
+                    style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+                  ),
+                  Row(
+                    children: [
+                      TextButton(
+                        onPressed: _selectAll,
+                        child: Text('Select All', style: TextStyle(color: theme.colorScheme.primary)),
+                      ),
+                      TextButton(
+                        onPressed: _clearSelection,
+                        child: const Text('Clear', style: TextStyle(color: Colors.red)),
+                      ),
+                    ],
+                  ),
+                ],
               ),
+            ),
+            
+            const SizedBox(height: 8),
+            
+            // Contacts list
+            Expanded(
+              child: _filteredContacts.isEmpty
+                  ? Center(
+                      child: Text(
+                        'No contacts found',
+                        style: TextStyle(fontSize: 16, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: _filteredContacts.length,
+                      itemBuilder: (context, index) {
+                        final contact = _filteredContacts[index];
+                        final isSelected = _selectedContacts.contains(contact);
+                        
+                        // Extract contact information
+                        final primaryPhone = contact.phones.isNotEmpty
+                            ? contact.phones.first.number
+                            : '';
+                        final primaryEmail = contact.emails.isNotEmpty
+                            ? contact.emails.first.address
+                            : '';
+                        
+                        return Card(
+                          color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+                          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                          child: CheckboxListTile(
+                            title: Text(
+                              contact.displayName,
+                              style: TextStyle(fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.white : Colors.black),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (primaryPhone.isNotEmpty) 
+                                  Text(primaryPhone, style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey)),
+                                if (primaryEmail.isNotEmpty) 
+                                  Text(primaryEmail, style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey)),
+                              ],
+                            ),
+                            secondary: CircleAvatar(
+                              backgroundColor: theme.colorScheme.primary,
+                              child: contact.photoOrThumbnail != null
+                                  ? ClipOval(
+                                      child: Image.memory(
+                                        contact.photoOrThumbnail!,
+                                        width: 40,
+                                        height: 40,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    )
+                                  : Text(
+                                      contact.displayName.isNotEmpty 
+                                          ? contact.displayName[0].toUpperCase() 
+                                          : '?',
+                                      style: const TextStyle(color: Colors.white),
+                                    ),
+                            ),
+                            value: isSelected,
+                            onChanged: (checked) {
+                              setState(() {
+                                if (checked == true) {
+                                  _selectedContacts.add(contact);
+                                } else {
+                                  _selectedContacts.remove(contact);
+                                }
+                              });
+                            },
+                            controlAffinity: ListTileControlAffinity.leading,
+                          ),
+                        );
+                      },
+                    ),
             ),
           ],
+        ),
+        bottomNavigationBar: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: themeProvider.getSurfaceColor(context),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 8,
+                offset: const Offset(0, -2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: theme.colorScheme.primary,
+                    side: BorderSide(color: theme.colorScheme.primary),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Text('Cancel'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: _selectedContacts.isEmpty
+                      ? null
+                      : () => Navigator.pop(context, _selectedContacts),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: Text(
+                    'Import (${_selectedContacts.length})',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -2096,116 +1827,128 @@ class GroupSelectionDialog extends StatefulWidget {
 class _GroupSelectionDialogState extends State<GroupSelectionDialog> {
   String? _selectedGroupId;
 
+  void _dismissKeyboard() {
+    FocusScope.of(context).unfocus();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      child: Container(
-        width: double.maxFinite,
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Assign to Group',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Select which group these contacts belong to:',
-              style: TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 20),
-            
-            // Group selection list
-            Container(
-              constraints: const BoxConstraints(maxHeight: 300),
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: widget.groups.length,
-                itemBuilder: (context, index) {
-                  final group = widget.groups[index];
-                  final isSelected = _selectedGroupId == group.id;
-                  
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    color: isSelected ? const Color.fromRGBO(60, 179, 233, 0.1) : null,
-                    child: ListTile(
-                      leading: Container(
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          color: Color(int.parse(group.colorCode.replaceAll('#', '0xFF'))),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      title: Text(
-                        group.name,
-                        style: TextStyle(
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          color: isSelected ? const Color(0xff3CB3E9) : Colors.black,
-                        ),
-                      ),
-                      subtitle: Text(
-                        '${group.frequency} times ${group.period.toLowerCase()}',
-                        style: TextStyle(
-                          color: isSelected ? const Color(0xff3CB3E9) : Colors.grey,
-                        ),
-                      ),
-                      trailing: isSelected 
-                          ? const Icon(Icons.check_circle, color: Color(0xff3CB3E9))
-                          : null,
-                      onTap: () {
-                        setState(() {
-                          _selectedGroupId = group.id;
-                        });
-                      },
-                    ),
-                  );
-                },
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final theme = Theme.of(context);
+    
+    return GestureDetector(
+      onTap: _dismissKeyboard,
+      behavior: HitTestBehavior.translucent,
+      child: Dialog(
+        backgroundColor: themeProvider.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+        child: Container(
+          width: double.maxFinite,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Assign to Group',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black),
               ),
-            ),
-            
-            const SizedBox(height: 20),
-            
-            // Action buttons
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xff3CB3E9),
-                      side: const BorderSide(color: Color(0xff3CB3E9)),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: const Text('Cancel'),
-                  ),
+              const SizedBox(height: 8),
+              Text(
+                'Select which group these contacts belong to:',
+                style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+              ),
+              const SizedBox(height: 20),
+              
+              // Group selection list
+              Container(
+                constraints: const BoxConstraints(maxHeight: 300),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: widget.groups.length,
+                  itemBuilder: (context, index) {
+                    final group = widget.groups[index];
+                    final isSelected = _selectedGroupId == group.id;
+                    
+                    return Card(
+                      color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+                      margin: const EdgeInsets.only(bottom: 8),
+                      child: ListTile(
+                        leading: Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: Color(int.parse(group.colorCode.replaceAll('#', '0xFF'))),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        title: Text(
+                          group.name,
+                          style: TextStyle(
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            color: isSelected ? theme.colorScheme.primary : (themeProvider.isDarkMode ? Colors.white : Colors.black),
+                          ),
+                        ),
+                        subtitle: Text(
+                          '${group.frequency} times ${group.period.toLowerCase()}',
+                          style: TextStyle(
+                            color: isSelected ? theme.colorScheme.primary : (themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+                          ),
+                        ),
+                        trailing: isSelected 
+                            ? Icon(Icons.check_circle, color: theme.colorScheme.primary)
+                            : null,
+                        onTap: () {
+                          setState(() {
+                            _selectedGroupId = group.id;
+                          });
+                        },
+                      ),
+                    );
+                  },
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _selectedGroupId == null 
-                        ? null 
-                        : () {
-                            final selectedGroup = widget.groups.firstWhere(
-                              (group) => group.id == _selectedGroupId,
-                            );
-                            Navigator.pop(context, selectedGroup);
-                          },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xff3CB3E9),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: const Text(
-                      'Import Contacts',
-                      style: TextStyle(color: Colors.white, fontSize: 14),
+              ),
+              
+              const SizedBox(height: 20),
+              
+              // Action buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: theme.colorScheme.primary,
+                        side: BorderSide(color: theme.colorScheme.primary),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: const Text('Cancel'),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _selectedGroupId == null 
+                          ? null 
+                          : () {
+                              final selectedGroup = widget.groups.firstWhere(
+                                (group) => group.id == _selectedGroupId,
+                              );
+                              Navigator.pop(context, selectedGroup);
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: theme.colorScheme.primary,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: const Text(
+                        'Import Contacts',
+                        style: TextStyle(color: Colors.white, fontSize: 14),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

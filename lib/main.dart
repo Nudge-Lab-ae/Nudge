@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:nudge/firebase_options.dart';
 import 'package:nudge/helpers/auth_refresh_helper.dart';
 import 'package:nudge/helpers/deletion_retry_helper.dart';
+import 'package:nudge/providers/theme_provider.dart';
 import 'package:nudge/screens/analytics/analytics_screen.dart';
 import 'package:nudge/screens/auth/complete_profile_screen.dart';
 import 'package:nudge/screens/contacts/edit_contact_screen.dart';
@@ -14,6 +15,7 @@ import 'package:nudge/screens/feedback/feedback_forum_screen.dart';
 import 'package:nudge/screens/splash_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/services/nudge_service.dart';
+import 'package:nudge/theme/app_theme.dart';
 import 'package:nudge/theme/text_styles.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -389,100 +391,119 @@ class NudgeApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        Provider<AuthService>(
-          create: (_) => AuthService(),
-        ),
-        Provider<ApiService>(
-          create: (_) => ApiService(),
-        ),
-        StreamProvider<User?>(
-          create: (context) => context.read<AuthService>().user,
-          initialData: null,
-        ),
-      ],
-      child: MaterialApp(
-        title: 'NUDGE',
-        navigatorKey: navigatorKey,
-        theme: ThemeData(
-          primaryColor: Color(0xFFF9FAFB),
-          colorScheme: ColorScheme.fromSwatch(
-            primarySwatch: Colors.blue,
-          ).copyWith(
-            secondary: Color(0xFFF9FAFB)
-          ),
-          fontFamily: 'OpenSans',
-          textTheme: const TextTheme(
-            displayLarge: AppTextStyles.title1,
-            displayMedium: AppTextStyles.title2,
-            displaySmall: AppTextStyles.title3,
-            bodyLarge: AppTextStyles.primary,
-            bodyMedium: AppTextStyles.primary,
-            bodySmall: AppTextStyles.secondary,
-            labelLarge: AppTextStyles.button,
-            labelMedium: AppTextStyles.buttonSecondary,
-            labelSmall: AppTextStyles.caption,
-          ),
-        ),
-        initialRoute: '/splash',
-        routes: {
-          '/splash': (context) => const SplashScreen(),
-          '/': (context) => const AuthWrapper(),
-          '/welcome': (context) => const WelcomeScreen(),
-          '/login': (context) => const LoginScreen(),
-          '/register': (context) => const RegisterScreen(),
-          '/complete_profile': (context) => const CompleteProfileScreen(),
-          '/dashboard': (context) {
-            // Check for notification navigation argument
-            final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-            return DashboardScreen(initialTab: args?['initialTab'] ?? 0);
-          },
-          '/contacts': (context) {
-            final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-            return ContactsListScreen(filter: args?['filter'], mode: args?['action'], showAppBar: true, hideButton: (){},);
-          },
-          '/analytics': (context) => const AnalyticsScreen(),
-          '/add_contact': (context) => const AddContactScreen(),
-          '/import_contacts': (context) => const ImportContactsScreen(),
-          '/notifications': (context) => const NotificationsScreen(showAppBar: true),
-          '/settings': (context) => const SettingsScreen(),
-          '/groups': (context) => const GroupsListScreen(showAppBar: true,),
-          '/edit_contact': (context) {
-            final contactId = ModalRoute.of(context)!.settings.arguments as String;
-            return EditContactScreen(contactId: contactId);
-          },
-          '/feedback_forum': (context) => const FeedbackForumScreen(),
-        },
-        builder: (context, child) {
-          // Process any pending notification when the app is built
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (_pendingNotificationRoute != null && navigatorKey.currentState != null) {
-              print('Processing pending notification route on app build');
-              navigateToNotificationsScreen();
-              _pendingNotificationRoute = null;
-            }
-          });
-          return child!;
-        },
-        onGenerateRoute: (settings) {
-          // If notification route is detected, always go to dashboard with notifications tab
-          if (settings.name == '/notifications' || 
-              settings.name?.contains('notification') == true) {
-            return MaterialPageRoute(
-              builder: (context) => DashboardScreen(initialTab: 3),
-            );
-          }
-          
-          return MaterialPageRoute(
-            builder: (context) => Scaffold(
-              body: Center(
-                child: Text('Page not found: ${settings.name}'),
+    return ChangeNotifierProvider(
+      create: (_) => ThemeProvider(),
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, child) {
+          return MultiProvider(
+            providers: [
+              Provider<AuthService>(
+                create: (_) => AuthService(),
               ),
+              Provider<ApiService>(
+                create: (_) => ApiService(),
+              ),
+              StreamProvider<User?>(
+                create: (context) => context.read<AuthService>().user,
+                initialData: null,
+              ),
+            ],
+            child: MaterialApp(
+              title: 'NUDGE',
+              navigatorKey: navigatorKey,
+              theme: AppTheme.lightTheme().copyWith(
+                // Add text theme to light theme
+                textTheme: const TextTheme(
+                  displayLarge: AppTextStyles.title1,
+                  displayMedium: AppTextStyles.title2,
+                  displaySmall: AppTextStyles.title3,
+                  bodyLarge: AppTextStyles.primary,
+                  bodyMedium: AppTextStyles.primary,
+                  bodySmall: AppTextStyles.secondary,
+                  labelLarge: AppTextStyles.button,
+                  labelMedium: AppTextStyles.buttonSecondary,
+                  labelSmall: AppTextStyles.caption,
+                ),
+              ),
+              darkTheme: AppTheme.darkTheme().copyWith(
+                // Add text theme to dark theme
+                textTheme: TextTheme(
+                  displayLarge: AppTextStyles.title1.copyWith(color: Colors.white),
+                  displayMedium: AppTextStyles.title2.copyWith(color: Colors.white),
+                  displaySmall: AppTextStyles.title3.copyWith(color: Colors.white),
+                  bodyLarge: AppTextStyles.primary.copyWith(color: Colors.white),
+                  bodyMedium: AppTextStyles.primary.copyWith(color: Colors.white),
+                  bodySmall: AppTextStyles.secondary.copyWith(color: Colors.grey),
+                  labelLarge: AppTextStyles.button,
+                  labelMedium: AppTextStyles.buttonSecondary,
+                  labelSmall: AppTextStyles.caption.copyWith(color: Colors.grey),
+                ),
+              ),
+              themeMode: themeProvider.themeMode,
+              initialRoute: '/splash',
+              routes: {
+                '/splash': (context) => const SplashScreen(),
+                '/': (context) => const AuthWrapper(),
+                '/welcome': (context) => const WelcomeScreen(),
+                '/login': (context) => const LoginScreen(),
+                '/register': (context) => const RegisterScreen(),
+                '/complete_profile': (context) => const CompleteProfileScreen(),
+                '/dashboard': (context) {
+                  final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+                  return DashboardScreen(initialTab: args?['initialTab'] ?? 0);
+                },
+                '/contacts': (context) {
+                  final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+                  return ContactsListScreen(filter: args?['filter'], mode: args?['action'], showAppBar: true, hideButton: (){},);
+                },
+                '/analytics': (context) => const AnalyticsScreen(),
+                '/add_contact': (context) => const AddContactScreen(),
+                '/import_contacts': (context) {
+                  final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+                  return ImportContactsScreen(
+                    groups: args?['groups'] ?? [],
+                    isOnboarding: args?['onboarding'] ?? false,
+                  );
+                },
+                '/notifications': (context) => const NotificationsScreen(showAppBar: true),
+                '/settings': (context) => const SettingsScreen(),
+                '/groups': (context) => const GroupsListScreen(showAppBar: true,),
+                '/edit_contact': (context) {
+                  final contactId = ModalRoute.of(context)!.settings.arguments as String;
+                  return EditContactScreen(contactId: contactId);
+                },
+                '/feedback_forum': (context) => const FeedbackForumScreen(),
+              },
+              builder: (context, child) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (_pendingNotificationRoute != null && navigatorKey.currentState != null) {
+                    print('Processing pending notification route on app build');
+                    navigateToNotificationsScreen();
+                    _pendingNotificationRoute = null;
+                  }
+                });
+                return child!;
+              },
+              onGenerateRoute: (settings) {
+                if (settings.name == '/notifications' || 
+                    settings.name?.contains('notification') == true) {
+                  return MaterialPageRoute(
+                    builder: (context) => DashboardScreen(initialTab: 3),
+                  );
+                }
+                
+                return MaterialPageRoute(
+                  builder: (context) => Scaffold(
+                    body: Center(
+                      child: Text('Page not found: ${settings.name}'),
+                    ),
+                  ),
+                );
+              },
+              debugShowCheckedModeBanner: false,
             ),
           );
         },
-        debugShowCheckedModeBanner: false,
       ),
     );
   }
