@@ -324,7 +324,7 @@ Widget build(BuildContext context) {
         
         return Scaffold(
            floatingActionButton: Padding(
-              padding: EdgeInsets.only(right: 6,bottom: 30,),
+              padding: EdgeInsets.only(right: 6,bottom: 55,),
               child: _selectedNudgeIds.isNotEmpty
                 ? FloatingActionButton.extended(
                     onPressed: () => _cancelSelectedNudges(context, themeProvider),
@@ -484,7 +484,7 @@ Widget build(BuildContext context) {
         backgroundColor: theme.colorScheme.primary,
       ),
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(right: 6, bottom: 50),
+        padding: const EdgeInsets.only(right: 6, bottom: 55),
         child: _selectedNudgeIds.isNotEmpty
           ? FloatingActionButton.extended(
               onPressed: () => _cancelSelectedNudges(context, themeProvider),

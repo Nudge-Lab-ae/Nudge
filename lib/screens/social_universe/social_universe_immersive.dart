@@ -1,6 +1,7 @@
 // lib/screens/social_universe_immersive_screen.dart
 import 'package:flutter/material.dart';
 import 'package:nudge/models/contact.dart';
+import 'package:nudge/providers/theme_provider.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/widgets/contact_detail_modal.dart';
 import 'package:nudge/widgets/social_universe.dart';
@@ -11,6 +12,7 @@ class SocialUniverseImmersiveScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
     final apiService = Provider.of<ApiService>(context);
     
     return Scaffold(
@@ -40,6 +42,7 @@ class SocialUniverseImmersiveScreen extends StatelessWidget {
               );
             },
             isImmersive: true,
+            isDarkMode: themeProvider.isDarkMode,
             onExitImmersive: () {
               Navigator.pop(context);
             },

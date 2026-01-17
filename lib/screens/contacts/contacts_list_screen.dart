@@ -104,7 +104,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
               onTap: _dismissKeyboard,
               child: Scaffold(
               floatingActionButton: Padding(
-                padding: EdgeInsets.only(right: 6, bottom: 30,),
+                padding: EdgeInsets.only(right: 10, bottom: 55,),
                 child: _selectedContacts.isNotEmpty
                 ? FloatingActionButton.extended(
                     onPressed: () => _selectionMode == 'add_to_group'
@@ -415,7 +415,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
         ],
       ),
       floatingActionButton: Padding(
-        padding: EdgeInsets.only(right: 16,bottom: 30,),
+        padding: EdgeInsets.only(right: 16,bottom: 55,),
         child: _selectedContacts.isNotEmpty
           ? FloatingActionButton.extended(
               onPressed: () => _selectionMode == 'add_to_group'
@@ -1376,7 +1376,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     
     return Scaffold(
       floatingActionButton: Padding(
-        padding: EdgeInsets.only(right: 6,bottom: 30,),
+        padding: EdgeInsets.only(right: 10,bottom: 55,),
         child: FeedbackFloatingButton(
           currentSection: 'contacts',
           extraActions: [

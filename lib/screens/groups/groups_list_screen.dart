@@ -386,7 +386,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
               // Fixed FAB positioning for both modes
               floatingActionButton: Padding(
                 padding: EdgeInsets.only(
-                  bottom: widget.showAppBar ? 30.0 : 30.0,
+                  bottom: widget.showAppBar ? 55.0 : 55.0,
                   right: 6.0,
                 ),
                 child: FeedbackFloatingButton(

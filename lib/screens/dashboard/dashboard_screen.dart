@@ -325,6 +325,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           _showContactQuickPanel(themeProvider, contact, apiService);
                         },
                         height: 550,
+                        isDarkMode: themeProvider.isDarkMode,
                         onFullScreenPressed: () {
                           setState(() {
                             _currentIndex = 1; // Navigate to immersive universe

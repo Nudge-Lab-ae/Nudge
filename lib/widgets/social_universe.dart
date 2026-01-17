@@ -1,4 +1,5 @@
-// social_universe.dart - Fixed for performance while keeping animations and visual effects
+// social_universe.dart - HYBRID CACHED VERSION (Stars only)
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:nudge/test/mock_data_generator.dart';
 import 'package:nudge/widgets/social_universe_guide.dart';
@@ -15,6 +16,7 @@ class SocialUniverseWidget extends StatefulWidget {
   final bool isImmersive;
   final VoidCallback? onExitImmersive;
   final VoidCallback? onFullScreenPressed;
+  final bool? isDarkMode;
   
   const SocialUniverseWidget({
     Key? key,
@@ -23,6 +25,7 @@ class SocialUniverseWidget extends StatefulWidget {
     this.height = 400,
     this.isImmersive = false,
     this.onExitImmersive,
+    this.isDarkMode,
     this.onFullScreenPressed,
   }) : super(key: key);
 
@@ -31,7 +34,7 @@ class SocialUniverseWidget extends StatefulWidget {
 }
 
 class _SocialUniverseWidgetState extends State<SocialUniverseWidget> 
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   Contact? _selectedContact;
   bool _showControls = true;
   double _immersionLevel = 1.0;
@@ -42,13 +45,24 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
   
   late AnimationController _rotationController;
   late Animation<double> _rotationAnimation;
+  
+  // New animation controller for selected star spin
+  late AnimationController _selectedStarSpinController;
+  late Animation<double> _selectedStarSpinAnimation;
+  
   bool _useMockData = false;
   List<Contact> _mockContacts = [];
   late List<Contact> _displayContacts;
 
+  // Star texture caching only
+  final Map<String, ui.Image> _starImages = {};
+  final Map<String, ui.Image> _vipStarImages = {};
+  bool _isCachingComplete = false;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     
     _mockContacts = MockContactsGenerator.generateMockContacts(count: 50);
     MockContactsGenerator.printDistribution(_mockContacts);
@@ -56,7 +70,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
     _displayContacts = widget.contacts;
     
     _rotationController = AnimationController(
-      duration: const Duration(seconds: 60),
+      duration: const Duration(seconds: 30),
       vsync: this,
     )..repeat();
     
@@ -65,20 +79,189 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
       end: 2 * pi,
     ).animate(_rotationController);
     
+    // Initialize selected star spin animation
+    _selectedStarSpinController = AnimationController(
+      duration: const Duration(seconds: 10),
+      vsync: this,
+    )..repeat();
+    
+    _selectedStarSpinAnimation = Tween<double>(
+      begin: 0,
+      end: 2 * pi,
+    ).animate(_selectedStarSpinController);
+    
     _sliderValue = _immersionLevel;
-    Future.delayed(const Duration(seconds: 1)).then((value){
-      setState(() {
-        _displayContacts = widget.contacts;
-      });
-    });
+    
+    // Start caching star shapes only
+    _startStarCaching(widget.isDarkMode!);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      if (!_isCachingComplete) {
+        _startStarCaching(widget.isDarkMode!);
+      }
+    }
+  }
+
+  @override
+  void didUpdateWidget(SocialUniverseWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.contacts != widget.contacts) {
+      _starPositions.clear();
+      _starSizes.clear();
+      _displayContacts = widget.contacts;
+      _startStarCaching(widget.isDarkMode!);
+    }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _rotationController.dispose();
+    _selectedStarSpinController.dispose();
+    _disposeCachedImages();
     super.dispose();
   }
 
+  void _disposeCachedImages() {
+    for (var image in _starImages.values) {
+      image.dispose();
+    }
+    for (var image in _vipStarImages.values) {
+      image.dispose();
+    }
+    _starImages.clear();
+    _vipStarImages.clear();
+  }
+
+  Future<void> _startStarCaching(bool isDarkMode) async {
+    
+    _isCachingComplete = false;
+    
+    _disposeCachedImages();
+    
+    Future.microtask(() async {
+      try {
+        // Cache star types with proper glow from second version
+        await _cacheStarTypeWithGlow('inner', Colors.yellow, isDarkMode);
+        await _cacheStarTypeWithGlow('middle', const Color(0xff3CB3E9), isDarkMode);
+        await _cacheStarTypeWithGlow('outer', const Color(0xff897ED6), isDarkMode);
+        await _cacheStarTypeWithGlow('vip', const Color(0xFFFFD700), isDarkMode);
+        
+        setState(() {
+          _isCachingComplete = true;
+        });
+      } catch (e) {
+        print('Error caching star shapes: $e');
+        // Fallback to original rendering
+      }
+    });
+  }
+
+  Future<void> _cacheStarTypeWithGlow(String type, Color baseColor, bool isDarkMode) async {
+    const starSize = 128.0;
+    
+    await _cacheSingleStarWithGlow(type, baseColor, starSize, false, false, isDarkMode);
+    
+    if (type == 'vip') {
+      await _cacheSingleStarWithGlow('vip', const Color(0xFFFFD700), starSize, false, true, isDarkMode);
+    }
+  }
+
+  Future<void> _cacheSingleStarWithGlow(String key, Color color, double size, bool isSelected, bool isVIP, bool isDarkMode) async {
+      final recorder = ui.PictureRecorder();
+      final canvas = ui.Canvas(recorder);
+      final center = ui.Offset(size / 2, size / 2);
+      
+      // Create a nice rounded central glow (without square artifacts)
+      final glowRadius = size * 0.4;
+      final glowPaint = ui.Paint()
+        ..shader = ui.Gradient.radial(
+          center,
+          glowRadius,
+          [
+            color.withOpacity(0.6),
+            color.withOpacity(0.4),
+            color.withOpacity(0.1),
+            Colors.transparent,
+          ],
+          [0.0, 0.4, 0.7, 1.0],
+        );
+      
+      canvas.drawCircle(center, glowRadius, glowPaint);
+      
+      const numberOfPoints = 5;
+      final innerRadiusRatio = 0.45;
+      final rotationOffset = -pi / 2;
+      
+      final points = <ui.Offset>[];
+      
+      for (var i = 0; i < numberOfPoints * 2; i++) {
+        final isEven = i.isEven;
+        final pointRadius = isEven ? size / 2 : size / 2 * innerRadiusRatio;
+        final pointAngle = (pi / numberOfPoints) * i + rotationOffset;
+        
+        points.add(ui.Offset(
+          center.dx + pointRadius * cos(pointAngle),
+          center.dy + pointRadius * sin(pointAngle),
+        ));
+      }
+      
+      final path = ui.Path()..addPolygon(points, true);
+      
+      final starPaint = ui.Paint()
+        ..shader = ui.Gradient.radial(
+          center,
+          size / 2,
+          [
+            Colors.white.withOpacity(0.8),
+            color.withOpacity(0.9),
+            color.withOpacity(0.6),
+          ],
+          [0.0, 0.5, 1.0],
+        );
+      
+      canvas.drawPath(path, starPaint);
+      
+      // Add black border to cached stars (for light mode)
+      final borderPaint = ui.Paint()
+        ..color = isDarkMode?Colors.white: Colors.black
+        ..style = ui.PaintingStyle.stroke
+        ..strokeWidth = 5.0;
+        // Removed maskFilter to avoid square artifacts
+      
+      canvas.drawPath(path, borderPaint);
+      
+      if (isVIP) {
+        final crownPaint = ui.Paint()
+          ..shader = ui.Gradient.linear(
+            ui.Offset(center.dx - size * 0.4, center.dy - size * 0.6),
+            ui.Offset(center.dx, center.dy - size * 1.0),
+            [const Color(0xFFFFD700), const Color(0xFFFFA500)],
+          );
+        
+        final crownPath = ui.Path()
+          ..moveTo(center.dx - size * 0.4, center.dy - size * 0.6)
+          ..lineTo(center.dx, center.dy - size * 1.0)
+          ..lineTo(center.dx + size * 0.4, center.dy - size * 0.6)
+          ..close();
+        
+        canvas.drawPath(crownPath, crownPaint);
+      }
+      
+      final picture = recorder.endRecording();
+      final image = await picture.toImage(size.toInt(), size.toInt());
+      picture.dispose();
+      
+      if (key == 'vip') {
+        _vipStarImages[key] = image;
+      } else {
+        _starImages[key] = image;
+      }
+    }
+    
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
@@ -90,7 +273,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
     }
   }
 
-  void _toggleMockData() {
+  void _toggleMockData(ThemeProvider themeProvider) {
     setState(() {
       _useMockData = !_useMockData;
       _displayContacts = _useMockData ? _mockContacts : widget.contacts;
@@ -98,6 +281,8 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
       
       _starPositions.clear();
       _starSizes.clear();
+      
+      _startStarCaching(themeProvider.isDarkMode);
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -115,13 +300,13 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
     
     return Container(
       height: widget.height,
-      width: double.infinity, // Take full width available
-      margin: const EdgeInsets.symmetric(horizontal: 0), // Remove side margins
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(horizontal: 0),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         color: isDarkMode 
           ? AppTheme.darkUniverseBackground 
-          : const Color(0xFFE3F2FD), // LIGHT BLUE container for light mode
+          : const Color(0xFFE3F2FD),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(isDarkMode ? 0.5 : 0.15),
@@ -138,7 +323,6 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header with theme-specific styling
                   Container(
                     padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                     decoration: BoxDecoration(
@@ -171,18 +355,20 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                                   Text(
                                     'SOCIAL UNIVERSE',
                                     style: TextStyle(
-                                      fontSize: 16, // Slightly larger
+                                      fontSize: 16,
                                       fontWeight: FontWeight.w700,
                                       color: isDarkMode 
                                         ? AppTheme.darkUniversePrimary 
-                                        : const Color(0xFF1565C0), // Dark blue for light mode
+                                        : const Color(0xFF1565C0),
                                       letterSpacing: 1.2,
                                     ),
                                   ),
                                   const SizedBox(width: 8),
                                   if (_useMockData)
                                     GestureDetector(
-                                      onTap: _toggleMockData,
+                                      onTap: (){
+                                        _toggleMockData(themeProvider);
+                                      },
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 8,
@@ -255,7 +441,6 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                   ),
                   const SizedBox(height: 16),
                   
-                  // MAIN UNIVERSE DISPLAY - Takes most space
                   Expanded(
                     child: Center(
                       child: Container(
@@ -263,7 +448,6 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                         height: double.infinity,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
-                          // Different backgrounds for light/dark mode
                           gradient: isDarkMode 
                             ? RadialGradient(
                                 center: Alignment.center,
@@ -286,13 +470,15 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                         ),
                         child: RepaintBoundary(
                           child: GestureDetector(
-                            onDoubleTap: _toggleMockData,
+                            onDoubleTap: (){
+                              _toggleMockData(themeProvider);
+                            },
                             onTapDown: (details) {
                               final containerSize = Size(widget.height, widget.height);
                               _handleUniverseTap(details.localPosition, containerSize);
                             },
                             child: AnimatedBuilder(
-                              animation: _rotationAnimation,
+                              animation: Listenable.merge([_rotationAnimation, _selectedStarSpinAnimation]),
                               builder: (context, child) {
                                 return CustomPaint(
                                   painter: UniversePainter(
@@ -301,6 +487,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                                     isImmersive: false,
                                     immersionLevel: 0.5,
                                     rotation: _rotationAnimation.value,
+                                    selectedStarSpin: _selectedStarSpinAnimation.value,
                                     onStarDrawn: (contactId, position, starSize) {
                                       if (mounted) {
                                         _starPositions[contactId] = position;
@@ -308,6 +495,9 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                                       }
                                     },
                                     isDarkMode: isDarkMode,
+                                    isCachingComplete: _isCachingComplete,
+                                    starImages: _starImages,
+                                    vipStarImages: _vipStarImages,
                                   ),
                                 );
                               },
@@ -320,7 +510,6 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                   
                   const SizedBox(height: 16),
                   
-                  // Legend - theme specific
                   _buildLegendRow(isDarkMode),
                 ],
               ),
@@ -378,7 +567,9 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
           Positioned.fill(
             child: RepaintBoundary(
               child: GestureDetector(
-                onDoubleTap: widget.isImmersive ? _toggleMockData : null,
+                onDoubleTap: (){
+                  _toggleMockData(themeProvider);
+                },
                 onTapDown: (details) {
                   final screenSize = MediaQuery.of(context).size;
                   _handleUniverseTap(details.localPosition, screenSize);
@@ -389,7 +580,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                   });
                 },
                 child: AnimatedBuilder(
-                  animation: _rotationAnimation,
+                  animation: Listenable.merge([_rotationAnimation, _selectedStarSpinAnimation]),
                   builder: (context, child) {
                     return CustomPaint(
                       painter: UniversePainter(
@@ -398,6 +589,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                         isImmersive: true,
                         immersionLevel: _immersionLevel,
                         rotation: _rotationAnimation.value,
+                        selectedStarSpin: _selectedStarSpinAnimation.value,
                         onStarDrawn: (contactId, position, starSize) {
                           if (mounted) {
                             _starPositions[contactId] = position;
@@ -405,6 +597,9 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                           }
                         },
                         isDarkMode: isDarkMode,
+                        isCachingComplete: _isCachingComplete,
+                        starImages: _starImages,
+                        vipStarImages: _vipStarImages,
                       ),
                     );
                   },
@@ -444,7 +639,6 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Update header background for better contrast
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -491,7 +685,9 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                                       const SizedBox(height: 4),
                                     if (_useMockData)
                                       GestureDetector(
-                                        onTap: _toggleMockData,
+                                        onTap: (){
+                                          _toggleMockData(themeProvider);
+                                        },
                                         child: Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                                           decoration: BoxDecoration(
@@ -844,7 +1040,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                             if (tempSliderValue > 0.55){
                               setState(() {
                                  tempSliderValue -= 0.1;
-                                //  _immersionLevel -= 0.1;
+                                 //  _immersionLevel -= 0.1;
                               });
                               print('decreased ${_sliderValue}');
                             }
@@ -965,8 +1161,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
       final distance = (tapPosition - starPosition).distance;
       final starSize = _starSizes[contactId] ?? 10.0;
       
-      // FIXED: Increased touch sensitivity - use adaptive touch radius
-      final touchRadius = starSize * 2.5; // Increased sensitivity
+      final touchRadius = starSize * 2.5;
       
       if (distance < touchRadius && distance < closestDistance) {
         closestDistance = distance;
@@ -982,10 +1177,16 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
       
       setState(() {
         _selectedContact = contact;
+        // Restart the spin animation when a new star is selected
+        _selectedStarSpinController
+          ..stop()
+          ..repeat();
       });
     } else {
       setState(() {
         _selectedContact = null;
+        // Stop the spin animation when no star is selected
+        _selectedStarSpinController.stop();
       });
     }
   }
@@ -1058,7 +1259,6 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
   }
     
   void _showMockContactDetails(Contact contact, ThemeProvider themeProvider) {
-    // final themeProvider = Provider.of<ThemeProvider>(context);
     final isDarkMode = themeProvider.isDarkMode;
     final ringColor = _getRingColor(contact.computedRing);
     final daysSince = DateTime.now().difference(contact.lastContacted).inDays;
@@ -1485,9 +1685,8 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.yellow.withOpacity(0.5),  // Yellow at top-left
-            Colors.orange.withOpacity(0.3), 
-            // isDarkMode ? Colors.black.withOpacity(0.8) : Colors.white.withOpacity(0.8),
+            Colors.yellow.withOpacity(0.5),
+            Colors.orange.withOpacity(0.3),
           ],
         ),
         border: Border.all(color: ringColor.withOpacity(0.4)),
@@ -1867,6 +2066,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
               onTap: () {
                 setState(() {
                   _selectedContact = null;
+                  _selectedStarSpinController.stop();
                 });
               },
               child: Container(
@@ -1934,20 +2134,23 @@ class UniversePainter extends CustomPainter {
   final bool isImmersive;
   final double immersionLevel;
   final double rotation;
+  final double selectedStarSpin;
   final Function(String contactId, Offset position, double size)? onStarDrawn;
   final bool isDarkMode;
+  final bool isCachingComplete;
+  final Map<String, ui.Image> starImages;
+  final Map<String, ui.Image> vipStarImages;
   
   // Performance optimization: Use pre-allocated Paint objects
   final Paint _backgroundPaint = Paint();
   final Paint _ringPaint = Paint();
   final Paint _glowPaint = Paint();
   final Paint _starPaint = Paint();
+  final Paint _imagePaint = Paint();
+  final Paint _centralGlowPaint = Paint();
+  // final Paint _spinningElementPaint = Paint();
   final Random _random = Random(42);
 
-  late final Map<String, int> _contactHashCache = {};
-  late final Map<String, double> _contactSpreadOffsetCache = {};
-  late final Map<String, double> _contactAngleCache = {};
-  
   // Pre-calculate ring radii to avoid recalculating every frame
   late final double _innerInnerRadius;
   late final double _innerOuterRadius;
@@ -1956,78 +2159,83 @@ class UniversePainter extends CustomPainter {
   late final double _outerInnerRadius;
   late final double _outerOuterRadius;
   
+  // Cache for calculations
+  final Map<String, _StarPositionCache> _positionCache = {};
+  
   UniversePainter({
     required this.contacts,
     required this.selectedContact,
     required this.isImmersive,
     required this.immersionLevel,
     required this.rotation,
+    required this.selectedStarSpin,
     this.onStarDrawn,
     required this.isDarkMode,
+    required this.isCachingComplete,
+    required this.starImages,
+    required this.vipStarImages,
   }) {
     // Pre-calculate ring radii once during construction
-    // These are based on maxRadius which will be calculated in paint()
-    // We'll store the ratios and multiply by actual maxRadius later
     _innerInnerRadius = 0.15;
     _innerOuterRadius = 0.35;
     _middleInnerRadius = 0.35;
     _middleOuterRadius = 0.55;
     _outerInnerRadius = 0.55;
     _outerOuterRadius = 0.80;
+    
+    _imagePaint.filterQuality = FilterQuality.medium;
+    _centralGlowPaint.blendMode = BlendMode.plus;
   }
-
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final maxRadius = min(size.width / 2, size.height / 2) * 1.3;
     
-    // Draw cosmic background
+    // Draw cosmic background - ORIGINAL EXACT IMPLEMENTATION
     _drawCosmicBackground(canvas, size, immersionLevel, isDarkMode);
     
-    // Draw rings with theme-specific colors
+    // Draw rings with theme-specific colors - ORIGINAL EXACT IMPLEMENTATION
     _drawRing(
-    canvas,
-    center,
-    maxRadius * 0.15,  // inner radius (not drawn, just for positioning)
-    maxRadius * 0.35,  // outer radius (drawn as boundary)
-    isDarkMode 
-      ? Colors.yellow.withOpacity(0.15 + 0.3 * immersionLevel)
-      : Colors.yellow.withOpacity(0.12 + 0.25 * immersionLevel),
-    isDarkMode,
-    true
-  );
+      canvas,
+      center,
+      maxRadius * 0.15,
+      maxRadius * 0.35,
+      isDarkMode 
+        ? Colors.yellow.withOpacity(0.15 + 0.3 * immersionLevel)
+        : Colors.yellow.withOpacity(0.12 + 0.25 * immersionLevel),
+      isDarkMode,
+      true
+    );
 
-  // Middle Circle: radius 45-70% (only outer boundary at 70%)
-  _drawRing(
-    canvas,
-    center,
-    maxRadius * 0.35,  // inner radius (not drawn, just for positioning)
-    maxRadius * 0.55,  // outer radius (drawn as boundary)
-    isDarkMode 
-      ? const Color(0xff3CB3E9).withOpacity(0.15 + 0.3 * immersionLevel)
-      : const Color(0xff3CB3E9).withOpacity(0.12 + 0.25 * immersionLevel),
-    isDarkMode,
-    false
-  );
+    _drawRing(
+      canvas,
+      center,
+      maxRadius * 0.35,
+      maxRadius * 0.55,
+      isDarkMode 
+        ? const Color(0xff3CB3E9).withOpacity(0.15 + 0.3 * immersionLevel)
+        : const Color(0xff3CB3E9).withOpacity(0.12 + 0.25 * immersionLevel),
+      isDarkMode,
+      false
+    );
 
-  // NEW: Outer Circle: radius 75-100% (only outer boundary at 100%)
-  _drawRing(
-    canvas,
-    center,
-    maxRadius * 0.55,  // inner radius (not drawn, just for positioning)
-    maxRadius * 0.75,   // outer radius (drawn as boundary) - fits container
-    isDarkMode 
-      ? const Color(0xff897ED6).withOpacity(0.15 + 0.3 * immersionLevel)
-      : const Color(0xff897ED6).withOpacity(0.12 + 0.25 * immersionLevel),
-    isDarkMode,
-    false
-  );
+    _drawRing(
+      canvas,
+      center,
+      maxRadius * 0.55,
+      maxRadius * 0.75,
+      isDarkMode 
+        ? const Color(0xff897ED6).withOpacity(0.15 + 0.3 * immersionLevel)
+        : const Color(0xff897ED6).withOpacity(0.12 + 0.25 * immersionLevel),
+      isDarkMode,
+      false
+    );
     
-    // Draw central user with theme support
+    // Draw central user with theme support - ORIGINAL EXACT IMPLEMENTATION
     _drawCentralUser(canvas, center, immersionLevel, isDarkMode);
     
-    // Draw all stars with rotation
+    // Draw all stars with rotation - USING CACHED SHAPES
     for (final contact in contacts) {
       final starInfo = _drawStar(canvas, center, contact, maxRadius, size, isDarkMode);
       
@@ -2035,83 +2243,24 @@ class UniversePainter extends CustomPainter {
         onStarDrawn!(contact.id, starInfo.position, starInfo.size);
       }
     }
-
-    // _drawShootingStars(canvas, size, immersionLevel, isDarkMode);
   }
 
   StarInfo? _drawStar(Canvas canvas, Offset center, Contact contact, double maxRadius, Size size, bool isDarkMode) {
     final isSelected = selectedContact?.id == contact.id;
     final isVIP = contact.isVIP;
     
-    // CACHE HASH CALCULATIONS
-    int hash;
-    if (_contactHashCache.containsKey(contact.id)) {
-      hash = _contactHashCache[contact.id]!;
-    } else {
-      hash = _stringToHash(contact.id);
-      _contactHashCache[contact.id] = hash;
-    }
-    
-    // CACHE SPREAD OFFSET
-    double spreadOffset;
-    if (_contactSpreadOffsetCache.containsKey(contact.id)) {
-      spreadOffset = _contactSpreadOffsetCache[contact.id]!;
-    } else {
-      spreadOffset = (hash.abs() % 35) / 100.0;
-      _contactSpreadOffsetCache[contact.id] = spreadOffset;
-    }
-    
-    // CACHE ANGLE
-    double contactAngleRad;
-    if (_contactAngleCache.containsKey(contact.id)) {
-      contactAngleRad = _contactAngleCache[contact.id]!;
-    } else {
-      final contactAngleDeg = contact.angleDeg != 0 
-          ? contact.angleDeg 
-          : (hash % 360).toDouble();
-      contactAngleRad = contactAngleDeg * (pi / 180);
-      _contactAngleCache[contact.id] = contactAngleRad;
-    }
-    
-    double innerRadius, outerRadius;
-    Color color;
-    
-    switch (contact.computedRing) {
-      case 'inner':
-        innerRadius = maxRadius * _innerInnerRadius;
-        outerRadius = maxRadius * _innerOuterRadius;
-        color = Colors.yellow;
-        break;
-      case 'middle':
-        innerRadius = maxRadius * _middleInnerRadius;
-        outerRadius = maxRadius * _middleOuterRadius;
-        color = const Color(0xff3CB3E9);
-        break;
-      case 'outer':
-        innerRadius = maxRadius * _outerInnerRadius;
-        outerRadius = maxRadius * _outerOuterRadius;
-        color = const Color(0xff897ED6);
-        break;
-      default:
-        innerRadius = maxRadius * _outerInnerRadius;
-        outerRadius = maxRadius * _outerOuterRadius;
-        color = Colors.grey;
-    }
-    
-    final ringWidth = outerRadius - innerRadius;
-    // Position stars within the middle 60% of each ring (20% to 80% of ring width)
-    final spreadRadius = innerRadius + (ringWidth * (0.2 + spreadOffset * 0.6));
-    
-    final angle = contactAngleRad + rotation;
+    // Calculate or get cached position
+    final positionCache = _getPositionCache(contact, maxRadius);
+    final spreadRadius = positionCache.spreadRadius;
+    final angle = positionCache.contactAngleRad + rotation;
     
     final x = center.dx + spreadRadius * cos(angle);
     final y = center.dy + spreadRadius * sin(angle);
     final position = Offset(x, y);
     
-    // Base star size - SIMPLIFIED CALCULATION
-    double baseSize = isImmersive ? 16.0 : 10.0;
+    // Calculate visual size - EXACT SAME CALCULATION AS ORIGINAL
+    double baseSize = isImmersive ? 9.0 : 7.0;
     
-    // Simplified size calculations without multiplication chain
     if (contact.computedRing == 'inner') {
       baseSize *= 1.2;
     } else {
@@ -2123,131 +2272,367 @@ class UniversePainter extends CustomPainter {
 
     final visualSize = baseSize * (1 + 0.5 * immersionLevel);
     
+    // Get color
+    Color color;
+    switch (contact.computedRing) {
+      case 'inner':
+        color = Colors.yellow;
+        break;
+      case 'middle':
+        color = const Color(0xff3CB3E9);
+        break;
+      case 'outer':
+        color = const Color(0xff897ED6);
+        break;
+      default:
+        color = Colors.grey;
+    }
+    
     if (isVIP) {
       color = const Color(0xFFFFD700);
     }
     
-    // OPTIMIZED: Use pre-allocated paint objects
-    _drawStarCentralGlow(canvas, position, visualSize, color, immersionLevel, isDarkMode, isSelected);
-    _drawStarShape(canvas, position, visualSize, color, isSelected, isDarkMode, immersionLevel);
-    
-    if (isVIP && isSelected) {
-      _drawVIPCrown(canvas, position, visualSize);
+    // Draw star using cached image if available
+    if (isCachingComplete) {
+      final image = isVIP ? vipStarImages['vip'] : starImages[contact.computedRing];
+      
+      if (image != null) {
+        // Draw cached star shape
+        final scale = visualSize / (image.width / 2);
+        
+        if (isSelected) {
+          // Add bright central glow for selected stars
+          _drawSelectedStarCentralGlow(canvas, position, visualSize, color);
+          
+          // Draw spinning elements around the star
+          _drawSpinningElements(canvas, position, visualSize, color);
+        }
+        
+        canvas.save();
+        if (isSelected) {
+          // Apply rotation to selected star
+          canvas.translate(position.dx, position.dy);
+          canvas.rotate(selectedStarSpin);
+          canvas.translate(-position.dx, -position.dy);
+        }
+        
+        canvas.translate(position.dx, position.dy);
+        canvas.scale(scale);
+        canvas.translate(-image.width / 2, -image.height / 2);
+        canvas.drawImage(image, Offset.zero, _imagePaint);
+        canvas.restore();
+        
+        // Draw selection glow for selected stars
+        if (isSelected) {
+          _drawSelectionGlow(canvas, position, visualSize, contact.computedRing);
+        }
+      } else {
+        // Fallback to original drawing
+        if (isSelected) {
+          _drawSelectedStarCentralGlow(canvas, position, visualSize, color);
+          _drawSpinningElements(canvas, position, visualSize, color);
+        }
+        
+        canvas.save();
+        if (isSelected) {
+          canvas.translate(position.dx, position.dy);
+          canvas.rotate(selectedStarSpin);
+          canvas.translate(-position.dx, -position.dy);
+        }
+        
+        _drawStarCentralGlow(canvas, position, visualSize, color, immersionLevel, isDarkMode, isSelected);
+        _drawStarShape(canvas, position, visualSize, color, isSelected, isDarkMode, immersionLevel);
+        
+        if (isVIP && isSelected) {
+          _drawVIPCrown(canvas, position, visualSize);
+        }
+        
+        canvas.restore();
+      }
+    } else {
+      // Fallback to original drawing while caching
+      if (isSelected) {
+        _drawSelectedStarCentralGlow(canvas, position, visualSize, color);
+        _drawSpinningElements(canvas, position, visualSize, color);
+      }
+      
+      canvas.save();
+      if (isSelected) {
+        canvas.translate(position.dx, position.dy);
+        canvas.rotate(selectedStarSpin);
+        canvas.translate(-position.dx, -position.dy);
+      }
+      
+      _drawStarCentralGlow(canvas, position, visualSize, color, immersionLevel, isDarkMode, isSelected);
+      _drawStarShape(canvas, position, visualSize, color, isSelected, isDarkMode, immersionLevel);
+      
+      if (isVIP && isSelected) {
+        _drawVIPCrown(canvas, position, visualSize);
+      }
+      
+      canvas.restore();
     }
     
     return StarInfo(position: position, size: visualSize);
   }
 
-  void _drawStarCentralGlow(Canvas canvas, Offset center, double size, Color color, double immersionLevel, bool isDarkMode, bool isSelected) {
-    final centralGlowRadius = size * (0.4 + immersionLevel * 0.3);
+  void _drawSelectedStarCentralGlow(Canvas canvas, Offset center, double size, Color color) {
+    // Bright central circular glow for selected stars
+    final glowRadius = size * 1.5;
     
-    // Primary central glow - bright and intense
-    final primaryGlowPaint = Paint()
+    _centralGlowPaint
       ..shader = RadialGradient(
         center: Alignment.center,
         colors: [
-          Colors.white.withOpacity(0.9 + immersionLevel * 0.1),
-          color.withOpacity(0.8 + immersionLevel * 0.2),
-          color.withOpacity(0.4 + immersionLevel * 0.3),
+          Colors.white.withOpacity(0.9),
+          color.withOpacity(0.8),
+          color.withOpacity(0.4),
+          Colors.transparent,
+        ],
+        stops: const [0.0, 0.2, 0.5, 1.0],
+      ).createShader(Rect.fromCircle(center: center, radius: glowRadius));
+    
+    canvas.drawCircle(center, glowRadius, _centralGlowPaint);
+    
+    // Add a pulsing inner glow
+    final pulse = (sin(selectedStarSpin * 2) + 1) / 2;
+    final pulseRadius = size * (0.8 + pulse * 0.3);
+    
+    final pulsePaint = Paint()
+      ..shader = RadialGradient(
+        center: Alignment.center,
+        colors: [
+          Colors.white.withOpacity(0.7),
+          color.withOpacity(0.5),
+          Colors.transparent,
         ],
         stops: const [0.0, 0.4, 1.0],
-      ).createShader(Rect.fromCircle(center: center, radius: centralGlowRadius))
-      ..maskFilter = MaskFilter.blur(BlurStyle.normal, size * (0.4 + immersionLevel * 0.2));
+      ).createShader(Rect.fromCircle(center: center, radius: pulseRadius));
     
-    canvas.drawCircle(center, centralGlowRadius, primaryGlowPaint);
+    canvas.drawCircle(center, pulseRadius, pulsePaint);
+  }
+
+  void _drawSpinningElements(Canvas canvas, Offset center, double size, Color color) {
+    final elementCount = 8;
+    final elementRadius = size * 0.1;
+    final orbitRadius = size * 1.2;
     
-    // Secondary aura glow - softer
-    final auraGlowPaint = Paint()
-      ..color = color.withOpacity(0.3 + immersionLevel * 0.2)
-      ..maskFilter = MaskFilter.blur(BlurStyle.normal, size * (0.8 + immersionLevel * 0.4));
-    
-    canvas.drawCircle(center, centralGlowRadius * 1.8, auraGlowPaint);
-    
-    // White hot core for selected/VIP stars
-    if (isSelected || immersionLevel > 0.7) {
-      final hotCorePaint = Paint()
+    for (int i = 0; i < elementCount; i++) {
+      final elementAngle = selectedStarSpin * 3 + (i * 2 * pi / elementCount);
+      final x = center.dx + orbitRadius * cos(elementAngle);
+      final y = center.dy + orbitRadius * sin(elementAngle);
+      final elementCenter = Offset(x, y);
+      
+      // Each element spins at its own speed
+      // final elementSpin = selectedStarSpin * 5 + (i * pi / 4);
+      
+      // Draw a small spinning circle (CHANGED FROM TRIANGLE)
+      final circleSize = elementRadius * 0.6;
+      final circlePaint = Paint()
         ..shader = RadialGradient(
           center: Alignment.center,
           colors: [
-            Colors.white.withOpacity(0.95),
+            Colors.white,
             color.withOpacity(0.9),
+            color.withOpacity(0.6),
           ],
-          stops: const [0.0, 1.0],
-        ).createShader(Rect.fromCircle(center: center, radius: size * 0.4));
+          stops: const [0.0, 0.7, 1.0],
+        ).createShader(Rect.fromCircle(center: elementCenter, radius: circleSize));
       
-      canvas.drawCircle(center, size * 0.4, hotCorePaint);
+      // Create a rotating circle
+      canvas.drawCircle(elementCenter, circleSize, circlePaint);
+      
+      // Add a glowing effect around the circles
+      final circleGlowPaint = Paint()
+        ..color = color.withOpacity(0.4)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, circleSize * 0.8);
+      
+      canvas.drawCircle(elementCenter, circleSize * 1.2, circleGlowPaint);
+      
+      // Add a subtle trail/glow behind the element (ENHANCED)
+      final trailPaint = Paint()
+        ..color = color.withOpacity(0.4)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, circleSize);
+      
+      canvas.drawCircle(
+        Offset(
+          elementCenter.dx - orbitRadius * 0.15 * cos(elementAngle),
+          elementCenter.dy - orbitRadius * 0.15 * sin(elementAngle),
+        ),
+        circleSize * 0.5,
+        trailPaint,
+      );
     }
   }
+    
+  _StarPositionCache _getPositionCache(Contact contact, double maxRadius) {
+    if (_positionCache.containsKey(contact.id)) {
+      return _positionCache[contact.id]!;
+    }
+    
+    final hash = _stringToHash(contact.id);
+    final spreadOffset = (hash.abs() % 35) / 100.0;
+    final contactAngleDeg = contact.angleDeg != 0 ? contact.angleDeg : (hash % 360).toDouble();
+    final contactAngleRad = contactAngleDeg * (pi / 180);
+    
+    double innerRadius, outerRadius;
+    switch (contact.computedRing) {
+      case 'inner':
+        innerRadius = maxRadius * _innerInnerRadius;
+        outerRadius = maxRadius * _innerOuterRadius;
+        break;
+      case 'middle':
+        innerRadius = maxRadius * _middleInnerRadius;
+        outerRadius = maxRadius * _middleOuterRadius;
+        break;
+      case 'outer':
+        innerRadius = maxRadius * _outerInnerRadius;
+        outerRadius = maxRadius * _outerOuterRadius;
+        break;
+      default:
+        innerRadius = maxRadius * _outerInnerRadius;
+        outerRadius = maxRadius * _outerOuterRadius;
+    }
+    
+    final ringWidth = outerRadius - innerRadius;
+    final spreadRadius = innerRadius + (ringWidth * (0.2 + spreadOffset * 0.6));
+    
+    final cache = _StarPositionCache(
+      spreadRadius: spreadRadius,
+      contactAngleRad: contactAngleRad,
+    );
+    
+    _positionCache[contact.id] = cache;
+    return cache;
+  }
 
-  // MODIFIED: Remove top highlight from star shape
+  // =========== ORIGINAL DRAWING METHODS ===========
+  
+  void _drawStarCentralGlow(Canvas canvas, Offset center, double size, Color color, double immersionLevel, bool isDarkMode, bool isSelected) {
+      // Create a nice rounded central glow that scales with immersionLevel
+      final glowIntensity = 1.2 + immersionLevel * 0.4; // 0.4 to 0.8 based on immersion
+      final glowRadius = size * (0.9 + immersionLevel * 0.2); // 0.3 to 0.5 based on immersion
+      
+      // Central glow - smooth rounded gradient
+      final centralGlowPaint = Paint()
+        ..shader = RadialGradient(
+          center: Alignment.center,
+          colors: [
+            color.withOpacity(glowIntensity),
+            color.withOpacity(glowIntensity * 0.8),
+            color.withOpacity(glowIntensity * 0.4),
+            Colors.transparent,
+          ],
+          stops: const [0.0, 0.3, 0.6, 1.0],
+        ).createShader(Rect.fromCircle(center: center, radius: glowRadius));
+      
+      canvas.drawCircle(center, glowRadius, centralGlowPaint);
+      
+      // Add a subtle inner core for more depth
+      if (immersionLevel > 0.5) {
+        final corePaint = Paint()
+          ..shader = RadialGradient(
+            center: Alignment.center,
+            colors: [
+              Colors.white.withOpacity(0.6 * immersionLevel),
+              color.withOpacity(0.7 * immersionLevel),
+            ],
+            stops: const [0.0, 1.0],
+          ).createShader(Rect.fromCircle(center: center, radius: size * 0.2));
+        
+        canvas.drawCircle(center, size * 0.2, corePaint);
+      }
+
+      final coreIntensity = 0.5 + immersionLevel * 0.5; // More prominent core
+      final corePaint = Paint()
+        ..shader = RadialGradient(
+          center: Alignment.center,
+          colors: [
+            Colors.white.withOpacity(coreIntensity),
+            color.withOpacity(coreIntensity * 0.8),
+          ],
+          stops: const [0.0, 1.0],
+        ).createShader(Rect.fromCircle(center: center, radius: size * 0.3)); // Increased from 0.2
+      
+      canvas.drawCircle(center, size * 0.3, corePaint);
+    }
+    
   void _drawStarShape(Canvas canvas, Offset center, double size, Color color, bool isSelected, bool isDarkMode, double immersionLevel) {
-    const numberOfPoints = 5;
-    final innerRadiusRatio = 0.45;
-    final rotationOffset = -pi / 2;
-    
-    final points = <Offset>[];
-    
-    for (var i = 0; i < numberOfPoints * 2; i++) {
-      final isEven = i.isEven;
-      final pointRadius = isEven ? size : size * innerRadiusRatio;
-      final pointAngle = (pi / numberOfPoints) * i + rotationOffset;
+      const numberOfPoints = 5;
+      final innerRadiusRatio = 0.45;
+      final rotationOffset = -pi / 2;
       
-      points.add(Offset(
-        center.dx + pointRadius * cos(pointAngle),
-        center.dy + pointRadius * sin(pointAngle),
-      ));
-    }
-    
-    final path = Path()..addPolygon(points, true);
-    
-    // Star gradient - REMOVED TOP HIGHLIGHT
-    final starPaint = Paint()
-      ..shader = RadialGradient(
-        center: Alignment.center,
-        colors: [
-          Colors.white.withOpacity(0.8 + immersionLevel * 0.2),
-          color.withOpacity(0.9 + immersionLevel * 0.1),
-          color.withOpacity(0.6 + immersionLevel * 0.2),
-        ],
-        stops: const [0.0, 0.5, 1.0],
-      ).createShader(
-        Rect.fromCircle(center: center, radius: size),
-      );
-    
-    canvas.drawPath(path, starPaint);
-    
-    // NO TOP HIGHLIGHT - Only central glow remains
-    
-    // Optional: Add subtle border for selected stars
-    if (isSelected) {
+      final points = <Offset>[];
+      
+      for (var i = 0; i < numberOfPoints * 2; i++) {
+        final isEven = i.isEven;
+        final pointRadius = isEven ? size : size * innerRadiusRatio;
+        final pointAngle = (pi / numberOfPoints) * i + rotationOffset;
+        
+        points.add(Offset(
+          center.dx + pointRadius * cos(pointAngle),
+          center.dy + pointRadius * sin(pointAngle),
+        ));
+      }
+      
+      final path = Path()..addPolygon(points, true);
+      
+      // Star gradient
+      final starPaint = Paint()
+        ..shader = RadialGradient(
+          center: Alignment.center,
+          colors: [
+            Colors.white.withOpacity(0.8 + immersionLevel * 0.2),
+            color.withOpacity(0.9 + immersionLevel * 0.1),
+            color.withOpacity(0.6 + immersionLevel * 0.2),
+          ],
+          stops: const [0.0, 0.5, 1.0],
+        ).createShader(
+          Rect.fromCircle(center: center, radius: size),
+        );
+      
+      canvas.drawPath(path, starPaint);
+      
+      // Add theme-appropriate border
+      final borderColor = isDarkMode ? Colors.white : Colors.black;
+      final borderOpacity = 0.7 + immersionLevel * 0.3; // 0.7 to 1.0 based on immersion
+      
       final borderPaint = Paint()
-        ..color = isDarkMode
-        ?Colors.white.withOpacity(0.5 + immersionLevel * 0.2)
-        :Colors.black.withOpacity(0.5 + immersionLevel * 0.2) 
+        ..color = borderColor.withOpacity(borderOpacity)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.5 + immersionLevel * 0.5
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 1.0);
+        ..strokeWidth = 0.5 + immersionLevel * 0.5; // 1.0 to 1.5 based on immersion
+        // Removed maskFilter to avoid square artifacts
       
       canvas.drawPath(path, borderPaint);
-    }
-
-    if (!isDarkMode) {
-      final borderPaint = Paint()
-        ..color = Colors.black.withOpacity(0.5 + immersionLevel * 0.1)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.5 + immersionLevel * 0.5
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 1.0);
       
-      canvas.drawPath(path, borderPaint);
+      // Optional: Add a subtle highlight border for selected stars
+      if (isSelected) {
+        final highlightBorderPaint = Paint()
+          ..color = isDarkMode 
+            ? Colors.white.withOpacity(0.9) 
+            : Colors.white.withOpacity(0.8)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.0 + immersionLevel * 1.0;
+        
+        canvas.drawPath(path, highlightBorderPaint);
+      }
     }
-
+    
+  void _drawSelectionGlow(Canvas canvas, Offset center, double size, String ring) {
+    final glowPaint = Paint()
+      ..color = _getRingColor(ring).withOpacity(0.3)
+      ..maskFilter = ui.MaskFilter.blur(ui.BlurStyle.normal, size * 0.5)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.0;
+    
+    canvas.drawCircle(center, size * 1.2, glowPaint);
   }
 
   void _drawCosmicBackground(Canvas canvas, Size size, double immersionLevel, bool isDarkMode) {
     final clampedImmersionLevel = immersionLevel.clamp(0.0, 1.0);
     
     if (isDarkMode) {
-      // DARK MODE: Deep space with bright stars
+      // DARK MODE: Deep space with bright stars - ORIGINAL
       _backgroundPaint
         ..shader = RadialGradient(
           center: Alignment.center,
@@ -2261,11 +2646,8 @@ class UniversePainter extends CustomPainter {
       
       canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), _backgroundPaint);
       
-      // Add some nebula effects for dark mode
-      // _drawNebula(canvas, size, clampedImmersionLevel, true);
-      
     } else {
-      // LIGHT MODE: VIVID BLUE COSMOS
+      // LIGHT MODE: VIVID BLUE COSMOS - ORIGINAL
       _backgroundPaint
         ..shader = RadialGradient(
           center: Alignment.center,
@@ -2281,18 +2663,18 @@ class UniversePainter extends CustomPainter {
       
       canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), _backgroundPaint);
       
-      // Add some light mode nebula/cloud effects
+      // Add some light mode nebula/cloud effects - ORIGINAL
       _drawNebula(canvas, size, clampedImmersionLevel, false);
     }
     
-    // Draw background stars with CLEAR DIFFERENCE between modes
+    // Draw background stars with CLEAR DIFFERENCE between modes - ORIGINAL
     _drawBackgroundStars(canvas, size, clampedImmersionLevel, isDarkMode);
   }
 
   void _drawNebula(Canvas canvas, Size size, double immersionLevel, bool isDarkMode) {
     final center = Offset(size.width / 2, size.height / 2);
     
-    // Create 2-3 nebula clouds
+    // Create 2-3 nebula clouds - ORIGINAL
     final nebulaCount = 2 + (immersionLevel * 2).toInt();
     
     for (int n = 0; n < nebulaCount; n++) {
@@ -2301,7 +2683,7 @@ class UniversePainter extends CustomPainter {
       final nebulaRadius = size.width * (0.15 + _random.nextDouble() * 0.25);
       
       if (isDarkMode) {
-        // Dark mode nebula - purples and blues
+        // Dark mode nebula - purples and blues - ORIGINAL
         _ringPaint
           ..shader = RadialGradient(
             center: Alignment.center,
@@ -2320,7 +2702,7 @@ class UniversePainter extends CustomPainter {
         
         canvas.drawCircle(Offset(nebulaX, nebulaY), nebulaRadius, _ringPaint);
       } else {
-        // Light mode clouds - light blues and cyans
+        // Light mode clouds - light blues and cyans - ORIGINAL
         _ringPaint
           ..shader = RadialGradient(
             center: Alignment.center,
@@ -2343,7 +2725,7 @@ class UniversePainter extends CustomPainter {
   }
 
   void _drawBackgroundStars(Canvas canvas, Size size, double immersionLevel, bool isDarkMode) {
-      // Increased star count for more vividness without blur
+      // Increased star count for more vividness without blur - ORIGINAL
       final baseStarCount = isDarkMode ? 150 : 90; // More stars
       final starCount = (baseStarCount * (0.5 + immersionLevel * 1.2)).toInt();
       
@@ -2352,12 +2734,12 @@ class UniversePainter extends CustomPainter {
         final y = (_random.nextDouble() * size.height);
         final starBrightness = _random.nextDouble();
         
-        // Star size - keep them small and sharp
+        // Star size - keep them small and sharp - ORIGINAL
         final baseRadius = isDarkMode ? 0.5 : 0.4;
         final radius = baseRadius + starBrightness * 0.4 + (immersionLevel * 0.2);
         
         if (isDarkMode) {
-          // DARK MODE STARS: Sharp and bright
+          // DARK MODE STARS: Sharp and bright - ORIGINAL
           final opacity = (0.5 + starBrightness * 0.4) * (0.6 + immersionLevel * 0.5);
           _starPaint
             ..color = Colors.white.withOpacity(opacity.clamp(0.0, 1.0))
@@ -2366,7 +2748,7 @@ class UniversePainter extends CustomPainter {
           canvas.drawCircle(Offset(x, y), radius, _starPaint);
           
         } else {
-          // LIGHT MODE STARS: Sharp and clean
+          // LIGHT MODE STARS: Sharp and clean - ORIGINAL
           final opacity = (0.6 + starBrightness * 0.4) * (0.8 + immersionLevel * 0.1);
           _starPaint
             ..color = Colors.white.withOpacity(opacity.clamp(0.0, 1.0))
@@ -2382,7 +2764,7 @@ class UniversePainter extends CustomPainter {
     final pulse = (sin(time * 2) + 1) / 2;
     
     if (isDarkMode) {
-      // DARK MODE central user: Gold/Yellow
+      // DARK MODE central user: Gold/Yellow - ORIGINAL
       _glowPaint
         ..shader = RadialGradient(
           center: Alignment.center,
@@ -2397,7 +2779,7 @@ class UniversePainter extends CustomPainter {
       
       canvas.drawCircle(center, 30 + pulse * 8, _glowPaint);
       
-      // Central sphere
+      // Central sphere - ORIGINAL
       _starPaint
         ..shader = RadialGradient(
           center: Alignment.center,
@@ -2407,7 +2789,7 @@ class UniversePainter extends CustomPainter {
       canvas.drawCircle(center, 18, _starPaint);
       
     } else {
-      // LIGHT MODE central user: Bright Cyan/Blue
+      // LIGHT MODE central user: Bright Cyan/Blue - ORIGINAL
       _glowPaint
         ..shader = RadialGradient(
           center: Alignment.center,
@@ -2422,7 +2804,7 @@ class UniversePainter extends CustomPainter {
       
       canvas.drawCircle(center, 28 + pulse * 6, _glowPaint);
       
-      // Central sphere
+      // Central sphere - ORIGINAL
       _starPaint
         ..shader = RadialGradient(
           center: Alignment.center,
@@ -2432,7 +2814,7 @@ class UniversePainter extends CustomPainter {
       canvas.drawCircle(center, 16, _starPaint);
     }
     
-    // "YOU" text - theme specific
+    // "YOU" text - theme specific - ORIGINAL
     final textColor = isDarkMode ? Colors.white : Colors.white;
     final shadowColor = isDarkMode ? Colors.black.withOpacity(0.8) : Colors.black.withOpacity(0.5);
     
@@ -2467,12 +2849,12 @@ class UniversePainter extends CustomPainter {
   }
 
   void _drawRing(Canvas canvas, Offset center, double innerRadius, double outerRadius, Color color, bool isDarkMode, bool isInnerRing) {
-    // Make ALL borders thicker and more vivid
+    // Make ALL borders thicker and more vivid - ORIGINAL
     final borderWidth = isDarkMode ? (1.5 + immersionLevel * 1.0) : (2.5 + immersionLevel * 1.5);
-    final ringOpacity = immersionLevel * 0.3; // Rings get more visible with immersion
+    final ringOpacity = immersionLevel * 0.3;
     
     if (isInnerRing) {
-      // Inner ring - only draw the outer circle
+      // Inner ring - only draw the outer circle - ORIGINAL
       _ringPaint
         ..shader = RadialGradient(
           colors: [
@@ -2493,11 +2875,10 @@ class UniversePainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = borderWidth;
       
-      // ONLY draw the outer circle, not the inner one
       canvas.drawCircle(center, outerRadius, _glowPaint);
       
     } else {
-      // Middle/Outer ring - only draw the outer circle
+      // Middle/Outer ring - only draw the outer circle - ORIGINAL
       _ringPaint
         ..shader = RadialGradient(
           colors: [
@@ -2518,7 +2899,6 @@ class UniversePainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = borderWidth * 0.9;
       
-      // ONLY draw the outer circle, not the inner one
       canvas.drawCircle(center, outerRadius, _glowPaint);
     }
   }
@@ -2538,6 +2918,19 @@ class UniversePainter extends CustomPainter {
     canvas.drawPath(crownPath, _starPaint);
   }
 
+  Color _getRingColor(String ring) {
+    switch (ring) {
+      case 'inner':
+        return Colors.yellow;
+      case 'middle':
+        return const Color(0xff3CB3E9);
+      case 'outer':
+        return const Color(0xff897ED6);
+      default:
+        return Colors.grey;
+    }
+  }
+
   @override
   bool shouldRepaint(covariant UniversePainter oldDelegate) {
     return oldDelegate.contacts != contacts ||
@@ -2545,8 +2938,22 @@ class UniversePainter extends CustomPainter {
            oldDelegate.isImmersive != isImmersive ||
            oldDelegate.immersionLevel != immersionLevel ||
            oldDelegate.rotation != rotation ||
+           oldDelegate.selectedStarSpin != selectedStarSpin ||
            oldDelegate.isDarkMode != isDarkMode;
   }
+  
+  // @override
+  // bool get isComplex => true;
+}
+
+class _StarPositionCache {
+  final double spreadRadius;
+  final double contactAngleRad;
+  
+  _StarPositionCache({
+    required this.spreadRadius,
+    required this.contactAngleRad,
+  });
 }
 
 class StarInfo {
