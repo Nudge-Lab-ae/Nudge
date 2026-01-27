@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:io';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -67,7 +69,7 @@ void _processPendingNotification() {
       navigatorKey.currentState!.pushNamedAndRemoveUntil(
         '/dashboard',
         (route) => false,
-        arguments: {'initialTab': 3}, // 3 is the index for notifications in bottom nav
+        arguments: {'initialTab': 4}, // 3 is the index for notifications in bottom nav
       );
     }
     
@@ -158,11 +160,37 @@ Future<void> initializeLocalNotifications() async {
     iOS: initializationSettingsIOS,
   );
 
-  await flutterLocalNotificationsPlugin.initialize(
+await flutterLocalNotificationsPlugin.initialize(
   initializationSettings,
   onDidReceiveNotificationResponse: (NotificationResponse response) {
-    print('Notification tapped - navigating to notifications');
-    navigateToNotificationsScreen();
+    print('Notification tapped: ${response.payload}');
+    
+    if (response.payload != null) {
+      try {
+        final data = jsonDecode(response.payload!) as Map<String, dynamic>;
+        
+        // Check if it's an event notification with action
+        if (data['type'] == 'event_notification') {
+          // Check which action was tapped
+          if (response.actionId == 'remind_me_then') {
+            _handleRemindMeThenAction(data);
+          } else if (response.actionId == 'dismiss') {
+            _handleDismissAction(data);
+          } else {
+            // Notification body was tapped
+            showEventNotificationDialog(data);
+          }
+        } else {
+          // Regular notification - navigate to notifications screen
+          navigateToNotificationsScreen();
+        }
+      } catch (e) {
+        print('Error parsing notification payload: $e');
+        navigateToNotificationsScreen();
+      }
+    } else {
+      navigateToNotificationsScreen();
+    }
   },
 );
 
@@ -269,35 +297,208 @@ void _setupIOSFCM() {
   });
 }
 
-void _showLocalNotification(RemoteMessage message) {
-  const AndroidNotificationDetails androidPlatformChannelSpecifics =
-      AndroidNotificationDetails(
-    'high_importance_channel',
-    'High Importance Notifications',
-    channelDescription: 'This channel is used for important notifications',
-    importance: Importance.high,
-    priority: Priority.high,
-    playSound: true,
-    showWhen: true,
-    autoCancel: true,
-  );
-
-  const DarwinNotificationDetails iOSPlatformChannelSpecifics =
-      DarwinNotificationDetails();
-
-  const NotificationDetails platformChannelSpecifics = NotificationDetails(
-    android: androidPlatformChannelSpecifics,
-    iOS: iOSPlatformChannelSpecifics,
-  );
-
-  flutterLocalNotificationsPlugin.show(
-    message.hashCode,
-    message.notification?.title ?? 'Connection Nudge 💫',
-    message.notification?.body ?? 'Time to connect!',
-    platformChannelSpecifics,
-    payload: _buildNotificationPayload(message.data),
-  );
+void showEventNotificationDialog(Map<String, dynamic> data) {
+  // This is called when the notification body is tapped (not an action button)
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (navigatorKey.currentState != null) {
+      showDialog(
+        context: navigatorKey.currentState!.context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text(data['contactName'] ?? 'Upcoming Event'),
+            content: Text(data['message'] ?? ''),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _handleDismissAction(data);
+                },
+                child: const Text('Dismiss'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _handleRemindMeThenAction(data);
+                },
+                child: const Text('Remind Me Then'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+  });
 }
+
+Future<void> _handleRemindMeThenAction(Map<String, dynamic> data) async {
+  final notificationId = data['notificationId'];
+  
+  if (notificationId == null) {
+    print('No notificationId found in data');
+    return;
+  }
+  
+  try {
+    final result = await FirebaseFunctions.instance
+        .httpsCallable('scheduleEventReminderForActualDate')
+        .call({'notificationId': notificationId});
+    
+    if (result.data['success'] == true) {
+      _showSnackBar('Reminder scheduled!');
+    } else {
+      _showSnackBar('Could not schedule reminder');
+    }
+  } catch (e) {
+    print('Error scheduling reminder: $e');
+    _showSnackBar('Error scheduling reminder');
+  }
+}
+
+Future<void> _handleDismissAction(Map<String, dynamic> data) async {
+  final notificationId = data['notificationId'];
+  
+  if (notificationId == null) {
+    print('No notificationId found in data');
+    return;
+  }
+  
+  try {
+    final result = await FirebaseFunctions.instance
+        .httpsCallable('dismissEventNotification')
+        .call({'notificationId': notificationId});
+    
+    if (result.data['success'] == true) {
+      _showSnackBar('Notification dismissed');
+    } else {
+      _showSnackBar('Could not dismiss notification');
+    }
+  } catch (e) {
+    print('Error dismissing notification: $e');
+    _showSnackBar('Error dismissing notification');
+  }
+}
+
+void _showSnackBar(String message) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (navigatorKey.currentState != null) {
+      final scaffoldMessenger = ScaffoldMessenger.of(navigatorKey.currentState!.context);
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text(message),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  });
+}
+
+// Add a function to schedule event notifications for contacts:
+Future<void> scheduleEventNotifications(List<String> contactIds) async {
+  try {
+    final result = await FirebaseFunctions.instance
+        .httpsCallable('scheduleEventNotificationsForContacts')
+        .call({'contactIds': contactIds});
+    
+    if (result.data['success'] == true) {
+      print('Event notifications scheduled: ${result.data}');
+    } else {
+      print('Failed to schedule event notifications');
+    }
+  } catch (e) {
+    print('Error scheduling event notifications: $e');
+  }
+}
+
+// Call this when adding/updating contacts:
+void onContactAddedOrUpdated(String contactId) {
+  scheduleEventNotifications([contactId]);
+}
+
+// Call this when importing multiple contacts:
+void onContactsImported(List<String> contactIds) {
+  scheduleEventNotifications(contactIds);
+}
+
+void _showLocalNotification(RemoteMessage message) {
+  // Handle event notifications differently
+  final data = message.data;
+  
+  if (data['type'] == 'event_notification') {
+    // Create notification with action buttons for events
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      'event_notifications',
+      'Event Notifications',
+      channelDescription: 'Birthday and anniversary notifications',
+      importance: Importance.high,
+      priority: Priority.high,
+      playSound: true,
+      showWhen: true,
+      autoCancel: true,
+      // Add action buttons
+      actions: [
+        AndroidNotificationAction(
+          'remind_me_then',
+          'Remind Me Then',
+          showsUserInterface: true,
+        ),
+        AndroidNotificationAction(
+          'dismiss',
+          'Dismiss',
+          cancelNotification: true,
+        ),
+      ],
+    );
+
+    const DarwinNotificationDetails iOSPlatformChannelSpecifics =
+        DarwinNotificationDetails(
+      categoryIdentifier: 'EVENT_NOTIFICATION_ACTIONS',
+    );
+
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+      iOS: iOSPlatformChannelSpecifics,
+    );
+
+    flutterLocalNotificationsPlugin.show(
+      message.hashCode,
+      message.notification?.title ?? '🎉 Upcoming Event!',
+      message.notification?.body ?? 'Time to connect!',
+      platformChannelSpecifics,
+      payload: jsonEncode(data),
+    );
+  } else {
+    // Regular notification without action buttons
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      'high_importance_channel',
+      'High Importance Notifications',
+      channelDescription: 'This channel is used for important notifications',
+      importance: Importance.high,
+      priority: Priority.high,
+      playSound: true,
+      showWhen: true,
+      autoCancel: true,
+    );
+
+    const DarwinNotificationDetails iOSPlatformChannelSpecifics =
+        DarwinNotificationDetails();
+
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+      iOS: iOSPlatformChannelSpecifics,
+    );
+
+    flutterLocalNotificationsPlugin.show(
+      message.hashCode,
+      message.notification?.title ?? 'Connection Nudge 💫',
+      message.notification?.body ?? 'Time to connect!',
+      platformChannelSpecifics,
+      payload: _buildNotificationPayload(message.data),
+    );
+  }
+}
+
 
 void navigateToNotificationsScreen() {
   print('Direct navigation to notifications screen');
@@ -307,7 +508,7 @@ void navigateToNotificationsScreen() {
     navigatorKey.currentState!.pushNamedAndRemoveUntil(
       '/dashboard',
       (route) => false,
-      arguments: {'initialTab': 3},
+      arguments: {'initialTab': 4},
     );
   } else {
     print('Navigator not ready, storing for later');
@@ -366,7 +567,7 @@ void _handleBackgroundMessage(RemoteMessage message) {
       navigatorKey.currentState!.pushNamedAndRemoveUntil(
         '/dashboard',
         (route) => false,
-        arguments: {'initialTab': 3},
+        arguments: {'initialTab': 4},
       );
     }
   });
@@ -380,7 +581,7 @@ void _handleTerminatedMessage(RemoteMessage message) {
       navigatorKey.currentState!.pushNamedAndRemoveUntil(
         '/dashboard',
         (route) => false,
-        arguments: {'initialTab': 3},
+        arguments: {'initialTab': 4},
       );
     }
   });
@@ -488,7 +689,7 @@ class NudgeApp extends StatelessWidget {
                 if (settings.name == '/notifications' || 
                     settings.name?.contains('notification') == true) {
                   return MaterialPageRoute(
-                    builder: (context) => DashboardScreen(initialTab: 3),
+                    builder: (context) => DashboardScreen(initialTab: 4),
                   );
                 }
                 

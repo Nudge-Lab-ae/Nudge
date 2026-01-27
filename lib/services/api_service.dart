@@ -315,7 +315,7 @@ class ApiService {
           currentUpvotes.add({
             'userId': userId,
             'username': currentUser.displayName ?? currentUser.email?.split('@')[0] ?? 'User',
-            'timestamp': FieldValue.serverTimestamp(),
+            // 'timestamp': FieldValue.serverTimestamp(),
           });
           
           await _firestore.collection('feedbacks').doc(feedbackId).update({

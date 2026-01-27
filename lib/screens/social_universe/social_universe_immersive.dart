@@ -16,7 +16,7 @@ class SocialUniverseImmersiveScreen extends StatelessWidget {
     final apiService = Provider.of<ApiService>(context);
     
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Color.fromARGB(255, 26, 30, 55),
       body: StreamProvider<List<Contact>>.value(
       value: apiService.getContactsStream(),
       initialData: const [],
@@ -24,6 +24,7 @@ class SocialUniverseImmersiveScreen extends StatelessWidget {
         builder: (context, contacts, child) {
           return SocialUniverseWidget(
             contacts: contacts,
+            showTitle: true,
             onContactView: (contact) {
               // Use the same beautiful modal as dashboard
               showModalBottomSheet(

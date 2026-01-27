@@ -389,9 +389,14 @@ class _SocialUniverseGuideState extends State<SocialUniverseGuide> {
   }
 
   Widget _buildCirclesExample(Color pageColor) {
+    // Color scheme for the circles
+    final goldColor = widget.isDarkMode ? Color(0xFFFFD700) : Color(0xFFFFC107);
+    final blueColor = widget.isDarkMode ? Color(0xFF5CDEE5) : Color(0xFF2196F3);
+    final purpleColor = widget.isDarkMode ? Color(0xFF9C27B0) : Color(0xFF9C27B0);
+    
     return Container(
-      width: 200,
-      height: 200,
+      width: 220,
+      height: 220,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         color: _currentTheme.cardBackground,
@@ -400,51 +405,45 @@ class _SocialUniverseGuideState extends State<SocialUniverseGuide> {
           width: 1,
         ),
       ),
-      padding: EdgeInsets.all(16),
+      padding: EdgeInsets.all(20),
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Outer Circle
+          // Outer Circle - Purple
           Container(
             width: 180,
             height: 180,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                color: widget.isDarkMode 
-                    ? Colors.redAccent.withOpacity(0.5)
-                    : Color(0xFFF44336).withOpacity(0.7),
-                width: 2,
+                color: purpleColor.withOpacity(0.7),
+                width: 2.5,
               ),
             ),
           ),
           
-          // Middle Circle
+          // Middle Circle - Blue
           Container(
             width: 120,
             height: 120,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                color: widget.isDarkMode 
-                    ? Color(0xFFFFC107).withOpacity(0.5)
-                    : Color(0xFFFF9800).withOpacity(0.7),
-                width: 2,
+                color: blueColor.withOpacity(0.7),
+                width: 2.5,
               ),
             ),
           ),
           
-          // Inner Circle
+          // Inner Circle - Gold
           Container(
             width: 60,
             height: 60,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                color: widget.isDarkMode 
-                    ? Colors.green.withOpacity(0.5)
-                    : Color(0xFF4CAF50).withOpacity(0.7),
-                width: 2,
+                color: goldColor.withOpacity(0.8),
+                width: 3,
               ),
             ),
           ),
@@ -468,51 +467,157 @@ class _SocialUniverseGuideState extends State<SocialUniverseGuide> {
             ),
           ),
           
-          // Labels
+          // Labels with arrows
+          // Outer Circle Label
           Positioned(
-            top: 5,
-            left: 0,
-            right: 0,
-            child: Text(
-              'Outer Circle',
-              style: TextStyle(
-                color: widget.isDarkMode ? Colors.redAccent : Color(0xFFF44336),
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-              textAlign: TextAlign.center,
+            top: 10,
+            right: 5,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Outer Circle',
+                  style: TextStyle(
+                    color: purpleColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                SizedBox(width: 4),
+                // Icon(
+                //   Icons.arrow_back,
+                //   color: purpleColor,
+                //   size: 12,
+                // ),
+              ],
             ),
           ),
           
+          // Middle Circle Label (top right)
           Positioned(
-            top: 70,
-            left: 0,
-            right: 0,
-            child: Text(
-              'Middle Circle',
-              style: TextStyle(
-                color: widget.isDarkMode ? Color(0xFFFFC107) : Color(0xFFFF9800),
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-              textAlign: TextAlign.center,
+            top: 50,
+            right: 40,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Middle Circle',
+                  style: TextStyle(
+                    color: blueColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                SizedBox(width: 4),
+                // Icon(
+                //   Icons.arrow_back,
+                //   color: blueColor,
+                //   size: 12,
+                // ),
+              ],
             ),
           ),
           
+          // Inner Circle Label (top right)
           Positioned(
-            top: 130,
-            left: 0,
-            right: 0,
-            child: Text(
-              'Inner Circle',
-              style: TextStyle(
-                color: widget.isDarkMode ? Colors.green : Color(0xFF4CAF50),
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-              textAlign: TextAlign.center,
+            top: 80,
+            right: 60,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Inner Circle',
+                  style: TextStyle(
+                    color: goldColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                SizedBox(width: 4),
+                // Icon(
+                //   Icons.arrow_back,
+                //   color: goldColor,
+                //   size: 12,
+                // ),
+              ],
             ),
           ),
+          
+          // // Additional labels on other sides for clarity
+          // // Bottom Left - Outer Circle
+          // Positioned(
+          //   bottom: 10,
+          //   left: 5,
+          //   child: Row(
+          //     mainAxisSize: MainAxisSize.min,
+          //     children: [
+          //       Icon(
+          //         Icons.arrow_forward,
+          //         color: purpleColor,
+          //         size: 12,
+          //       ),
+          //       SizedBox(width: 4),
+          //       Text(
+          //         'Less Frequent',
+          //         style: TextStyle(
+          //           color: purpleColor,
+          //           fontSize: 9,
+          //           fontWeight: FontWeight.w600,
+          //         ),
+          //       ),
+          //     ],
+          //   ),
+          // ),
+          
+          // // Bottom Middle - Middle Circle
+          // Positioned(
+          //   bottom: 50,
+          //   left: 40,
+          //   child: Row(
+          //     mainAxisSize: MainAxisSize.min,
+          //     children: [
+          //       Icon(
+          //         Icons.arrow_forward,
+          //         color: blueColor,
+          //         size: 12,
+          //       ),
+          //       SizedBox(width: 4),
+          //       Text(
+          //         'Moderate',
+          //         style: TextStyle(
+          //           color: blueColor,
+          //           fontSize: 9,
+          //           fontWeight: FontWeight.w600,
+          //         ),
+          //       ),
+          //     ],
+          //   ),
+          // ),
+          
+          // // Bottom Right - Inner Circle
+          // Positioned(
+          //   bottom: 80,
+          //   left: 60,
+          //   child: Row(
+          //     mainAxisSize: MainAxisSize.min,
+          //     children: [
+          //       Icon(
+          //         Icons.arrow_forward,
+          //         color: goldColor,
+          //         size: 12,
+          //       ),
+          //       SizedBox(width: 4),
+          //       Text(
+          //         'Frequent',
+          //         style: TextStyle(
+          //           color: goldColor,
+          //           fontSize: 9,
+          //           fontWeight: FontWeight.w600,
+          //         ),
+          //       ),
+          //     ],
+          //   ),
+          // ),
         ],
       ),
     );

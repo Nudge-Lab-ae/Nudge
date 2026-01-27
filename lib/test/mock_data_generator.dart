@@ -40,17 +40,6 @@ class MockContactsGenerator {
       double cdi;
       String computedRing;
       
-      final rand = _random.nextDouble();
-      if (rand < 0.2) {
-        cdi = 80 + _random.nextDouble() * 20; // 80-100
-        computedRing = 'inner';
-      } else if (rand < 0.7) {
-        cdi = 50 + _random.nextDouble() * 29; // 50-79
-        computedRing = 'middle';
-      } else {
-        cdi = 15 + _random.nextDouble() * 34; // 15-49
-        computedRing = 'outer';
-      }
       
       // Last contacted between 1 and 180 days ago
       final lastContacted = now.subtract(Duration(days: _random.nextInt(180) + 1));
@@ -60,6 +49,21 @@ class MockContactsGenerator {
       
       // Generate VIP status (20% chance)
       final isVIP = _random.nextDouble() < 0.2;
+
+      final rand = _random.nextDouble();
+      if (rand < 0.2) {
+        cdi = 80 + _random.nextDouble() * 20; // 80-100
+        computedRing = 'inner';
+        if (isVIP)  computedRing = 'inner_vip';
+      } else if (rand < 0.7) {
+        cdi = 50 + _random.nextDouble() * 29; // 50-79
+        computedRing = 'middle';
+        if (isVIP)  computedRing = 'middle_vip';
+      } else {
+        cdi = 15 + _random.nextDouble() * 34; // 15-49
+        computedRing = 'outer';
+        if (isVIP)  computedRing = 'outer_vip';
+      }
       
       // Generate interaction count (0-20)
       final interactionCount = _random.nextInt(20);

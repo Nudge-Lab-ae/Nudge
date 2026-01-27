@@ -1,4 +1,4 @@
-// complete_profile_screen.dart - Updated with crop_your_image
+// complete_profile_screen.dart - Enhanced with Social Universe Preview
 import 'dart:typed_data';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -10,24 +10,22 @@ import 'package:crop_your_image/crop_your_image.dart';
 import 'package:country_code_picker/country_code_picker.dart';
 import 'package:nudge/models/contact.dart';
 import 'package:nudge/models/social_group.dart';
-// import 'package:nudge/services/nudge_service.dart';
-// import 'package:nudge/models/user.dart';
-// import 'package:nudge/theme/text_styles.dart';
 import 'package:nudge/widgets/gradient_text.dart';
 import 'package:nudge/helpers/restart_helper.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
-// import 'dart:ui' as ui;
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
 import '../contacts/import_contacts_screen.dart';
-// import '../dashboard/dashboard_screen.dart';
 
 // Add these imports for contact picking functionality
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_contacts/flutter_contacts.dart' as fContacts;
 import '../../services/contact_sync_service.dart';
 import '../../providers/theme_provider.dart';
+
+// Import the Social Universe widget
+import 'package:nudge/widgets/social_universe.dart';
 
 class CompleteProfileScreen extends StatefulWidget {
   const CompleteProfileScreen({super.key});
@@ -41,14 +39,9 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _bioController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  // File? _imageFile;
   final ImagePicker _picker = ImagePicker();
   bool _isLoading = false;
-  // Uint8List? _croppedData;
-  String myUsername = '';
-  String myPhone = '';
-  String myBio = '';
-   final _imageDataList = <Uint8List>[];
+  final _imageDataList = <Uint8List>[];
   var _currentImage = 0;
   set currentImage(int value) {
     setState(() {
@@ -69,23 +62,208 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
   final List<SocialGroup> _userGroups = [];
 
   // Country code
-  // String _countryCode = '+971';
   CountryCode _selectedCountry = CountryCode(dialCode: '+971', code: 'AE');
 
 
-  // Steps configuration
+  // Steps configuration - Updated with preview step
   final List<Map<String, dynamic>> _steps = [
     {'title': 'Complete Your Profile', 'subtitle': 'Tell us about yourself'},
     {'title': 'Create Social Groups', 'subtitle': 'Organize your contacts'},
+    {'title': 'Welcome to Your Social Universe', 'subtitle': 'See what we\'re building'},
     {'title': 'Add Your Contacts', 'subtitle': 'Import or add contacts'},
     {'title': 'Identify Close Circle', 'subtitle': 'Mark important relationships'},
     {'title': 'Review Setup', 'subtitle': 'You\'re all set!'},
+  ];
+
+  // Mock contacts for preview
+  final List<Contact> _mockPreviewContacts = [
+    Contact(
+      id: 'preview_1',
+      name: 'Alex Johnson',
+      phoneNumber: '+1234567890',
+      email: 'alex@example.com',
+      priority: 1,
+      notes: '',
+      imageUrl: '',
+      interactionHistory: {},
+      connectionType: 'Friend',
+      socialGroups: [],
+      frequency: 2,
+      period: 'Weekly',
+      lastContacted: DateTime.now().subtract(const Duration(days: 3)),
+      computedRing: 'inner',
+      rawBand: 'inner',
+      rawBandSince: DateTime.now().subtract(const Duration(days: 30)),
+      cdi: 85,
+      angleDeg: 45,
+      isVIP: true,
+      interactionCountInWindow: 12,
+      tags: ['Close', 'Gym buddy'],
+    ),
+    Contact(
+      id: 'preview_2',
+      name: 'Sarah Miller',
+      phoneNumber: '+1234567891',
+      email: 'sarah@example.com',
+      priority: 1,
+      notes: '',
+      imageUrl: '',
+      interactionHistory: {},
+      socialGroups: [],
+      connectionType: 'Family',
+      frequency: 1,
+      period: 'Weekly',
+      lastContacted: DateTime.now().subtract(const Duration(days: 7)),
+      computedRing: 'inner',
+      rawBand: 'inner',
+      rawBandSince: DateTime.now().subtract(const Duration(days: 90)),
+      cdi: 90,
+      angleDeg: 120,
+      isVIP: false,
+      interactionCountInWindow: 8,
+      tags: ['Sister', 'Emergency'],
+    ),
+    Contact(
+      id: 'preview_3',
+      name: 'Michael Chen',
+      phoneNumber: '+1234567892',
+      email: 'michael@example.com',
+      priority: 1,
+      notes: '',
+      imageUrl: '',
+      socialGroups: [],
+      interactionHistory: {},connectionType: 'Colleague',
+      frequency: 2,
+      period: 'Monthly',
+      lastContacted: DateTime.now().subtract(const Duration(days: 14)),
+      computedRing: 'middle',
+      rawBand: 'middle',
+      rawBandSince: DateTime.now().subtract(const Duration(days: 60)),
+      cdi: 65,
+      angleDeg: 210,
+      isVIP: false,
+      interactionCountInWindow: 5,
+      tags: ['Work', 'Project'],
+    ),
+    Contact(
+      id: 'preview_4',
+      name: 'David Wilson',
+      phoneNumber: '+1234567893',
+      email: 'david@example.com',
+      priority: 1,
+      notes: '',
+      imageUrl: '',
+      socialGroups: [],
+      interactionHistory: {},
+      connectionType: 'Client',
+      frequency: 1,
+      period: 'Quarterly',
+      lastContacted: DateTime.now().subtract(const Duration(days: 45)),
+      computedRing: 'outer',
+      rawBand: 'outer',
+      rawBandSince: DateTime.now().subtract(const Duration(days: 120)),
+      cdi: 40,
+      angleDeg: 300,
+      isVIP: false,
+      interactionCountInWindow: 2,
+      tags: ['Business', 'Important'],
+    ),
+    Contact(
+      id: 'preview_5',
+      name: 'Emma Davis',
+      phoneNumber: '+1234567894',
+      email: 'emma@example.com',
+      priority: 1,
+      notes: '',
+      imageUrl: '',
+      socialGroups: [],
+      interactionHistory: {},connectionType: 'Friend',
+      frequency: 1,
+      period: 'Monthly',
+      lastContacted: DateTime.now().subtract(const Duration(days: 21)),
+      computedRing: 'middle',
+      rawBand: 'middle',
+      rawBandSince: DateTime.now().subtract(const Duration(days: 75)),
+      cdi: 55,
+      angleDeg: 150,
+      isVIP: false,
+      interactionCountInWindow: 4,
+      tags: ['College', 'Travel'],
+    ),
+    Contact(
+      id: 'preview_6',
+      name: 'Robert Taylor',
+      phoneNumber: '+1234567895',
+      email: 'robert@example.com',
+       priority: 1,
+      notes: '',
+      imageUrl: '',
+      socialGroups: [],
+      interactionHistory: {},connectionType: 'Mentor',
+      frequency: 2,
+      period: 'Annually',
+      lastContacted: DateTime.now().subtract(const Duration(days: 90)),
+      computedRing: 'outer',
+      rawBand: 'outer',
+      rawBandSince: DateTime.now().subtract(const Duration(days: 180)),
+      cdi: 35,
+      angleDeg: 30,
+      isVIP: true,
+      interactionCountInWindow: 1,
+      tags: ['Advisor', 'Expert'],
+    ),
+    Contact(
+      id: 'preview_7',
+      name: 'Lisa Brown',
+      phoneNumber: '+1234567896',
+      email: 'lisa@example.com',
+      connectionType: 'Family',
+      priority: 1,
+      notes: '',
+      imageUrl: '',
+      socialGroups: [],
+      interactionHistory: {},
+      frequency: 3,
+      period: 'Weekly',
+      lastContacted: DateTime.now().subtract(const Duration(days: 1)),
+      computedRing: 'inner',
+      rawBand: 'inner',
+      rawBandSince: DateTime.now().subtract(const Duration(days: 365)),
+      cdi: 95,
+      angleDeg: 75,
+      isVIP: false,
+      interactionCountInWindow: 15,
+      tags: ['Mother', 'Close'],
+    ),
+    Contact(
+      id: 'preview_8',
+      name: 'James Wilson',
+      phoneNumber: '+1234567897',
+      email: 'james@example.com',
+      connectionType: 'Colleague',
+      priority: 1,
+      notes: '',
+      imageUrl: '',
+      socialGroups: [],
+      interactionHistory: {},frequency: 1,
+      period: 'Monthly',
+      lastContacted: DateTime.now().subtract(const Duration(days: 28)),
+      computedRing: 'outer',
+      rawBand: 'outer',
+      rawBandSince: DateTime.now().subtract(const Duration(days: 150)),
+      cdi: 30,
+      angleDeg: 250,
+      isVIP: false,
+      interactionCountInWindow: 3,
+      tags: ['Work', 'Team'],
+    ),
   ];
 
   @override
   void initState() {
     super.initState();
     _initializeDefaultGroups();
+    // Start at step 0 (profile) instead of preview
   }
 
   void _dismissKeyboard() {
@@ -182,19 +360,14 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
     if (_imageBytes == null) return;
     
     _cropController.crop();
-    // if (cropped!=null) {
-    //   // Create a temporary file from cropped bytes
-     
-    // }
-     final tempDir = await getTemporaryDirectory();
-      final file = File('${tempDir.path}/cropped_profile_${DateTime.now().millisecondsSinceEpoch}.png');
-      await file.writeAsBytes(_imageBytes!.toList());
-      
-      setState(() {
-        // _imageFile = file;
-        _isCropping = false;
-        _imageBytes = null;
-      });
+    final tempDir = await getTemporaryDirectory();
+    final file = File('${tempDir.path}/cropped_profile_${DateTime.now().millisecondsSinceEpoch}.png');
+    await file.writeAsBytes(_imageBytes!.toList());
+    
+    setState(() {
+      _isCropping = false;
+      _imageBytes = null;
+    });
   }
 
   void _cancelCrop() {
@@ -204,7 +377,6 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
     });
   }
 
-  // Helper method to get temporary directory
   Future<Directory> getTemporaryDirectory() async {
     return Directory.systemTemp;
   }
@@ -223,43 +395,17 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
     }
   }
 
-  bool _isStepValid(int step) {
-    switch (step) {
-      case 0: // Profile
-        return myUsername.isNotEmpty && 
-              myPhone.isNotEmpty && 
-              _isValidPhoneNumber(myPhone);
-      case 1: // Groups
-        return _userGroups.isNotEmpty;
-      case 2: // Contacts
-        return true; // Changed: Allow continuing without contacts
-      case 3: // Close Circle
-        return true;
-      case 4: // Review
-        return true;
-      default:
-        return false;
-    }
-  }
-
   Future<String> uploadImageToFirebase(Uint8List imageBytes, String fileName) async {
     try {
-      // Reference to Firebase Storage
       final storageRef = FirebaseStorage.instance.ref();
-
-      // Create a child reference (folder + filename)
       final imagesRef = storageRef.child('uploads/$fileName');
 
-      // Upload raw data
       UploadTask uploadTask = imagesRef.putData(
         imageBytes,
-        SettableMetadata(contentType: 'image/png'), // or 'image/jpeg'
+        SettableMetadata(contentType: 'image/png'),
       );
 
-      // Wait until upload completes
       TaskSnapshot snapshot = await uploadTask;
-
-      // Get the download URL
       String downloadUrl = await snapshot.ref.getDownloadURL();
       return downloadUrl;
     } catch (e) {
@@ -275,24 +421,19 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
       final user = authService.currentUser;
       
       if (user != null) {
-        // STEP 1: Ensure FCM token is stored before anything else
-        print('storing token');
+        // STEP 1: Ensure FCM token is stored
         await authService.storeFCMToken();
         
         // STEP 2: Get fresh user data with FCM token
         final freshUserDoc = await apiService.getUser();
         final freshUserMap = freshUserDoc.toMap();
         if (freshUserMap['fcmToken'] == null || freshUserMap['fcmToken'].isEmpty) {
-          // Try to get token again if not available
-          print('getting token');
           String? fcmToken = await FirebaseMessaging.instance.getToken();
           if (fcmToken != null) {
             await apiService.updateUser({'fcmToken': fcmToken});
           } else {
             throw Exception('FCM token is required for notifications');
           }
-        } else{
-          print('got token already');
         }
 
         // Upload image if selected
@@ -301,8 +442,6 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
           String uniqueID = _usernameController.text + (DateTime.now().millisecondsSinceEpoch).toString();
           imageUrl = await uploadImageToFirebase(_imageBytes!, uniqueID);
         }
-
-        print('Final Stage 1');
         
         // Update user profile
         await apiService.updateUser({
@@ -315,7 +454,6 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
           'updatedAt': DateTime.now(),
         });
         
-        print('Final Stage 2');
         // Save groups
         await apiService.updateGroups(_userGroups);
 
@@ -323,16 +461,9 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
           await apiService.updateCloseCircleContacts(_closeCircleContacts);
         }
 
-        print('Final Stage 3');
-
         if (_selectedContacts.isNotEmpty) {
-          // Schedule nudges in background without waiting
-          //  apiService.scheduleHourlyNotifications();
-           apiService.scheduleRegularNotifications();
-          // _scheduleNudgesForImportedContacts();
+          apiService.scheduleRegularNotifications();
         }
-        
-        print('Final Stage 4');
         
         // Navigate to dashboard using restart approach
         _navigateToDashboardWithSuccess();
@@ -346,7 +477,6 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
   }
 
   void _navigateToDashboardWithSuccess() {
-    // Show success message
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -381,7 +511,6 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
       ),
     );
 
-    // Force app restart after a delay to show the snackbar
     Future.delayed(const Duration(milliseconds: 1500), () {
       AppRestartHelper.setSkipSplashFlag();
       AppRestartHelper.forceAppRestart(context);
@@ -389,7 +518,6 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
   }
 
   void _toggleCloseCircleContact(Contact contact) {
-    print(contact.toMap()); print(' is the contact');
     setState(() {
       if (_closeCircleContacts.contains(contact)) {
         _closeCircleContacts.remove(contact);
@@ -399,37 +527,35 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
     });
   }
 
-Future<void> _pickContactsManually() async {
-  FocusScope.of(context).unfocus();
-  
-  final permissionOk = await fContacts.FlutterContacts.requestPermission();
-  if (!permissionOk) {
-    _showSettingsDialog('Contacts permission is required to pick contacts');
-    return;
+  Future<void> _pickContactsManually() async {
+    FocusScope.of(context).unfocus();
+    
+    final permissionOk = await fContacts.FlutterContacts.requestPermission();
+    if (!permissionOk) {
+      _showSettingsDialog('Contacts permission is required to pick contacts');
+      return;
+    }
+
+    final contacts = await fContacts.FlutterContacts.getContacts(withProperties: true);
+
+    final selectedContacts = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ContactPickerDialog(contacts: contacts),
+      ),
+    );
+
+    if (selectedContacts == null || selectedContacts.isEmpty) return;
+
+    final SocialGroup? selectedGroup = await showDialog<SocialGroup>(
+      context: context,
+      builder: (context) => GroupSelectionDialog(groups: _userGroups),
+    );
+
+    if (selectedGroup == null) return;
+
+    await _importContactsWithGroup(selectedContacts, selectedGroup);
   }
-
-  final contacts = await fContacts.FlutterContacts.getContacts(withProperties: true);
-
-  // Use full screen instead of dialog
-  final selectedContacts = await Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => ContactPickerDialog(contacts: contacts),
-    ),
-  );
-
-  if (selectedContacts == null || selectedContacts.isEmpty) return;
-
-  // Show group selection dialog
-  final SocialGroup? selectedGroup = await showDialog<SocialGroup>(
-    context: context,
-    builder: (context) => GroupSelectionDialog(groups: _userGroups),
-  );
-
-  if (selectedGroup == null) return;
-
-  await _importContactsWithGroup(selectedContacts, selectedGroup);
-}
 
   void _showSettingsDialog(String message) {
     showDialog(
@@ -455,6 +581,9 @@ Future<void> _pickContactsManually() async {
   }
 
   Widget _buildStepIndicator(ThemeProvider themeProvider) {
+    // Don't show step indicator on preview screen (step 2)
+    if (_currentStep == 2) return const SizedBox.shrink();
+    
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
       decoration: BoxDecoration(
@@ -467,7 +596,7 @@ Future<void> _pickContactsManually() async {
       ),
       child: Column(
         children: [
-          // Progress bar
+          // Progress bar - simplified logic
           Container(
             height: 4,
             decoration: BoxDecoration(
@@ -478,9 +607,11 @@ Future<void> _pickContactsManually() async {
               children: [
                 LayoutBuilder(
                   builder: (context, constraints) {
+                    // Simple progress calculation: treat preview as a normal step
+                    double progress = (_currentStep + 1) / _steps.length;
                     return AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
-                      width: constraints.maxWidth * ((_currentStep + 1) / _steps.length),
+                      width: constraints.maxWidth * progress,
                       decoration: BoxDecoration(
                         color: const Color(0xff3CB3E9),
                         borderRadius: BorderRadius.circular(2),
@@ -513,7 +644,7 @@ Future<void> _pickContactsManually() async {
       ),
     );
   }
-
+    
   Widget _buildCurrentStep() {
     if (_isCropping) {
       return _buildCropScreen();
@@ -522,11 +653,220 @@ Future<void> _pickContactsManually() async {
     switch (_currentStep) {
       case 0: return _buildProfileStep();
       case 1: return _buildGroupsStep();
-      case 2: return _buildContactsStep();
-      case 3: return _buildCloseCircleStep();
-      case 4: return _buildReviewStep();
+      case 2: return _buildPreviewStep();
+      case 3: return _buildContactsStep();
+      case 4: return _buildCloseCircleStep();
+      case 5: return _buildReviewStep();
       default: return _buildProfileStep();
     }
+  }
+
+  // NEW: Preview Step with Social Universe
+  Widget _buildPreviewStep() {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final theme = Theme.of(context);
+    
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Hero section
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  theme.colorScheme.primary.withOpacity(0.1),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+            child: Column(
+              children: [
+                const SizedBox(height: 20),
+                GradientText(
+                  text: 'Welcome to',
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  gradient: LinearGradient(
+                    colors: [
+                      theme.colorScheme.primary,
+                      theme.colorScheme.secondary,
+                    ],
+                  ),
+                ),
+                GradientText(
+                  text: 'Your Social Universe',
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  gradient: LinearGradient(
+                    colors: [
+                      theme.colorScheme.secondary,
+                      theme.colorScheme.primary,
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Visualize your connections like never before',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: themeProvider.isDarkMode ? Colors.white70 : Colors.grey.shade700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Social Universe Preview
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            child: Card(
+              elevation: 8,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  height: 350,
+                  color: themeProvider.isDarkMode ? Colors.black : const Color(0xFF0A1A3B),
+                  child: SocialUniverseWidget(
+                    contacts: _mockPreviewContacts,
+                    showTitle: false,
+                    onContactView: (contact) {
+                      // Preview interaction
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('In your actual Social Universe, you can view details for ${contact.name}'),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                    height: 350,
+                    isImmersive: false,
+                    isDarkMode: themeProvider.isDarkMode,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 24),
+          
+          // Features list
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildFeatureItem(
+                  Icons.star,
+                  'Visualize Connections',
+                  'See your relationships in beautiful rings',
+                  themeProvider,
+                ),
+                const SizedBox(height: 16),
+                _buildFeatureItem(
+                  Icons.notifications,
+                  'Smart Reminders',
+                  'Never lose touch with important people',
+                  themeProvider,
+                ),
+                const SizedBox(height: 16),
+                _buildFeatureItem(
+                  Icons.group,
+                  'Organize Groups',
+                  'Categorize contacts by relationship type',
+                  themeProvider,
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: 40),
+          
+          // Call to action
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Customize your social universe in a few easy steps',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Let\'s build a Social Universe customized to you',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: themeProvider.isDarkMode ? Colors.white70 : Colors.grey.shade700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: 40),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeatureItem(IconData icon, String title, String description, ThemeProvider themeProvider) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: const Color(0xff3CB3E9).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            icon,
+            color: const Color(0xff3CB3E9),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                description,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: themeProvider.isDarkMode ? Colors.white70 : Colors.grey.shade600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   Future<void> _importContactsWithGroup(List<fContacts.Contact> deviceContacts, SocialGroup group) async {
@@ -542,19 +882,15 @@ Future<void> _pickContactsManually() async {
     });
 
     try {
-      // Import contacts and assign to the selected group
       final result = await syncService.importContactsWithGroup(
         pickedContacts: deviceContacts,
         groupId: group.name,
-        onProgress: (processed, total) {
-          // Progress callback if needed
-        },
+        onProgress: (processed, total) {},
       );
 
       setState(() => _isLoading = false);
 
       if (result['success'] == true) {
-        // Update the selected contacts list
         final updatedContacts = await apiService.getAllContacts();
         setState(() {
           _selectedContacts = updatedContacts;
@@ -578,19 +914,19 @@ Future<void> _pickContactsManually() async {
 
   onUserNameChange(String username) {
     setState(() {
-      myUsername = username;
+      _usernameController.text = username;
     });
   }
 
   onPhoneChange(String phone) {
     setState(() {
-      myPhone = phone;
+      _phoneController.text = phone;
     });
   }
 
   onBioChange(String bio) {
     setState(() {
-      myBio = bio;
+      _bioController.text = bio;
     });
   }
 
@@ -619,30 +955,27 @@ Future<void> _pickContactsManually() async {
                     image: _imageBytes!,
                     controller: _cropController,
                     aspectRatio: 1,
-                    // initialArea: Rect.largest,
-                     onCropped: (result) {
-                            switch (result) {
-                              case CropSuccess(:final croppedImage):
-                                // _croppedData = croppedImage;
-                                _imageBytes = croppedImage;
-                              case CropFailure(:final cause):
-                                showDialog(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    title: const Text('Error'),
-                                    content:
-                                        Text('Failed to crop image: ${cause}'),
-                                    actions: [
-                                      TextButton(
-                                          onPressed: () =>
-                                              Navigator.pop(context),
-                                          child: Text('OK')),
-                                    ],
-                                  ),
-                                );
-                            }
-                            setState(() => _isCropping = false);
-                          },
+                    onCropped: (result) {
+                      switch (result) {
+                        case CropSuccess(:final croppedImage):
+                          _imageBytes = croppedImage;
+                        case CropFailure(:final cause):
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Error'),
+                              content: Text('Failed to crop image: ${cause}'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('OK'),
+                                ),
+                              ],
+                            ),
+                          );
+                      }
+                      setState(() => _isCropping = false);
+                    },
                     withCircleUi: true,
                     baseColor: theme.colorScheme.primary,
                     maskColor: themeProvider.isDarkMode ? Colors.white.withAlpha(100) : Colors.black.withAlpha(100),
@@ -696,6 +1029,30 @@ Future<void> _pickContactsManually() async {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 20),
+            
+            // Header with motivational text
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Complete Your Profile',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Start by telling us about yourself',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: themeProvider.isDarkMode ? Colors.white70 : Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 30),
             
             // Profile Image with Cropping
             Center(
@@ -781,12 +1138,11 @@ Future<void> _pickContactsManually() async {
                           _selectedCountry = country;
                         });
                       },
-                      initialSelection: _selectedCountry.code, // Use current selection
-                      favorite: [_selectedCountry.code!, 'US'], // Preserve current as favorite
+                      initialSelection: _selectedCountry.code,
+                      favorite: [_selectedCountry.code!, 'US'],
                       showCountryOnly: false,
                       showOnlyCountryWhenClosed: false,
                       alignLeft: false,
-                      // Key to force rebuild when selection changes
                       key: Key(_selectedCountry.code!),
                       textStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
                       searchStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
@@ -802,7 +1158,7 @@ Future<void> _pickContactsManually() async {
                     keyboardType: TextInputType.phone,
                     maxLength: 9,
                     inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly, // Only allow digits
+                      FilteringTextInputFormatter.digitsOnly,
                     ],
                     onTap: () => _dismissKeyboard(),
                     style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
@@ -840,7 +1196,6 @@ Future<void> _pickContactsManually() async {
                     },
                     onChanged: (value) {
                       onPhoneChange(value);
-                      // Validate on the fly
                       if (_formKey.currentState != null) {
                         _formKey.currentState!.validate();
                       }
@@ -884,92 +1239,110 @@ Future<void> _pickContactsManually() async {
     );
   }
 
-Widget _buildGroupsStep() {
-  final themeProvider = Provider.of<ThemeProvider>(context);
-  // final theme = Theme.of(context);
-  
-  return SingleChildScrollView(
-    padding: const EdgeInsets.symmetric(horizontal: 16),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 20),
-        Text('CUSTOMIZE YOUR SOCIAL GROUPS', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
-        const SizedBox(height: 10),
-        Text('Drag to reorder groups by priority. Add, edit, or remove groups.', 
-          style: TextStyle(fontSize: 14, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey)),
-        const SizedBox(height: 30),
-        
-        // Add new group button
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: _addNewGroup,
-            icon: const Icon(Icons.add, color: Colors.white),
-            label: const Text('Add New Group'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xff3CB3E9),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 15),
+  Widget _buildGroupsStep() {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 20),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Organize your connections',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Create groups to categorize your relationships',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: themeProvider.isDarkMode ? Colors.white70 : Colors.grey.shade600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 30),
+          
+          Text('CUSTOMIZE YOUR SOCIAL GROUPS', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
+          const SizedBox(height: 10),
+          Text('Drag to reorder groups by priority. Add, edit, or remove groups.', 
+            style: TextStyle(fontSize: 14, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey)),
+          const SizedBox(height: 30),
+          
+          // Add new group button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _addNewGroup,
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text('Add New Group'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xff3CB3E9),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 15),
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 20),
-        
-        // Reorderable list of groups
-        Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade300),
-            borderRadius: BorderRadius.circular(10),
-            color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+          const SizedBox(height: 20),
+          
+          // Reorderable list of groups
+          Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade300),
+              borderRadius: BorderRadius.circular(10),
+              color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+            ),
+            child: ReorderableListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _userGroups.length,
+              itemBuilder: (context, index) {
+                final group = _userGroups[index];
+                return Container(
+                  key: Key(group.id),
+                  decoration: BoxDecoration(
+                    border: index < _userGroups.length - 1 
+                        ? Border(bottom: BorderSide(color: themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200))
+                        : null,
+                  ),
+                  child: _buildEditableGroupItem(group, index),
+                );
+              },
+              onReorder: (oldIndex, newIndex) {
+                setState(() {
+                  if (oldIndex < newIndex) newIndex -= 1;
+                  final item = _userGroups.removeAt(oldIndex);
+                  _userGroups.insert(newIndex, item);
+                  
+                  for (int i = 0; i < _userGroups.length; i++) {
+                    _userGroups[i] = _userGroups[i].copyWith(orderIndex: i);
+                  }
+                });
+              },
+            ),
           ),
-          child: ReorderableListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _userGroups.length,
-            itemBuilder: (context, index) {
-              final group = _userGroups[index];
-              return Container(
-                key: Key(group.id),
-                decoration: BoxDecoration(
-                  border: index < _userGroups.length - 1 
-                      ? Border(bottom: BorderSide(color: themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200))
-                      : null,
-                ),
-                child: _buildEditableGroupItem(group, index),
-              );
-            },
-            onReorder: (oldIndex, newIndex) {
-              setState(() {
-                if (oldIndex < newIndex) newIndex -= 1;
-                final item = _userGroups.removeAt(oldIndex);
-                _userGroups.insert(newIndex, item);
-                
-                // Update orderIndex for all groups
-                for (int i = 0; i < _userGroups.length; i++) {
-                  _userGroups[i] = _userGroups[i].copyWith(orderIndex: i);
-                }
-              });
-            },
-          ),
-        ),
-        const SizedBox(height: 40),
-      ],
-    ),
-  );
-}
+          const SizedBox(height: 40),
+        ],
+      ),
+    );
+  }
 
-// Update the _buildEditableGroupItem to include drag handle
   Widget _buildEditableGroupItem(SocialGroup group, int index) {
     final themeProvider = Provider.of<ThemeProvider>(context);
-    // final theme = Theme.of(context);
     
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header row with drag handle and delete
           Row(
             children: [
               ReorderableDragStartListener(
@@ -1006,7 +1379,6 @@ Widget _buildGroupsStep() {
           ),
           const SizedBox(height: 15),
           
-          // Frequency Dropdown
           Text('CONTACT FREQUENCY:', style: TextStyle(fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555))),
           const SizedBox(height: 8),
          DropdownButtonFormField<String>(
@@ -1040,7 +1412,6 @@ Widget _buildGroupsStep() {
           
           const SizedBox(height: 20),
           
-          // Members section
           Text(
             '${group.memberIds.length} members',
             style: TextStyle(
@@ -1059,15 +1430,12 @@ Widget _buildGroupsStep() {
   }
 
   bool _isValidPhoneNumber(String phone) {
-    // Remove any spaces, dashes, or parentheses
     String cleanedPhone = phone.replaceAll(RegExp(r'[^\d]'), '');
     
-    // Check if it's exactly 9 digits and only numbers
     if (cleanedPhone.length != 9) {
       return false;
     }
     
-    // Check if all characters are digits
     if (!RegExp(r'^[0-9]{9}$').hasMatch(cleanedPhone)) {
       return false;
     }
@@ -1075,14 +1443,14 @@ Widget _buildGroupsStep() {
     return true;
   }
 
-    Widget _buildPhoneValidationMessage() {
+  Widget _buildPhoneValidationMessage() {
     final themeProvider = Provider.of<ThemeProvider>(context);
     
-    if (myPhone.isEmpty) {
+    if (_phoneController.text.isEmpty) {
       return const SizedBox.shrink();
     }
     
-    if (!_isValidPhoneNumber(myPhone)) {
+    if (!_isValidPhoneNumber(_phoneController.text)) {
       return Container(
         margin: const EdgeInsets.only(top: 8),
         padding: const EdgeInsets.all(10),
@@ -1097,7 +1465,7 @@ Widget _buildGroupsStep() {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                myPhone.length < 9 
+                _phoneController.text.length < 9 
                   ? 'Phone number too short. Must be exactly 9 digits.' 
                   : 'Please use only numbers (0-9) for the phone number.',
                 style: TextStyle(
@@ -1125,7 +1493,7 @@ Widget _buildGroupsStep() {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Valid phone number: ${_selectedCountry.dialCode} ${myPhone}',
+              'Valid phone number: ${_selectedCountry.dialCode} ${_phoneController.text}',
               style: const TextStyle(
                 fontSize: 12,
                 color: Color(0xff3CB3E9),
@@ -1145,13 +1513,13 @@ Widget _buildGroupsStep() {
         name: 'New Group',
         description: '',
         period: 'Monthly',
-        frequency: 2, // Default frequency
+        frequency: 2,
         memberIds: [],
         memberCount: 0,
         lastInteraction: DateTime.now(),
         colorCode: '#2596BE',
-        birthdayNudgesEnabled: true, // Default enabled
-        anniversaryNudgesEnabled: true, // Default enabled
+        birthdayNudgesEnabled: true,
+        anniversaryNudgesEnabled: true,
         orderIndex: _userGroups.length
       ));
     });
@@ -1192,13 +1560,36 @@ Widget _buildGroupsStep() {
       child: Column(
         children: [
           const SizedBox(height: 20),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Let\'s fill your Social Universe',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Add contacts to start building your universe',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: themeProvider.isDarkMode ? Colors.white70 : Colors.grey.shade600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 30),
+          
           Text('ADD YOUR CONTACTS', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555))),
           const SizedBox(height: 10),
           Text('Import your contacts or add them manually. You can skip this and do it later.', 
             style: TextStyle(fontSize: 14, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey), textAlign: TextAlign.center),
           const SizedBox(height: 40),
           
-          // Import Options - Fixed layout
+          // Import Options
           Platform.isIOS
           ? Container(
             width: size.width*0.7,
@@ -1326,7 +1717,6 @@ Widget _buildGroupsStep() {
   }
 
   List<SocialGroup> _getOrderedGroupsForSelection() {
-    // Return groups in their current UI order (after any reordering)
     return List.from(_userGroups);
   }
 
@@ -1343,7 +1733,6 @@ Widget _buildGroupsStep() {
           Text('Identify Your Close Circle', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
           const SizedBox(height: 10),
           
-          // Explanation
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -1369,7 +1758,6 @@ Widget _buildGroupsStep() {
           
           const SizedBox(height: 20),
           
-          // Contact Selection
           if (_selectedContacts.isNotEmpty) ...[
             Text('Select your Close Circle members:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
             const SizedBox(height: 10),
@@ -1433,7 +1821,7 @@ Widget _buildGroupsStep() {
                 child: Icon(Icons.check, size: 50, color: theme.colorScheme.primary),
               ),
               const SizedBox(height: 20),
-              Text('You\'re all set! 🎉', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
+              Text('Your Social Universe is ready! 🎉', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
               const SizedBox(height: 16),
               Text(
                 'We\'ve created your groups and scheduled your first nudges. You\'ll start seeing reminders soon — and get your first Weekly Digest this Sunday!',
@@ -1452,6 +1840,43 @@ Widget _buildGroupsStep() {
           _buildSummaryItem(Icons.contacts, 'Contacts', 'You can add contacts later from the dashboard'),
           _buildSummaryItem(Icons.star, 'Close Circle', '${_closeCircleContacts.length} important relationships'),
           _buildSummaryItem(Icons.notifications, 'Weekly Digest', 'Starting this Sunday'),
+          
+          const SizedBox(height: 40),
+          
+          // Preview of what's next
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: theme.colorScheme.primary.withOpacity(0.2)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.star, color: theme.colorScheme.primary),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Explore Your Social Universe',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Visit your dashboard to explore your personalized Social Universe visualization and manage your connections.',
+                  style: TextStyle(
+                    color: themeProvider.isDarkMode ? Colors.white70 : Colors.grey.shade700,
+                  ),
+                ),
+              ],
+            ),
+          ),
           
           const SizedBox(height: 40),
         ],
@@ -1480,22 +1905,26 @@ Widget _buildGroupsStep() {
       behavior: HitTestBehavior.translucent,
       child: Scaffold(
         backgroundColor: themeProvider.getBackgroundColor(context),
-        appBar: AppBar(
-          title: GradientText( text: 'NUDGE', style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
-               gradient: const LinearGradient(
+        appBar: _currentStep == 2 
+          ? null // No app bar on preview screen
+          : AppBar(
+              title: GradientText(
+                text: 'NUDGE',
+                style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
+                gradient: const LinearGradient(
                   colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
+                ),
+              ),
+              centerTitle: true,
+              backgroundColor: themeProvider.getSurfaceColor(context),
+              surfaceTintColor: Colors.transparent,
+              automaticallyImplyLeading: false,
+              elevation: 0,
             ),
-          ),
-          centerTitle: true,
-          backgroundColor: themeProvider.getSurfaceColor(context),
-          surfaceTintColor: Colors.transparent,
-          automaticallyImplyLeading: false, // Remove back button
-          elevation: 0,
-        ),
         body: Column(children: [
-          if (!_isCropping) _buildStepIndicator(themeProvider),
+          if (_currentStep > 0) _buildStepIndicator(themeProvider),
           Expanded(child: _buildCurrentStep()),
           if (!_isCropping) Container(
             padding: const EdgeInsets.all(16),
@@ -1509,7 +1938,7 @@ Widget _buildGroupsStep() {
               ),
             ),
             child: Row(children: [
-              if (_currentStep > 0) Expanded(
+              if (_currentStep > 0) Expanded( // Don't show back on preview step
                 child: OutlinedButton(
                   onPressed: _previousStep,
                   style: OutlinedButton.styleFrom(
@@ -1522,30 +1951,51 @@ Widget _buildGroupsStep() {
                 ),
               ),
               if (_currentStep > 0) const SizedBox(width: 10),
-              Expanded(
-                child: ElevatedButton(
-                  autofocus: true,
-                  onPressed: () {
-                    _dismissKeyboard();
-                    if (_currentStep == 0) {
-                      // Validate form for profile step
-                      if (_formKey.currentState!.validate()) {
-                        _nextStep();
-                      }
-                    } else if (_isStepValid(_currentStep)) {
+             Expanded(
+              child: ElevatedButton(
+                autofocus: true,
+                onPressed: () {
+                  print('trying to continue');
+                  _dismissKeyboard();
+                  
+                  // Handle each step's validation
+                  if (_currentStep == 0) {
+                    // Profile step - validate form
+                    if (_formKey.currentState!.validate()) {
                       _nextStep();
                     }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.colorScheme.primary,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : Text(_currentStep == _steps.length - 1 ? 'Go to Dashboard' : 'Continue', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                  } else if (_currentStep == 1) {
+                    // Groups step - just check if groups exist
+                    if (_userGroups.isNotEmpty) {
+                      _nextStep();
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Please add at least one group'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  } else {
+                    // All other steps (preview, contacts, close circle, review) - just continue
+                    _nextStep();
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.colorScheme.primary,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
+                child: _isLoading
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : Text(
+                        _currentStep == _steps.length - 1 
+                          ? 'Launch Your Universe' 
+                          : 'Continue',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
               ),
+            ),
             ]),
           ),
         ]),
@@ -1627,7 +2077,6 @@ class _ContactPickerDialogState extends State<ContactPickerDialog> {
           title: Text('SELECT CONTACTS', style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555)),),
           backgroundColor: themeProvider.getSurfaceColor(context),
           actions: [
-            // Selection info
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Center(
@@ -1641,7 +2090,6 @@ class _ContactPickerDialogState extends State<ContactPickerDialog> {
         ),
         body: Column(
           children: [
-            // Search bar
             Padding(
               padding: const EdgeInsets.all(16),
               child: TextField(
@@ -1661,7 +2109,6 @@ class _ContactPickerDialogState extends State<ContactPickerDialog> {
               ),
             ),
             
-            // Selection actions
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
@@ -1689,7 +2136,6 @@ class _ContactPickerDialogState extends State<ContactPickerDialog> {
             
             const SizedBox(height: 8),
             
-            // Contacts list
             Expanded(
               child: _filteredContacts.isEmpty
                   ? Center(
@@ -1704,7 +2150,6 @@ class _ContactPickerDialogState extends State<ContactPickerDialog> {
                         final contact = _filteredContacts[index];
                         final isSelected = _selectedContacts.contains(contact);
                         
-                        // Extract contact information
                         final primaryPhone = contact.phones.isNotEmpty
                             ? contact.phones.first.number
                             : '';
@@ -1859,7 +2304,6 @@ class _GroupSelectionDialogState extends State<GroupSelectionDialog> {
               ),
               const SizedBox(height: 20),
               
-              // Group selection list
               Container(
                 constraints: const BoxConstraints(maxHeight: 300),
                 child: ListView.builder(
@@ -1910,7 +2354,6 @@ class _GroupSelectionDialogState extends State<GroupSelectionDialog> {
               
               const SizedBox(height: 20),
               
-              // Action buttons
               Row(
                 children: [
                   Expanded(

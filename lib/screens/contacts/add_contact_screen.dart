@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:nudge/screens/dashboard/dashboard_screen.dart';
 import 'package:nudge/services/api_service.dart';
-import 'package:nudge/services/nudge_service.dart';
+// import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/theme/text_styles.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
 // import 'package:nudge/widgets/gradient_text.dart';
@@ -841,7 +841,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                         // Save Button
                         SizedBox(
                           width: double.infinity,
-                          height: 50,
+                          height: 55,
                           child: ElevatedButton(
                             onPressed: () async {
                               print('stage0');
@@ -905,13 +905,13 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                 
                                 // Automatically schedule nudge based on connection category
                                 try {
-                                  final nudgeService = NudgeService();
-                                  await nudgeService.scheduleNudgeForContact(
-                                    newContact, 
-                                    user.uid,
-                                    period: period,
-                                    frequency: frequency,
-                                  );
+                                  // final nudgeService = NudgeService();
+                                  // await nudgeService.scheduleNudgeForContact(
+                                  //   newContact, 
+                                  //   user.uid,
+                                  //   period: period,
+                                  //   frequency: frequency,
+                                  // );
                                   await apiService.scheduleNudgesForContacts(contactIds: [newContact.id]);
                                   print('Automatic nudge scheduled for ${newContact.name}');
                                 } catch (e) {

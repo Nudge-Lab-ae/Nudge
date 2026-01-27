@@ -45,6 +45,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
   int _addingTotalCount = 0;
   int _addingErrorCount = 0;
   String? _currentGroupName;
+  bool emptyContacts = false;
 
   @override
   void initState() {
@@ -81,7 +82,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     final groupFrequency = routeArgs?['groupFrequency'];
     
     // If user is not logged in, show empty state
-    if (user == null) {
+    if (user == null || emptyContacts) {
       return _buildEmptyState(themeProvider: themeProvider);
     }
     
@@ -94,6 +95,9 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
           builder: (context, contacts, child) {
             totalContacts = contacts;
             final filteredContacts = _applyFilter(contacts, _currentFilter);
+            if (filteredContacts.isEmpty) {
+              emptyContacts = true;
+            }
             final searchedContacts = filteredContacts.where((contact) {
               return contact.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
                   contact.connectionType.toLowerCase().contains(_searchQuery.toLowerCase()) ||

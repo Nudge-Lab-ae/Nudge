@@ -3,4 +3,5 @@
     <!-- <color name="splash_background">#FF2DA1AF</color> -->
      <!-- RGB(45, 161, 175) -->
      <color name="splash_background">#FFFFFFFF</color>
+     <color name="notification_color">#3CB3E9</color>
 </resources>

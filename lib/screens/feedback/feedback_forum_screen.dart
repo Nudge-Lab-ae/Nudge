@@ -272,7 +272,7 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
     final status = feedback['status'] ?? 'received';
     // final type = feedback['type'] ?? 'Feature Request';
     final section = feedback['section'] ?? 'General';
-    final user = feedback['user'] ?? {};
+    // final user = feedback['user'] ?? {};
     final adminResponse = feedback['adminResponse'];
     final upvotes = feedback['upvotes'] as List<dynamic>? ?? [];
     final upvoteCount = upvotes.length;
@@ -384,20 +384,20 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
             // Meta information
             Row(
               children: [
-                Icon(
-                  Icons.person_outline,
-                  size: 14,
-                  color: isDarkMode ? const Color(0xFF888888) : Colors.grey.shade600,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  user['username'] ?? user['email'] ?? 'Anonymous',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDarkMode ? const Color(0xFFAAAAAA) : Colors.grey.shade600,
-                  ),
-                ),
-                const SizedBox(width: 12),
+                // Icon(
+                //   Icons.person_outline,
+                //   size: 14,
+                //   color: isDarkMode ? const Color(0xFF888888) : Colors.grey.shade600,
+                // ),
+                // const SizedBox(width: 4),
+                // Text(
+                //   user['username'] ?? user['email'] ?? 'Anonymous',
+                //   style: TextStyle(
+                //     fontSize: 12,
+                //     color: isDarkMode ? const Color(0xFFAAAAAA) : Colors.grey.shade600,
+                //   ),
+                // ),
+                // const SizedBox(width: 12),
                 Icon(
                   Icons.location_on_outlined,
                   size: 14,

@@ -1344,7 +1344,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       _currentUser!.admin
                       ? Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.only(top: 16, bottom: 16),
                           decoration: BoxDecoration(
                             color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.grey.shade50,
                             borderRadius: BorderRadius.circular(10),
@@ -1376,7 +1376,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     );
                                   },
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.purple,
+                                    backgroundColor: Colors.blue,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(10),
                                     ),

@@ -289,11 +289,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         decoration: BoxDecoration(
                           color: themeProvider.isDarkMode 
                             ? Colors.white.withOpacity(0.1)
-                            : Colors.black.withOpacity(0.15),
+                            : Colors.black.withOpacity(0.45),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(color: Colors.white24),
                         ),
-                        child: Icon(Icons.settings, color: themeProvider.isDarkMode ? Colors.white : theme.colorScheme.primary, size: 20),
+                        child: Icon(Icons.settings, color: themeProvider.isDarkMode ? Colors.white : Colors.white, size: 20),
                       ),
                       onPressed: () {
                         Navigator.pushNamed(context, '/settings');
@@ -324,6 +324,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         onContactView: (contact) {
                           _showContactQuickPanel(themeProvider, contact, apiService);
                         },
+                        showTitle: true,
                         height: 550,
                         isDarkMode: themeProvider.isDarkMode,
                         onFullScreenPressed: () {
@@ -535,8 +536,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
         color: themeProvider.isDarkMode
-            ? Colors.white.withOpacity(0.1)
-            : Colors.white.withOpacity(themeProvider.isDarkMode ? 0.3 : 0.9),
+            ? Color(0xff111111).withOpacity(0.7)
+            : Colors.white.withOpacity(0.9),
         border: Border.all(color: themeProvider.isDarkMode ? Colors.white.withOpacity(0.2) : Colors.white.withOpacity(0.4)),
         boxShadow: [
           BoxShadow(
@@ -576,7 +577,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             index: 1,
             icon: Icon(
               Icons.star_border,
-              size: 20,
+              size: 25,
               color: _currentIndex == 1 
                 ? (themeProvider.isDarkMode ? const Color.fromARGB(255, 32, 144, 196) : AppTheme.primaryColor)
                 : themeProvider.getTextHintColor(context),
@@ -749,11 +750,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _buildStatCard(
-                  title: 'Total Contacts',
+                  title: 'Contacts',
                   value: totalContacts.toString(),
                   iconSize: 35,
                   iconAsset: 'assets/quick-insights/total-contacts.svg',
-                  backgroundAsset: null,
+                  backgroundAsset: 'assets/card-backgrounds/needs-care.png',
                   iconColor: theme.colorScheme.primary,
                   onTap: () => setState(() => _currentIndex = 2),
                   context: context,
@@ -763,7 +764,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   value: analytics.vipContacts.toString(),
                   iconSize: 35,
                   iconAsset: 'assets/quick-insights/close circle-star.svg',
-                  backgroundAsset: 'assets/card-backgrounds/close-circle.png',
+                  backgroundAsset: 'assets/card-backgrounds/needs-care.png',
                   iconColor: themeProvider.isDarkMode ? theme.colorScheme.primary : Colors.white,
                   onTap: () {
                     setState(() {
@@ -840,7 +841,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   value: (weeklyNudgePerformance['scheduled'] ?? 0).toString(),
                   iconSize: 35,
                   iconAsset: 'assets/performance-icons/clock-scheduled.svg',
-                  backgroundAsset: 'assets/card-backgrounds/scheduled.png',
+                  backgroundAsset: 'assets/card-backgrounds/nudges-this-week.jpg',
                   iconColor: themeProvider.isDarkMode ? theme.colorScheme.primary : Colors.white,
                   context: context,
                 ),
@@ -849,7 +850,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   value: (weeklyNudgePerformance['completed'] ?? 0).toString(),
                   iconSize: 35,
                   iconAsset: 'assets/performance-icons/check-completed.svg',
-                  backgroundAsset: null,
+                   backgroundAsset: 'assets/card-backgrounds/nudges-this-week.jpg',
                   iconColor: AppTheme.successColor,
                   context: context,
                 ),
@@ -858,7 +859,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   value: (weeklyNudgePerformance['missed'] ?? 0).toString(),
                   iconSize: 35,
                   iconAsset: 'assets/performance-icons/x-missed.svg',
-                  backgroundAsset: 'assets/card-backgrounds/missed.png',
+                   backgroundAsset: 'assets/card-backgrounds/nudges-this-week.jpg',
                   iconColor: themeProvider.isDarkMode ? theme.colorScheme.primary : Colors.white,
                   context: context,
                 ),
@@ -1168,7 +1169,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   width: label == 'Add Touchpoint'?42:32,
                   height: label == 'Add Touchpoint'?42:32,
                   colorFilter: ColorFilter.mode(
-                    themeProvider.isDarkMode ? theme.colorScheme.primary : const Color(0xff999999),
+                    themeProvider.isDarkMode ? theme.colorScheme.primary : const Color.fromARGB(255, 131, 101, 195),
                     BlendMode.srcIn,
                   ),
                 ),
