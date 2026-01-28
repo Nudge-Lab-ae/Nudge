@@ -43,9 +43,10 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   final List<int> _quantityOptions = [25, 50, 100, 150];
   late List<SocialGroup> _availableGroups = [];
   bool _isOnboarding = false;
+  late ThemeProvider globalThemeProvider;
 
-  void _showSettingsDialog(String message) {
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+  void _showSettingsDialog(String message, ThemeProvider themeProvider) {
+    // final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -69,7 +70,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
     );
   }
 
-  Future<void> _importDeviceContacts() async {
+  Future<void> _importDeviceContacts(ThemeProvider themeProvider) async {
     setState(() {
       _isImporting = true;
       _processedCount = 0;
@@ -108,7 +109,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
         }
       }
       
-      final SocialGroup? selectedGroup = await _showGroupSelectionDialog(groupsForSelection);
+      final SocialGroup? selectedGroup = await _showGroupSelectionDialog(groupsForSelection, themeProvider);
       if (selectedGroup == null) {
         setState(() {
           _isImporting = false;
@@ -134,7 +135,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
       final importedContacts = await apiService.getAllContacts();
 
       if (result['needsSettings'] == true) {
-        _showSettingsDialog(result['message']);
+        _showSettingsDialog(result['message'], themeProvider);
         return;
       }
 
@@ -203,8 +204,8 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
     }
   }
 
-  Future<SocialGroup?> _showGroupSelectionDialog(List<SocialGroup> groupsForSelection) async {
-    final themeProvider = Provider.of<ThemeProvider>(context);
+  Future<SocialGroup?> _showGroupSelectionDialog(List<SocialGroup> groupsForSelection, ThemeProvider themeProvider) async {
+    // final themeProvider = Provider.of<ThemeProvider>(context);
     
     if (groupsForSelection.isEmpty) {
       groupsForSelection = _createDefaultGroups();
@@ -256,10 +257,11 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
     );
   }
 
-  Future<void> _pickContactsAndImport() async {
+  Future<void> _pickContactsAndImport(ThemeProvider themeProvider) async {
     // First, get the group selection
     final apiService = Provider.of<ApiService>(context, listen: false);
     final authService = Provider.of<AuthService>(context, listen: false);
+    print('stage 1');
     
     List<SocialGroup> groupsForSelection;
     
@@ -285,7 +287,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
       }
     }
 
-    final SocialGroup? selectedGroup = await _showGroupSelectionDialog(groupsForSelection);
+    final SocialGroup? selectedGroup = await _showGroupSelectionDialog(groupsForSelection, themeProvider);
     if (selectedGroup == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Group selection cancelled')),
@@ -296,7 +298,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
     // Now check permission and get contacts
     final permissionOk = await fContacts.FlutterContacts.requestPermission();
     if (!permissionOk) {
-      _showSettingsDialog('Contacts permission is required to pick contacts');
+      _showSettingsDialog('Contacts permission is required to pick contacts', themeProvider);
       return;
     }
 
@@ -471,13 +473,14 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
     super.initState();
     // For iOS, immediately open the contact picker
      _getArgumentsFromRoute();
+    //  themeProvider = Provider.of<ThemeProvider>(context);
     
     // For iOS, immediately open the contact picker
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (Platform.isIOS) {
         // Don't auto-open picker during onboarding
         if (!_isOnboarding) {
-          _pickContactsAndImport();
+          _pickContactsAndImport(globalThemeProvider);
         }
       }
     });
@@ -490,20 +493,21 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    globalThemeProvider = themeProvider;
     var size = MediaQuery.of(context).size;
     
     // For iOS, show a simplified screen or directly open picker
     if (Platform.isIOS) {
-      return _buildIOSVersion();
+      return _buildIOSVersion(themeProvider);
     }
     
     // For Android, show the full import options
     return _buildAndroidVersion(size, themeProvider);
   }
 
-  Widget _buildIOSVersion() {
-    final themeProvider = Provider.of<ThemeProvider>(context);
+  Widget _buildIOSVersion(ThemeProvider themeProvider) {
+    // final themeProvider = Provider.of<ThemeProvider>(context);
     
     return Scaffold(
       appBar: AppBar(
@@ -563,7 +567,9 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: _isImporting ? null : _pickContactsAndImport,
+                  onPressed: () {
+                    _isImporting ? null : _pickContactsAndImport(themeProvider);
+                  }, 
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryColor,
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -750,7 +756,9 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
                         children: [
                           Expanded(
                             child: ElevatedButton(
-                              onPressed: _isImporting ? null : _importDeviceContacts,
+                              onPressed: () {
+                                _isImporting ? null : _importDeviceContacts(themeProvider);
+                              } ,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppTheme.primaryColor,
                                 padding: const EdgeInsets.symmetric(vertical: 16),
@@ -783,7 +791,9 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: OutlinedButton.icon(
-                              onPressed: _isImporting ? null : _pickContactsAndImport,
+                              onPressed: () {
+                                _isImporting ? null : _pickContactsAndImport(themeProvider);
+                              }, 
                               style: OutlinedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(vertical: 16),
                                 shape: RoundedRectangleBorder(
@@ -1058,11 +1068,17 @@ class __FullScreenContactPickerState extends State<_FullScreenContactPicker> {
     });
   }
 
+   void _dismissKeyboard() {
+    FocusScope.of(context).unfocus();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     
-    return Scaffold(
+    return GestureDetector(
+      onTap: _dismissKeyboard,
+      child: Scaffold(
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1349,6 +1365,6 @@ class __FullScreenContactPickerState extends State<_FullScreenContactPicker> {
           ),
         ),
       ),
-    );
+    ));
   }
 }

@@ -1021,7 +1021,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       // Use white icons for dark mode with background images
                       backgroundAsset != null && themeProvider.isDarkMode
                           ? Colors.white
-                          : iconColor,
+                          // : iconColor,
+                          : Colors.white,
                       BlendMode.srcIn,
                     ),
                   ),

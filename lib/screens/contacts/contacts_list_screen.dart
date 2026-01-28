@@ -1,5 +1,6 @@
 // lib/screens/contacts/contacts_list_screen.dart
 import 'package:flutter/material.dart';
+import 'package:nudge/models/social_group.dart';
 import 'package:nudge/screens/contacts/import_contacts_screen.dart';
 import 'package:nudge/screens/dashboard/dashboard_screen.dart';
 import 'package:nudge/services/api_service.dart';
@@ -46,6 +47,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
   int _addingErrorCount = 0;
   String? _currentGroupName;
   bool emptyContacts = false;
+  List<SocialGroup> allGroups = [];
 
   @override
   void initState() {
@@ -64,6 +66,14 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
           _selectionMode = 'add_to_group';
         });
       }
+    });
+  }
+
+  fetchGroups() async{
+    final apiService = Provider.of<ApiService>(context, listen: false);
+    final groups = await apiService.getGroupsStream().first;
+    setState(() {
+      allGroups = groups;
     });
   }
 
@@ -95,8 +105,8 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
           builder: (context, contacts, child) {
             totalContacts = contacts;
             final filteredContacts = _applyFilter(contacts, _currentFilter);
-            if (filteredContacts.isEmpty) {
-              emptyContacts = true;
+            if (totalContacts.isEmpty) {
+              return _buildEmptyState(themeProvider: themeProvider);
             }
             final searchedContacts = filteredContacts.where((contact) {
               return contact.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
@@ -1465,7 +1475,9 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const ImportContactsScreen(),
+                                builder: (context) => ImportContactsScreen(
+                                  groups: allGroups,
+                                ),
                               ),
                             );
                           },
