@@ -335,8 +335,8 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
                     child: Row(
                       children: [
                         Icon(
-                          isUpvoted ? Icons.arrow_upward : Icons.arrow_upward_outlined,
-                          size: 12,
+                          isUpvoted ? Icons.thumb_up : Icons.thumb_up,
+                          size: 15,
                           color: isUpvoted ? Colors.orange : Colors.grey,
                         ),
                         const SizedBox(width: 4),

@@ -237,6 +237,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
           right: 20,
           child: FeedbackFloatingButton(
             currentSection: getCurrentSection(),
+            extraActions: _currentIndex == 1
+            ?[
+              FeedbackAction(
+                label: 'Log Interaction',
+                icon: Icons.add,
+                onPressed: () {
+                  _showAddTouchpointModal(context, themeProvider);
+                },
+              ),
+            ] 
+            : []
           ),
         ):Center(),
         ],
@@ -337,7 +348,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     const SizedBox(height: 20),
                     
                     // Quick Insights - Now in card
-                    _buildQuickInsightsCard(analytics, contacts.length, context),
+                    _buildQuickInsightsCard(analytics, contacts.length, context, groups.length),
                     const SizedBox(height: 20),
 
                     // Nudge Performance
@@ -541,8 +552,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         border: Border.all(color: themeProvider.isDarkMode ? Colors.white.withOpacity(0.2) : Colors.white.withOpacity(0.4)),
         boxShadow: [
           BoxShadow(
-            color: themeProvider.isDarkMode ? Colors.black.withOpacity(0.5) : Colors.white.withOpacity(0.6),
-            blurRadius: 25,
+            color: themeProvider.isDarkMode ? Colors.white.withOpacity(0.5) : Colors.black.withOpacity(0.5),
+            blurRadius: 35,
             spreadRadius: 3,
           ),
           BoxShadow(
@@ -713,7 +724,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   // QUICK INSIGHTS card
-  Widget _buildQuickInsightsCard(Analytics analytics, int totalContacts, BuildContext context) {
+  Widget _buildQuickInsightsCard(Analytics analytics, int totalContacts, BuildContext context, int groups) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final theme = Theme.of(context);
     
@@ -760,7 +771,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   context: context,
                 ),
                 _buildStatCard(
-                  title: 'Close Circle',
+                  title: 'Favourites',
                   value: analytics.vipContacts.toString(),
                   iconSize: 35,
                   iconAsset: 'assets/quick-insights/close circle-star.svg',
@@ -776,17 +787,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   context: context,
                 ),
                 _buildStatCard(
-                  title: 'Needs Care',
-                  value: analytics.contactsNeedingAttention.toString(),
+                  title: 'Social Groups',
+                  value: groups.toString(),
                   iconSize: 35,
-                  iconAsset: 'assets/quick-insights/needs care.svg',
+                  iconAsset: 'assets/quick-actions/add group-icon.svg',
                   backgroundAsset: 'assets/card-backgrounds/needs-care.png',
                   iconColor: themeProvider.isDarkMode ? theme.colorScheme.primary : Colors.white,
                   onTap: () {
                     setState(() {
-                      _currentIndex = 2;
-                      attentionFilter = true;
-                      vipFilter = false;
+                      _currentIndex = 3;
+                      // attentionFilter = true;
+                      // vipFilter = false;
                     });
                   },
                   context: context,

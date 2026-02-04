@@ -143,7 +143,7 @@ void _handleNotificationTap(String? payload) {
       navigatorKey.currentState!.pushNamedAndRemoveUntil(
         '/dashboard',
         (route) => false,
-        arguments: {'initialTab': 3}, // 3 is notifications tab index
+        arguments: {'initialTab': 4}, // 3 is notifications tab index
       );
     }
   });
@@ -158,7 +158,7 @@ void _handleFCMNotificationTap(RemoteMessage message) {
       navigatorKey.currentState!.pushNamedAndRemoveUntil(
         '/dashboard',
         (route) => false,
-        arguments: {'initialTab': 3}, // 3 is notifications tab index
+        arguments: {'initialTab': 4}, // 3 is notifications tab index
       );
     }
   });
@@ -199,7 +199,7 @@ String _buildNotificationPayload(Map<String, dynamic> messageData) {
 
     await notificationsPlugin.show(
       message.hashCode,
-      message.notification?.title ?? 'Connection Nudge 💫',
+      message.notification?.title ?? 'Nudge 💫',
       message.notification?.body ?? 'Time to connect!',
       notificationDetails,
       payload: _buildNotificationPayload(message.data),

@@ -761,6 +761,7 @@ class _NudgeScheduleDialogState extends State<NudgeScheduleDialog> {
   final Set<String> _selectedContactIds = {};
   bool _staggered = true;
   String _staggerInterval = '1 hour';
+  List<Contact> allContacts = [];
   
   // New state to track the current view
   _DialogView _currentView = _DialogView.options;
@@ -775,6 +776,7 @@ class _NudgeScheduleDialogState extends State<NudgeScheduleDialog> {
       initialData: [],
       child: Consumer<List<Contact>>(
         builder: (context, contacts, child) {
+          allContacts = contacts;
           return Dialog(
             insetPadding: const EdgeInsets.all(20),
             child: Padding(
@@ -1000,7 +1002,7 @@ class _NudgeScheduleDialogState extends State<NudgeScheduleDialog> {
           child: ElevatedButton(
             onPressed: () {
               final apiService = Provider.of<ApiService>(context, listen: false);
-              apiService.scheduleRegularNotifications();
+              apiService.scheduleRegularNotifications(allContacts);
               Navigator.of(context).pop();
             },
             child: const Text('OK'),

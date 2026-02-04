@@ -20,7 +20,9 @@ import '../../widgets/connection_type_chip.dart';
 import 'dart:io';
 import '../../services/storage_service.dart';
 import '../../providers/theme_provider.dart';
+import 'package:country_code_picker/country_code_picker.dart';
 import '../../theme/app_theme.dart';
+import 'package:phone_number/phone_number.dart';
 
 class EditContactScreen extends StatefulWidget {
   final String contactId;
@@ -46,6 +48,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
   late TextEditingController _notesController;
   late TextEditingController _socialGroupsController;
   late TextEditingController _professionController;
+  final PhoneNumberUtil _phoneNumberUtil = PhoneNumberUtil();
 
   String _connectionType = 'Friend';
   bool _isVIP = false;
@@ -66,6 +69,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
   bool saving = false;
   final _cropController = CropController();
   Uint8List? _imageBytes;
+  CountryCode _selectedCountry = CountryCode(dialCode: '+971', code: 'AE');
 
   @override
   void initState() {
@@ -103,16 +107,100 @@ class _EditContactScreenState extends State<EditContactScreen> {
     FocusScope.of(context).unfocus();
   }
 
+  //   void _initializeCountryCodeFromPhone(String phoneNumber) {
+  //   if (phoneNumber.isNotEmpty) {
+  //     // Check if number starts with country code
+  //     if (phoneNumber.startsWith('+')) {
+  //       // Find country code in the string
+  //       final match = RegExp(r'^\+\d{1,4}').firstMatch(phoneNumber);
+  //       if (match != null) {
+  //         final dialCode = match.group(0)!;
+  //         // Try to find the country code
+  //         if (dialCode == '+971') {
+  //           setState(() => _selectedCountry = CountryCode(dialCode: '+971', code: 'AE'));
+  //           _phoneController.text = phoneNumber.substring(dialCode.length);
+  //           return;
+  //         } else if (dialCode == '+1') {
+  //           setState(() => _selectedCountry = CountryCode(dialCode: '+1', code: 'US'));
+  //           _phoneController.text = phoneNumber.substring(dialCode.length);
+  //           return;
+  //         } else if (dialCode == '+44') {
+  //           setState(() => _selectedCountry = CountryCode(dialCode: '+44', code: 'GB'));
+  //           _phoneController.text = phoneNumber.substring(dialCode.length);
+  //           return;
+  //         } else if (dialCode == '+91') {
+  //           setState(() => _selectedCountry = CountryCode(dialCode: '+91', code: 'IN'));
+  //           _phoneController.text = phoneNumber.substring(dialCode.length);
+  //           return;
+  //         } else if (dialCode == '+33') {
+  //           setState(() => _selectedCountry = CountryCode(dialCode: '+33', code: 'FR'));
+  //           _phoneController.text = phoneNumber.substring(dialCode.length);
+  //           return;
+  //         } else if (dialCode == '+49') {
+  //           setState(() => _selectedCountry = CountryCode(dialCode: '+49', code: 'DE'));
+  //           _phoneController.text = phoneNumber.substring(dialCode.length);
+  //           return;
+  //         } else if (dialCode == '+251') {
+  //           setState(() => _selectedCountry = CountryCode(dialCode: '+251', code: 'ET'));
+  //           _phoneController.text = phoneNumber.substring(dialCode.length);
+  //           return;
+  //         }
+  //       }
+  //     }
+      
+  //     // Check if number starts with 0 (common in UAE)
+  //     if (phoneNumber.startsWith('0')) {
+  //       setState(() => _selectedCountry = CountryCode(dialCode: '+971', code: 'AE'));
+  //       return;
+  //     }
+      
+  //     // Default to UAE
+  //     setState(() => _selectedCountry = CountryCode(dialCode: '+971', code: 'AE'));
+  //   }
+  // }
+
+  Future<void> splitPhoneNumber(String phoneNumber) async {
+    try {
+      if (phoneNumber.startsWith('0')) {
+        setState(() => _selectedCountry = CountryCode(dialCode: '+971', code: 'AE'));
+        return;
+      }
+      // Parse the number
+      final parsed = await _phoneNumberUtil.parse(phoneNumber);
+
+      // Extract country code and national number
+      final countryCode = parsed.countryCode;
+      final nationalNumber = parsed.nationalNumber;
+
+      setState(() {
+        _selectedCountry = CountryCode(
+          dialCode: '+$countryCode', code: parsed.regionCode, name: parsed.regionCode
+        );
+        _phoneController.text = nationalNumber;
+      });
+      
+      return;
+    } catch (e) {
+      throw Exception("Invalid phone number: $e");
+    }
+  }
+
+
+
   Future<void> _loadContactData() async {
     if (widget.isImported && widget.importedContact != null) {
       // Populate fields from imported contact
+      final phoneNumber = widget.importedContact!['phoneNumber'] ?? '';
       setState(() {
         _nameController.text = widget.importedContact!['name'] ?? '';
-        _phoneController.text = widget.importedContact!['phoneNumber'] ?? '';
+        _phoneController.text = phoneNumber;
         _emailController.text = widget.importedContact!['email'] ?? '';
         _connectionType = widget.importedContact!['connectionType'] ?? 'Friend';
         _isLoading = false;
       });
+      // Initialize country code from phone number
+      splitPhoneNumber(phoneNumber);
+
     } else {
       // Existing logic for regular contacts
       final authService = Provider.of<AuthService>(context, listen: false);
@@ -161,6 +249,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
           _imageUrl = contact.imageUrl;
           _isLoading = false;
         });
+        splitPhoneNumber(contact.phoneNumber);
       }
     }
   }
@@ -399,7 +488,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
   }
 
   Future<Map<String, dynamic>> matchSchedule(String groupName, List<SocialGroup> groups) async {
-    SocialGroup myGroup = groups.firstWhere((group) => group.id == groupName);
+    SocialGroup myGroup = groups.firstWhere((group) => group.name == groupName);
     Map<String, dynamic> schedule = {'period': myGroup.period, 'frequency': myGroup.frequency};
     return schedule;
   }
@@ -447,7 +536,9 @@ class _EditContactScreenState extends State<EditContactScreen> {
               surfaceTintColor: Colors.transparent,
               actions: [
                 IconButton(
-                  icon: Icon(Icons.save, color: themeProvider.getTextPrimaryColor(context)),
+                  icon: saving
+                  ?Text('...', style: TextStyle(color: themeProvider.getTextPrimaryColor(context)),)
+                  :Icon(Icons.save, color: themeProvider.getTextPrimaryColor(context)),
                   onPressed: () => _saveContact(groups),
                   tooltip: 'Save Changes',
                 ),
@@ -582,9 +673,9 @@ class _EditContactScreenState extends State<EditContactScreen> {
                             children: _userGroups.map((group) {
                               return ConnectionTypeChip(
                                 label: group.name,
-                                isSelected: _connectionType == group.id,
+                                isSelected: _connectionType == group.name,
                                 onSelected: (selected) {
-                                  if (selected) setState(() => _connectionType = group.id);
+                                  if (selected) setState(() => _connectionType = group.name);
                                 },
                               );
                             }).toList(),
@@ -614,7 +705,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
                             },
                           ),
                         ),
-                        Text('Close Circle', style: AppTextStyles.primary.copyWith(color: themeProvider.getTextPrimaryColor(context))),
+                        Text('Favourites', style: AppTextStyles.primary.copyWith(color: themeProvider.getTextPrimaryColor(context))),
                       ],
                     ),
                     const SizedBox(height: 20),
@@ -622,32 +713,62 @@ class _EditContactScreenState extends State<EditContactScreen> {
                     // Phone Number
                     Text('PHONE NUMBER', style: AppTextStyles.primaryBold.copyWith(color: themeProvider.getTextPrimaryColor(context))),
                     const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _phoneController,
-                      style: AppTextStyles.primary.copyWith(color: themeProvider.getTextPrimaryColor(context)),
-                      keyboardType: TextInputType.phone,
-                      decoration: InputDecoration(
-                        hintText: 'Enter phone number',
-                        hintStyle: AppTextStyles.secondary.copyWith(color: themeProvider.getTextHintColor(context)),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: themeProvider.getTextHintColor(context), width: 1),
-                          borderRadius: BorderRadius.circular(10)
+                    Row(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(color: themeProvider.getTextHintColor(context), width: 1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: CountryCodePicker(
+                            onChanged: (CountryCode country) {
+                              setState(() {
+                                _selectedCountry = country;
+                              });
+                            },
+                            initialSelection: _selectedCountry.code,
+                            favorite: [_selectedCountry.code!, 'US'],
+                            showCountryOnly: false,
+                            showOnlyCountryWhenClosed: false,
+                            alignLeft: false,
+                            key: Key(_selectedCountry.code!),
+                            textStyle: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
+                            searchStyle: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
+                            dialogTextStyle: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
+                            dialogBackgroundColor: themeProvider.getCardColor(context),
+                          ),
                         ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
-                          borderRadius: BorderRadius.circular(10)
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _phoneController,
+                            style: AppTextStyles.primary.copyWith(color: themeProvider.getTextPrimaryColor(context)),
+                            keyboardType: TextInputType.phone,
+                            decoration: InputDecoration(
+                              hintText: 'Enter phone number',
+                              hintStyle: AppTextStyles.secondary.copyWith(color: themeProvider.getTextHintColor(context)),
+                              enabledBorder: OutlineInputBorder(
+                                borderSide: BorderSide(color: themeProvider.getTextHintColor(context), width: 1),
+                                borderRadius: BorderRadius.circular(10)
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+                                borderRadius: BorderRadius.circular(10)
+                              ),
+                              errorBorder: OutlineInputBorder(
+                                borderSide: BorderSide(color: Colors.red, width: 1),
+                                borderRadius: BorderRadius.circular(10)
+                              ),
+                              focusedErrorBorder: OutlineInputBorder(
+                                borderSide: BorderSide(color: Colors.red, width: 2),
+                                borderRadius: BorderRadius.circular(10)
+                              ),
+                              filled: true,
+                              fillColor: themeProvider.getCardColor(context),
+                            ),
+                          ),
                         ),
-                        errorBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red, width: 1),
-                          borderRadius: BorderRadius.circular(10)
-                        ),
-                        focusedErrorBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red, width: 2),
-                          borderRadius: BorderRadius.circular(10)
-                        ),
-                        filled: true,
-                        fillColor: themeProvider.getCardColor(context),
-                      ),
+                      ],
                     ),
                     const SizedBox(height: 20),
 
@@ -956,7 +1077,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
                 .map((group) => group.trim())
                 .where((group) => group.isNotEmpty)
                 .toList(),
-            phoneNumber: _phoneController.text,
+            phoneNumber: _selectedCountry.dialCode! + _phoneController.text.trim(),
             email: _emailController.text,
             notes: _notesController.text,
             profession: _professionController.text.isEmpty ? null : _professionController.text,
@@ -974,6 +1095,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
           if (_originalContact!.connectionType != updatedContact.connectionType) {
             await apiService.cancelNudgesForContacts([updatedContact.id]);
             await apiService.scheduleNudgesForContacts(contactIds: [updatedContact.id]);
+            await apiService.scheduleEventNotifications([updatedContact]);
           }
           print('phase 6');
           

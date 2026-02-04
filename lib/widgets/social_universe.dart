@@ -184,21 +184,22 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
     });
   }
 
-  // void _drawVIPCrown(Canvas canvas, Offset position, double size) {
-  //   final Paint _starPaint = Paint();
-  //   _starPaint
-  //     ..shader = const LinearGradient(
-  //       colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
-  //     ).createShader(Rect.fromCircle(center: position, radius: size * 0.5));
+
+    void _drawVIPCrown(Canvas canvas, Offset position, double size) {
+    final Paint _starPaint = Paint();
+    _starPaint
+      ..shader = const LinearGradient(
+        colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+      ).createShader(Rect.fromCircle(center: position, radius: size * 0.5));
     
-  //   final crownPath = Path()
-  //     ..moveTo(position.dx - size * 0.4, position.dy - size * 0.6)
-  //     ..lineTo(position.dx, position.dy - size * 1.0)
-  //     ..lineTo(position.dx + size * 0.4, position.dy - size * 0.6)
-  //     ..close();
+    final crownPath = Path()
+      ..moveTo(position.dx - size * 0.4, position.dy - size * 0.6)
+      ..lineTo(position.dx, position.dy - size * 1.0)
+      ..lineTo(position.dx + size * 0.4, position.dy - size * 0.6)
+      ..close();
     
-  //   canvas.drawPath(crownPath, _starPaint);
-  // }
+    canvas.drawPath(crownPath, _starPaint);
+  }
 
   Future<void> _cacheBackgroundImages() async {
   try {
@@ -324,6 +325,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
           );
 
         }
+        _drawVIPCrown(canvas, Offset(center.dx, center.dy), size);
       }
       
 
@@ -1736,7 +1738,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
 
   Widget _buildCompactContactCard(Contact contact, bool isDarkMode, ThemeProvider themeProvider) {
     var size = MediaQuery.of(context).size;
-    if (_useMockData && contact.id.startsWith('mock_')) {
+    if (!_useMockData && contact.id.startsWith('mock_')) {
       return Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -2004,7 +2006,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: isDarkMode ? Colors.white : Colors.black,
+                    color:Colors.white
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -2015,14 +2017,14 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: isDarkMode ? Colors.white.withOpacity(0.2) : Colors.black.withOpacity(0.1),
+                        color: Colors.white.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         contact.connectionType,
                         style: TextStyle(
                           fontSize: 11,
-                          color: isDarkMode ? Colors.white70 : Colors.black87,
+                          color: Colors.white70,
                         ),
                       ),
                     ),
@@ -2031,7 +2033,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                       '• $lastContactText',
                       style: TextStyle(
                         fontSize: 11,
-                        color: isDarkMode ? Colors.white54 : Colors.grey.shade700,
+                        color: Colors.white54,
                       ),
                     ),
                   ],
@@ -2048,11 +2050,13 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
-                gradient: LinearGradient(
-                  colors: [ringColor, ringColor.withOpacity(0.8)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                // border: Border.all(color: Colors.black),
+                // gradient: LinearGradient(
+                //   colors: [ringColor, ringColor.withOpacity(0.8)],
+                //   begin: Alignment.topLeft,
+                //   end: Alignment.bottomRight,
+                // ),
+                color: const ui.Color.fromARGB(255, 29, 69, 136),
                 boxShadow: [
                   BoxShadow(
                     color: ringColor.withOpacity(0.5),
@@ -2413,7 +2417,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
       case 'outer':
         return const Color(0xff897ED6);
       default:
-        return Colors.grey;
+        return Colors.yellow;
     }
   }
 
@@ -2525,8 +2529,8 @@ class UniversePainter extends CustomPainter {
       innerRingOuter,
       middleRingOuter,
       isDarkMode 
-        ? const ui.Color.fromARGB(255, 235, 239, 240).withOpacity(0.45 + 0.3 * immersionLevel)
-        : const ui.Color.fromARGB(255, 229, 234, 237).withOpacity(0.42 + 0.25 * immersionLevel),
+        ? const ui.Color.fromARGB(255, 198, 214, 218).withOpacity(0.45 + 0.3 * immersionLevel)
+        : const ui.Color.fromARGB(255, 203, 214, 220).withOpacity(0.42 + 0.25 * immersionLevel),
       isDarkMode,
       false
     );
@@ -2537,8 +2541,8 @@ class UniversePainter extends CustomPainter {
       middleRingOuter,
       outerRingOuter,
       isDarkMode 
-        ? const ui.Color.fromARGB(255, 231, 229, 243).withOpacity(0.65 + 0.3 * immersionLevel)
-        : const ui.Color.fromARGB(255, 240, 240, 241).withOpacity(0.62 + 0.25 * immersionLevel),
+        ? const ui.Color.fromARGB(255, 189, 183, 224).withOpacity(0.65 + 0.3 * immersionLevel)
+        : const ui.Color.fromARGB(255, 173, 173, 224).withOpacity(0.62 + 0.25 * immersionLevel),
       isDarkMode,
       false
     );
@@ -3300,7 +3304,7 @@ class UniversePainter extends CustomPainter {
       
       // Only draw glow border in dark mode
       _glowPaint
-          ..color = color.withOpacity((isDarkMode ? 0.15 : 0.25) + ringOpacity * 0.7)
+          ..color = color.withOpacity((isDarkMode ? 0.35 : 0.45) + ringOpacity * 0.7)
           ..style = PaintingStyle.stroke
           ..strokeWidth = borderWidth * 0.9;
         

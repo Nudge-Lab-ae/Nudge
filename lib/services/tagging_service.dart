@@ -34,7 +34,7 @@ class TaggingService {
       suggestions.add('Inner Circle');
     } else if (monthlyCalls >= 5) {
       suggestions.add('Regular Contact');
-      suggestions.add('Close Circle');
+      suggestions.add('Favourites');
     }
     
     // Analyze call duration

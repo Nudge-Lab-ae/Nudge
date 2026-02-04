@@ -7,6 +7,7 @@ import 'package:nudge/screens/contacts/contact_detail_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/services/auth_service.dart';
 import 'package:nudge/services/nudge_service.dart';
+import 'package:nudge/widgets/add_touchpoint_modal.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -337,6 +338,15 @@ Widget build(BuildContext context) {
                   )
                 : FeedbackFloatingButton(
                     currentSection: 'notifications',
+                    extraActions: [
+                       FeedbackAction(
+                        label: 'Log Interaction',
+                        icon: Icons.add,
+                        onPressed: () {
+                          _showAddTouchpointModal(context, themeProvider);
+                        },
+              ),
+                    ],
                   ),
             ),
           body: Stack(
@@ -1216,6 +1226,30 @@ Widget _buildEmptyDayState({required ThemeProvider themeProvider}) {
       ),
     );
   }
+
+    void _showAddTouchpointModal(BuildContext context, ThemeProvider themeProvider) {
+    // final themeProvider = Provider.of<ThemeProvider>(context);
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      backgroundColor: themeProvider.getSurfaceColor(context),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: AddTouchpointModal(
+            apiService: Provider.of<ApiService>(context, listen: false),
+          ),
+        );
+      },
+    );
+  }
+
 
   Widget _buildSwipeBackground(String action, BuildContext context, {required ThemeProvider themeProvider}) {
     final theme = Theme.of(context);

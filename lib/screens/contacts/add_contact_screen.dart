@@ -10,6 +10,7 @@ import 'package:nudge/services/api_service.dart';
 // import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/theme/text_styles.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
+import 'package:country_code_picker/country_code_picker.dart';
 // import 'package:nudge/widgets/gradient_text.dart';
 import 'package:provider/provider.dart';
 // import '../../services/database_service.dart';
@@ -62,6 +63,8 @@ class _AddContactScreenState extends State<AddContactScreen> {
   bool _isCropping = false;
   final _cropController = CropController();
   Uint8List? _imageBytes;
+  bool saving = false;
+  CountryCode _selectedCountry = CountryCode(dialCode: '+971', code: 'AE');
 
   @override
   void initState() {
@@ -151,7 +154,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
 
   Future<Map<String, dynamic>> matchSchedule (String groupName, List<SocialGroup> groups) async{
     print(groupName);
-    SocialGroup myGroup = groups.firstWhere((group) => group.id == groupName);
+    SocialGroup myGroup = groups.firstWhere((group) => group.name == groupName);
     Map<String, dynamic> schedule = {'period': myGroup.period, 'frequency': myGroup.frequency};
     return schedule;
    }
@@ -506,7 +509,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                     label: group.name,
                                     isSelected: _connectionType == group.name,
                                     onSelected: (selected) {
-                                      if (selected) setState(() => _connectionType = group.id);
+                                      if (selected) setState(() => _connectionType = group.name);
                                     },
                                   );
                                 }).toList(),
@@ -537,7 +540,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                 },
                               ),
                             ),
-                            Text('Close Circle', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+                            Text('Favourites', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
                           ],
                         ),
                         
@@ -731,37 +734,67 @@ class _AddContactScreenState extends State<AddContactScreen> {
                         const SizedBox(height: 20),
                         
                         // Phone Number
-                        Text(
+                       Text(
                           'PHONE NUMBER',
                           style: TextStyle(fontWeight: FontWeight.bold, color: themeProvider.getTextPrimaryColor(context)),
                         ),
                         const SizedBox(height: 8),
-                        TextFormField(
-                          controller: _phoneController,
-                          style: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
-                          keyboardType: TextInputType.phone,
-                          decoration: InputDecoration(
-                            hintText: 'Enter phone number',
-                            hintStyle: TextStyle(color: themeProvider.getTextHintColor(context)),
-                            enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: themeProvider.getTextHintColor(context), width: 1),
-                              borderRadius: BorderRadius.circular(10)
+                        Row(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(color: themeProvider.getTextHintColor(context), width: 1),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: CountryCodePicker(
+                                onChanged: (CountryCode country) {
+                                  setState(() {
+                                    _selectedCountry = country;
+                                  });
+                                },
+                                initialSelection: _selectedCountry.code,
+                                favorite: [_selectedCountry.code!, 'US'],
+                                showCountryOnly: false,
+                                showOnlyCountryWhenClosed: false,
+                                alignLeft: false,
+                                key: Key(_selectedCountry.code!),
+                                textStyle: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
+                                searchStyle: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
+                                dialogTextStyle: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
+                                dialogBackgroundColor: themeProvider.getCardColor(context),
+                              ),
                             ),
-                            focusedBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
-                              borderRadius: BorderRadius.circular(10)
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: TextFormField(
+                                controller: _phoneController,
+                                style: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
+                                keyboardType: TextInputType.phone,
+                                decoration: InputDecoration(
+                                  hintText: 'Enter phone number',
+                                  hintStyle: TextStyle(color: themeProvider.getTextHintColor(context)),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderSide: BorderSide(color: themeProvider.getTextHintColor(context), width: 1),
+                                    borderRadius: BorderRadius.circular(10)
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+                                    borderRadius: BorderRadius.circular(10)
+                                  ),
+                                  errorBorder: OutlineInputBorder(
+                                    borderSide: BorderSide(color: Colors.red, width: 1),
+                                    borderRadius: BorderRadius.circular(10)
+                                  ),
+                                  focusedErrorBorder: OutlineInputBorder(
+                                    borderSide: BorderSide(color: Colors.red, width: 2),
+                                    borderRadius: BorderRadius.circular(10)
+                                  ),
+                                  filled: true,
+                                  fillColor: themeProvider.getCardColor(context),
+                                ),
+                              ),
                             ),
-                            errorBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.red, width: 1),
-                              borderRadius: BorderRadius.circular(10)
-                            ),
-                            focusedErrorBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.red, width: 2),
-                              borderRadius: BorderRadius.circular(10)
-                            ),
-                            filled: true,
-                            fillColor: themeProvider.getCardColor(context),
-                          ),
+                          ],
                         ),
                         
                         const SizedBox(height: 20),
@@ -845,6 +878,9 @@ class _AddContactScreenState extends State<AddContactScreen> {
                           child: ElevatedButton(
                             onPressed: () async {
                               print('stage0');
+                              setState(() {
+                                saving = true;
+                              });
                               if (_formKey.currentState!.validate() && user != null) {
                                 // Upload image if selected
                                 if (_imageBytes != null) {
@@ -884,7 +920,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                       .where((group) => group.startsWith('#'))
                                       .map((group) => group.substring(1))
                                       .toList(),
-                                  phoneNumber: _phoneController.text,
+                                  phoneNumber: _selectedCountry.dialCode! + _phoneController.text.trim(),
                                   email: _emailController.text,
                                   notes: _notesController.text,
                                   imageUrl: _imageUrl,
@@ -913,24 +949,56 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                   //   frequency: frequency,
                                   // );
                                   await apiService.scheduleNudgesForContacts(contactIds: [newContact.id]);
+                                  await apiService.scheduleEventNotifications([newContact]);
                                   print('Automatic nudge scheduled for ${newContact.name}');
                                 } catch (e) {
                                   print('Error scheduling automatic nudge: $e');
                                   // Don't show error to user - nudge scheduling is secondary
                                 }
-                                
+                                                              
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Row(
+                                      children: [
+                                        const Icon(Icons.celebration, color: Colors.white),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Text(
+                                                'Successfully Created Contact!',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    backgroundColor: Colors.green,
+                                    duration: const Duration(seconds: 4),
+                                  ),
+                                );
+                                setState(() {
+                                  saving = false;
+                                });
                                 // Navigate back
                                 Navigator.pop(context);
+
                               }
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.primaryColor,
+                              backgroundColor: saving?const Color.fromARGB(255, 119, 119, 119):AppTheme.primaryColor,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
                             ),
-                            child: const Text(
-                              'SAVE CONTACT',
+                            child: Text(
+                              saving?'SAVING CONTACT...':'SAVE CONTACT',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,

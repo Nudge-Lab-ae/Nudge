@@ -491,7 +491,7 @@ void _showLocalNotification(RemoteMessage message) {
 
     flutterLocalNotificationsPlugin.show(
       message.hashCode,
-      message.notification?.title ?? 'Connection Nudge 💫',
+      message.notification?.title ?? 'Nudge 💫',
       message.notification?.body ?? 'Time to connect!',
       platformChannelSpecifics,
       payload: _buildNotificationPayload(message.data),

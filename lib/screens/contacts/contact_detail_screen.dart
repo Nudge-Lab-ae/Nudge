@@ -55,12 +55,12 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
         });
         
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(isVIP ? 'Added to Close Circle' : 'Removed from Close Circle')),
+          SnackBar(content: Text(isVIP ? 'Added to Favourites' : 'Removed from Favourites')),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error updating Close Circle status: $e')),
+        SnackBar(content: Text('Error updating Favourites status: $e')),
       );
     } finally {
       setState(() {
@@ -210,10 +210,10 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
               color: themeProvider.getCardColor(context),
               child: ListTile(
                 leading: Icon(Icons.star, color: _currentContact.isVIP ? Colors.amber : themeProvider.getTextSecondaryColor(context)),
-                title: Text('Close Circle', style: TextStyle(fontWeight: FontWeight.w600, color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+                title: Text('Favourites', style: TextStyle(fontWeight: FontWeight.w600, color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
                 subtitle: Text(_currentContact.isVIP 
-                    ? 'This contact is in your Close Circle' 
-                    : 'Add to your Close Circle for special attention',
+                    ? 'This contact is in your Favourites' 
+                    : 'Add to your Favourites for special attention',
                     style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
                 trailing: _isUpdatingVIP
                     ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryColor))
@@ -369,7 +369,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                     Icon(Icons.info, size: 40, color: themeProvider.getTextSecondaryColor(context)),
                     const SizedBox(height: 10),
                     Text(
-                      'Add your first Close Circle contact for better insights.',
+                      'Add your first Favourites contact for better insights.',
                       style: TextStyle(
                         fontSize: 16,
                         fontFamily: 'OpenSans',

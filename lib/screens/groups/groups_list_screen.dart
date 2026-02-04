@@ -117,8 +117,8 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
     return sortedGroups;
   }
 
-  void _showDeleteConfirmation(BuildContext context, SocialGroup group, ApiService apiService) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
+  void _showDeleteConfirmation(BuildContext context, SocialGroup group, ApiService apiService, ThemeProvider themeProvider) {
+    // final themeProvider = Provider.of<ThemeProvider>(context);
     final theme = Theme.of(context);
     
     showDialog(
@@ -205,6 +205,44 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                         icon: const Icon(Icons.arrow_back, color: Colors.white),
                         onPressed: () => Navigator.pop(context),
                       ),
+                      actions: [
+                         Padding(
+                          padding: const EdgeInsets.only(right: 16.0),
+                          child: ElevatedButton(
+                            onPressed: () {
+                              _showCreateGroupDialog(context, apiService, themeProvider: themeProvider);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: themeProvider.getSurfaceColor(context),
+                              foregroundColor: theme.colorScheme.primary,
+                              side: BorderSide(color: themeProvider.isDarkMode ? AppTheme.darkCardBorder : Colors.grey.shade300, width: 1),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              elevation: 0,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.add,
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Add Group',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    fontFamily: 'OpenSans'
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                       centerTitle: false,
                       backgroundColor: theme.colorScheme.primary,
                      )
@@ -212,57 +250,101 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
               body: Stack(
                 children: [
                   // For embedded mode (dashboard), use CustomScrollView with collapsible header
-                  if (!widget.showAppBar)
-                    StreamBuilder<List<SocialGroup>>(
-                      stream: _groupsStream,
-                      builder: (context, groupsSnapshot) {
-                        if (groupsSnapshot.hasError) {
-                          return _buildErrorState(groupsSnapshot.error.toString(), themeProvider: themeProvider);
-                        }
+                  // Replace the entire if (!widget.showAppBar) section (lines 130-220) with:
+                if (!widget.showAppBar)
+                  StreamBuilder<List<SocialGroup>>(
+                    stream: _groupsStream,
+                    builder: (context, groupsSnapshot) {
+                      if (groupsSnapshot.hasError) {
+                        return _buildErrorState(groupsSnapshot.error.toString(), themeProvider: themeProvider);
+                      }
 
-                        if (!groupsSnapshot.hasData) {
-                          return _buildLoadingState(themeProvider: themeProvider);
-                        }
+                      if (!groupsSnapshot.hasData) {
+                        return _buildLoadingState(themeProvider: themeProvider);
+                      }
 
-                        final groups = groupsSnapshot.data!;
-                        allGroups = groups;
-                        final sortedGroups = _sortGroups(groups);
-                        final filteredGroups = sortedGroups.where((group) {
-                          return group.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                              group.description.toLowerCase().contains(_searchQuery.toLowerCase());
-                        }).toList();
-                        
-                        if (groups.isEmpty) {
-                          return _buildEmptyState(apiService, themeProvider: themeProvider);
-                        }
+                      final groups = groupsSnapshot.data!;
+                      allGroups = groups;
+                      final sortedGroups = _sortGroups(groups);
+                      final filteredGroups = sortedGroups.where((group) {
+                        return group.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                            group.description.toLowerCase().contains(_searchQuery.toLowerCase());
+                      }).toList();
+                      
+                      if (groups.isEmpty) {
+                        return _buildEmptyState(apiService, themeProvider: themeProvider);
+                      }
 
-                        return Scaffold(
-                          appBar: AppBar(
-                            title: Text(
-                              'Social Groups',
-                              style: AppTextStyles.title2.copyWith(
-                                color: themeProvider.getTextPrimaryColor(context),
-                                fontSize: 22,
-                                fontFamily: 'Inter',
-                                fontWeight: FontWeight.w800
-                              ),
-                            ),
-                            backgroundColor: themeProvider.getBackgroundColor(context),
-                            leading: Center(),
-                            centerTitle: false,
-                            surfaceTintColor: Colors.transparent,
-                          ),
+                      return GestureDetector(
+                        // onTap: _dismissKeyboard,
+                        child: Scaffold(
                           body: CustomScrollView(
                             physics: const BouncingScrollPhysics(),
                             slivers: [
+                              // Sliver App Bar with disappearing effect
+                              SliverAppBar(
+                                title: Text(
+                                  'Social Groups',
+                                  style: AppTextStyles.title2.copyWith(
+                                    color: themeProvider.getTextPrimaryColor(context),
+                                    fontSize: 22,
+                                    fontFamily: 'Inter',
+                                    fontWeight: FontWeight.w800
+                                  ),
+                                ),
+                                backgroundColor: themeProvider.getBackgroundColor(context),
+                                leading: Center(),
+                                centerTitle: false,
+                                surfaceTintColor: Colors.transparent,
+                                floating: true,
+                                 actions: [
+                                  Padding(
+                                    padding: const EdgeInsets.only(right: 16.0),
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        _showCreateGroupDialog(context, apiService, themeProvider: themeProvider);
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: themeProvider.getSurfaceColor(context),
+                                        foregroundColor: theme.colorScheme.primary,
+                                        side: BorderSide(color: themeProvider.isDarkMode ? AppTheme.darkCardBorder : Colors.grey.shade300, width: 1),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(20),
+                                        ),
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                        elevation: 0,
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.add,
+                                            size: 16,
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            'Add Group',
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              fontFamily: 'OpenSans'
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                                snap: true,
+                                pinned: false,
+                              ),
+                              
                               // Groups List
-                              SliverFillRemaining(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: ListView.builder(
-                                    physics: const BouncingScrollPhysics(),
-                                    itemCount: filteredGroups.length,
-                                    itemBuilder: (context, index) {
+                              SliverPadding(
+                                padding: const EdgeInsets.all(16),
+                                sliver: SliverList(
+                                  delegate: SliverChildBuilderDelegate(
+                                    (context, index) {
                                       final group = filteredGroups[index];
                                       final groupMembers = contacts.where((contact) => 
                                         contact.connectionType == group.name || contact.connectionType == group.id
@@ -275,6 +357,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                                         child: _buildGroupCard(context, group, groupMembers, progress, apiService, themeProvider: themeProvider),
                                       );
                                     },
+                                    childCount: filteredGroups.length,
                                   ),
                                 ),
                               ),
@@ -285,9 +368,10 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                               ),
                             ],
                           ),
-                        );
-                      },
-                    ),
+                        ),
+                      );
+                    },
+                  ),
                   
                   // For standalone mode, use CustomScrollView with collapsible header
                   if (widget.showAppBar)
@@ -313,53 +397,71 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                           return _buildEmptyState(apiService, themeProvider: themeProvider);
                         }
 
-                        return Scaffold(
-                          appBar: AppBar(
-                            title: Text(
-                              'Social Groups',
-                              style: AppTextStyles.title2.copyWith(
-                                color: themeProvider.getTextPrimaryColor(context),
-                                fontSize: 16,
-                                fontFamily: 'Inter',
-                                fontWeight: FontWeight.w800
-                              ),
-                            ),
-                            centerTitle: false,
-                            leading: Center(),
-                            backgroundColor: themeProvider.getBackgroundColor(context),
-                          ),
-                          body: CustomScrollView(
-                            physics: const BouncingScrollPhysics(),
-                            slivers: [
-                              // Groups List
-                              SliverFillRemaining(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: ListView.builder(
-                                    physics: const BouncingScrollPhysics(),
-                                    itemCount: filteredGroups.length,
-                                    itemBuilder: (context, index) {
-                                      final group = filteredGroups[index];
-                                      final groupMembers = contacts.where((contact) => 
-                                        contact.connectionType == group.name || contact.connectionType == group.id
-                                      ).toList();
-                                      
-                                      final progress = _calculateGroupProgress(groupMembers, nudges);
-                                      
-                                      return Padding(
-                                        padding: const EdgeInsets.only(bottom: 12),
-                                        child: _buildGroupCard(context, group, groupMembers, progress, apiService, themeProvider: themeProvider),
-                                      );
-                                    },
-                                  ),
+                        return GestureDetector(
+                          // onTap: _dismissKeyboard,
+                          child: Scaffold(
+                            appBar: AppBar(
+                              title: Text(
+                                'Social Groups',
+                                style: AppTextStyles.title2.copyWith(
+                                  color: themeProvider.getTextPrimaryColor(context),
+                                  fontSize: 16,
+                                  fontFamily: 'Inter',
+                                  fontWeight: FontWeight.w800
                                 ),
                               ),
-                              
-                              // Bottom padding for FAB
-                              const SliverToBoxAdapter(
-                                child: SizedBox(height: 80),
+                              centerTitle: false,
+                              leading: IconButton(
+                                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                                onPressed: () => Navigator.pop(context),
                               ),
-                            ],
+                              backgroundColor: theme.colorScheme.primary,
+                            ),
+                            floatingActionButton: Padding(
+                              padding: EdgeInsets.only(right: 10, bottom: 55),
+                              child: FeedbackFloatingButton(
+                                currentSection: 'groups',
+                                extraActions: [
+                                  FeedbackAction(
+                                    label: 'New Group',
+                                    icon: Icons.group_add,
+                                    onPressed: () => _showCreateGroupDialog(context, apiService, themeProvider: themeProvider),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            body: CustomScrollView(
+                              physics: const BouncingScrollPhysics(),
+                              slivers: [
+                                // Groups List
+                                SliverPadding(
+                                  padding: const EdgeInsets.all(16),
+                                  sliver: SliverList(
+                                    delegate: SliverChildBuilderDelegate(
+                                      (context, index) {
+                                        final group = filteredGroups[index];
+                                        final groupMembers = contacts.where((contact) => 
+                                          contact.connectionType == group.name || contact.connectionType == group.id
+                                        ).toList();
+                                        
+                                        final progress = _calculateGroupProgress(groupMembers, nudges);
+                                        
+                                        return Padding(
+                                          padding: const EdgeInsets.only(bottom: 12),
+                                          child: _buildGroupCard(context, group, groupMembers, progress, apiService, themeProvider: themeProvider),
+                                        );
+                                      },
+                                      childCount: filteredGroups.length,
+                                    ),
+                                  ),
+                                ),
+                                
+                                // Bottom padding for FAB
+                                const SliverToBoxAdapter(
+                                  child: SizedBox(height: 80),
+                                ),
+                              ],
+                            ),
                           ),
                         );
                       },
@@ -507,7 +609,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
     
     return GestureDetector(
       onTap: () => _showGroupDetails(context, group, members, apiService, themeProvider: themeProvider),
-      onLongPress: () => _showDeleteConfirmation(context, group, apiService),
+      onLongPress: () => _showDeleteConfirmation(context, group, apiService, themeProvider),
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(
@@ -1147,7 +1249,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                     const SizedBox(width: 10),
                     IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => _showDeleteConfirmation(context, group, apiService),
+                      onPressed: () => _showDeleteConfirmation(context, group, apiService, themeProvider),
                     ),
                   ],
                 ),

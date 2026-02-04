@@ -52,7 +52,7 @@ class ApiService {
   }
 
     // Call Cloud Function to trigger scheduled notifications
-  Future<Map<String, dynamic>> scheduleRegularNotifications() async {
+  Future<Map<String, dynamic>> scheduleRegularNotifications(List<Contact> contactIds) async {
     String contactId = _auth.currentUser!.uid;
     print('sending scheduled nudges');
     try {
@@ -67,7 +67,35 @@ class ApiService {
         'contactId': contactId,
       });
       print (result.data); print(' is the result');
+
+      scheduleEventNotifications(contactIds);
       
+      return result.data;
+    } catch (e) {
+      print('Error scheduling nudges: $e');
+      throw Exception('Failed to trigger nudge: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> scheduleEventNotifications (List<Contact> contacts) async {
+    print('sending scheduled nudges');
+    try {
+      print('phase 1');
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) throw Exception('No user logged in');
+      
+      final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('scheduleEventNotificationsForContacts');
+      print('phase 2');
+      
+      List<String> contactIds = [];
+      for (int i =0; i<contacts.length; i++) {
+        contactIds.add(contacts[i].id);
+      }
+      final result = await callable.call({
+        'contactIds': contactIds,
+      });
+      print (result.data); print(' is the result');
+
       return result.data;
     } catch (e) {
       print('Error scheduling nudges: $e');
@@ -613,7 +641,7 @@ class ApiService {
           });
     }
   } catch (e) {
-    throw Exception('Failed to update close circle contacts: $e');
+    throw Exception('Failed to update Favourite contacts: $e');
   }
 }
 

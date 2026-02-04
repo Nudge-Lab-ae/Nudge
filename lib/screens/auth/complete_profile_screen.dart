@@ -71,7 +71,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
     {'title': 'Create Social Groups', 'subtitle': 'Organize your contacts'},
     {'title': 'Welcome to Your Social Universe', 'subtitle': 'See what we\'re building'},
     {'title': 'Add Your Contacts', 'subtitle': 'Import or add contacts'},
-    {'title': 'Identify Close Circle', 'subtitle': 'Mark important relationships'},
+    {'title': 'Identify Favourites', 'subtitle': 'Mark important relationships'},
     {'title': 'Review Setup', 'subtitle': 'You\'re all set!'},
   ];
 
@@ -462,7 +462,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
         }
 
         if (_selectedContacts.isNotEmpty) {
-          apiService.scheduleRegularNotifications();
+          apiService.scheduleRegularNotifications(_selectedContacts);
         }
         
         // Navigate to dashboard using restart approach
@@ -1730,7 +1730,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 20),
-          Text('Identify Your Close Circle', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
+          Text('Identify Your Favourites', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
           const SizedBox(height: 10),
           
           Container(
@@ -1745,11 +1745,11 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                 Row(children: [
                   Icon(Icons.info, color: theme.colorScheme.primary),
                   const SizedBox(width: 8),
-                  Text('What is a Close Circle?', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
+                  Text('What is a Favourite?', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
                 ]),
                 const SizedBox(height: 8),
                 Text(
-                  'Your Close Circle is for people you naturally connect with often — those relationships don\'t need reminders. NUDGE will include them in your weekly reflection so you can note how things are going.',
+                  'Your Favourites are people you naturally connect with often — those relationships don\'t need reminders. NUDGE will include them in your weekly reflection so you can note how things are going.',
                   style: TextStyle(fontSize: 14, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
                 ),
               ],
@@ -1759,7 +1759,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
           const SizedBox(height: 20),
           
           if (_selectedContacts.isNotEmpty) ...[
-            Text('Select your Close Circle members:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
+            Text('Select your Favourites members:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
             const SizedBox(height: 10),
             
             ..._selectedContacts.map((contact) => Card(
@@ -1838,7 +1838,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
           _buildSummaryItem(Icons.person, 'Profile Complete', 'Username: ${_usernameController.text}'),
           _buildSummaryItem(Icons.group, '${_userGroups.length} Social Groups', 'Organized by priority'),
           _buildSummaryItem(Icons.contacts, 'Contacts', 'You can add contacts later from the dashboard'),
-          _buildSummaryItem(Icons.star, 'Close Circle', '${_closeCircleContacts.length} important relationships'),
+          _buildSummaryItem(Icons.star, 'Favourites', '${_closeCircleContacts.length} important relationships'),
           _buildSummaryItem(Icons.notifications, 'Weekly Digest', 'Starting this Sunday'),
           
           const SizedBox(height: 40),
@@ -1992,7 +1992,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                         _currentStep == _steps.length - 1 
                           ? 'Launch Your Universe' 
                           : 'Continue',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                        style: TextStyle(fontSize: _currentStep == _steps.length - 1 ? 14 :16, fontWeight: FontWeight.bold, color: Colors.white),
+                        textAlign: TextAlign.center,
                       ),
               ),
             ),

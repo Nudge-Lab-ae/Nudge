@@ -938,7 +938,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
   String _getFilterLabel(String filter) {
     switch (filter) {
       case 'vip':
-        return 'Close Circle';
+        return 'Favourites';
       case 'needs_attention':
         return 'Needs Care';
       default:
@@ -949,7 +949,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
   String _getFilterTitle(String filter) {
     switch (filter) {
       case 'vip':
-        return 'Close Circle Contacts';
+        return 'Favourite Contacts';
       case 'needs_attention':
         return 'Contacts Needing Care';
       default:
@@ -1376,8 +1376,8 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     
     switch (filter) {
       case 'vip':
-        title = 'No Close Circle Contacts yet';
-        description = 'Mark contacts as Close Circle to see them here';
+        title = 'No Favourite Contacts yet';
+        description = 'Mark contacts as Favourite to see them here';
         break;
       case 'needs_attention':
         title = 'No contacts need care';

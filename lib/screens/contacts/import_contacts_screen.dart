@@ -169,6 +169,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
           // CONDITIONALLY SCHEDULE NUDGES
           if (!_isOnboarding && recentlyImportedContacts.isNotEmpty) {
             await apiService.scheduleNudgesForContacts(contactIds: importedContactIds);
+            await apiService.scheduleEventNotifications(recentlyImportedContacts);
           }
           
           Navigator.pop(context, recentlyImportedContacts);

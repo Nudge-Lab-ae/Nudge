@@ -1,5 +1,6 @@
 // lib/widgets/contact_details_modal.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../models/contact.dart';
 import '../services/api_service.dart';
 import '../providers/theme_provider.dart'; // Add this import
@@ -27,7 +28,7 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
     
     final contact = widget.contact;
     final daysSinceLastContact = DateTime.now().difference(contact.lastContacted).inDays;
-    final ringColor = _getRingColor(contact.computedRing, isDarkMode);
+    final ringColor = _getRingColor(contact.computedRing);
     
     return Container(
       height: MediaQuery.of(context).size.height * 0.65,
@@ -52,7 +53,7 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                   color: isDarkMode 
                     ? const Color(0xFFCCCCCC)
                     : const Color(0xff555555),
-                  letterSpacing: 1.2,
+                  // letterSpacing: 1.2,
                 ),
               ),
               IconButton(
@@ -95,7 +96,7 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                 child: Center(
                   child: Text(
                     contact.name.substring(0, 1).toUpperCase(),
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
                       fontSize: 36,
                       fontWeight: FontWeight.bold,
@@ -113,7 +114,7 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                     Text(
                       contact.name,
                       style: TextStyle(
-                        fontSize: 28,
+                        fontSize: contact.name.length >15 ?22 : 27,
                         fontWeight: FontWeight.w700,
                         color: isDarkMode 
                           ? Colors.white
@@ -169,7 +170,7 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
             children: [
               Expanded(
                 child: _buildStatCard(
-                  icon: Icons.category,
+                  icon: null,
                   title: 'Connection Type',
                   value: contact.connectionType.isNotEmpty 
                       ? contact.connectionType 
@@ -217,15 +218,15 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
               
               const SizedBox(width: 12),
               
-              Expanded(
-                child: _buildStatCard(
-                  icon: Icons.phone,
-                  title: 'Contact Priority',
-                  value: contact.priority.toString(),
-                  color: const Color(0xFF9C27B0),
-                  isDarkMode: isDarkMode,
-                ),
-              ),
+              // Expanded(
+              //   child: _buildStatCard(
+              //     icon: Icons.phone,
+              //     title: 'CDI Score',
+              //     value: contact.cdi.toStringAsFixed(2),
+              //     color: const Color(0xFF9C27B0),
+              //     isDarkMode: isDarkMode,
+              //   ),
+              // ),
             ],
           ),
           
@@ -376,7 +377,7 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
   }
 
   Widget _buildStatCard({
-    required IconData icon,
+    required IconData? icon,
     required String title,
     required String value,
     required Color color,
@@ -412,7 +413,13 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
               shape: BoxShape.circle,
             ),
             child: Center(
-              child: Icon(
+              child: icon == null
+              ? SvgPicture.asset(
+              'assets/contact-icons/connection-type.svg',
+              width: 22,
+              height: 22,
+              color: color
+            ) : Icon(
                 icon,
                 size: 20,
                 color: color,
@@ -518,16 +525,16 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
     );
   }
 
-  Color _getRingColor(String ring, bool isDarkMode) {
+  Color _getRingColor(String ring) {
     switch (ring) {
       case 'inner':
-        return isDarkMode ? const Color(0xFF4CAF50) : Colors.green;
+        return Colors.yellow;
       case 'middle':
-        return const Color(0xFFFFC107);
+        return const Color(0xff3CB3E9);
       case 'outer':
-        return isDarkMode ? const Color(0xFFF44336) : Colors.redAccent;
+        return const Color(0xff897ED6);
       default:
-        return isDarkMode ? const Color(0xFF757575) : Colors.grey;
+        return Colors.yellow;
     }
   }
 }
