@@ -1022,6 +1022,20 @@ Future<Map<String, dynamic>> register(String email, String password) async {
     }
   }
 
+  Future<bool> sendTestEventNotification() async{
+     try {
+      final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('sendTestEventNotification');
+      final result = await callable.call();
+      print('called hourly notification function');
+      print(result.data);
+      return true;
+    } catch (e) {
+      // throw Exception('Failed to trigger nudge: $e');
+      return false;
+    }
+  }
+
+
 Future<void> submitFeedback({
   required String message,
   String type = 'Feedback',

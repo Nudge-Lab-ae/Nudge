@@ -310,7 +310,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         Navigator.pushNamed(context, '/settings');
                       },
                       onLongPress: () {
-                        apiService.cancelHourlyNotifications();
+                        apiService.sendTestEventNotification();
                       },
                     ),
                   )

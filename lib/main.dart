@@ -148,51 +148,66 @@ Future<void> initializeLocalNotifications() async {
   const AndroidInitializationSettings initializationSettingsAndroid =
       AndroidInitializationSettings('@mipmap/ic_launcher');
 
-  const DarwinInitializationSettings initializationSettingsIOS =
+  DarwinInitializationSettings initializationSettingsIOS =
       DarwinInitializationSettings(
     requestAlertPermission: true,
     requestBadgePermission: true,
     requestSoundPermission: true,
+    // 👇 Register iOS categories and actions
+    notificationCategories: [
+      DarwinNotificationCategory(
+        'EVENT_NOTIFICATION_ACTIONS',
+        actions: [
+          DarwinNotificationAction.plain(
+            'remind_me_then',
+            'Remind Me Then',
+          ),
+          DarwinNotificationAction.plain(
+            'dismiss',
+            'Dismiss',
+            options: {DarwinNotificationActionOption.destructive},
+          ),
+        ],
+      ),
+    ],
   );
 
-  const InitializationSettings initializationSettings = InitializationSettings(
+  InitializationSettings initializationSettings = InitializationSettings(
     android: initializationSettingsAndroid,
     iOS: initializationSettingsIOS,
   );
 
-await flutterLocalNotificationsPlugin.initialize(
-  initializationSettings,
-  onDidReceiveNotificationResponse: (NotificationResponse response) {
-    print('Notification tapped: ${response.payload}');
-    
-    if (response.payload != null) {
-      try {
-        final data = jsonDecode(response.payload!) as Map<String, dynamic>;
-        
-        // Check if it's an event notification with action
-        if (data['type'] == 'event_notification') {
-          // Check which action was tapped
-          if (response.actionId == 'remind_me_then') {
-            _handleRemindMeThenAction(data);
-          } else if (response.actionId == 'dismiss') {
-            _handleDismissAction(data);
+  await flutterLocalNotificationsPlugin.initialize(
+    initializationSettings,
+    onDidReceiveNotificationResponse: (NotificationResponse response) {
+      print('Notification tapped: ${response.payload}');
+
+      if (response.payload != null) {
+        try {
+          final data = jsonDecode(response.payload!) as Map<String, dynamic>;
+
+          if (data['type'] == 'event_notification') {
+            if (response.actionId == 'remind_me_then') {
+              // _handleRemindMeThenAction(data);
+              print('remind me then pressed');
+            } else if (response.actionId == 'dismiss') {
+              // _handleDismissAction(data);
+              print('dismiss pressed');
+            } else {
+              showEventNotificationDialog(data);
+            }
           } else {
-            // Notification body was tapped
-            showEventNotificationDialog(data);
+            navigateToNotificationsScreen();
           }
-        } else {
-          // Regular notification - navigate to notifications screen
+        } catch (e) {
+          print('Error parsing notification payload: $e');
           navigateToNotificationsScreen();
         }
-      } catch (e) {
-        print('Error parsing notification payload: $e');
-        navigateToNotificationsScreen();
+      } else {
+        // navigateToNotificationsScreen();
       }
-    } else {
-      navigateToNotificationsScreen();
-    }
-  },
-);
+    },
+  );
 
   // Create notification channel for Android
   const AndroidNotificationChannel channel = AndroidNotificationChannel(
@@ -204,8 +219,23 @@ await flutterLocalNotificationsPlugin.initialize(
   );
 
   await flutterLocalNotificationsPlugin
-      .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+      .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>()
       ?.createNotificationChannel(channel);
+
+  // 👇 Create event notifications channel for Android
+  const AndroidNotificationChannel eventChannel = AndroidNotificationChannel(
+    'event_notifications',
+    'Event Notifications',
+    description: 'Birthday and anniversary notifications',
+    importance: Importance.high,
+    playSound: true,
+  );
+
+  await flutterLocalNotificationsPlugin
+      .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>()
+      ?.createNotificationChannel(eventChannel);
 }
 
 Future<void> initializeFCM() async {
@@ -468,6 +498,8 @@ void _showLocalNotification(RemoteMessage message) {
       payload: jsonEncode(data),
     );
   } else {
+
+    print(data); print(' is the data');
     // Regular notification without action buttons
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
