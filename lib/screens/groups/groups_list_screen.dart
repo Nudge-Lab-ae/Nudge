@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nudge/screens/contacts/contact_detail_screen.dart';
+import 'package:nudge/screens/contacts/import_contacts_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/theme/text_styles.dart';
 import 'package:provider/provider.dart';
@@ -1257,7 +1258,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _buildStatItem('Members', '${members.length}', themeProvider: themeProvider),
+                    _buildStatItem('Contacts', '${members.length}', themeProvider: themeProvider),
                     _buildStatItem('Frequency', FrequencyPeriodMapper.getConversationalChoice(group.frequency, group.period), themeProvider: themeProvider),
                     _buildStatItem('Last Engaged', _formatDate(group.lastInteraction), themeProvider: themeProvider),
                   ],
@@ -1266,28 +1267,69 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('GROUP MEMBERS', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
+                    Text('GROUP CONTACTS', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
                     if (members.isNotEmpty)
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        Navigator.pushNamed(context, '/contacts', arguments: {
-                          'action': 'add_to_group',
-                          'contacts': allContacts, 
-                          'groupId': group.id,
-                          'groupName': group.name,
-                          'groupPeriod': group.period,
-                          'groupFrequency': group.frequency,
-                          'groupFrequencyDisplay': FrequencyPeriodMapper.getConversationalChoice(group.frequency, group.period),
-                        });
-                      },
-                      child: Row(
+                    PopupMenuButton<String>(
+                      icon: Row(
                         children: [
                           Icon(Icons.add, size: 16, color: theme.colorScheme.primary),
                           SizedBox(width: 4),
                           Text('Add More', style: TextStyle(color: theme.colorScheme.primary, fontFamily: 'OpenSans')),
                         ],
                       ),
+                      onSelected: (String value) async {
+                        Navigator.pop(context); // Close the bottom sheet first
+                        
+                        if (value == 'import') {
+                          // Navigate to import contacts screen with the pre-selected group
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ImportContactsScreen(
+                                groups: [group], // Pass the specific group
+                                preSelectedGroup: group, // Add this parameter
+                              ),
+                            ),
+                          );
+                          
+                          if (result != null && result is List<Contact>) {
+                            // Refresh the group details if contacts were imported
+                            setState(() {});
+                          }
+                        } else if (value == 'existing') {
+                          Navigator.pushNamed(context, '/contacts', arguments: {
+                            'action': 'add_to_group',
+                            'contacts': allContacts, 
+                            'groupId': group.id,
+                            'groupName': group.name,
+                            'groupPeriod': group.period,
+                            'groupFrequency': group.frequency,
+                            'groupFrequencyDisplay': FrequencyPeriodMapper.getConversationalChoice(group.frequency, group.period),
+                          });
+                        }
+                      },
+                      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                        const PopupMenuItem<String>(
+                          value: 'import',
+                          child: Row(
+                            children: [
+                              Icon(Icons.import_contacts, size: 20),
+                              SizedBox(width: 8),
+                              Text('Import New Contacts'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem<String>(
+                          value: 'existing',
+                          child: Row(
+                            children: [
+                              Icon(Icons.group_add, size: 20),
+                              SizedBox(width: 8),
+                              Text('Add Existing Contacts'),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

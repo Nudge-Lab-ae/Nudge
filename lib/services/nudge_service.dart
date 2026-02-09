@@ -141,80 +141,83 @@ class NudgeService {
   }
 
   // Reschedule nudges after a touchpoint is logged
-Future<void> rescheduleNudgeAfterInteraction(Contact contact, String userId) async {
-  try {
-    // Find all active nudges for this contact
-    final snapshot = await _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('nudges')
-        .where('contactId', isEqualTo: contact.id)
-        .where('isCompleted', isEqualTo: false)
-        .get();
+  Future<void> rescheduleNudgeAfterInteraction(Contact contact, String userId, [DateTime? interactionTimestamp]) async {
+    try {
+      // Use provided timestamp or current time if not provided (for backward compatibility)
+      final interactionTime = interactionTimestamp ?? DateTime.now();
+      
+      // Find all active nudges for this contact
+      final snapshot = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('nudges')
+          .where('contactId', isEqualTo: contact.id)
+          .where('isCompleted', isEqualTo: false)
+          .get();
 
-    // Calculate new scheduled time based on contact's frequency
-    final newScheduledTime = _calculateNextNudgeTimeFromLastContact(contact);
+      // Calculate new scheduled time based on interaction time and contact's frequency
+      final newScheduledTime = _calculateNextNudgeTimeFromLastContact(contact, interactionTime);
 
-    for (final doc in snapshot.docs) {
-      // Update the nudge with new scheduled time
-      await doc.reference.update({
-        'scheduledTime': newScheduledTime.millisecondsSinceEpoch,
-        'updatedAt': DateTime.now().millisecondsSinceEpoch,
-      });
+      for (final doc in snapshot.docs) {
+        // Update the nudge with new scheduled time
+        await doc.reference.update({
+          'scheduledTime': newScheduledTime.millisecondsSinceEpoch,
+          'updatedAt': DateTime.now().millisecondsSinceEpoch,
+        });
 
-      // Cancel and reschedule the notification if it's a push notification
-      final nudge = Nudge.fromMap(doc.data());
-      if (nudge.isPushNotification) {
-        await _notificationService.cancelNotification(doc.id.hashCode);
-        await _notificationService.scheduleNudgeNotification(
-          doc.id.hashCode,
-          'Time to connect with ${contact.name}!',
-          'Remember to reach out to ${contact.name}.',
-          newScheduledTime,
-        );
+        // Cancel and reschedule the notification if it's a push notification
+        final nudge = Nudge.fromMap(doc.data());
+        if (nudge.isPushNotification) {
+          await _notificationService.cancelNotification(doc.id.hashCode);
+          await _notificationService.scheduleNudgeNotification(
+            doc.id.hashCode,
+            'Time to connect with ${contact.name}!',
+            'Remember to reach out to ${contact.name}.',
+            newScheduledTime,
+          );
+        }
       }
+
+      print('Rescheduled nudges for ${contact.name} to $newScheduledTime (based on interaction at $interactionTime)');
+    } catch (e) {
+      print('Error rescheduling nudges after interaction: $e');
+      throw Exception('Failed to reschedule nudges: $e');
+    }
+  }
+
+  // Calculate next nudge time from last contacted date
+  DateTime _calculateNextNudgeTimeFromLastContact(Contact contact, DateTime interactionTime) {
+    DateTime nextTime;
+
+    // Calculate based on contact's frequency and period
+    switch (contact.period) {
+      case 'Daily':
+        nextTime = interactionTime.add(Duration(days: contact.frequency));
+        break;
+      case 'Weekly':
+        nextTime = interactionTime.add(Duration(days: contact.frequency * 7));
+        break;
+      case 'Monthly':
+        nextTime = interactionTime.add(Duration(days: contact.frequency * 30));
+        break;
+      case 'Quarterly':
+        nextTime = interactionTime.add(Duration(days: contact.frequency * 90));
+        break;
+      case 'Annually':
+        nextTime = interactionTime.add(Duration(days: contact.frequency * 365));
+        break;
+      default:
+        nextTime = interactionTime.add(Duration(days: 30)); // Default to 30 days
     }
 
-    print('Rescheduled nudges for ${contact.name} to $newScheduledTime');
-  } catch (e) {
-    print('Error rescheduling nudges after interaction: $e');
-    throw Exception('Failed to reschedule nudges: $e');
+    // Ensure the new time is in the future (from current time, not interaction time)
+    final now = DateTime.now();
+    if (nextTime.isBefore(now)) {
+      nextTime = now.add(const Duration(minutes: 5));
+    }
+
+    return nextTime;
   }
-}
-
-// Calculate next nudge time from last contacted date
-DateTime _calculateNextNudgeTimeFromLastContact(Contact contact) {
-  final lastContacted = contact.lastContacted;
-  DateTime nextTime;
-
-  // Calculate based on contact's frequency and period
-  switch (contact.period) {
-    case 'Daily':
-      nextTime = lastContacted.add(Duration(days: contact.frequency));
-      break;
-    case 'Weekly':
-      nextTime = lastContacted.add(Duration(days: contact.frequency * 7));
-      break;
-    case 'Monthly':
-      nextTime = lastContacted.add(Duration(days: contact.frequency * 30));
-      break;
-    case 'Quarterly':
-      nextTime = lastContacted.add(Duration(days: contact.frequency * 90));
-      break;
-    case 'Annually':
-      nextTime = lastContacted.add(Duration(days: contact.frequency * 365));
-      break;
-    default:
-      nextTime = lastContacted.add(Duration(days: 30)); // Default to 30 days
-  }
-
-  // Ensure the new time is in the future
-  if (nextTime.isBefore(DateTime.now())) {
-    nextTime = DateTime.now().add(const Duration(minutes: 5));
-  }
-
-  return nextTime;
-}
 
 // Main method to schedule nudges for imported contacts with proper spacing
 Future<Map<String, dynamic>> scheduleGroupedNudgesWithSpacing(

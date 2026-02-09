@@ -507,7 +507,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
               onTap: _dismissKeyboard,
               child: Scaffold(
         appBar: AppBar(
-          title: Text('Edit Contact', style: AppTextStyles.title2.copyWith(color: themeProvider.getTextPrimaryColor(context))),
+          title: Text('Edit Contact', style: AppTextStyles.title2.copyWith(color: themeProvider.getTextPrimaryColor(context), fontSize: 22, fontWeight: FontWeight.w800)),
           centerTitle: true,
           iconTheme: IconThemeData(color: AppTheme.primaryColor),
           backgroundColor: themeProvider.getSurfaceColor(context),
@@ -529,7 +529,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
               onTap: _dismissKeyboard,
               child: Scaffold(
             appBar: AppBar(
-              title: Text('Edit Contact', style: AppTextStyles.title2.copyWith(color: themeProvider.getTextPrimaryColor(context))),
+              title: Text('Edit Contact', style: AppTextStyles.title2.copyWith(color: themeProvider.getTextPrimaryColor(context), fontSize: 22, fontWeight: FontWeight.w800)),
               centerTitle: true,
               iconTheme: IconThemeData(color: AppTheme.primaryColor),
               backgroundColor: themeProvider.getSurfaceColor(context),
@@ -867,7 +867,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
                     const SizedBox(height: 20),
 
                     // Important Dates
-                    Text('IMPORTANT DATES', style: AppTextStyles.title3.copyWith(color: themeProvider.getTextSecondaryColor(context))),
+                    Text('IMPORTANT DATES', style: AppTextStyles.title3.copyWith(color: themeProvider.getTextPrimaryColor(context), fontSize: 18)),
                     const SizedBox(height: 10),
 
                     // Birthday

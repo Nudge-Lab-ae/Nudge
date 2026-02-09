@@ -3,6 +3,7 @@ import 'dart:io';
 // import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:nudge/models/contact.dart';
 import 'package:nudge/models/social_group.dart';
 import 'package:nudge/models/user.dart';
 import 'package:nudge/screens/dashboard/dashboard_screen.dart';
@@ -22,11 +23,13 @@ import '../../services/auth_service.dart';
 class ImportContactsScreen extends StatefulWidget {
   final List<SocialGroup>? groups;
   final bool isOnboarding;
+  final SocialGroup? preSelectedGroup;
   
   const ImportContactsScreen({
     super.key, 
     this.groups,
-    this.isOnboarding = false
+    this.isOnboarding = false,
+    this.preSelectedGroup,
   });
 
   @override
@@ -44,6 +47,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   late List<SocialGroup> _availableGroups = [];
   bool _isOnboarding = false;
   late ThemeProvider globalThemeProvider;
+  SocialGroup? _preSelectedGroup;
 
   void _showSettingsDialog(String message, ThemeProvider themeProvider) {
     // final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
@@ -90,26 +94,37 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
 
     try {
       // Check if we have groups from arguments, otherwise fetch from API
-      List<SocialGroup> groupsForSelection;
+      // List<SocialGroup> groupsForSelection;
       
-      if (_availableGroups.isNotEmpty) {
-        groupsForSelection = _availableGroups;
+      SocialGroup? selectedGroup;
+      
+      if (_preSelectedGroup != null) {
+        // Use the pre-selected group
+        selectedGroup = _preSelectedGroup;
       } else {
-        print('No groups from arguments, fetching from API');
-        User thisUser = await apiService.getUser();
-        var userGroups = thisUser.groups;
-        groupsForSelection = [];
+        // Original logic: show group selection dialog
+        List<SocialGroup> groupsForSelection;
         
-        if (userGroups != null && userGroups.isNotEmpty) {
-          for (int i = 0; i < userGroups.length; i++) {
-            groupsForSelection.add(SocialGroup.fromMap(userGroups[i]));
-          }
+        if (_availableGroups.isNotEmpty) {
+          groupsForSelection = _availableGroups;
         } else {
-          groupsForSelection = _createDefaultGroups();
+          print('No groups from arguments, fetching from API');
+          User thisUser = await apiService.getUser();
+          var userGroups = thisUser.groups;
+          groupsForSelection = [];
+          
+          if (userGroups != null && userGroups.isNotEmpty) {
+            for (int i = 0; i < userGroups.length; i++) {
+              groupsForSelection.add(SocialGroup.fromMap(userGroups[i]));
+            }
+          } else {
+            groupsForSelection = _createDefaultGroups();
+          }
         }
+        
+        selectedGroup = await _showGroupSelectionDialog(groupsForSelection, themeProvider);
       }
-      
-      final SocialGroup? selectedGroup = await _showGroupSelectionDialog(groupsForSelection, themeProvider);
+
       if (selectedGroup == null) {
         setState(() {
           _isImporting = false;
@@ -154,12 +169,12 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
         } else {
           setState(() {
             _statusMessage =
-                'Successfully imported ${result['importedCount']} contacts to ${selectedGroup.name}!';
+                'Successfully imported ${result['importedCount']} contacts to ${selectedGroup!.name}!';
           });
 
           final importedContacts = await apiService.getAllContacts();
           final recentlyImportedContacts = importedContacts
-              .where((contact) => contact.socialGroups.contains(selectedGroup.name))
+              .where((contact) => contact.socialGroups.contains(selectedGroup!.name))
               .toList();
           List<String> importedContactIds = [];
           recentlyImportedContacts.map((contact){
@@ -206,7 +221,6 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   }
 
   Future<SocialGroup?> _showGroupSelectionDialog(List<SocialGroup> groupsForSelection, ThemeProvider themeProvider) async {
-    // final themeProvider = Provider.of<ThemeProvider>(context);
     
     if (groupsForSelection.isEmpty) {
       groupsForSelection = _createDefaultGroups();
@@ -216,7 +230,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
     return await showDialog<SocialGroup>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Select Group'),
+        title: Text('Choose a Category', style: TextStyle(color: themeProvider.isDarkMode?const Color.fromARGB(255, 171, 170, 170):const Color.fromARGB(137, 55, 54, 54), fontSize: 20, fontWeight: FontWeight.w700, fontFamily: 'OpenSans')),
         backgroundColor: themeProvider.getSurfaceColor(context),
         content: Container(
           width: double.maxFinite,
@@ -264,31 +278,37 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
     final authService = Provider.of<AuthService>(context, listen: false);
     print('stage 1');
     
-    List<SocialGroup> groupsForSelection;
+    SocialGroup? selectedGroup;
     
-    if (_availableGroups.isNotEmpty) {
-      // Use groups passed from onboarding
-      groupsForSelection = _availableGroups;
+    if (_preSelectedGroup != null) {
+      // Use the pre-selected group
+      selectedGroup = _preSelectedGroup;
     } else {
-      // Fallback: get groups from API
-      try {
-        User thisUser = await apiService.getUser();
-        var userGroups = thisUser.groups;
-        groupsForSelection = [];
-        
-        if (userGroups != null && userGroups.isNotEmpty) {
-          for (int i = 0; i < userGroups.length; i++) {
-            groupsForSelection.add(SocialGroup.fromMap(userGroups[i]));
+      // Original logic: show group selection dialog
+      List<SocialGroup> groupsForSelection;
+      
+      if (_availableGroups.isNotEmpty) {
+        groupsForSelection = _availableGroups;
+      } else {
+        try {
+          User thisUser = await apiService.getUser();
+          var userGroups = thisUser.groups;
+          groupsForSelection = [];
+          
+          if (userGroups != null && userGroups.isNotEmpty) {
+            for (int i = 0; i < userGroups.length; i++) {
+              groupsForSelection.add(SocialGroup.fromMap(userGroups[i]));
+            }
+          } else {
+            groupsForSelection = _createDefaultGroups();
           }
-        } else {
+        } catch (e) {
           groupsForSelection = _createDefaultGroups();
         }
-      } catch (e) {
-        groupsForSelection = _createDefaultGroups();
       }
-    }
 
-    final SocialGroup? selectedGroup = await _showGroupSelectionDialog(groupsForSelection, themeProvider);
+      selectedGroup = await _showGroupSelectionDialog(groupsForSelection, themeProvider);
+    }
     if (selectedGroup == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Group selection cancelled')),
@@ -308,10 +328,13 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
       withPhoto: true,
     );
 
+    final existingContacts = await apiService.getAllContacts();
+
     final selectedContacts = await Navigator.of(context).push<List<fContacts.Contact>>(
       MaterialPageRoute(
         builder: (context) => _FullScreenContactPicker(
           contacts: contacts,
+          existingContacts: existingContacts,
           selectedGroup: selectedGroup, // Pass the selected group to the picker
         ),
         fullscreenDialog: true,
@@ -334,7 +357,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
       _isImporting = true;
       _processedCount = 0;
       _totalCount = selectedContacts.length;
-      _statusMessage = 'Importing selected contacts to ${selectedGroup.name}...';
+      _statusMessage = 'Importing selected contacts to ${selectedGroup!.name}...';
     });
 
     final result = await syncService.importFromContactPicker(
@@ -350,22 +373,46 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
     );
 
     setState(() => _isImporting = false);
-
+    print('The result is'); print (result);
     if (result['success'] == true) {
       setState(() {
         _statusMessage =
-            'Successfully imported ${result['importedCount']} contacts to ${selectedGroup.name}!';
+            'Successfully imported ${result['importedCount']} contacts to ${selectedGroup!.name}!';
       });
 
+      // final importedContacts = await apiService.getAllContacts();
+      // // final importedContacts = selectedContacts;
+      // final recentlyImportedContacts = importedContacts
+      //     .where((contact) => contact.connectionType.contains(selectedGroup.name))
+      //     .toList();
+
       final importedContacts = await apiService.getAllContacts();
-      final recentlyImportedContacts = importedContacts
-          .where((contact) => contact.socialGroups.contains(selectedGroup.name))
-          .toList();
+
+     final selectedContactNormalizedPhones = selectedContacts
+    .where((contact) => contact.phones.isNotEmpty)
+    .map((contact) => normalizePhoneNumber(contact.phones.first.normalizedNumber))
+    .where((phone) => phone.isNotEmpty) // Filter out empty phone numbers
+    .toSet();
+
+    // Filter imported contacts by matching normalized phone numbers
+    final recentlyImportedContacts = importedContacts
+        .where((apiContact) {
+          // Get and normalize the API contact's phone number
+          final apiPhone = apiContact.phoneNumber;
+          final normalizedApiPhone = normalizePhoneNumber(apiPhone);
+          
+          // Check if it matches any of the selected contact phone numbers
+          return selectedContactNormalizedPhones.contains(normalizedApiPhone);
+        })
+        .toList();
+
 
       List<String> importedContactIds = [];
       recentlyImportedContacts.map((contact){
         importedContactIds.add(contact.id);
       });
+      print(importedContactIds); print(' is the imported contact ids');
+      print (recentlyImportedContacts); print (' is the recently imported contacts');
       
       // CONDITIONALLY SCHEDULE NUDGES
       if (_isOnboarding == false && recentlyImportedContacts.isNotEmpty) {
@@ -388,6 +435,10 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
       );
     }
   }
+
+  String normalizePhoneNumber(String phoneNumber) {
+  return phoneNumber.replaceAll(RegExp(r'[^0-9]'), '');
+}
 
   // Add this method to create default groups when none are available
   List<SocialGroup> _createDefaultGroups() {
@@ -490,6 +541,12 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   void _getArgumentsFromRoute() {
     _availableGroups = widget.groups as List<SocialGroup>;
      _isOnboarding = widget.isOnboarding;
+      _preSelectedGroup = widget.preSelectedGroup; // Get pre-selected group
+    
+    // If we have a pre-selected group, add it to available groups
+    if (_preSelectedGroup != null && !_availableGroups.contains(_preSelectedGroup)) {
+      _availableGroups = [_preSelectedGroup!];
+    }
   }
 
   @override
@@ -512,20 +569,33 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
     
     return Scaffold(
       appBar: AppBar(
-        title: GradientText(
-          text: 'NUDGE',
-          style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
-          gradient: const LinearGradient(
-            colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+      title: Column(
+        children: [
+          GradientText(
+            text: 'NUDGE',
+            style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
+            gradient: const LinearGradient(
+              colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
           ),
-        ),
-        centerTitle: true,
-        surfaceTintColor: Colors.transparent,
-        iconTheme: IconThemeData(color: AppTheme.primaryColor),
-        backgroundColor: themeProvider.getSurfaceColor(context),
+          if (_preSelectedGroup != null)
+            Text(
+              'Import to ${_preSelectedGroup!.name}',
+              style: TextStyle(
+                fontSize: 12,
+                color: AppTheme.primaryColor,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+        ],
       ),
+      centerTitle: true,
+      surfaceTintColor: Colors.transparent,
+      iconTheme: IconThemeData(color: AppTheme.primaryColor),
+      backgroundColor: themeProvider.getSurfaceColor(context),
+    ),
       floatingActionButton: Padding(
         padding: EdgeInsets.only(bottom: 50),
         child: FeedbackFloatingButton(),
@@ -626,20 +696,33 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   Widget _buildAndroidVersion(Size size, ThemeProvider themeProvider) {
     return Scaffold(
       appBar: AppBar(
-        title: GradientText(
-          text: 'NUDGE',
-          style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
-          gradient: const LinearGradient(
-            colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+      title: Column(
+        children: [
+          GradientText(
+            text: 'NUDGE',
+            style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
+            gradient: const LinearGradient(
+              colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
           ),
-        ),
-        centerTitle: true,
-        surfaceTintColor: Colors.transparent,
-        iconTheme: IconThemeData(color: AppTheme.primaryColor),
-        backgroundColor: themeProvider.getSurfaceColor(context),
+          if (_preSelectedGroup != null)
+            Text(
+              'Import to ${_preSelectedGroup!.name}',
+              style: TextStyle(
+                fontSize: 12,
+                color: AppTheme.primaryColor,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+        ],
       ),
+      centerTitle: true,
+      surfaceTintColor: Colors.transparent,
+      iconTheme: IconThemeData(color: AppTheme.primaryColor),
+      backgroundColor: themeProvider.getSurfaceColor(context),
+    ),
       floatingActionButton: Padding(
         padding: EdgeInsets.only(bottom: 50),
         child: FeedbackFloatingButton(),
@@ -973,399 +1056,464 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
 }
 
 /// Full-screen contact picker widget for selecting contacts to import
-class _FullScreenContactPicker extends StatefulWidget {
-  final List<fContacts.Contact> contacts;
-  final SocialGroup? selectedGroup; // Add this parameter
+  class _FullScreenContactPicker extends StatefulWidget {
+    final List<fContacts.Contact> contacts;
+    final List<Contact> existingContacts;
+    final SocialGroup? selectedGroup;
 
-  const _FullScreenContactPicker({
-    required this.contacts,
-    this.selectedGroup, // Add this parameter
-  });
-
-  @override
-  __FullScreenContactPickerState createState() => __FullScreenContactPickerState();
-}
-
-class __FullScreenContactPickerState extends State<_FullScreenContactPicker> {
-  final List<fContacts.Contact> _tempSelected = [];
-  final TextEditingController _searchController = TextEditingController();
-  List<fContacts.Contact> _filteredContacts = [];
-  
-  // Cache for avatar indices to maintain consistency
-  final Map<String, int> _avatarIndexCache = {};
-
-  @override
-  void initState() {
-    super.initState();
-    _filteredContacts = List.of(widget.contacts);
-  }
-
-  void _applyFilter(String query) {
-    final q = query.trim().toLowerCase();
-    setState(() {
-      _filteredContacts = q.isEmpty
-          ? List.of(widget.contacts)
-          : widget.contacts.where((c) {
-              final name = c.displayName.toLowerCase();
-              final phones = c.phones.map((p) => p.number.toLowerCase()).join(' ');
-              final emails = c.emails.map((e) => e.address.toLowerCase()).join(' ');
-              return name.contains(q) || phones.contains(q) || emails.contains(q);
-            }).toList();
+    const _FullScreenContactPicker({
+      required this.contacts,
+      required this.existingContacts,
+      this.selectedGroup,
     });
+
+    @override
+    __FullScreenContactPickerState createState() => __FullScreenContactPickerState();
   }
 
-  // Get cached or new random index for avatar
-  int _getAvatarIndex(fContacts.Contact contact) {
-    // Use contact ID as cache key if available, otherwise use display name
-    final cacheKey = contact.id;
+  class __FullScreenContactPickerState extends State<_FullScreenContactPicker> {
+    final List<fContacts.Contact> _tempSelected = [];
+    final TextEditingController _searchController = TextEditingController();
+    List<fContacts.Contact> _filteredContacts = [];
     
-    if (_avatarIndexCache.containsKey(cacheKey)) {
-      return _avatarIndexCache[cacheKey]!;
-    }
+    // Cache for avatar indices to maintain consistency
+    final Map<String, int> _avatarIndexCache = {};
     
-    // Generate random index (1-6) using the same logic as contacts list
-    final seed = cacheKey.isEmpty ? 'default' : cacheKey;
-    var hash = 0;
-    for (var i = 0; i < seed.length; i++) {
-      hash = seed.codeUnitAt(i) + ((hash << 5) - hash);
-    }
-    final index = (hash.abs() % 6) + 1;
-    
-    // Cache the result
-    _avatarIndexCache[cacheKey] = index;
-    return index;
-  }
-
-  void _selectAllFiltered() {
-    setState(() {
-      for (final c in _filteredContacts) {
-        if (!_tempSelected.contains(c)) {
-          _tempSelected.add(c);
+    // Helper method to check if a contact already exists
+    bool _isContactAlreadyExists(fContacts.Contact contact) {
+      if (widget.existingContacts.isEmpty) return false;
+      
+      // Check if any phone number matches
+      final contactPhones = contact.phones
+          .map((phone) => _normalizePhoneNumber(phone.normalizedNumber))
+          .where((phone) => phone.isNotEmpty)
+          .toList();
+      
+      if (contactPhones.isEmpty) return false;
+      
+      for (final existingContact in widget.existingContacts) {
+        final existingPhone = _normalizePhoneNumber(existingContact.phoneNumber);
+        if (contactPhones.contains(existingPhone)) {
+          return true;
         }
       }
-    });
-  }
-
-  String _getContactInitials(String name) {
-    if (name.isEmpty) return '?';
-    
-    // Trim and split the name by spaces
-    final parts = name.trim().split(' ').where((part) => part.isNotEmpty).toList();
-    
-    if (parts.length >= 2) {
-      // Has at least first and last name - get first letter of first and last name
-      return '${parts.first[0].toUpperCase()}${parts.last[0].toUpperCase()}';
-    } else if (parts.length == 1) {
-      // Only first name available
-      return parts.first[0].toUpperCase();
+      
+      return false;
     }
     
-    return '?';
-  }
+    String _normalizePhoneNumber(String phoneNumber) {
+      return phoneNumber.replaceAll(RegExp(r'[^0-9]'), '');
+    }
 
-  void _clearFilteredSelection() {
-    setState(() {
-      _tempSelected.removeWhere((c) => _filteredContacts.contains(c));
-    });
-  }
+    @override
+    void initState() {
+      super.initState();
+      _filteredContacts = List.of(widget.contacts);
+    }
 
-   void _dismissKeyboard() {
-    FocusScope.of(context).unfocus();
-  }
+    void _applyFilter(String query) {
+      final q = query.trim().toLowerCase();
+      setState(() {
+        _filteredContacts = q.isEmpty
+            ? List.of(widget.contacts)
+            : widget.contacts.where((c) {
+                final name = c.displayName.toLowerCase();
+                final phones = c.phones.map((p) => p.number.toLowerCase()).join(' ');
+                final emails = c.emails.map((e) => e.address.toLowerCase()).join(' ');
+                return name.contains(q) || phones.contains(q) || emails.contains(q);
+              }).toList();
+      });
+    }
 
-  @override
-  Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    
-    return GestureDetector(
-      onTap: _dismissKeyboard,
-      child: Scaffold(
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'SELECT CONTACTS',
-              style: TextStyle(
-                color: themeProvider.getTextPrimaryColor(context),
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            if (widget.selectedGroup != null)
+    // Get cached or new random index for avatar
+    int _getAvatarIndex(fContacts.Contact contact) {
+      final cacheKey = contact.id;
+      
+      if (_avatarIndexCache.containsKey(cacheKey)) {
+        return _avatarIndexCache[cacheKey]!;
+      }
+      
+      final seed = cacheKey.isEmpty ? 'default' : cacheKey;
+      var hash = 0;
+      for (var i = 0; i < seed.length; i++) {
+        hash = seed.codeUnitAt(i) + ((hash << 5) - hash);
+      }
+      final index = (hash.abs() % 6) + 1;
+      
+      _avatarIndexCache[cacheKey] = index;
+      return index;
+    }
+
+    void _selectAllFiltered() {
+      setState(() {
+        for (final c in _filteredContacts) {
+          if (!_tempSelected.contains(c) && !_isContactAlreadyExists(c)) {
+            _tempSelected.add(c);
+          }
+        }
+      });
+    }
+
+    String _getContactInitials(String name) {
+      if (name.isEmpty) return '?';
+      
+      final parts = name.trim().split(' ').where((part) => part.isNotEmpty).toList();
+      
+      if (parts.length >= 2) {
+        return '${parts.first[0].toUpperCase()}${parts.last[0].toUpperCase()}';
+      } else if (parts.length == 1) {
+        return parts.first[0].toUpperCase();
+      }
+      
+      return '?';
+    }
+
+    void _clearFilteredSelection() {
+      setState(() {
+        _tempSelected.removeWhere((c) => _filteredContacts.contains(c));
+      });
+    }
+
+    void _dismissKeyboard() {
+      FocusScope.of(context).unfocus();
+    }
+
+    @override
+    Widget build(BuildContext context) {
+      final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+      
+      return GestureDetector(
+        onTap: _dismissKeyboard,
+        child: Scaffold(
+        appBar: AppBar(
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Text(
-                'for ${widget.selectedGroup!.name}',
+                'SELECT CONTACTS',
                 style: TextStyle(
-                  color: AppTheme.primaryColor,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
+                  color: themeProvider.getTextPrimaryColor(context),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
+              if (widget.selectedGroup != null)
+                Text(
+                  'for ${widget.selectedGroup!.name}',
+                  style: TextStyle(
+                    color: AppTheme.primaryColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+            ],
+          ),
+          backgroundColor: themeProvider.getSurfaceColor(context),
+          actions: [
+            IconButton(
+              icon: Icon(Icons.select_all, color: themeProvider.getTextPrimaryColor(context)),
+              tooltip: 'Select all',
+              onPressed: _selectAllFiltered,
+            ),
+            IconButton(
+              icon: Icon(Icons.clear, color: themeProvider.getTextPrimaryColor(context)),
+              tooltip: 'Clear selection',
+              onPressed: _clearFilteredSelection,
+            ),
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: Text(
+                '${_tempSelected.length}',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: themeProvider.getTextPrimaryColor(context)),
+              ),
+            ),
           ],
         ),
-        backgroundColor: themeProvider.getSurfaceColor(context),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.select_all, color: themeProvider.getTextPrimaryColor(context)),
-            tooltip: 'Select all',
-            onPressed: _selectAllFiltered,
-          ),
-          IconButton(
-            icon: Icon(Icons.clear, color: themeProvider.getTextPrimaryColor(context)),
-            tooltip: 'Clear selection',
-            onPressed: _clearFilteredSelection,
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: Text(
-              '${_tempSelected.length}',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: themeProvider.getTextPrimaryColor(context)),
-            ),
-          ),
-        ],
-      ),
-      body: Container(
-        color: themeProvider.getBackgroundColor(context),
-        child: Column(
-          children: [
-            // Group info banner (if group is selected)
-            if (widget.selectedGroup != null)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                color: AppTheme.primaryColor.withOpacity(0.1),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 16,
-                      height: 16,
-                      decoration: BoxDecoration(
-                        color: Color(int.parse(widget.selectedGroup!.colorCode.replaceAll('#', '0xFF'))),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Contacts will be added to: ${widget.selectedGroup!.name}',
-                        style: TextStyle(
-                          color: AppTheme.primaryColor,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 14,
+        body: Container(
+          color: themeProvider.getBackgroundColor(context),
+          child: Column(
+            children: [
+              // Group info banner (if group is selected)
+              if (widget.selectedGroup != null)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 16,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          color: Color(int.parse(widget.selectedGroup!.colorCode.replaceAll('#', '0xFF'))),
+                          shape: BoxShape.circle,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            
-            // Search bar
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: TextField(
-                controller: _searchController,
-                style: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
-                decoration: InputDecoration(
-                  prefixIcon: Icon(Icons.search, color: themeProvider.getTextSecondaryColor(context)),
-                  hintText: 'Search by name, phone, or email',
-                  hintStyle: TextStyle(color: themeProvider.getTextHintColor(context)),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: themeProvider.getTextHintColor(context)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: themeProvider.getTextHintColor(context)),
-                  ),
-                  filled: true,
-                  fillColor: themeProvider.getCardColor(context),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                ),
-                onChanged: _applyFilter,
-              ),
-            ),
-            
-            // Info bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Showing ${_filteredContacts.length} of ${widget.contacts.length} contacts',
-                    style: TextStyle(fontSize: 12, color: themeProvider.getTextSecondaryColor(context)),
-                  ),
-                  Text(
-                    'Selected: ${_tempSelected.length}',
-                    style: TextStyle(fontSize: 12, color: themeProvider.getTextSecondaryColor(context)),
-                  ),
-                ],
-              ),
-            ),
-            
-            const SizedBox(height: 8),
-            
-            // Divider
-            Divider(height: 1, color: themeProvider.getTextHintColor(context)),
-            
-            // Contacts list
-            Expanded(
-              child: _filteredContacts.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.group_off, size: 64, color: themeProvider.getTextSecondaryColor(context)),
-                          const SizedBox(height: 16),
-                          Text(
-                            'No contacts found',
-                            style: TextStyle(fontSize: 18, color: themeProvider.getTextSecondaryColor(context)),
-                          ),
-                          if (_searchController.text.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 8.0),
-                              child: Text(
-                                'Try a different search term',
-                                style: TextStyle(fontSize: 14, color: themeProvider.getTextHintColor(context)),
-                              ),
-                            ),
-                        ],
-                      ),
-                    )
-                  : ListView.builder(
-                      itemCount: _filteredContacts.length,
-                      itemBuilder: (context, index) {
-                        final contact = _filteredContacts[index];
-                        final isSelected = _tempSelected.contains(contact);
-                        final primaryPhone = contact.phones.isNotEmpty
-                            ? contact.phones.first.number
-                            : '';
-                        final primaryEmail = contact.emails.isNotEmpty
-                            ? contact.emails.first.address
-                            : '';
-                        
-                        // Get the cached avatar index
-                        final avatarIndex = _getAvatarIndex(contact);
-
-                        Widget avatar;
-                        if (contact.photo != null && contact.photo!.isNotEmpty) {
-                          avatar = CircleAvatar(
-                            backgroundImage: MemoryImage(contact.photo!),
-                            radius: 24,
-                          );
-                        } else {
-                          avatar = CircleAvatar(
-                            radius: 24,
-                            backgroundColor: Colors.transparent,
-                            backgroundImage: AssetImage('assets/contact-icons/$avatarIndex.png'),
-                            child: Text(
-                              contact.displayName.isNotEmpty ? _getContactInitials(contact.displayName).toUpperCase() : '',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
-                            )
-                          );
-                        }
-                        
-                        return Container(
-                          color: isSelected 
-                              ? AppTheme.primaryColor.withOpacity(0.1)
-                              : Colors.transparent,
-                          child: ListTile(
-                            leading: avatar,
-                            title: Text(
-                              contact.displayName,
-                              style: TextStyle(
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                color: isSelected ? AppTheme.primaryColor : themeProvider.getTextPrimaryColor(context),
-                              ),
-                            ),
-                            subtitle: Text(
-                              [primaryPhone, primaryEmail]
-                                  .where((s) => s.isNotEmpty)
-                                  .join(' • '),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: isSelected 
-                                    ? AppTheme.primaryColor.withOpacity(0.8)
-                                    : themeProvider.getTextSecondaryColor(context),
-                              ),
-                            ),
-                            trailing: isSelected
-                                ? Icon(Icons.check_circle, color: AppTheme.primaryColor)
-                                : null,
-                            onTap: () {
-                              setState(() {
-                                if (isSelected) {
-                                  _tempSelected.remove(contact);
-                                } else {
-                                  _tempSelected.add(contact);
-                                }
-                              });
-                            },
-                          ),
-                        );
-                      },
-                    ),
-            ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: BottomAppBar(
-        color: themeProvider.getSurfaceColor(context),
-        child: Padding(
-          padding: const EdgeInsets.all(0.0),
-          child: Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    side: BorderSide(color: themeProvider.getTextHintColor(context)),
-                  ),
-                  child: Text(
-                    'Cancel',
-                    style: TextStyle(fontSize: 16, color: themeProvider.getTextSecondaryColor(context)),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: _tempSelected.isEmpty
-                      ? null
-                      : () => Navigator.pop(context, _tempSelected),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.download, color: Colors.white),
                       const SizedBox(width: 8),
-                      Text(
-                        'Import (${_tempSelected.length})',
-                        style: const TextStyle(fontSize: 16, color: Colors.white),
+                      Expanded(
+                        child: Text(
+                          'Contacts will be added to: ${widget.selectedGroup!.name}',
+                          style: TextStyle(
+                            color: AppTheme.primaryColor,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 14,
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
+              
+              // Search bar
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: TextField(
+                  controller: _searchController,
+                  style: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
+                  decoration: InputDecoration(
+                    prefixIcon: Icon(Icons.search, color: themeProvider.getTextSecondaryColor(context)),
+                    hintText: 'Search by name, phone, or email',
+                    hintStyle: TextStyle(color: themeProvider.getTextHintColor(context)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: themeProvider.getTextHintColor(context)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: themeProvider.getTextHintColor(context)),
+                    ),
+                    filled: true,
+                    fillColor: themeProvider.getCardColor(context),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  ),
+                  onChanged: _applyFilter,
+                ),
+              ),
+              
+              // Info bar
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Showing ${_filteredContacts.length} of ${widget.contacts.length} contacts',
+                      style: TextStyle(fontSize: 12, color: themeProvider.getTextSecondaryColor(context)),
+                    ),
+                    Text(
+                      'Selected: ${_tempSelected.length}',
+                      style: TextStyle(fontSize: 12, color: themeProvider.getTextSecondaryColor(context)),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Divider
+              Divider(height: 1, color: themeProvider.getTextHintColor(context)),
+              
+              // Contacts list
+              Expanded(
+                child: _filteredContacts.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.group_off, size: 64, color: themeProvider.getTextSecondaryColor(context)),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No contacts found',
+                              style: TextStyle(fontSize: 18, color: themeProvider.getTextSecondaryColor(context)),
+                            ),
+                            if (_searchController.text.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: Text(
+                                  'Try a different search term',
+                                  style: TextStyle(fontSize: 14, color: themeProvider.getTextHintColor(context)),
+                                ),
+                              ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: _filteredContacts.length,
+                        itemBuilder: (context, index) {
+                          final contact = _filteredContacts[index];
+                          final isSelected = _tempSelected.contains(contact);
+                          final alreadyExists = _isContactAlreadyExists(contact);
+                          final primaryPhone = contact.phones.isNotEmpty
+                              ? contact.phones.first.number
+                              : '';
+                          final primaryEmail = contact.emails.isNotEmpty
+                              ? contact.emails.first.address
+                              : '';
+                          
+                          final avatarIndex = _getAvatarIndex(contact);
+
+                          Widget avatar;
+                          if (contact.photo != null && contact.photo!.isNotEmpty) {
+                            avatar = CircleAvatar(
+                              backgroundImage: MemoryImage(contact.photo!),
+                              radius: 24,
+                            );
+                          } else {
+                            avatar = CircleAvatar(
+                              radius: 24,
+                              backgroundColor: Colors.transparent,
+                              backgroundImage: AssetImage('assets/contact-icons/$avatarIndex.png'),
+                              child: Text(
+                                contact.displayName.isNotEmpty ? _getContactInitials(contact.displayName).toUpperCase() : '',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              )
+                            );
+                          }
+                          
+                          // Determine text color based on contact state
+                          Color textColor;
+                          Color subtitleColor;
+                          
+                          if (alreadyExists) {
+                            textColor = themeProvider.getTextHintColor(context);
+                            subtitleColor = themeProvider.getTextHintColor(context).withOpacity(0.7);
+                          } else if (isSelected) {
+                            textColor = AppTheme.primaryColor;
+                            subtitleColor = AppTheme.primaryColor.withOpacity(0.8);
+                          } else {
+                            textColor = themeProvider.getTextPrimaryColor(context);
+                            subtitleColor = themeProvider.getTextSecondaryColor(context);
+                          }
+                          
+                          return Container(
+                            color: isSelected 
+                                ? AppTheme.primaryColor.withOpacity(0.1)
+                                : Colors.transparent,
+                            child: ListTile(
+                              leading: Opacity(
+                                opacity: alreadyExists ? 0.5 : 1.0,
+                                child: avatar,
+                              ),
+                              title: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      contact.displayName,
+                                      style: TextStyle(
+                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                        color: textColor,
+                                        fontStyle: alreadyExists ? FontStyle.italic : FontStyle.normal,
+                                      ),
+                                    ),
+                                  ),
+                                  if (alreadyExists)
+                                    Container(
+                                      margin: const EdgeInsets.only(left: 8),
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: themeProvider.getTextHintColor(context).withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        'Already in Nudge',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: themeProvider.getTextHintColor(context),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              subtitle: Text(
+                                [primaryPhone, primaryEmail]
+                                    .where((s) => s.isNotEmpty)
+                                    .join(' • '),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: subtitleColor,
+                                  fontStyle: alreadyExists ? FontStyle.italic : FontStyle.normal,
+                                ),
+                              ),
+                              trailing: isSelected
+                                  ? Icon(Icons.check_circle, color: AppTheme.primaryColor)
+                                  : alreadyExists
+                                      ? Icon(Icons.check_circle_outline, color: themeProvider.getTextHintColor(context))
+                                      : null,
+                              onTap: alreadyExists
+                                  ? null // Make already existing contacts unselectable
+                                  : () {
+                                      setState(() {
+                                        if (isSelected) {
+                                          _tempSelected.remove(contact);
+                                        } else {
+                                          _tempSelected.add(contact);
+                                        }
+                                      });
+                                    },
+                            ),
+                          );
+                        },
+                      ),
               ),
             ],
           ),
         ),
-      ),
-    ));
+        bottomNavigationBar: BottomAppBar(
+          color: themeProvider.getSurfaceColor(context),
+          child: Padding(
+            padding: const EdgeInsets.all(0.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      side: BorderSide(color: themeProvider.getTextHintColor(context)),
+                    ),
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(fontSize: 16, color: themeProvider.getTextSecondaryColor(context)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _tempSelected.isEmpty
+                        ? null
+                        : () => Navigator.pop(context, _tempSelected),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.download, color: Colors.white),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Import (${_tempSelected.length})',
+                          style: const TextStyle(fontSize: 16, color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ));
+    }
   }
-}

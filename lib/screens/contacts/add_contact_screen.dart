@@ -30,8 +30,10 @@ class AddContactScreen extends StatefulWidget {
   final String? groupName;
   final String? groupPeriod;
   final int? groupFrequency;
+  final bool isOnboarding;
+  final List<SocialGroup>? groups;
   
-  const AddContactScreen({super.key, this.groupName, this.groupPeriod, this.groupFrequency});
+  AddContactScreen({super.key, this.groupName, this.groupPeriod, this.groupFrequency, this.isOnboarding = false, this.groups});
 
   @override
   State<AddContactScreen> createState() => _AddContactScreenState();
@@ -80,6 +82,15 @@ class _AddContactScreenState extends State<AddContactScreen> {
   }
 
   void _loadUserGroups() async {
+    if (widget.isOnboarding && widget.groups != null && widget.groups!.isNotEmpty) {
+      setState(() {
+        _userGroups = widget.groups!;
+        if (_userGroups.isNotEmpty) {
+          _connectionType = _userGroups.first.name;
+        }
+      });
+      return;
+    }
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
       final user = authService.currentUser;
@@ -88,6 +99,13 @@ class _AddContactScreenState extends State<AddContactScreen> {
         final apiService = Provider.of<ApiService>(context, listen: false);
         final groups = await apiService.getGroupsStream().first;
         
+        if (groups.isEmpty && widget.isOnboarding){
+          var newGroups = _createDefaultGroups();
+          setState(() {
+            _userGroups = newGroups;
+          });
+          return;
+        }
         setState(() {
           _userGroups = groups;
           if (_userGroups.isNotEmpty) {
@@ -99,6 +117,82 @@ class _AddContactScreenState extends State<AddContactScreen> {
       print('Error loading user groups: $e');
     }
   }
+
+    List<SocialGroup> _createDefaultGroups() {
+    return [
+      SocialGroup(
+        id: 'family',
+        name: 'Family',
+        description: '',
+        period: 'Monthly',
+        frequency: 4,
+        memberIds: [],
+        memberCount: 0,
+        lastInteraction: DateTime.now(),
+        colorCode: '#4FC3F7',
+        birthdayNudgesEnabled: true,
+        anniversaryNudgesEnabled: true,
+        orderIndex: 0
+      ),
+      SocialGroup(
+        id: 'friend',
+        name: 'Friend',
+        description: '',
+        period: 'Weekly',
+        frequency: 2,
+        memberIds: [],
+        memberCount: 0,
+        lastInteraction: DateTime.now(),
+        colorCode: '#FF6F61',
+        birthdayNudgesEnabled: true,
+        anniversaryNudgesEnabled: true,
+        orderIndex: 1
+      ),
+      SocialGroup(
+        id: 'colleague',
+        name: 'Colleague',
+        description: '',
+        period: 'Monthly',
+        frequency: 2,
+        memberIds: [],
+        memberCount: 0,
+        lastInteraction: DateTime.now(),
+        colorCode: '#81C784',
+        birthdayNudgesEnabled: true,
+        anniversaryNudgesEnabled: true,
+        orderIndex: 2
+      ),
+      SocialGroup(
+        id: 'client',
+        name: 'Client',
+        description: '',
+        period: 'Quarterly',
+        frequency: 1,
+        memberIds: [],
+        memberCount: 0,
+        lastInteraction: DateTime.now(),
+        colorCode: '#FFC107',
+        birthdayNudgesEnabled: true,
+        anniversaryNudgesEnabled: true,
+        orderIndex: 3
+      ),
+      SocialGroup(
+        id: 'mentor',
+        name: 'Mentor',
+        description: '',
+        period: 'Annually',
+        frequency: 2,
+        memberIds: [],
+        memberCount: 0,
+        lastInteraction: DateTime.now(),
+        colorCode: '#607D8B',
+        birthdayNudgesEnabled: true,
+        anniversaryNudgesEnabled: true,
+        orderIndex: 4
+      ),
+    ];
+  }
+
 
   void _loadTagSuggestions() async {
     final authService = Provider.of<AuthService>(context, listen: false);
@@ -152,12 +246,25 @@ class _AddContactScreenState extends State<AddContactScreen> {
   });
 }
 
-  Future<Map<String, dynamic>> matchSchedule (String groupName, List<SocialGroup> groups) async{
-    print(groupName);
-    SocialGroup myGroup = groups.firstWhere((group) => group.name == groupName);
-    Map<String, dynamic> schedule = {'period': myGroup.period, 'frequency': myGroup.frequency};
-    return schedule;
-   }
+  Future<Map<String, dynamic>> matchSchedule(String groupName, List<SocialGroup> groups) async {
+    print('Matching schedule for group: $groupName');
+    
+    // If we have groups passed from onboarding, use them
+    final List<SocialGroup> targetGroups = widget.isOnboarding && widget.groups != null 
+        ? widget.groups! 
+        : groups;
+    
+    try {
+      SocialGroup myGroup = targetGroups.firstWhere((group) => group.name == groupName);
+      Map<String, dynamic> schedule = {'period': myGroup.period, 'frequency': myGroup.frequency};
+      print('Found schedule: $schedule');
+      return schedule;
+    } catch (e) {
+      print('Group not found, using default schedule: $e');
+      // Return a default schedule if group not found
+      return {'period': 'Monthly', 'frequency': 2};
+    }
+  }
 
    void _deleteImage() {
     setState(() {
@@ -346,8 +453,10 @@ class _AddContactScreenState extends State<AddContactScreen> {
       return _buildCropScreen();
     }
     
-    return StreamProvider<List<SocialGroup>>(
-        create: (context) => apiService.getGroupsStream(),
+    return StreamProvider<List<SocialGroup>>.value(
+        value: widget.isOnboarding && widget.groups != null
+      ? Stream.value(widget.groups!) // Use passed groups if onboarding
+      : apiService.getGroupsStream(), // Otherwise use API stream
         initialData: const [],
         child: Consumer<List<SocialGroup>>(
           builder: (context, groups, child) {
@@ -355,7 +464,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
               onTap: _dismissKeyboard,
               child: Scaffold(
                 appBar: AppBar(
-                  title: Text('Add Contact', style: AppTextStyles.title2.copyWith(color: themeProvider.getTextPrimaryColor(context))),
+                  title: Text('Add Contact', style: AppTextStyles.title2.copyWith(color: themeProvider.getTextPrimaryColor(context), fontSize: 22, fontWeight: FontWeight.w800)),
                   centerTitle: true,
                   iconTheme: IconThemeData(color: AppTheme.primaryColor),
                   surfaceTintColor: Colors.transparent,
@@ -903,7 +1012,10 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                   period = widget.groupPeriod!;
                                   frequency = widget.groupFrequency!;
                                 } else {
-                                  Map<String, dynamic> schedule = await matchSchedule(_connectionType, groups);
+                                  final List<SocialGroup> targetGroups = widget.isOnboarding && widget.groups != null 
+                                  ? widget.groups! 
+                                  : groups;
+                                  Map<String, dynamic> schedule = await matchSchedule(_connectionType, targetGroups);
                                   period = schedule['period'];
                                   frequency = schedule['frequency'];
                                 }
@@ -987,7 +1099,11 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                   saving = false;
                                 });
                                 // Navigate back
-                                Navigator.pop(context);
+                                if (widget.isOnboarding) {
+                                  Navigator.pop(context, newContact); // Return the created contact
+                                } else {
+                                  Navigator.pop(context); // Regular navigation
+                                }
 
                               }
                             },

@@ -8,6 +8,7 @@ class WelcomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    var size = MediaQuery.of(context).size;
     return Scaffold(
       body: Stack(
         children: [
@@ -54,13 +55,13 @@ class WelcomeScreen extends StatelessWidget {
                       color: Colors.white,
                       letterSpacing: 3,
                       fontFamily: 'RobotoMono',
-                      shadows: [
-                        Shadow(
-                          blurRadius: 10,
-                          color: Colors.black38,
-                          offset: Offset(2, 2),
-                        ),
-                      ],
+                      // shadows: [
+                      //   Shadow(
+                      //     blurRadius: 10,
+                      //     color: Colors.black38,
+                      //     offset: Offset(2, 2),
+                      //   ),
+                      // ],
                     ),
                   ),
                   
@@ -70,7 +71,7 @@ class WelcomeScreen extends StatelessWidget {
                   const Text(
                     'Stay connected to the people\nwho matter most',
                     style: TextStyle(
-                      fontSize: 24,
+                      fontSize: 21,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
                       height: 1.4,
@@ -89,7 +90,7 @@ class WelcomeScreen extends StatelessWidget {
                   
                   // Join Button
                   SizedBox(
-                    width: double.infinity,
+                    width: size.width*0.7,
                     height: 60,
                     child: ElevatedButton(
                       onPressed: () {
@@ -264,7 +265,7 @@ class NaturalStarPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     // Draw defined rings first
-    _drawDefinedUniverseRings(canvas, size);
+    // _drawDefinedUniverseRings(canvas, size);
     
     // Draw all stars
     for (final star in _allStars) {
@@ -283,54 +284,54 @@ class NaturalStarPainter extends CustomPainter {
     _drawSubtleConnections(canvas, size);
   }
 
-  void _drawDefinedUniverseRings(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final maxRadius = min(size.width, size.height) * 0.45;
+  // void _drawDefinedUniverseRings(Canvas canvas, Size size) {
+  //   final center = Offset(size.width / 2, size.height / 2);
+  //   final maxRadius = min(size.width, size.height) * 0.45;
     
-    // Draw 3 defined rings (less blurry, more visible)
-    final rings = [
-      Ring(radius: maxRadius * 0.5, color: Colors.yellow.withOpacity(0.1)),
-      Ring(radius: maxRadius * 0.7, color: const Color(0xff3CB3E9).withOpacity(0.08)),
-      Ring(radius: maxRadius * 0.95, color: const Color(0xff897ED6).withOpacity(0.06)),
-    ];
+  //   // Draw 3 defined rings (less blurry, more visible)
+  //   final rings = [
+  //     Ring(radius: maxRadius * 0.5, color: Colors.yellow.withOpacity(0.1)),
+  //     Ring(radius: maxRadius * 0.7, color: const Color(0xff3CB3E9).withOpacity(0.08)),
+  //     Ring(radius: maxRadius * 0.95, color: const Color(0xff897ED6).withOpacity(0.06)),
+  //   ];
     
-    for (final ring in rings) {
-      // Main ring - sharper, less blurry
-      final paint = Paint()
-        ..color = ring.color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.0
-        ..strokeCap = StrokeCap.round;
-        // Minimal blur for sharper edges
+  //   for (final ring in rings) {
+  //     // Main ring - sharper, less blurry
+  //     final paint = Paint()
+  //       ..color = ring.color
+  //       ..style = PaintingStyle.stroke
+  //       ..strokeWidth = 1.0
+  //       ..strokeCap = StrokeCap.round;
+  //       // Minimal blur for sharper edges
       
-      canvas.drawCircle(center, ring.radius, paint);
+  //     canvas.drawCircle(center, ring.radius, paint);
       
-      // Very subtle inner glow only
-      final innerPaint = Paint()
-        ..color = ring.color.withOpacity(0.3)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.5
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+  //     // Very subtle inner glow only
+  //     final innerPaint = Paint()
+  //       ..color = ring.color.withOpacity(0.3)
+  //       ..style = PaintingStyle.stroke
+  //       ..strokeWidth = 0.5
+  //       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
       
-      canvas.drawCircle(center, ring.radius - 0.5, innerPaint);
-    }
+  //     canvas.drawCircle(center, ring.radius - 0.5, innerPaint);
+  //   }
     
-    // Add subtle radial gradient effect for rings
-    final radialGradientPaint = Paint()
-      ..shader = RadialGradient(
-        center: Alignment.center,
-        colors: [
-          Colors.white.withOpacity(0.02),
-          Colors.transparent,
-        ],
-        radius: 0.5,
-      ).createShader(Rect.fromCircle(
-        center: center,
-        radius: maxRadius,
-      ));
+  //   // Add subtle radial gradient effect for rings
+  //   final radialGradientPaint = Paint()
+  //     ..shader = RadialGradient(
+  //       center: Alignment.center,
+  //       colors: [
+  //         Colors.white.withOpacity(0.02),
+  //         Colors.transparent,
+  //       ],
+  //       radius: 0.5,
+  //     ).createShader(Rect.fromCircle(
+  //       center: center,
+  //       radius: maxRadius,
+  //     ));
     
-    canvas.drawCircle(center, maxRadius, radialGradientPaint);
-  }
+  //   canvas.drawCircle(center, maxRadius, radialGradientPaint);
+  // }
 
   void _drawSubtleConnections(Canvas canvas, Size size) {
     final paint = Paint()

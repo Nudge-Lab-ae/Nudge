@@ -104,7 +104,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Contact Details', style: AppTextStyles.title2.copyWith(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+        title: Text('Contact Details', style: AppTextStyles.title2.copyWith(color: themeProvider.getTextPrimaryColor(context), fontSize: 22, fontWeight: FontWeight.w800, fontFamily: 'Inter')),
         centerTitle: true,
         iconTheme: IconThemeData(color: AppTheme.primaryColor),
         backgroundColor: themeProvider.getSurfaceColor(context),
@@ -184,7 +184,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                   Text(
                     (_currentContact.name),
                     style: TextStyle(
-                      fontSize: 24,
+                      fontSize: 20,
                       fontFamily: 'OpenSans',
                       fontWeight: FontWeight.bold,
                       color: themeProvider.getTextPrimaryColor(context)
@@ -221,8 +221,9 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                         value: _currentContact.isVIP,
                         onChanged: _toggleVIPStatus,
                         activeColor: AppTheme.primaryColor,
-                        inactiveThumbColor: themeProvider.getTextSecondaryColor(context),
-                        inactiveTrackColor: themeProvider.getTextHintColor(context),
+                        // activeTrackColor: Colors.black,
+                        inactiveThumbColor: themeProvider.getButtonColor(context),
+                        // inactiveTrackColor: themeProvider.getButtonSecondaryColor(context),
                       ),
               ),
             ),
@@ -258,16 +259,16 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                 ),
               const SizedBox(height: 20),
             ],
-            
+            const SizedBox(height: 20),
             // Connection Details Section
             Text(
               'CONNECTION DETAILS',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 17,
                 fontFamily: 'OpenSans',
                 fontWeight: FontWeight.bold,
                 color: themeProvider.getTextSecondaryColor(context),
-                letterSpacing: 1.0,
+                // letterSpacing: 1.0,
               ),
             ),
             const SizedBox(height: 10),
@@ -432,7 +433,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  _showLogInteractionModal(context);
+                  _showLogInteractionModal(context, themeProvider);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryColor,
@@ -507,9 +508,9 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     }
   }
 
-  Future<void> _showLogInteractionModal(BuildContext context) async {
+  Future<void> _showLogInteractionModal(BuildContext context, ThemeProvider themeProvider) async {
     final apiService = Provider.of<ApiService>(context, listen: false);
-    final themeProvider = Provider.of<ThemeProvider>(context);
+    // final themeProvider = Provider.of<ThemeProvider>(context);
     
     showModalBottomSheet(
       context: context,
@@ -526,6 +527,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
           child: _LogInteractionModal(
             apiService: apiService,
             contact: _currentContact,
+            isDarkMode: themeProvider.isDarkMode,
           ),
         );
       },
@@ -546,10 +548,12 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
 class _LogInteractionModal extends StatefulWidget {
   final ApiService apiService;
   final Contact contact;
+  final bool isDarkMode;
   
   const _LogInteractionModal({
     required this.apiService,
     required this.contact,
+    required this.isDarkMode,
   });
 
   @override
@@ -560,7 +564,15 @@ class __LogInteractionModalState extends State<_LogInteractionModal> {
   TextEditingController _notesController = TextEditingController();
   String? _selectedInteractionType;
   bool _isLoading = false;
-  final List<String> _interactionTypes = ['call', 'message', 'meet', 'other'];
+  DateTime _selectedDate = DateTime.now();
+  TimeOfDay _selectedTime = TimeOfDay.now();
+
+  final List<String> _interactionTypes = [
+    'call',
+    'message',
+    'meet',
+    'other'
+  ];
 
   @override
   void dispose() {
@@ -568,7 +580,33 @@ class __LogInteractionModalState extends State<_LogInteractionModal> {
     super.dispose();
   }
 
-  Future<void> _logTouchpoint() async {
+  Future<void> _selectDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
+  }
+
+  Future<void> _selectTime() async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: _selectedTime,
+    );
+    if (picked != null && picked != _selectedTime) {
+      setState(() {
+        _selectedTime = picked;
+      });
+    }
+  }
+
+  Future<void> _logInteraction() async {
     if (_selectedInteractionType == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -584,11 +622,21 @@ class __LogInteractionModalState extends State<_LogInteractionModal> {
     });
 
     try {
+      // Combine date and time
+      final interactionDateTime = DateTime(
+        _selectedDate.year,
+        _selectedDate.month,
+        _selectedDate.day,
+        _selectedTime.hour,
+        _selectedTime.minute,
+      );
+
       // Log the interaction
       await widget.apiService.logInteraction(
         contactId: widget.contact.id,
         interactionType: _selectedInteractionType!,
         notes: _notesController.text.isNotEmpty ? _notesController.text : null,
+        interactionDate: interactionDateTime.toIso8601String(), // Add this parameter
       );
 
       // Show success message
@@ -600,9 +648,10 @@ class __LogInteractionModalState extends State<_LogInteractionModal> {
         ),
       );
 
-      // Close the modal after a brief delay
+      // Close both modals after a brief delay
       Future.delayed(const Duration(milliseconds: 500), () {
-        Navigator.pop(context);
+        Navigator.pop(context); // Close the log touchpoint modal
+        Navigator.pop(context); // Close the contact detail modal
       });
 
     } catch (e) {
@@ -622,7 +671,9 @@ class __LogInteractionModalState extends State<_LogInteractionModal> {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
+    // Format date and time for display
+    final formattedDate = '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}';
+    final formattedTime = _selectedTime.format(context);
     
     return Container(
       constraints: BoxConstraints(
@@ -641,14 +692,20 @@ class __LogInteractionModalState extends State<_LogInteractionModal> {
                 'LOG TOUCHPOINT',
                 style: TextStyle(
                   fontSize: 18,
-                  fontFamily: 'OpenSans',
                   fontWeight: FontWeight.w700,
-                  color: themeProvider.getTextPrimaryColor(context),
+                  color: widget.isDarkMode 
+                    ? const Color(0xFFCCCCCC)
+                    : const Color(0xff555555),
                   letterSpacing: 1.2,
                 ),
               ),
               IconButton(
-                icon: Icon(Icons.close, color: themeProvider.getTextPrimaryColor(context)),
+                icon: Icon(
+                  Icons.close, 
+                  color: widget.isDarkMode 
+                    ? const Color(0xFFCCCCCC)
+                    : const Color(0xff555555)
+                ),
                 onPressed: () => Navigator.pop(context),
               ),
             ],
@@ -660,25 +717,26 @@ class __LogInteractionModalState extends State<_LogInteractionModal> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
+              color: const Color(0xFF3CB3E9).withOpacity(widget.isDarkMode ? 0.2 : 0.1),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
+              border: Border.all(
+                color: const Color(0xFF3CB3E9).withOpacity(widget.isDarkMode ? 0.4 : 0.3),
+              ),
             ),
             child: Row(
               children: [
                 Container(
                   width: 40,
                   height: 40,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppTheme.primaryColor,
+                    color: Color(0xFF3CB3E9),
                   ),
                   child: Center(
                     child: Text(
                       widget.contact.name.substring(0, 1).toUpperCase(),
                       style: const TextStyle(
                         color: Colors.white,
-                        fontFamily: 'OpenSans',
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -694,17 +752,19 @@ class __LogInteractionModalState extends State<_LogInteractionModal> {
                         widget.contact.name,
                         style: TextStyle(
                           fontSize: 16,
-                          fontFamily: 'OpenSans',
                           fontWeight: FontWeight.w600,
-                          color: themeProvider.getTextPrimaryColor(context),
+                          color: widget.isDarkMode 
+                            ? Colors.white
+                            : const Color(0xff333333),
                         ),
                       ),
                       Text(
                         widget.contact.connectionType,
                         style: TextStyle(
                           fontSize: 12,
-                          fontFamily: 'OpenSans',
-                          color: themeProvider.getTextSecondaryColor(context),
+                          color: widget.isDarkMode 
+                            ? const Color(0xFFAAAAAA)
+                            : const Color(0xff888888),
                         ),
                       ),
                     ],
@@ -721,9 +781,10 @@ class __LogInteractionModalState extends State<_LogInteractionModal> {
             'INTERACTION TYPE',
             style: TextStyle(
               fontSize: 12,
-              fontFamily: 'OpenSans',
               fontWeight: FontWeight.w600,
-              color: themeProvider.getTextSecondaryColor(context),
+              color: widget.isDarkMode 
+                ? const Color(0xFFAAAAAA)
+                : const Color(0xff888888),
               letterSpacing: 0.5,
             ),
           ),
@@ -739,16 +800,25 @@ class __LogInteractionModalState extends State<_LogInteractionModal> {
                   type.toUpperCase(),
                   style: TextStyle(
                     fontSize: 12,
-                    fontFamily: 'OpenSans',
                     fontWeight: FontWeight.w600,
-                    color: isSelected ? Colors.white : themeProvider.getTextPrimaryColor(context),
+                    color: isSelected 
+                      ? Colors.white
+                      : widget.isDarkMode 
+                          ? Colors.white
+                          : const Color(0xff333333),
                   ),
                 ),
                 selected: isSelected,
-                selectedColor: AppTheme.primaryColor,
-                backgroundColor: themeProvider.getCardColor(context),
+                selectedColor: const Color(0xFF3CB3E9),
+                backgroundColor: widget.isDarkMode 
+                  ? const Color(0xFF2A2A2A)
+                  : Colors.white,
                 side: BorderSide(
-                  color: isSelected ? AppTheme.primaryColor : themeProvider.getTextHintColor(context),
+                  color: isSelected 
+                    ? const Color(0xFF3CB3E9)
+                    : widget.isDarkMode 
+                        ? const Color(0xFF444444)
+                        : const Color(0xFFEEEEEE),
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
@@ -764,24 +834,134 @@ class __LogInteractionModalState extends State<_LogInteractionModal> {
           
           const SizedBox(height: 16),
           
+          // Date and Time Selection
+          Text(
+            'WHEN DID THIS INTERACTION HAPPEN?',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: widget.isDarkMode 
+                ? const Color(0xFFAAAAAA)
+                : const Color(0xff888888),
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+          
+          Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: _selectDate,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: widget.isDarkMode 
+                          ? const Color(0xFF444444)
+                          : const Color(0xFFEEEEEE),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.calendar_today, size: 20, color: const Color(0xFF3CB3E9)),
+                            const SizedBox(width: 12),
+                            ],
+                        ),
+                        Text(
+                          formattedDate,
+                          style: TextStyle(
+                            color: widget.isDarkMode ? Colors.white : const Color(0xff333333),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: GestureDetector(
+                  onTap: _selectTime,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: widget.isDarkMode 
+                          ? const Color(0xFF444444)
+                          : const Color(0xFFEEEEEE),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.access_time, size: 20, color: const Color(0xFF3CB3E9)),
+                            const SizedBox(width: 12),
+                            ],
+                        ),
+                        Text(
+                          formattedTime,
+                          style: TextStyle(
+                            color: widget.isDarkMode ? Colors.white : const Color(0xff333333),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 16),
+          
           // Notes Field
           TextField(
             controller: _notesController,
-            style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'),
+            style: TextStyle(
+              color: widget.isDarkMode ? Colors.white : const Color(0xff333333),
+            ),
             maxLines: 3,
             decoration: InputDecoration(
               labelText: 'Notes (optional)',
-              labelStyle: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans'),
+              labelStyle: TextStyle(
+                color: widget.isDarkMode 
+                  ? const Color(0xFFAAAAAA)
+                  : const Color(0xff888888),
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: themeProvider.getTextHintColor(context)),
+                borderSide: BorderSide(
+                  color: widget.isDarkMode 
+                    ? const Color(0xFF444444)
+                    : const Color(0xFFEEEEEE),
+                ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: themeProvider.getTextHintColor(context)),
+                borderSide: BorderSide(
+                  color: widget.isDarkMode 
+                    ? const Color(0xFF444444)
+                    : const Color(0xFFEEEEEE),
+                ),
               ),
               filled: true,
-              fillColor: themeProvider.getCardColor(context),
+              fillColor: widget.isDarkMode 
+                ? const Color(0xFF2A2A2A)
+                : Colors.white,
             ),
           ),
           
@@ -791,9 +971,9 @@ class __LogInteractionModalState extends State<_LogInteractionModal> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: _isLoading ? null : _logTouchpoint,
+              onPressed: _isLoading ? null : _logInteraction,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
+                backgroundColor: const Color(0xFF3CB3E9),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
@@ -819,7 +999,6 @@ class __LogInteractionModalState extends State<_LogInteractionModal> {
                           'LOG TOUCHPOINT',
                           style: TextStyle(
                             fontSize: 16,
-                            fontFamily: 'OpenSans',
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -834,3 +1013,4 @@ class __LogInteractionModalState extends State<_LogInteractionModal> {
     );
   }
 }
+

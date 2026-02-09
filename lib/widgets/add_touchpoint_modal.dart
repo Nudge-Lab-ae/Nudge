@@ -25,6 +25,8 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
   Contact? _selectedContact;
   String? _selectedInteractionType;
   bool _isLoading = false;
+  DateTime _selectedDate = DateTime.now();
+  TimeOfDay _selectedTime = TimeOfDay.now();
 
   final List<String> _interactionTypes = [
     'call',
@@ -91,6 +93,32 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
     });
   }
 
+  Future<void> _selectDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
+  }
+
+  Future<void> _selectTime() async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: _selectedTime,
+    );
+    if (picked != null && picked != _selectedTime) {
+      setState(() {
+        _selectedTime = picked;
+      });
+    }
+  }
+
   Future<void> _logTouchpoint() async {
     if (_selectedContact == null || _selectedInteractionType == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -107,11 +135,21 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
     });
 
     try {
+      // Combine date and time
+      final interactionDateTime = DateTime(
+        _selectedDate.year,
+        _selectedDate.month,
+        _selectedDate.day,
+        _selectedTime.hour,
+        _selectedTime.minute,
+      );
+
       // Log the interaction
       await widget.apiService.logInteraction(
         contactId: _selectedContact!.id,
         interactionType: _selectedInteractionType!,
         notes: _notesController.text.isNotEmpty ? _notesController.text : null,
+        interactionDate: interactionDateTime.toIso8601String(), // Add this parameter
       );
 
       // Show success message
@@ -149,12 +187,15 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
     final theme = Theme.of(context);
     
     final primaryColor = theme.colorScheme.primary;
-    // final backgroundColor = themeProvider.getBackgroundColor(context);
     final surfaceColor = themeProvider.getSurfaceColor(context);
     final textColor = themeProvider.isDarkMode ? Colors.white : const Color(0xff333333);
     final secondaryTextColor = themeProvider.isDarkMode ? Colors.grey.shade400 : const Color(0xff888888);
     final borderColor = themeProvider.isDarkMode ? Colors.grey.shade600 : const Color(0xFFEEEEEE);
     final iconColor = themeProvider.isDarkMode ? Colors.white : const Color(0xff555555);
+
+    // Format date and time for display
+    final formattedDate = '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}';
+    final formattedTime = _selectedTime.format(context);
 
     return Container(
       constraints: BoxConstraints(
@@ -426,6 +467,90 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
                   },
                 );
               }).toList(),
+            ),
+            
+            const SizedBox(height: 16),
+            
+            // Date and Time Selection
+            Text(
+              'WHEN DID THIS INTERACTION HAPPEN?',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: secondaryTextColor,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 8),
+            
+            Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: _selectDate,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: borderColor),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.calendar_today, size: 20, color: primaryColor),
+                              const SizedBox(width: 12),
+                              ],
+                          ),
+                          Text(
+                            formattedDate,
+                            style: TextStyle(
+                              color: textColor,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: _selectTime,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: borderColor),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.access_time, size: 20, color: primaryColor),
+                              const SizedBox(width: 12),
+                             ],
+                          ),
+                          Text(
+                            formattedTime,
+                            style: TextStyle(
+                              color: textColor,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
             
             const SizedBox(height: 16),

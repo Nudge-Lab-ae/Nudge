@@ -690,7 +690,7 @@ class NudgeApp extends StatelessWidget {
                   return ContactsListScreen(filter: args?['filter'], mode: args?['action'], showAppBar: true, hideButton: (){},);
                 },
                 '/analytics': (context) => const AnalyticsScreen(),
-                '/add_contact': (context) => const AddContactScreen(),
+                '/add_contact': (context) => AddContactScreen(),
                 '/import_contacts': (context) {
                   final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
                   return ImportContactsScreen(

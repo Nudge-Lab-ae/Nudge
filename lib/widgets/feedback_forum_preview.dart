@@ -46,9 +46,10 @@ class FeedbackForumPreview extends StatelessWidget {
           );
         }
         
-        final feedbacks = snapshot.data!;
+        final allFeedbacks = snapshot.data!;
+        final filteredFeedbacks = _filterFeedbacks(allFeedbacks);
         
-        if (feedbacks.isEmpty) {
+        if (filteredFeedbacks.isEmpty) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -60,7 +61,7 @@ class FeedbackForumPreview extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'No feedback yet',
+                  'No feature requests yet',
                   style: TextStyle(
                     fontSize: 16,
                     color: isDarkMode ? const Color(0xFFCCCCCC) : Colors.grey,
@@ -87,7 +88,7 @@ class FeedbackForumPreview extends StatelessWidget {
               child: Row(
                 children: [
                   Text(
-                    'Recent Feedback',
+                    'Recent Feature Requests',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -119,9 +120,9 @@ class FeedbackForumPreview extends StatelessWidget {
             // Feedback items
             Expanded(
               child: ListView.builder(
-                itemCount: feedbacks.length,
+                itemCount: filteredFeedbacks.length,
                 itemBuilder: (context, index) {
-                  return _buildPreviewItem(feedbacks[index], isDarkMode);
+                  return _buildPreviewItem(filteredFeedbacks[index], isDarkMode);
                 },
               ),
             ),
@@ -215,6 +216,11 @@ class FeedbackForumPreview extends StatelessWidget {
         ),
       ),
     );
+  }
+
+   List<Map<String, dynamic>> _filterFeedbacks(List<Map<String, dynamic>> feedbacks) {
+    // Filter to only show Feature Requests
+    return feedbacks.where((f) => f['type'] == 'Feature Request').toList();
   }
 
   String _getStatusDisplayName(String status) {

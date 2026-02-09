@@ -539,6 +539,8 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
   }
 }
 
+// ... (previous imports and code remain the same until _LogTouchpointModal class)
+
 class _LogTouchpointModal extends StatefulWidget {
   final ApiService apiService;
   final Contact contact;
@@ -558,6 +560,8 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
   TextEditingController _notesController = TextEditingController();
   String? _selectedInteractionType;
   bool _isLoading = false;
+  DateTime _selectedDate = DateTime.now();
+  TimeOfDay _selectedTime = TimeOfDay.now();
 
   final List<String> _interactionTypes = [
     'call',
@@ -570,6 +574,32 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
   void dispose() {
     _notesController.dispose();
     super.dispose();
+  }
+
+  Future<void> _selectDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
+  }
+
+  Future<void> _selectTime() async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: _selectedTime,
+    );
+    if (picked != null && picked != _selectedTime) {
+      setState(() {
+        _selectedTime = picked;
+      });
+    }
   }
 
   Future<void> _logInteraction() async {
@@ -588,11 +618,21 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
     });
 
     try {
+      // Combine date and time
+      final interactionDateTime = DateTime(
+        _selectedDate.year,
+        _selectedDate.month,
+        _selectedDate.day,
+        _selectedTime.hour,
+        _selectedTime.minute,
+      );
+
       // Log the interaction
       await widget.apiService.logInteraction(
         contactId: widget.contact.id,
         interactionType: _selectedInteractionType!,
         notes: _notesController.text.isNotEmpty ? _notesController.text : null,
+        interactionDate: interactionDateTime.toIso8601String(), // Add this parameter
       );
 
       // Show success message
@@ -627,6 +667,10 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
 
   @override
   Widget build(BuildContext context) {
+    // Format date and time for display
+    final formattedDate = '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}';
+    final formattedTime = _selectedTime.format(context);
+    
     return Container(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.85,
@@ -786,6 +830,100 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
           
           const SizedBox(height: 16),
           
+          // Date and Time Selection
+          Text(
+            'WHEN DID THIS INTERACTION HAPPEN?',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: widget.isDarkMode 
+                ? const Color(0xFFAAAAAA)
+                : const Color(0xff888888),
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+          
+          Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: _selectDate,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: widget.isDarkMode 
+                          ? const Color(0xFF444444)
+                          : const Color(0xFFEEEEEE),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.calendar_today, size: 20, color: const Color(0xFF3CB3E9)),
+                            const SizedBox(width: 12),
+                            ],
+                        ),
+                        Text(
+                          formattedDate,
+                          style: TextStyle(
+                            color: widget.isDarkMode ? Colors.white : const Color(0xff333333),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: GestureDetector(
+                  onTap: _selectTime,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: widget.isDarkMode 
+                          ? const Color(0xFF444444)
+                          : const Color(0xFFEEEEEE),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.access_time, size: 20, color: const Color(0xFF3CB3E9)),
+                            const SizedBox(width: 12),
+                            ],
+                        ),
+                        Text(
+                          formattedTime,
+                          style: TextStyle(
+                            color: widget.isDarkMode ? Colors.white : const Color(0xff333333),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 16),
+          
           // Notes Field
           TextField(
             controller: _notesController,
@@ -871,3 +1009,5 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
     );
   }
 }
+
+

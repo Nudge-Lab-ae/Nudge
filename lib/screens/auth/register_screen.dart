@@ -216,6 +216,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final apiService = Provider.of<ApiService>(context, listen: false);
     final themeProvider = Provider.of<ThemeProvider>(context);
     final theme = Theme.of(context);
+    var size = MediaQuery.of(context).size;
 
     return GestureDetector(
       onTap: _dismissKeyboard,
@@ -245,7 +246,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 20),
-                Text(
+                SizedBox(
+                  width: size.width,
+                  child: Text(
                   'Create Your Account',
                   style: TextStyle(
                     fontSize: 20,
@@ -254,6 +257,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   textAlign: TextAlign.center,
                 ),
+                ),
                 const SizedBox(height: 30),
                 
                 // Email
@@ -261,8 +265,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   'Email',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+                    fontSize: 14,
+                    color: themeProvider.isDarkMode ? Colors.white : Color(0xff555555),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -356,7 +360,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
-                    color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+                    color: themeProvider.isDarkMode ? Colors.white :  Color(0xff555555),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -406,7 +410,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
-                    color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+                    color: themeProvider.isDarkMode ? Colors.white :  Color(0xff555555),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -575,13 +579,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 20),
                 
-                Text(
+                Center(
+                  child: Text(
                   'or',
                   style: TextStyle(
                     fontSize: 16,
                     color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey,
                   ),
                   textAlign: TextAlign.center,
+                ),
                 ),
                 const SizedBox(height: 20),
                 

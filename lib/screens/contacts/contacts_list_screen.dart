@@ -144,16 +144,17 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                               label: 'Add Contact',
                               icon: Icons.add,
                               onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => AddContactScreen(
-                                      groupName: groupName,
-                                      groupPeriod: groupPeriod,
-                                      groupFrequency: groupFrequency,
-                                    ),
-                                  ),
-                                );
+                                // Navigator.push(
+                                //   context,
+                                //   MaterialPageRoute(
+                                //     builder: (context) => AddContactScreen(
+                                //       groupName: groupName,
+                                //       groupPeriod: groupPeriod,
+                                //       groupFrequency: groupFrequency,
+                                //     ),
+                                //   ),
+                                // );
+                                _showAddContactOptions(context, themeProvider);
                               },
                             ),
                           ]
@@ -455,16 +456,17 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                         label: 'Add Contact',
                         icon: Icons.add,
                         onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => AddContactScreen(
-                                groupName: groupName,
-                                groupPeriod: groupPeriod,
-                                groupFrequency: groupFrequency,
-                              ),
-                            ),
-                          );
+                          // Navigator.push(
+                          //   context,
+                          //   MaterialPageRoute(
+                          //     builder: (context) => AddContactScreen(
+                          //       groupName: groupName,
+                          //       groupPeriod: groupPeriod,
+                          //       groupFrequency: groupFrequency,
+                          //     ),
+                          //   ),
+                          // );
+                          _showAddContactOptions(context, themeProvider);
                         },
                       ),
                     ]
@@ -1398,12 +1400,13 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
               label: 'Add Contacts',
               icon: Icons.person_add,
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const AddContactScreen(),
-                  ),
-                );
+                // Navigator.push(
+                //   context,
+                //   MaterialPageRoute(
+                //     builder: (context) => AddContactScreen(),
+                //   ),
+                // );
+                _showAddContactOptions(context, themeProvider);
               },
             ),
           ],
@@ -1453,7 +1456,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const AddContactScreen(),
+                              builder: (context) => AddContactScreen(),
                             ),
                           );
                         },
@@ -1558,4 +1561,57 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
         return contacts;
     }
   }
+
+    void _showAddContactOptions(BuildContext context, ThemeProvider themeProvider) {
+    // final themeProvider = Provider.of<ThemeProvider>(context);
+    
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      backgroundColor: themeProvider.getSurfaceColor(context),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'ADD CONTACTS',
+                  style: TextStyle(
+                    color: themeProvider.getTextPrimaryColor(context),
+                    fontSize: 18,
+                    fontFamily: 'OpenSans',
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              ListTile(
+                leading: Icon(Icons.person_add, color: themeProvider.isDarkMode ? AppTheme.darkIconColor : AppTheme.primaryColor),
+                title: Text('ADD CONTACT MANUALLY', style: TextStyle(fontWeight: FontWeight.w700, fontFamily: 'OpenSans', color: themeProvider.getTextPrimaryColor(context))),
+                subtitle: Text('Create a new contact from scratch', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans',)),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, '/add_contact');
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.import_contacts, color: themeProvider.isDarkMode ? AppTheme.darkIconColor : AppTheme.primaryColor),
+                title: Text('IMPORT CONTACTS', style: TextStyle(fontWeight: FontWeight.w700, fontFamily: 'OpenSans', color: themeProvider.getTextPrimaryColor(context))),
+                subtitle: Text('Import from your device contacts', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans',)),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, '/import_contacts');
+                },
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
 }

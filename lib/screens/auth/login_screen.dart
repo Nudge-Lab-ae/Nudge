@@ -58,21 +58,21 @@ class _LoginScreenState extends State<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-              Text(
-                'CRAFTING CLOSER COMMUNITIES',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555)
-                ),
-              ),
-              const SizedBox(height: 30),
+              // Text(
+              //   'CRAFTING CLOSER COMMUNITIES',
+              //   style: TextStyle(
+              //     fontSize: 20,
+              //     fontWeight: FontWeight.w600,
+              //     color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555)
+              //   ),
+              // ),
+              // const SizedBox(height: 30),
               Text(
                 'EMAIL',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555),
-                  fontSize: 16,
+                  fontSize: 14,
                 ),
               ),
               const SizedBox(height: 8),
@@ -107,7 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
               Text(
                 'PASSWORD',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555)
                 ),
@@ -150,6 +150,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     'Forgot Password?',
                     style: TextStyle(
                       color: theme.colorScheme.primary,
+                      fontSize: 14
                     ),
                   ),
                 ),
@@ -228,7 +229,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
               ),
               const SizedBox(height: 20),
-              Text(
+              Center(
+                child: Text(
                 'or',
                 style: TextStyle(
                   fontSize: 16,
@@ -236,6 +238,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 textAlign: TextAlign.center,
                 ),
+              ),
               const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
@@ -366,6 +369,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     "Don't have an account? Register",
                     style: TextStyle(
                       color: theme.colorScheme.primary,
+                      fontSize: 14
                     ),
                   ),
                 ),

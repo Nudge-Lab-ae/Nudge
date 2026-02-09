@@ -377,10 +377,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       backgroundColor: theme.colorScheme.primary,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
-                    child: Text(
+                    child: Center(
+                      child: Text(
                       'SUBMIT FEEDBACK',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode?Colors.black:Colors.white),
                     ),
+                    )
                   ),
           ),
         ],

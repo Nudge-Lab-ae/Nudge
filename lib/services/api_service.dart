@@ -1090,27 +1090,27 @@ Future<void> submitFeedback({
   // Add these methods to your existing ApiService class
 
 // Feedback management methods
-Stream<List<Map<String, dynamic>>> getFeedbacksStream() {
-  try {
-    Query query = _firestore
-        .collection('feedbacks')
-        .orderBy('timestamp', descending: true);
-    
-    return query.snapshots().map((snapshot) => snapshot.docs
-        .map((doc) {
-          final data = doc.data() as Map<String, dynamic>;
-          return {
-            'id': doc.id,
-            ...data,
-            'timestamp': data['timestamp']?.toDate() ?? DateTime.now(),
-          };
-        })
-        .toList());
-  } catch (e) {
-    print('Error getting feedbacks stream: $e');
-    return Stream.value([]);
+  Stream<List<Map<String, dynamic>>> getFeedbacksStream() {
+    try {
+      Query query = _firestore
+          .collection('feedbacks')
+          .orderBy('timestamp', descending: true);
+      
+      return query.snapshots().map((snapshot) => snapshot.docs
+          .map((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            return {
+              'id': doc.id,
+              ...data,
+              'timestamp': data['timestamp']?.toDate() ?? DateTime.now(),
+            };
+          })
+          .toList());
+    } catch (e) {
+      print('Error getting feedbacks stream: $e');
+      return Stream.value([]);
+    }
   }
-}
 
   Future<void> updateFeedbackStatus(String feedbackId, String newStatus) async {
     try {
@@ -1237,6 +1237,7 @@ Future<void> updateFeedbackAdminData({
     required String contactId,
     required String interactionType,
     String? notes,
+    String? interactionDate, // Add this optional parameter
   }) async {
     try {
       final currentUser = _auth.currentUser;
@@ -1254,19 +1255,33 @@ Future<void> updateFeedbackAdminData({
         contactDoc.data() as Map<String, dynamic>..['id'] = contactDoc.id,
       );
       
+      // Determine interaction timestamp
+      DateTime interactionTimestamp;
+      if (interactionDate != null && interactionDate.isNotEmpty) {
+        // Parse the provided date
+        try {
+          interactionTimestamp = DateTime.parse(interactionDate);
+        } catch (e) {
+          print('Error parsing provided interaction date: $interactionDate, using current time');
+          interactionTimestamp = DateTime.now();
+        }
+      } else {
+        // Use current time as default
+        interactionTimestamp = DateTime.now();
+      }
+      
       // Update interaction history
-      final now = DateTime.now();
       final interactionHistory = Map<String, dynamic>.from(contact.interactionHistory);
-      final interactionKey = now.millisecondsSinceEpoch.toString();
+      final interactionKey = interactionTimestamp.millisecondsSinceEpoch.toString();
       
       interactionHistory[interactionKey] = {
         'type': interactionType,
-        'timestamp': now.millisecondsSinceEpoch,
+        'timestamp': interactionTimestamp.millisecondsSinceEpoch,
         'notes': notes,
       };
       
-      // Count interactions in last 90 days
-      final ninetyDaysAgo = now.subtract(const Duration(days: 90));
+      // Count interactions in last 90 days (from the interaction date)
+      final ninetyDaysAgo = interactionTimestamp.subtract(const Duration(days: 90));
       final recentInteractions = interactionHistory.values
           .where((interaction) {
             final timestamp = DateTime.fromMillisecondsSinceEpoch(
@@ -1277,8 +1292,10 @@ Future<void> updateFeedbackAdminData({
           .length;
       
       // Update contact with new interaction
+      // IMPORTANT: Only update lastContacted if this interaction is the most recent
+      final isMostRecent = interactionTimestamp.isAfter(contact.lastContacted);
       final updatedContact = contact.copyWith(
-        lastContacted: now,
+        lastContacted: isMostRecent ? interactionTimestamp : contact.lastContacted,
         interactionHistory: interactionHistory,
         interactionCountInWindow: recentInteractions,
       );
@@ -1289,16 +1306,22 @@ Future<void> updateFeedbackAdminData({
       
       // Save to Firestore
       await updateContact(contactWithCDI);
-      await nudgeService.rescheduleNudgeAfterInteraction(contactWithCDI, currentUser.uid);
       
-      print('Interaction logged for ${contact.name}, new CDI: ${contactWithCDI.cdi}');
+      // Reschedule nudge based on this interaction
+      await nudgeService.rescheduleNudgeAfterInteraction(
+        contactWithCDI, 
+        currentUser.uid,
+        interactionTimestamp, // Pass the interaction timestamp to the nudge service
+      );
+      
+      print('Interaction logged for ${contact.name} at $interactionTimestamp, new CDI: ${contactWithCDI.cdi}');
       
     } catch (e) {
       print('Error logging interaction: $e');
       throw Exception('Failed to log interaction: $e');
     }
   }
-
+    
   // Batch update CDI for all contacts (call from daily job)
   Future<void> batchUpdateCDI() async {
     try {

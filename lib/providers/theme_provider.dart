@@ -47,6 +47,14 @@ class ThemeProvider extends ChangeNotifier {
     return _isDarkMode ? const Color.fromARGB(255, 57, 57, 57) : Colors.white;
   }
 
+  Color getButtonColor(BuildContext context) {
+    return _isDarkMode ? const Color.fromARGB(255, 146, 145, 145) : const Color.fromARGB(255, 196, 195, 195);
+  }
+
+  Color getButtonSecondaryColor(BuildContext context) {
+    return _isDarkMode ? const Color.fromARGB(255, 167, 166, 166) : const Color.fromARGB(255, 90, 89, 89);
+  }
+
   Color getTextPrimaryColor(BuildContext context) {
     return _isDarkMode ? AppTheme.darkTextPrimary : AppTheme.lightTextPrimary;
   }

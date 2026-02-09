@@ -799,7 +799,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                         decoration: BoxDecoration(
                           color: isDarkMode 
                             ? Colors.black.withOpacity(0.5) 
-                            : Colors.white.withOpacity(0.3),
+                            : Colors.white.withOpacity(0.6),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                             color: isDarkMode 
@@ -854,7 +854,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                                             'Click to return to real data',
                                             style: TextStyle(
                                               fontSize: 12,
-                                              color: Colors.orange,
+                                              color: isDarkMode?Colors.white:Colors.black,
                                             ),
                                           ),
                                         ),
@@ -874,14 +874,14 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                                   vertical: 8,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: isDarkMode ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.3),
+                                  color: isDarkMode ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.4),
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(color: isDarkMode ? Colors.white30 : Colors.blue.shade200),
                                 ),
                                 child: Icon(
                                   Icons.info_outline,
                                   size: 20,
-                                  color: isDarkMode ? Colors.white70 : Colors.blue,
+                                  color: isDarkMode ? Colors.white70 : const ui.Color.fromARGB(255, 105, 181, 243),
                                 ),
                               ),
                             ),
@@ -1199,7 +1199,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                                 vertical: 8,
                               ),
                               decoration: BoxDecoration(
-                                color: (isDarkMode ? AppTheme.darkUniverseSecondary : const ui.Color.fromARGB(255, 101, 160, 220)).withOpacity(0.2),
+                                color: (isDarkMode ? AppTheme.darkUniverseSecondary : const ui.Color.fromARGB(255, 16, 40, 65)).withOpacity(0.5),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
@@ -2305,7 +2305,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
               Expanded(
                 child: GestureDetector(
                   onTap: () {
-                    if (_useMockData && contact.id.startsWith('mock_')) {
+                    if (!_useMockData && contact.id.startsWith('mock_')) {
                       _showMockContactDetails(contact, themeProvider);
                     } else {
                       widget.onContactView(contact);
@@ -2318,7 +2318,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
                       gradient: LinearGradient(
-                        colors: _useMockData && contact.id.startsWith('mock_')
+                        colors: !_useMockData && contact.id.startsWith('mock_')
                           ? [Colors.orange, const Color(0xFFFF9800)]
                           : const [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
                         begin: Alignment.topLeft,
@@ -2326,7 +2326,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: (_useMockData && contact.id.startsWith('mock_')
+                          color: (!_useMockData && contact.id.startsWith('mock_')
                             ? Colors.orange
                             : const Color(0xFF5CDEE5)
                           ).withOpacity(0.5),
@@ -2339,7 +2339,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          _useMockData && contact.id.startsWith('mock_') 
+                          !_useMockData && contact.id.startsWith('mock_') 
                             ? 'VIEW MOCK DETAILS' 
                             : 'VIEW DETAILS',
                           style: const TextStyle(
@@ -2350,7 +2350,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                         ),
                         const SizedBox(width: 8),
                         Icon(
-                          _useMockData && contact.id.startsWith('mock_')
+                          !_useMockData && contact.id.startsWith('mock_')
                             ? Icons.info_outline
                             : Icons.arrow_forward,
                           size: 16,

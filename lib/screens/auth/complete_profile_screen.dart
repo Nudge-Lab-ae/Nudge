@@ -10,8 +10,10 @@ import 'package:crop_your_image/crop_your_image.dart';
 import 'package:country_code_picker/country_code_picker.dart';
 import 'package:nudge/models/contact.dart';
 import 'package:nudge/models/social_group.dart';
+import 'package:nudge/screens/contacts/add_contact_screen.dart';
 import 'package:nudge/widgets/gradient_text.dart';
 import 'package:nudge/helpers/restart_helper.dart';
+import 'package:nudge/widgets/social_universe_guide.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
 import '../../services/api_service.dart';
@@ -466,7 +468,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
         }
         
         // Navigate to dashboard using restart approach
-        _navigateToDashboardWithSuccess();
+        // _navigateToDashboardWithSuccess();
+         _showSocialUniverseGuide(context);
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -475,6 +478,38 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
       setState(() => _isLoading = false);
     }
   }
+
+  // In the _CompleteProfileScreenState class, add this method:
+    void _showSocialUniverseGuide(BuildContext context) {
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.9,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
+          ),
+          child: SocialUniverseGuide(
+            onClose: () {
+              // When user clicks "Got It!" or close button
+              Navigator.of(context).pop();
+              _navigateToDashboardWithSuccess();
+            },
+            isDarkMode: false,
+          ),
+        );
+      },
+    );
+  }
+
+
 
   void _navigateToDashboardWithSuccess() {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -582,10 +617,10 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
 
   Widget _buildStepIndicator(ThemeProvider themeProvider) {
     // Don't show step indicator on preview screen (step 2)
-    if (_currentStep == 2) return const SizedBox.shrink();
+    // if (_currentStep == 2) return const SizedBox.shrink();
     
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+      padding: EdgeInsets.only(top: 16, bottom: 16, right: 16, left: 16),
       decoration: BoxDecoration(
         color: themeProvider.getSurfaceColor(context),
         border: Border(
@@ -596,33 +631,36 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
       ),
       child: Column(
         children: [
-          // Progress bar - simplified logic
+          // Staggered (broken) lines indicator
           Container(
-            height: 4,
-            decoration: BoxDecoration(
-              color: themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.grey[300],
-              borderRadius: BorderRadius.circular(2),
-            ),
-            child: Stack(
-              children: [
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    // Simple progress calculation: treat preview as a normal step
-                    double progress = (_currentStep + 1) / _steps.length;
-                    return AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      width: constraints.maxWidth * progress,
+            height: 6,
+            margin: const EdgeInsets.only(bottom: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(_steps.length, (index) {
+                // Only show lines up to current step
+                bool isActive = index <= _currentStep;
+                bool isLast = index == _steps.length - 1;
+                
+                return Row(
+                  children: [
+                    // Line segment
+                    Container(
+                      width: 24,
+                      height: 4,
                       decoration: BoxDecoration(
-                        color: const Color(0xff3CB3E9),
+                        color: isActive ? const Color(0xff3CB3E9) : (themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.grey[300]),
                         borderRadius: BorderRadius.circular(2),
                       ),
-                    );
-                  },
-                ),
-              ],
+                    ),
+                    // Gap between lines (except after last line)
+                    if (!isLast) const SizedBox(width: 8),
+                  ],
+                );
+              }),
             ),
           ),
-          const SizedBox(height: 12),
+          
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -664,52 +702,32 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
   // NEW: Preview Step with Social Universe
   Widget _buildPreviewStep() {
     final themeProvider = Provider.of<ThemeProvider>(context);
-    final theme = Theme.of(context);
+    // final theme = Theme.of(context);
     
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Expanded(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        // crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Hero section
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  theme.colorScheme.primary.withOpacity(0.1),
-                  Colors.transparent,
-                ],
-              ),
-            ),
+            padding: const EdgeInsets.only(left: 24, right: 24, top: 10, bottom: 40),
             child: Column(
               children: [
-                const SizedBox(height: 20),
-                GradientText(
-                  text: 'Welcome to',
-                  style: const TextStyle(
+                Text(
+                  'Welcome to',
+                  style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.w700,
-                  ),
-                  gradient: LinearGradient(
-                    colors: [
-                      theme.colorScheme.primary,
-                      theme.colorScheme.secondary,
-                    ],
+                    color: Color.fromARGB(255, 15, 57, 142), // Navy blue color
                   ),
                 ),
-                GradientText(
-                  text: 'Your Social Universe',
-                  style: const TextStyle(
+                Text(
+                  'Your Social Universe',
+                  style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.w700,
-                  ),
-                  gradient: LinearGradient(
-                    colors: [
-                      theme.colorScheme.secondary,
-                      theme.colorScheme.primary,
-                    ],
+                    color: Color.fromARGB(255, 15, 57, 142), // Navy blue color
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -799,19 +817,20 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Customize your social universe in a few easy steps',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: themeProvider.isDarkMode ? Colors.white : Colors.black,
-                  ),
-                ),
+                // Text(
+                //   'Customize your social universe in a few easy steps',
+                //   style: TextStyle(
+                //     fontSize: 20,
+                //     fontWeight: FontWeight.w700,
+                //     color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+                //   ),
+                // ),
                 const SizedBox(height: 8),
                 Text(
                   'Let\'s build a Social Universe customized to you',
                   style: TextStyle(
                     fontSize: 16,
+                    fontWeight: FontWeight.w700,
                     color: themeProvider.isDarkMode ? Colors.white70 : Colors.grey.shade700,
                   ),
                 ),
@@ -1021,7 +1040,11 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
     final themeProvider = Provider.of<ThemeProvider>(context);
     final theme = Theme.of(context);
     
-    return SingleChildScrollView(
+    return Column(
+      children: [
+        _buildStepIndicator(themeProvider),
+        Expanded(
+      child: SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Form(
         key: _formKey,
@@ -1034,7 +1057,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                Center(
+                  child: Text(
                   'Complete Your Profile',
                   style: TextStyle(
                     fontSize: 24,
@@ -1042,14 +1066,17 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                     color: themeProvider.isDarkMode ? Colors.white : Colors.black,
                   ),
                 ),
+                ),
                 const SizedBox(height: 8),
-                Text(
+                Center(
+                  child: Text(
                   'Start by telling us about yourself',
                   style: TextStyle(
                     fontSize: 16,
                     color: themeProvider.isDarkMode ? Colors.white70 : Colors.grey.shade600,
                   ),
                 ),
+                )
               ],
             ),
             const SizedBox(height: 30),
@@ -1236,7 +1263,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
           ],
         ),
       ),
-    );
+    ))]);
   }
 
   Widget _buildGroupsStep() {
@@ -1252,7 +1279,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Organize your connections',
+                'Customize your Social Groups',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
@@ -1261,7 +1288,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
               ),
               const SizedBox(height: 8),
               Text(
-                'Create groups to categorize your relationships',
+                'Create groups to categorize your relationships.\n1. Add, edit or remove groups\n2. Drag to reorder groups by priority',
                 style: TextStyle(
                   fontSize: 16,
                   color: themeProvider.isDarkMode ? Colors.white70 : Colors.grey.shade600,
@@ -1269,12 +1296,6 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
               ),
             ],
           ),
-          const SizedBox(height: 30),
-          
-          Text('CUSTOMIZE YOUR SOCIAL GROUPS', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
-          const SizedBox(height: 10),
-          Text('Drag to reorder groups by priority. Add, edit, or remove groups.', 
-            style: TextStyle(fontSize: 14, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey)),
           const SizedBox(height: 30),
           
           // Add new group button
@@ -1296,7 +1317,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
           // Reorderable list of groups
           Container(
             decoration: BoxDecoration(
-              border: Border.all(color: themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade300),
+              // border: Border.all(color: themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade300),
               borderRadius: BorderRadius.circular(10),
               color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
             ),
@@ -1308,10 +1329,10 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                 final group = _userGroups[index];
                 return Container(
                   key: Key(group.id),
+                  margin: const EdgeInsets.only(bottom: 20),
                   decoration: BoxDecoration(
-                    border: index < _userGroups.length - 1 
-                        ? Border(bottom: BorderSide(color: themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200))
-                        : null,
+                    border: Border.all(color: themeProvider.isDarkMode ? Colors.grey.shade800 : const Color.fromARGB(255, 206, 203, 203), width: 1),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: _buildEditableGroupItem(group, index),
                 );
@@ -1339,18 +1360,36 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
     final themeProvider = Provider.of<ThemeProvider>(context);
     
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header row with drag handle and delete button
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               ReorderableDragStartListener(
                 index: index,
-                child: Icon(Icons.drag_handle, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: Icon(Icons.drag_handle, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+                ),
               ),
-              const SizedBox(width: 10),
-              Expanded(
+              SizedBox(
+                width: 200,
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete, color: Colors.red),
+                onPressed: () => _deleteGroup(index),
+              ),
+            ],
+          ),
+          // const SizedBox(height: 15),
+          SizedBox(
+            width: double.infinity,
+            child: Padding(
+            padding: EdgeInsets.only(left: 20, right: 20),
+            child: Expanded(
                 child: TextFormField(
                   initialValue: group.name,
                   onTap: () => _dismissKeyboard(),
@@ -1369,23 +1408,18 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                     });
                   },
                 ),
-              ),
-              const SizedBox(width: 10),
-              IconButton(
-                icon: const Icon(Icons.delete, color: Colors.red),
-                onPressed: () => _deleteGroup(index),
-              ),
-            ],
-          ),
+              ))),
           const SizedBox(height: 15),
-          
-          Text('CONTACT FREQUENCY:', style: TextStyle(fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555))),
-          const SizedBox(height: 8),
-         DropdownButtonFormField<String>(
+          // Contact Frequency Dropdown
+          Padding(
+            padding: EdgeInsets.only(left: 20, right: 20),
+            child: DropdownButtonFormField<String>(
             value: _getCurrentFrequencyChoice(group),
             onTap: () => _dismissKeyboard(),
             style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555)),
             decoration: InputDecoration(
+              labelText: 'CONTACT FREQUENCY',
+              labelStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : const Color(0xff555555)),
               border: const OutlineInputBorder(),
               isDense: true,
               filled: true,
@@ -1408,18 +1442,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                 });
               }
             },
-          ),
-          
-          const SizedBox(height: 20),
-          
-          Text(
-            '${group.memberIds.length} members',
-            style: TextStyle(
-              color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-            ),
-          ),
+          )),
         ],
       ),
     );
@@ -1523,6 +1546,13 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
         orderIndex: _userGroups.length
       ));
     });
+     ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Added a new group at the bottom.'),
+          duration: Duration(seconds: 2),
+          backgroundColor: Colors.green,
+        ),
+      );
   }
 
   void _deleteGroup(int index) {
@@ -1530,7 +1560,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Group'),
+        title:  Text('Delete Group', style: TextStyle(color: Color(0xff777777)),),
         content: const Text('Are you sure you want to delete this group?'),
         actions: [
           TextButton(
@@ -1553,7 +1583,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
 
   Widget _buildContactsStep() {
     final themeProvider = Provider.of<ThemeProvider>(context);
-    var size = MediaQuery.of(context).size;
+    // var size = MediaQuery.of(context).size;
     
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1571,14 +1601,14 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                   color: themeProvider.isDarkMode ? Colors.white : Colors.black,
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Add contacts to start building your universe',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: themeProvider.isDarkMode ? Colors.white70 : Colors.grey.shade600,
-                ),
-              ),
+              const SizedBox(height: 20),
+              // Text(
+              //   'Add contacts to start building your universe',
+              //   style: TextStyle(
+              //     fontSize: 16,
+              //     color: themeProvider.isDarkMode ? Colors.white70 : Colors.grey.shade600,
+              //   ),
+              // ),
             ],
           ),
           const SizedBox(height: 30),
@@ -1589,429 +1619,587 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
             style: TextStyle(fontSize: 14, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey), textAlign: TextAlign.center),
           const SizedBox(height: 40),
           
-          // Import Options
-          Platform.isIOS
-          ? Container(
-            width: size.width*0.7,
-            height: size.height*0.4,
-            child: Card(
-              color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
-              child: Padding(
-                 padding: const EdgeInsets.only(left: 5, right: 5, bottom: 20, top: 20),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.person_add, size: 60, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
-                    const SizedBox(height: 16),
-                    Text('ADD MANUALLY', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
-                    const SizedBox(height: 8),
-                    Text('Select specific contacts to import', 
-                      textAlign: TextAlign.center, style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey)),
-                    const SizedBox(height: 20),
-                    OutlinedButton(
-                      onPressed: () {
-                        _dismissKeyboard();
-                        _pickContactsManually();
-                      },
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xff3CB3E9),
-                        side: const BorderSide(color: Color(0xff3CB3E9)),
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      ),
-                      child: const Text('Pick Contacts', style: TextStyle(fontSize: 14)),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          )
-          : Row(
-            children: [
-              Expanded(
-                child: Card(
-                  color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 5, right: 5, bottom: 20, top: 20),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.import_contacts, size: 60, color: const Color(0xff3CB3E9)),
-                        const SizedBox(height: 16),
-                        Text('QUICK IMPORT', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
-                        const SizedBox(height: 8),
-                        Text('Import your existing contacts', 
-                          textAlign: TextAlign.center, style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey)),
-                        const SizedBox(height: 20),
-                        ElevatedButton(
-                          onPressed: () async {
-                            _dismissKeyboard();
-                            final result = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>  ImportContactsScreen(
-                                  groups: _getOrderedGroupsForSelection(),
-                                  isOnboarding: true,
-                                ),
-                               ),
-                            );
-                            
-                            if (result != null && result is List<Contact>) {
-                              final Set<String> existingIds = _selectedContacts.map((c) => c.id).toSet();
-                              final List<Contact> newContacts = result.where((c) => !existingIds.contains(c.id)).toList();
-                              
-                              setState(() {
-                                _selectedContacts.addAll(newContacts);
-                              });
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xff3CB3E9),
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                          ),
-                          child: const Text('Import Contacts', style: TextStyle(color: Colors.white, fontSize: 12)),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Card(
-                  color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
-                  child: Padding(
-                     padding: const EdgeInsets.only(left: 5, right: 5, bottom: 20, top: 20),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.person_add, size: 60, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
-                        const SizedBox(height: 16),
-                        Text('ADD MANUALLY', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
-                        const SizedBox(height: 8),
-                        Text('Select specific contacts to import', 
-                          textAlign: TextAlign.center, style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey)),
-                        const SizedBox(height: 20),
-                        OutlinedButton(
-                          onPressed: () {
-                            _dismissKeyboard();
-                            _pickContactsManually();
-                          },
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xff3CB3E9),
-                            side: const BorderSide(color: Color(0xff3CB3E9)),
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                          ),
-                          child: const Text('Pick Contacts', style: TextStyle(fontSize: 14)),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+          contactAddingWidget(themeProvider),
           const SizedBox(height: 40),
         ],
       ),
     );
   }
 
-  List<SocialGroup> _getOrderedGroupsForSelection() {
-    return List.from(_userGroups);
-  }
-
-  Widget _buildCloseCircleStep() {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final theme = Theme.of(context);
-    
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 20),
-          Text('Identify Your Favourites', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
-          const SizedBox(height: 10),
-          
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(children: [
-                  Icon(Icons.info, color: theme.colorScheme.primary),
-                  const SizedBox(width: 8),
-                  Text('What is a Favourite?', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
-                ]),
-                const SizedBox(height: 8),
-                Text(
-                  'Your Favourites are people you naturally connect with often — those relationships don\'t need reminders. NUDGE will include them in your weekly reflection so you can note how things are going.',
-                  style: TextStyle(fontSize: 14, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
-                ),
-              ],
+  Widget contactAddingWidget(ThemeProvider themeProvider) {
+      // var size = MediaQuery.of(context).size;
+      if (Platform.isIOS) {
+        // iOS: Single card with two buttons side-by-side
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          child: Card(
+            color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Text(
+                    'ADD CONTACTS',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+                    ),
+                  ),
+                  ),
+                  const SizedBox(height: 8),
+                  Center(
+                    child: Text(
+                    'Choose how you want to add contacts',
+                    style: TextStyle(
+                      color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey,
+                    ),
+                  )),
+                  const SizedBox(height: 30),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Icon(Icons.person_add_alt_1, size: 50, color: const Color(0xff3CB3E9)),
+                            const SizedBox(height: 12),
+                            ElevatedButton(
+                              onPressed: () async {
+                                _dismissKeyboard();
+                                final newContact = await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => AddContactScreen(
+                                      isOnboarding: true,
+                                      groups: _userGroups
+                                      ),
+                                  ),
+                                );
+                                
+                                if (newContact != null && newContact is Contact) {
+                                  setState(() {
+                                    _selectedContacts.add(newContact);
+                                  });
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xff3CB3E9),
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                minimumSize: const Size.fromHeight(44),
+                              ),
+                              child: const Text('Add New', style: TextStyle(color: Colors.white, fontSize: 14)),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Create from scratch',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 20),
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Icon(Icons.contacts, size: 50, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+                            const SizedBox(height: 12),
+                            OutlinedButton(
+                              onPressed: () {
+                                _dismissKeyboard();
+                                _pickContactsManually();
+                              },
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xff3CB3E9),
+                                side: const BorderSide(color: Color(0xff3CB3E9)),
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                minimumSize: const Size.fromHeight(44),
+                              ),
+                              child: const Text('Pick Contacts', style: TextStyle(fontSize: 14)),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Select from device',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
-          
-          const SizedBox(height: 20),
-          
-          if (_selectedContacts.isNotEmpty) ...[
-            Text('Select your Favourites members:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
-            const SizedBox(height: 10),
-            
-            ..._selectedContacts.map((contact) => Card(
-              color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
-              margin: const EdgeInsets.only(bottom: 8),
-              child: CheckboxListTile(
-                title: Text(contact.name, style: TextStyle(fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
-                subtitle: contact.phoneNumber.isNotEmpty ? Text(contact.phoneNumber, style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey)) : null,
-                secondary: CircleAvatar(
-                  backgroundColor: theme.colorScheme.primary,
-                  child: Text(contact.name.isNotEmpty ? contact.name[0].toUpperCase() : '?', style: const TextStyle(color: Colors.white)),
-                ),
-                value: _closeCircleContacts.contains(contact),
-                onChanged: (bool? value) => _toggleCloseCircleContact(contact),
-                controlAffinity: ListTileControlAffinity.leading,
-              ),
-            )).toList(),
-          ] else ...[
+        );
+      } else {
+        // Android: Quick Import card on top, Add Contacts card below
+        return Column(
+          children: [
+            // Quick Import Card
             Card(
               color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
               child: Padding(
                 padding: const EdgeInsets.all(20),
-                child: Column(children: [
-                  Icon(Icons.people_outline, size: 60, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
-                  const SizedBox(height: 16),
-                  Text('No Contacts Yet', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
-                  const SizedBox(height: 8),
-                  Text('You haven\'t added any contacts yet. You can add them later from the dashboard.', textAlign: TextAlign.center, style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey)),
-                ]),
-              ),
-            ),
-          ],
-          const SizedBox(height: 40),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildReviewStep() {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final theme = Theme.of(context);
-    
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 40),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            child: Column(children: [
-              Container(
-                width: 100, height: 100,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.check, size: 50, color: theme.colorScheme.primary),
-              ),
-              const SizedBox(height: 20),
-              Text('Your Social Universe is ready! 🎉', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
-              const SizedBox(height: 16),
-              Text(
-                'We\'ve created your groups and scheduled your first nudges. You\'ll start seeing reminders soon — and get your first Weekly Digest this Sunday!',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey, height: 1.5),
-              ),
-            ]),
-          ),
-          
-          const SizedBox(height: 40),
-          Text('Your Nudge Setup:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
-          const SizedBox(height: 20),
-          
-          _buildSummaryItem(Icons.person, 'Profile Complete', 'Username: ${_usernameController.text}'),
-          _buildSummaryItem(Icons.group, '${_userGroups.length} Social Groups', 'Organized by priority'),
-          _buildSummaryItem(Icons.contacts, 'Contacts', 'You can add contacts later from the dashboard'),
-          _buildSummaryItem(Icons.star, 'Favourites', '${_closeCircleContacts.length} important relationships'),
-          _buildSummaryItem(Icons.notifications, 'Weekly Digest', 'Starting this Sunday'),
-          
-          const SizedBox(height: 40),
-          
-          // Preview of what's next
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: theme.colorScheme.primary.withOpacity(0.2)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.star, color: theme.colorScheme.primary),
-                    const SizedBox(width: 8),
                     Text(
-                      'Explore Your Social Universe',
+                      'QUICK IMPORT',
                       style: TextStyle(
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: themeProvider.isDarkMode ? Colors.white : Colors.black,
                       ),
                     ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Import your existing contacts from device',
+                      style: TextStyle(
+                        color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: () async {
+                        _dismissKeyboard();
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ImportContactsScreen(
+                              groups: _getOrderedGroupsForSelection(),
+                              isOnboarding: true,
+                            ),
+                          ),
+                        );
+                        
+                        if (result != null && result is List<Contact>) {
+                          final Set<String> existingIds = _selectedContacts.map((c) => c.id).toSet();
+                          final List<Contact> newContacts = result.where((c) => !existingIds.contains(c.id)).toList();
+                          
+                          setState(() {
+                            _selectedContacts.addAll(newContacts);
+                          });
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xff3CB3E9),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      ),
+                      child: const Text('Import Contacts', style: TextStyle(color: Colors.white, fontSize: 14)),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Visit your dashboard to explore your personalized Social Universe visualization and manage your connections.',
-                  style: TextStyle(
-                    color: themeProvider.isDarkMode ? Colors.white70 : Colors.grey.shade700,
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Add Contacts Card (same as iOS but for Android)
+            Card(
+              color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'ADD CONTACTS',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Choose how you want to add contacts',
+                      style: TextStyle(
+                        color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            children: [
+                              Icon(Icons.person_add_alt_1, size: 50, color: const Color(0xff3CB3E9)),
+                              const SizedBox(height: 12),
+                              ElevatedButton(
+                                onPressed: () async {
+                                  _dismissKeyboard();
+                                  final newContact = await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => AddContactScreen(isOnboarding: true),
+                                    ),
+                                  );
+                                  
+                                  if (newContact != null && newContact is Contact) {
+                                    setState(() {
+                                      _selectedContacts.add(newContact);
+                                    });
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xff3CB3E9),
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  minimumSize: const Size.fromHeight(44),
+                                ),
+                                child: const Text('Add New', style: TextStyle(color: Colors.white, fontSize: 14)),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Create from scratch',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 20),
+                        Expanded(
+                          child: Column(
+                            children: [
+                              Icon(Icons.contacts, size: 50, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+                              const SizedBox(height: 12),
+                              OutlinedButton(
+                                onPressed: () {
+                                  _dismissKeyboard();
+                                  _pickContactsManually();
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xff3CB3E9),
+                                  side: const BorderSide(color: Color(0xff3CB3E9)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  minimumSize: const Size.fromHeight(44),
+                                ),
+                                child: const Text('Pick Contacts', style: TextStyle(fontSize: 14)),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Select from device',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      }
+    }
+
+      List<SocialGroup> _getOrderedGroupsForSelection() {
+        return List.from(_userGroups);
+      }
+
+      Widget _buildCloseCircleStep() {
+        final themeProvider = Provider.of<ThemeProvider>(context);
+        final theme = Theme.of(context);
+        
+        return SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 20),
+              Text('Identify Your Favourites', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
+              const SizedBox(height: 10),
+              
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: [
+                      Icon(Icons.info, color: theme.colorScheme.primary),
+                      const SizedBox(width: 8),
+                      Text('What is a Favourite?', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
+                    ]),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Your Favourites are people you naturally connect with often and those relationships may not need as much intentionality.',
+                      style: TextStyle(fontSize: 14, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+              
+              const SizedBox(height: 20),
+              
+              if (_selectedContacts.isNotEmpty) ...[
+                Text('Select your Favourites members:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
+                const SizedBox(height: 10),
+                
+                ..._selectedContacts.map((contact) => Card(
+                  color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: CheckboxListTile(
+                    title: Text(contact.name, style: TextStyle(fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
+                    subtitle: contact.phoneNumber.isNotEmpty ? Text(contact.phoneNumber, style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey)) : null,
+                    secondary: CircleAvatar(
+                      backgroundColor: theme.colorScheme.primary,
+                      child: Text(contact.name.isNotEmpty ? contact.name[0].toUpperCase() : '?', style: const TextStyle(color: Colors.white)),
+                    ),
+                    value: _closeCircleContacts.contains(contact),
+                    onChanged: (bool? value) => _toggleCloseCircleContact(contact),
+                    controlAffinity: ListTileControlAffinity.leading,
+                  ),
+                )).toList(),
+              ] else ...[
+                Card(
+                  color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(children: [
+                      Icon(Icons.people_outline, size: 60, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+                      const SizedBox(height: 16),
+                      Text('No Contacts Yet', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
+                      const SizedBox(height: 8),
+                      Text('You haven\'t added any contacts yet. You can add them later from the dashboard.', textAlign: TextAlign.center, style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey)),
+                    ]),
                   ),
                 ),
               ],
-            ),
+              const SizedBox(height: 40),
+            ],
           ),
-          
-          const SizedBox(height: 40),
-        ],
-      ),
-    );
-  }
+        );
+      }
 
-  Widget _buildSummaryItem(IconData icon, String title, String subtitle) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final theme = Theme.of(context);
-    
-    return ListTile(
-      leading: Icon(icon, color: theme.colorScheme.primary),
-      title: Text(title, style: TextStyle(fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
-      subtitle: Text(subtitle, style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey)),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final theme = Theme.of(context);
-    
-    return GestureDetector(
-      onTap: _dismissKeyboard,
-      behavior: HitTestBehavior.translucent,
-      child: Scaffold(
-        backgroundColor: themeProvider.getBackgroundColor(context),
-        appBar: _currentStep == 2 
-          ? null // No app bar on preview screen
-          : AppBar(
-              title: GradientText(
-                text: 'NUDGE',
-                style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
-              centerTitle: true,
-              backgroundColor: themeProvider.getSurfaceColor(context),
-              surfaceTintColor: Colors.transparent,
-              automaticallyImplyLeading: false,
-              elevation: 0,
-            ),
-        body: Column(children: [
-          if (_currentStep > 0) _buildStepIndicator(themeProvider),
-          Expanded(child: _buildCurrentStep()),
-          if (!_isCropping) Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: themeProvider.getSurfaceColor(context),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, -2))],
-              border: Border(
-                top: BorderSide(
-                  color: themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade300,
-                ),
-              ),
-            ),
-            child: Row(children: [
-              if (_currentStep > 0) Expanded( // Don't show back on preview step
-                child: OutlinedButton(
-                  onPressed: _previousStep,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: theme.colorScheme.primary,
-                    side: BorderSide(color: theme.colorScheme.primary),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      Widget _buildReviewStep() {
+        final themeProvider = Provider.of<ThemeProvider>(context);
+        final theme = Theme.of(context);
+        
+        return SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 40),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                child: Column(children: [
+                  Container(
+                    width: 100, height: 100,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.check, size: 50, color: theme.colorScheme.primary),
                   ),
-                  child: const Text('Back'),
-                ),
+                  const SizedBox(height: 20),
+                  Text('Your Social Universe is ready! 🎉', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
+                  const SizedBox(height: 16),
+                  Text(
+                    'We\'ve created your groups and scheduled your first nudges. You\'ll start seeing reminders soon — and get your first Weekly Digest this Sunday!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 16, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey, height: 1.5),
+                  ),
+                ]),
               ),
-              if (_currentStep > 0) const SizedBox(width: 10),
-             Expanded(
-              child: ElevatedButton(
-                autofocus: true,
-                onPressed: () {
-                  print('trying to continue');
-                  _dismissKeyboard();
-                  
-                  // Handle each step's validation
-                  if (_currentStep == 0) {
-                    // Profile step - validate form
-                    if (_formKey.currentState!.validate()) {
-                      _nextStep();
-                    }
-                  } else if (_currentStep == 1) {
-                    // Groups step - just check if groups exist
-                    if (_userGroups.isNotEmpty) {
-                      _nextStep();
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Please add at least one group'),
-                          duration: Duration(seconds: 2),
+              
+              const SizedBox(height: 40),
+              Text('Your Nudge Setup:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
+              const SizedBox(height: 20),
+              
+              _buildSummaryItem(Icons.person, 'Profile Complete', 'Username: ${_usernameController.text}'),
+              _buildSummaryItem(Icons.group, '${_userGroups.length} Social Groups', 'Organized by priority'),
+              _buildSummaryItem(Icons.contacts, 'Contacts', 'You can add contacts later from the dashboard'),
+              _buildSummaryItem(Icons.star, 'Favourites', '${_closeCircleContacts.length} important relationships'),
+              _buildSummaryItem(Icons.notifications, 'Weekly Digest', 'Starting this Sunday'),
+              
+              const SizedBox(height: 40),
+              
+              // Preview of what's next
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: theme.colorScheme.primary.withOpacity(0.2)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.star, color: theme.colorScheme.primary),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Explore Your Social Universe',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+                          ),
                         ),
-                      );
-                    }
-                  } else {
-                    // All other steps (preview, contacts, close circle, review) - just continue
-                    _nextStep();
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primary,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                child: _isLoading
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : Text(
-                        _currentStep == _steps.length - 1 
-                          ? 'Launch Your Universe' 
-                          : 'Continue',
-                        style: TextStyle(fontSize: _currentStep == _steps.length - 1 ? 14 :16, fontWeight: FontWeight.bold, color: Colors.white),
-                        textAlign: TextAlign.center,
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Visit your dashboard to explore your personalized Social Universe visualization and manage your connections.',
+                      style: TextStyle(
+                        color: themeProvider.isDarkMode ? Colors.white70 : Colors.grey.shade700,
                       ),
+                    ),
+                  ],
+                ),
               ),
-            ),
+              
+              const SizedBox(height: 40),
+            ],
+          ),
+        );
+      }
+
+      Widget _buildSummaryItem(IconData icon, String title, String subtitle) {
+        final themeProvider = Provider.of<ThemeProvider>(context);
+        final theme = Theme.of(context);
+        
+        return ListTile(
+          leading: Icon(icon, color: theme.colorScheme.primary),
+          title: Text(title, style: TextStyle(fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
+          subtitle: Text(subtitle, style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey)),
+        );
+      }
+
+      @override
+      Widget build(BuildContext context) {
+        final themeProvider = Provider.of<ThemeProvider>(context);
+        final theme = Theme.of(context);
+        
+        return GestureDetector(
+          onTap: _dismissKeyboard,
+          behavior: HitTestBehavior.translucent,
+          child: Scaffold(
+            backgroundColor: themeProvider.getBackgroundColor(context),
+            appBar: AppBar(
+                  title: GradientText(
+                    text: 'NUDGE',
+                    style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
+                  ),
+                  centerTitle: true,
+                  backgroundColor: themeProvider.getSurfaceColor(context),
+                  surfaceTintColor: Colors.transparent,
+                  automaticallyImplyLeading: false,
+                  elevation: 0,
+                ),
+            body: Column(children: [
+              if (_currentStep > 0) _buildStepIndicator(themeProvider),
+              Expanded(child: _buildCurrentStep()),
+              if (!_isCropping) Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: themeProvider.getSurfaceColor(context),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, -2))],
+                  border: Border(
+                    top: BorderSide(
+                      color: themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade300,
+                    ),
+                  ),
+                ),
+                child: Row(children: [
+                  if (_currentStep > 0) Expanded( // Don't show back on preview step
+                    child: OutlinedButton(
+                      onPressed: _previousStep,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: theme.colorScheme.primary,
+                        side: BorderSide(color: theme.colorScheme.primary),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: Text('Back', style: TextStyle(fontSize: _currentStep == _steps.length - 1 ? 14 : 16,),),
+                    ),
+                  ),
+                  if (_currentStep > 0) const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton(
+                    autofocus: true,
+                    onPressed: () {
+                      print('trying to continue');
+                      _dismissKeyboard();
+                      
+                      // Handle each step's validation
+                      if (_currentStep == 0) {
+                        // Profile step - validate form
+                        if (_formKey.currentState!.validate()) {
+                          _nextStep();
+                        }
+                      } else if (_currentStep == 1) {
+                        // Groups step - just check if groups exist
+                        if (_userGroups.isNotEmpty) {
+                          _nextStep();
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Please add at least one group'),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      } else {
+                        // All other steps (preview, contacts, close circle, review) - just continue
+                        _nextStep();
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: theme.colorScheme.primary,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : Text(
+                            _currentStep == _steps.length - 1 
+                              ? 'Launch Your Universe' 
+                              : 'Continue',
+                            style: TextStyle(fontSize: _currentStep == _steps.length - 1 ? 14 :16, fontWeight: FontWeight.bold, color: Colors.white),
+                            textAlign: TextAlign.center,
+                          ),
+                  ),
+                ),
+                ]),
+              ),
             ]),
           ),
-        ]),
-      ),
-    );
-  }
+        );
+      }
 
-  @override
-  void dispose() {
-    _usernameController.dispose();
-    _phoneController.dispose();
-    _bioController.dispose();
-    super.dispose();
-  }
-}
+      @override
+      void dispose() {
+        _usernameController.dispose();
+        _phoneController.dispose();
+        _bioController.dispose();
+        super.dispose();
+      }
+    }
 
 class ContactPickerDialog extends StatefulWidget {
   final List<fContacts.Contact> contacts;

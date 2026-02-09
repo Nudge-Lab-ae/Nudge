@@ -114,7 +114,13 @@ class _SocialUniverseGuideState extends State<SocialUniverseGuide> {
         ? _pages[_currentPage].color 
         : _pages[_currentPage].lightModeColor;
 
-    return Scaffold(
+    return WillPopScope(
+    onWillPop: () async {
+      // Handle back button - same as close button for onboarding
+      widget.onClose();
+      return false; // Don't allow default back behavior
+    },
+    child: Scaffold(
       backgroundColor: _currentTheme.backgroundColor,
       body: SafeArea(
         child: Column(
@@ -307,7 +313,7 @@ class _SocialUniverseGuideState extends State<SocialUniverseGuide> {
           ],
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildPage(GuidePage page, int pageIndex) {

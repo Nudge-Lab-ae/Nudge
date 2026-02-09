@@ -300,11 +300,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         decoration: BoxDecoration(
                           color: themeProvider.isDarkMode 
                             ? Colors.white.withOpacity(0.1)
-                            : Colors.black.withOpacity(0.45),
+                            : Color(0xff888888).withOpacity(0.45),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(color: Colors.white24),
                         ),
-                        child: Icon(Icons.settings, color: themeProvider.isDarkMode ? Colors.white : Colors.white, size: 20),
+                        child: Icon(Icons.settings, color: themeProvider.isDarkMode ? Colors.white : Color(0xff555555), size: 20),
                       ),
                       onPressed: () {
                         Navigator.pushNamed(context, '/settings');
@@ -347,16 +347,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                     const SizedBox(height: 20),
                     
+                    // Quick Actions - Now in card
+                    _buildQuickActionsCard(context, themeProvider),
+                    const SizedBox(height: 20),
                     // Quick Insights - Now in card
+
                     _buildQuickInsightsCard(analytics, contacts.length, context, groups.length),
                     const SizedBox(height: 20),
 
-                    // Nudge Performance
+                     // Nudge Performance
                     _buildWeeklyNudgePerformanceSection(weeklyNudgePerformance, context),
-                    const SizedBox(height: 20),
-
-                    // Quick Actions - Now in card
-                    _buildQuickActionsCard(context, themeProvider),
                     const SizedBox(height: 20),
 
                     // VIP Contacts
@@ -548,12 +548,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         borderRadius: BorderRadius.circular(28),
         color: themeProvider.isDarkMode
             ? Color(0xff111111).withOpacity(0.7)
-            : Colors.white.withOpacity(0.9),
+            : Colors.white.withOpacity(0.7),
         border: Border.all(color: themeProvider.isDarkMode ? Colors.white.withOpacity(0.2) : Colors.white.withOpacity(0.4)),
         boxShadow: [
           BoxShadow(
-            color: themeProvider.isDarkMode ? Colors.white.withOpacity(0.5) : Colors.black.withOpacity(0.5),
-            blurRadius: 35,
+            color: themeProvider.isDarkMode ? Colors.white.withOpacity(0.5) : Colors.white.withOpacity(0.7),
+            blurRadius: themeProvider.isDarkMode ?35: 50,
             spreadRadius: 3,
           ),
           BoxShadow(
@@ -765,7 +765,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   value: totalContacts.toString(),
                   iconSize: 35,
                   iconAsset: 'assets/quick-insights/total-contacts.svg',
-                  backgroundAsset: 'assets/card-backgrounds/needs-care.png',
+                  backgroundAsset: 'assets/card-backgrounds/nudges-this-week.jpg',
                   iconColor: theme.colorScheme.primary,
                   onTap: () => setState(() => _currentIndex = 2),
                   context: context,
@@ -775,7 +775,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   value: analytics.vipContacts.toString(),
                   iconSize: 35,
                   iconAsset: 'assets/quick-insights/close circle-star.svg',
-                  backgroundAsset: 'assets/card-backgrounds/needs-care.png',
+                  backgroundAsset: 'assets/card-backgrounds/nudges-this-week.jpg',
                   iconColor: themeProvider.isDarkMode ? theme.colorScheme.primary : Colors.white,
                   onTap: () {
                     setState(() {
@@ -791,7 +791,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   value: groups.toString(),
                   iconSize: 35,
                   iconAsset: 'assets/quick-actions/add group-icon.svg',
-                  backgroundAsset: 'assets/card-backgrounds/needs-care.png',
+                  backgroundAsset: 'assets/card-backgrounds/nudges-this-week.jpg',
                   iconColor: themeProvider.isDarkMode ? theme.colorScheme.primary : Colors.white,
                   onTap: () {
                     setState(() {
@@ -852,7 +852,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   value: (weeklyNudgePerformance['scheduled'] ?? 0).toString(),
                   iconSize: 35,
                   iconAsset: 'assets/performance-icons/clock-scheduled.svg',
-                  backgroundAsset: 'assets/card-backgrounds/nudges-this-week.jpg',
+                  backgroundAsset: 'assets/card-backgrounds/needs-care.png',
                   iconColor: themeProvider.isDarkMode ? theme.colorScheme.primary : Colors.white,
                   context: context,
                 ),
@@ -861,7 +861,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   value: (weeklyNudgePerformance['completed'] ?? 0).toString(),
                   iconSize: 35,
                   iconAsset: 'assets/performance-icons/check-completed.svg',
-                   backgroundAsset: 'assets/card-backgrounds/nudges-this-week.jpg',
+                  backgroundAsset: 'assets/card-backgrounds/needs-care.png',
                   iconColor: AppTheme.successColor,
                   context: context,
                 ),
@@ -870,7 +870,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   value: (weeklyNudgePerformance['missed'] ?? 0).toString(),
                   iconSize: 35,
                   iconAsset: 'assets/performance-icons/x-missed.svg',
-                   backgroundAsset: 'assets/card-backgrounds/nudges-this-week.jpg',
+                  backgroundAsset: 'assets/card-backgrounds/needs-care.png',
                   iconColor: themeProvider.isDarkMode ? theme.colorScheme.primary : Colors.white,
                   context: context,
                 ),
@@ -1081,45 +1081,54 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // Quick actions row
   Widget _buildCenteredQuickActions(BuildContext context, ThemeProvider themeProvider) {
     // final themeProvider = Provider.of<ThemeProvider>(context);
-    // final theme = Theme.of(context);
+    final theme = Theme.of(context);
     
     return Center(
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           _buildQuickActionButton(
-            svgAsset: 'assets/quick-actions/add contact icon.svg',
-            label: 'Add Contacts',
-            onPressed: () {
-              _showAddContactOptions(context, themeProvider);
-            },
-            context: context,
-            themeProvider: themeProvider
-          ),
+              title: 'Add Contacts',
+              value: '',
+              iconSize: 35,
+              iconAsset: 'assets/quick-actions/add contact icon.svg',
+              backgroundAsset: 'assets/card-backgrounds/nudges-this-week.jpg',
+              iconColor: theme.colorScheme.primary,
+              onTap: () {
+                _showAddContactOptions(context, themeProvider);
+              },
+              context: context,
+            ),
+         const SizedBox(width: 8),
+          _buildQuickActionButton(
+              title: 'Create Group',
+              value: '',
+              iconSize: 35,
+              iconAsset: 'assets/quick-actions/add group-icon.svg',
+              backgroundAsset: 'assets/card-backgrounds/nudges-this-week.jpg',
+              iconColor: theme.colorScheme.primary,
+              onTap: () {
+                setState(() {
+                  _currentIndex = 3; // Groups is now at index 3
+                  attentionFilter = false;
+                  vipFilter = false;
+                });
+              },
+              context: context,
+            ),
           const SizedBox(width: 8),
           _buildQuickActionButton(
-            svgAsset: 'assets/quick-actions/add group-icon.svg',
-            label: 'Create Group',
-            onPressed: () {
-              setState(() {
-                _currentIndex = 3; // Groups is now at index 3
-                attentionFilter = false;
-                vipFilter = false;
-              });
-            },
+            iconAsset: 'assets/quick-actions/touchpoint-icon.svg',
+            backgroundAsset: 'assets/card-backgrounds/nudges-this-week.jpg',
             context: context,
-            themeProvider: themeProvider
-          ),
-          const SizedBox(width: 8),
-          _buildQuickActionButton(
-            svgAsset: 'assets/quick-actions/touchpoint-icon.svg',
-            label: 'Add Touchpoint',
-            onPressed: () {
-              _showAddTouchpointModal(context, themeProvider);
-            },
-            context: context,
-            themeProvider: themeProvider
-          ),
+              title: 'Add Touchpoint',
+              value: '',
+              iconSize: 45,
+              iconColor: theme.colorScheme.primary,
+              onTap: () {
+                _showAddTouchpointModal(context, themeProvider);
+              },
+            ),
         ],
       ),
     );
@@ -1149,59 +1158,122 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildQuickActionButton({
-    required String svgAsset,
-    required String label,
-    required VoidCallback onPressed,
+    required String title,
+    required String value,
+    required String iconAsset,
+    required Color iconColor,
+    String? backgroundAsset,
+    double? iconSize,
+    VoidCallback? onTap,
     required BuildContext context,
-    required ThemeProvider themeProvider,
   }) {
-    // final themeProvider = Provider.of<ThemeProvider>(context);
-    final theme = Theme.of(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
     var size = MediaQuery.of(context).size;
     
-    return SizedBox(
+    final card = Container(
       width: size.width * 0.25,
       height: 120,
-      child: Card(
-        elevation: 4,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        color: themeProvider.getCardColor(context),
-        child: InkWell(
-          onTap: onPressed,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SvgPicture.asset(
-                  svgAsset,
-                  width: label == 'Add Touchpoint'?42:32,
-                  height: label == 'Add Touchpoint'?42:32,
-                  colorFilter: ColorFilter.mode(
-                    themeProvider.isDarkMode ? theme.colorScheme.primary : const Color.fromARGB(255, 131, 101, 195),
-                    BlendMode.srcIn,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontFamily: 'OpenSans',
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: themeProvider.getTextPrimaryColor(context),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
+      decoration: BoxDecoration(
+        // Always show the background image if available, regardless of theme
+        image: backgroundAsset != null
+          ? DecorationImage(
+              image: AssetImage(backgroundAsset), 
+              fit: BoxFit.cover,
+              // Add opacity overlay for dark mode to make text more readable
+              colorFilter: themeProvider.isDarkMode
+                  ? ColorFilter.mode(
+                      Colors.black.withOpacity(0.6),
+                      BlendMode.darken,
+                    )
+                  : null,
+            )
+          : null,
+        // Fallback background color when no image
+        color: backgroundAsset == null
+            ? (themeProvider.isDarkMode 
+                ? AppTheme.darkSurfaceVariant 
+                : Colors.white)
+            : null,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15),
+            offset: const Offset(0, 2),
+            blurRadius: 4,
           ),
+        ],
+        border: Border.all(
+          color: themeProvider.isDarkMode 
+              ? AppTheme.darkCardBorder 
+              : AppTheme.lightCardBorder, 
+          width: 0.6
         ),
       ),
+      child: Stack(
+        children: [
+          // Add an additional gradient overlay for dark mode to improve text contrast
+          if (backgroundAsset != null && themeProvider.isDarkMode)
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withOpacity(0.7),
+                  ],
+                ),
+              ),
+            ),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(5.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    height: 50,
+                    child: SvgPicture.asset(
+                    iconAsset,
+                    width: iconSize,
+                    height: iconSize,
+                    colorFilter: ColorFilter.mode(
+                      // Use white icons for dark mode with background images
+                      backgroundAsset != null && themeProvider.isDarkMode
+                          ? Colors.white
+                          // : iconColor,
+                          : Colors.white,
+                      BlendMode.srcIn,
+                    ),
+                  ),
+                  ),
+                  const SizedBox(height: 10),
+                  
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontFamily: 'OpenSans',
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: backgroundAsset != null
+                          // White text for cards with background images
+                          ? Colors.white
+                          : themeProvider.getTextSecondaryColor(context),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
+
+    return GestureDetector(onTap: onTap, child: MouseRegion(cursor: SystemMouseCursors.click, child: card));
   }
 
   int _getCachedRandomIndex(String seed) {
