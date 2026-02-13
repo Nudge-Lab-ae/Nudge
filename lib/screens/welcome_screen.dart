@@ -69,7 +69,7 @@ class WelcomeScreen extends StatelessWidget {
                   
                   // Hero text
                   const Text(
-                    'Stay connected to the people\nwho matter most',
+                    'Stay Connected to the People\nWho Matter Most',
                     style: TextStyle(
                       fontSize: 21,
                       fontWeight: FontWeight.w700,

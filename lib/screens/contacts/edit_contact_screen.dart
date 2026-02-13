@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:crop_your_image/crop_your_image.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:nudge/screens/dashboard/dashboard_screen.dart';
 import 'package:nudge/services/api_service.dart';
@@ -493,6 +494,221 @@ class _EditContactScreenState extends State<EditContactScreen> {
     return schedule;
   }
 
+  // Add this method inside _EditContactScreenState
+  bool _isValidPhoneNumber(String phone) {
+    String cleanedPhone = phone.replaceAll(RegExp(r'[^\d]'), '');
+    
+    if (cleanedPhone.length > 12 || cleanedPhone.length < 9) {
+      return false;
+    }
+    
+    // if (!RegExp(r'^[0-9]{9}$').hasMatch(cleanedPhone)) {
+    //   return false;
+    // }
+    
+    return true;
+  }
+
+  // Add this widget method inside _EditContactScreenState
+  Widget _buildPhoneValidationMessage() {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    
+    if (_phoneController.text.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    
+    if (!_isValidPhoneNumber(_phoneController.text)) {
+      return Container(
+        margin: const EdgeInsets.only(top: 8),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: themeProvider.isDarkMode ? Colors.red.shade900.withOpacity(0.3) : const Color(0xFFFFF5F5),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.red.shade100),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.info_outline, color: Colors.red.shade600, size: 16),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                _phoneController.text.length < 9 
+                  ? 'Phone number too short. Must be exactly 9 digits.' 
+                  : 'Please use only numbers (0-9) for the phone number.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.red.shade600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: themeProvider.isDarkMode ? const Color(0xFF0A3A62) : const Color(0xFFF0F9FF),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.check_circle, color: Colors.green.shade600, size: 16),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Valid phone number: ${_selectedCountry.dialCode} ${_phoneController.text}',
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppTheme.primaryColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+    void _showValidationAlert() {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.error_outline, color: Colors.orange.shade700, size: 28),
+            const SizedBox(width: 8),
+            Text(
+              'Cannot Save Changes',
+              style: AppTextStyles.title2.copyWith(
+                color: themeProvider.isDarkMode ? Colors.white : Colors.black87,
+                fontSize: 18,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Please fix the following issues:',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 16),
+            
+            // Name validation
+            if (_nameController.text.isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  children: [
+                    Icon(Icons.close, color: Colors.red.shade400, size: 18),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Name is required',
+                        style: TextStyle(color: Colors.red.shade700),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            
+            // Phone validation
+            if (_phoneController.text.isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  children: [
+                    Icon(Icons.close, color: Colors.red.shade400, size: 18),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Phone number is required',
+                        style: TextStyle(color: Colors.red.shade700),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else if (!_isValidPhoneNumber(_phoneController.text))
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  children: [
+                    Icon(Icons.close, color: Colors.red.shade400, size: 18),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Phone number must be exactly 9 digits',
+                        style: TextStyle(color: Colors.red.shade700),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            
+            // Connection type validation
+            if (_userGroups.isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  children: [
+                    Icon(Icons.close, color: Colors.red.shade400, size: 18),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'No connection types available. Please create a group first.',
+                        style: TextStyle(color: Colors.red.shade700),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else if (_connectionType.isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  children: [
+                    Icon(Icons.close, color: Colors.red.shade400, size: 18),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Please select a connection type',
+                        style: TextStyle(color: Colors.red.shade700),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+        backgroundColor: themeProvider.getSurfaceColor(context),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              foregroundColor: AppTheme.primaryColor,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            ),
+            child: const Text(
+              'GOT IT',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
@@ -744,9 +960,14 @@ class _EditContactScreenState extends State<EditContactScreen> {
                             controller: _phoneController,
                             style: AppTextStyles.primary.copyWith(color: themeProvider.getTextPrimaryColor(context)),
                             keyboardType: TextInputType.phone,
+                            maxLength: 12,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
                             decoration: InputDecoration(
                               hintText: 'Enter phone number',
                               hintStyle: AppTextStyles.secondary.copyWith(color: themeProvider.getTextHintColor(context)),
+                              counterText: '',
                               enabledBorder: OutlineInputBorder(
                                 borderSide: BorderSide(color: themeProvider.getTextHintColor(context), width: 1),
                                 borderRadius: BorderRadius.circular(10)
@@ -766,10 +987,24 @@ class _EditContactScreenState extends State<EditContactScreen> {
                               filled: true,
                               fillColor: themeProvider.getCardColor(context),
                             ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter a phone number';
+                              } else if (!_isValidPhoneNumber(value)) {
+                                return 'Please enter a valid 9-digit phone number';
+                              }
+                              return null;
+                            },
+                            onChanged: (value) {
+                              setState(() {
+                                // Trigger rebuild for validation message
+                              });
+                            },
                           ),
                         ),
                       ],
                     ),
+                    _buildPhoneValidationMessage(), // Add this line
                     const SizedBox(height: 20),
 
                     // Email
@@ -995,6 +1230,20 @@ class _EditContactScreenState extends State<EditContactScreen> {
   Future<void> _saveContact(List<SocialGroup> groups) async {
     final apiService = Provider.of<ApiService>(context, listen: false);
     if (saving) {
+      return;
+    }
+    // Dismiss keyboard
+    _dismissKeyboard();
+    
+    // Check if form is valid
+    if (!_formKey.currentState!.validate()) {
+      _showValidationAlert();
+      return;
+    }
+    
+    // Check if connection type is selected
+    if (_connectionType.isEmpty) {
+      _showValidationAlert();
       return;
     }
     print('phase 1');

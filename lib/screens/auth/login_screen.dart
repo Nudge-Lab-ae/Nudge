@@ -68,7 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
               // ),
               // const SizedBox(height: 30),
               Text(
-                'EMAIL',
+                'Email',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555),
@@ -105,7 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 20),
               Text(
-                'PASSWORD',
+                'Password',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,

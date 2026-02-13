@@ -264,7 +264,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 Text(
                   'Email',
                   style: TextStyle(
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w600,
                     fontSize: 14,
                     color: themeProvider.isDarkMode ? Colors.white : Color(0xff555555),
                   ),
@@ -358,8 +358,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 Text(
                   'Password',
                   style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
                     color: themeProvider.isDarkMode ? Colors.white :  Color(0xff555555),
                   ),
                 ),
@@ -408,8 +408,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 Text(
                   'Confirm Password',
                   style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
                     color: themeProvider.isDarkMode ? Colors.white :  Color(0xff555555),
                   ),
                 ),
@@ -600,16 +600,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       _dismissKeyboard();
                       setState(() => _isLoading = true);
                       try {
+                        print('register 1');
                         final user = await authService.signInWithGoogle();
+                         print('register 2');
                         if (user != null) {
                           // Check if user already exists in Firestore
+                           print('register 3');
                           final userData = await apiService.getUser();
-                          if (userData.id == '') {
+                           print('register 4');
+                          if (userData.id != '') {
                             // Also check if email exists in Firestore (for consistency)
+                             print('register 5');
                             final emailExists = await apiService.checkEmailExists(user.email!);
                             
                             if (emailExists) {
                               // Show error and don't create duplicate
+                               print('register 6');
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text('The email ${user.email} is already registered. Please log in.'),
@@ -619,7 +625,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               setState(() => _isLoading = false);
                               return;
                             }
-                            
+                             print('register 7');
                             // Create initial user document
                             await apiService.addUser(thisUser.User(
                               admin: false,
@@ -638,17 +644,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               weeklyDigestEnabled: false
                             ));
                           }
-                          
+                           print('register 8');
                           // Navigate to complete profile screen if profile is not completed
                           if (userData.id == '' || !userData.profileCompleted) {
+                             print('register 9');
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(builder: (context) => const CompleteProfileScreen()),
                             );
                           }
+                           print('register 10');
                           // Otherwise, AuthWrapper will handle navigation to dashboard
                         }
                       } on FirebaseAuthException catch (e) {
+                         print('register 11');
                         String errorMessage = 'Google sign-up failed.';
                         if (e.code == 'account-exists-with-different-credential') {
                           errorMessage = 'This email is already registered with a different method.';

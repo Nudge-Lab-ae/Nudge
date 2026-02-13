@@ -3023,7 +3023,7 @@ class UniversePainter extends CustomPainter {
       
       canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), _backgroundPaint);
       
-      _drawNebula(canvas, size, clampedImmersionLevel, false);
+      // _drawNebula(canvas, size, clampedImmersionLevel, false);
       // Draw background stars with CLEAR DIFFERENCE between modes - ORIGINAL
       _drawBackgroundStars(canvas, size, clampedImmersionLevel, isDarkMode);
       
@@ -3054,7 +3054,7 @@ class UniversePainter extends CustomPainter {
       // Add some light mode nebula/cloud effects - ORIGINAL
       
       // Still draw some background stars but fewer
-      _drawBackgroundStars(canvas, size, clampedImmersionLevel * 0.5, isDarkMode);
+      _drawBackgroundStars(canvas, size, clampedImmersionLevel, isDarkMode);
     }
   }
   
@@ -3073,58 +3073,58 @@ class UniversePainter extends CustomPainter {
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), _backgroundPaint);
   }
 
-  void _drawNebula(Canvas canvas, Size size, double immersionLevel, bool isDarkMode) {
-    final center = Offset(size.width / 2, size.height / 2);
+  // void _drawNebula(Canvas canvas, Size size, double immersionLevel, bool isDarkMode) {
+  //   final center = Offset(size.width / 2, size.height / 2);
     
-    // Create 2-3 nebula clouds - ORIGINAL
-    final nebulaCount = 2 + (immersionLevel * 2).toInt();
+  //   // Create 2-3 nebula clouds - ORIGINAL
+  //   final nebulaCount = 2 + (immersionLevel * 2).toInt();
     
-    for (int n = 0; n < nebulaCount; n++) {
-      final nebulaX = center.dx + (_random.nextDouble() - 0.5) * size.width * 0.6;
-      final nebulaY = center.dy + (_random.nextDouble() - 0.5) * size.height * 0.6;
-      final nebulaRadius = size.width * (0.15 + _random.nextDouble() * 0.25);
+  //   for (int n = 0; n < nebulaCount; n++) {
+  //     final nebulaX = center.dx + (_random.nextDouble() - 0.5) * size.width * 0.6;
+  //     final nebulaY = center.dy + (_random.nextDouble() - 0.5) * size.height * 0.6;
+  //     final nebulaRadius = size.width * (0.15 + _random.nextDouble() * 0.25);
       
-      if (isDarkMode) {
-        // Dark mode nebula - purples and blues - ORIGINAL
-        _ringPaint
-          ..shader = RadialGradient(
-            center: Alignment.center,
-            colors: [
-              const Color.fromARGB(255, 38, 23, 78).withOpacity(0.25 + immersionLevel * 0.03),
-              const Color.fromARGB(255, 21, 27, 65).withOpacity(0.23 + immersionLevel * 0.02),
-              const Color.fromARGB(255, 36, 62, 105).withOpacity(0.22 + immersionLevel * 0.01),
-              Colors.transparent,
-            ],
-            stops: const [0.0, 0.3, 0.6, 1.0],
-          ).createShader(Rect.fromCircle(
-            center: Offset(nebulaX, nebulaY),
-            radius: nebulaRadius,
-          ))
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, nebulaRadius * 0.7);
+  //     if (isDarkMode) {
+  //       // Dark mode nebula - purples and blues - ORIGINAL
+  //       _ringPaint
+  //         ..shader = RadialGradient(
+  //           center: Alignment.center,
+  //           colors: [
+  //             const Color.fromARGB(255, 38, 23, 78).withOpacity(0.25 + immersionLevel * 0.03),
+  //             const Color.fromARGB(255, 21, 27, 65).withOpacity(0.23 + immersionLevel * 0.02),
+  //             const Color.fromARGB(255, 36, 62, 105).withOpacity(0.22 + immersionLevel * 0.01),
+  //             Colors.transparent,
+  //           ],
+  //           stops: const [0.0, 0.3, 0.6, 1.0],
+  //         ).createShader(Rect.fromCircle(
+  //           center: Offset(nebulaX, nebulaY),
+  //           radius: nebulaRadius,
+  //         ))
+  //         ..maskFilter = MaskFilter.blur(BlurStyle.normal, nebulaRadius * 0.7);
         
-        canvas.drawCircle(Offset(nebulaX, nebulaY), nebulaRadius, _ringPaint);
-      } else {
-        // Light mode clouds - light blues and cyans - ORIGINAL
-        _ringPaint
-          ..shader = RadialGradient(
-            center: Alignment.center,
-            colors: [
-              const Color(0xFF80DEEA).withOpacity(0.08 + immersionLevel * 0.04),
-              const Color(0xFF4DD0E1).withOpacity(0.05 + immersionLevel * 0.03),
-              const Color(0xFF26C6DA).withOpacity(0.03 + immersionLevel * 0.02),
-              Colors.transparent,
-            ],
-            stops: const [0.0, 0.4, 0.7, 1.0],
-          ).createShader(Rect.fromCircle(
-            center: Offset(nebulaX, nebulaY),
-            radius: nebulaRadius,
-          ))
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, nebulaRadius * 0.9);
+  //       canvas.drawCircle(Offset(nebulaX, nebulaY), nebulaRadius, _ringPaint);
+  //     } else {
+  //       // Light mode clouds - light blues and cyans - ORIGINAL
+  //       _ringPaint
+  //         ..shader = RadialGradient(
+  //           center: Alignment.center,
+  //           colors: [
+  //             const Color(0xFF80DEEA).withOpacity(0.08 + immersionLevel * 0.04),
+  //             const Color(0xFF4DD0E1).withOpacity(0.05 + immersionLevel * 0.03),
+  //             const Color(0xFF26C6DA).withOpacity(0.03 + immersionLevel * 0.02),
+  //             Colors.transparent,
+  //           ],
+  //           stops: const [0.0, 0.4, 0.7, 1.0],
+  //         ).createShader(Rect.fromCircle(
+  //           center: Offset(nebulaX, nebulaY),
+  //           radius: nebulaRadius,
+  //         ))
+  //         ..maskFilter = MaskFilter.blur(BlurStyle.normal, nebulaRadius * 0.9);
         
-        canvas.drawCircle(Offset(nebulaX, nebulaY), nebulaRadius, _ringPaint);
-      }
-    }
-  }
+  //       canvas.drawCircle(Offset(nebulaX, nebulaY), nebulaRadius, _ringPaint);
+  //     }
+  //   }
+  // }
 
   void _drawBackgroundStars(Canvas canvas, Size size, double immersionLevel, bool isDarkMode) {
       // Increased star count for more vividness without blur - ORIGINAL
@@ -3165,14 +3165,20 @@ class UniversePainter extends CustomPainter {
     final time = DateTime.now().millisecondsSinceEpoch / 1000;
     final pulse = (sin(time * 2) + 1) / 2;
     
+    // Calculate shine intensity based on immersionLevel
+    // No shine at 0.5, full shine at 1.0, linear interpolation
+    final shineIntensity = (immersionLevel - 0.4) / 0.5;
+    final clampedShineIntensity = shineIntensity.clamp(0.0, 1.0);
+    
+    // Draw the base central sphere (unchanged from original)
     if (isDarkMode) {
       // DARK MODE central user: Gold/Yellow - ORIGINAL
       _glowPaint
         ..shader = RadialGradient(
           center: Alignment.center,
           colors: [
-            const Color.fromARGB(255, 225, 255, 0).withOpacity(0.9),
-            const Color.fromARGB(255, 238, 255, 0).withOpacity(0.7),
+            const ui.Color.fromARGB(255, 255, 225, 0).withOpacity(0.9),
+            const ui.Color.fromARGB(255, 255, 247, 0).withOpacity(0.7),
             Colors.transparent,
           ],
           stops: const [0.0, 0.4, 1.0],
@@ -3185,7 +3191,7 @@ class UniversePainter extends CustomPainter {
       _starPaint
         ..shader = RadialGradient(
           center: Alignment.center,
-          colors: const [Color.fromARGB(255, 234, 255, 0), Color.fromARGB(255, 242, 255, 0)],
+          colors: const [ui.Color.fromARGB(255, 255, 251, 0), ui.Color.fromARGB(255, 255, 234, 0)],
         ).createShader(Rect.fromCircle(center: center, radius: 18));
       
       canvas.drawCircle(center, 18, _starPaint);
@@ -3197,7 +3203,7 @@ class UniversePainter extends CustomPainter {
           center: Alignment.center,
           colors: [
             const Color(0xFFFFD600).withOpacity(0.9),
-            const Color.fromARGB(255, 221, 255, 0).withOpacity(0.7),
+            const ui.Color.fromARGB(255, 251, 255, 0).withOpacity(0.7),
             Colors.transparent,
           ],
           stops: const [0.0, 0.4, 1.0],
@@ -3210,10 +3216,89 @@ class UniversePainter extends CustomPainter {
       _starPaint
         ..shader = RadialGradient(
           center: Alignment.center,
-          colors: const [Color.fromARGB(255, 255, 251, 0), Color.fromARGB(255, 221, 255, 0)],
+          colors: const [ui.Color.fromARGB(255, 255, 255, 0), ui.Color.fromARGB(255, 255, 238, 0)],
         ).createShader(Rect.fromCircle(center: center, radius: 16));
       
       canvas.drawCircle(center, 16, _starPaint);
+    }
+    
+    // ===== NEW: ADD BRIGHT WHITE GLOWING CENTER =====
+    if (clampedShineIntensity > 0) {
+      // Inner white core glow - grows with immersion
+      final innerCoreRadius = 4.0 + clampedShineIntensity * 6.0; // 4 to 10 pixels
+      final innerCorePaint = Paint()
+        ..shader = RadialGradient(
+          center: Alignment.center,
+          colors: [
+            Colors.white.withOpacity(0.4 + clampedShineIntensity * 0.1), // 0.9 to 1.0
+            Colors.white.withOpacity(0.3 + clampedShineIntensity * 0.3), // 0.6 to 0.9
+            Colors.white.withOpacity(0.1 + clampedShineIntensity * 0.4), // 0.2 to 0.6
+            Colors.transparent,
+          ],
+          stops: [0.0, 0.3, 0.6, 1.0],
+        ).createShader(Rect.fromCircle(center: center, radius: innerCoreRadius))
+        ..maskFilter = MaskFilter.blur(
+          BlurStyle.normal, 
+          3.0 + clampedShineIntensity * 7.0 // 3 to 10 blur
+        );
+      
+      canvas.drawCircle(center, innerCoreRadius, innerCorePaint);
+      
+      // Outer white glow halo - extends beyond the main circle at high immersion
+      final haloRadius = 25.0 + clampedShineIntensity * 15.0; // 25 to 40 pixels
+      final haloPaint = Paint()
+        ..shader = RadialGradient(
+          center: Alignment.center,
+          colors: [
+            Colors.white.withOpacity(0.1 * clampedShineIntensity), // 0 to 0.1
+            Colors.white.withOpacity(0.05 * clampedShineIntensity), // 0 to 0.05
+            Colors.transparent,
+          ],
+          stops: const [0.0, 0.5, 1.0],
+        ).createShader(Rect.fromCircle(center: center, radius: haloRadius))
+        ..maskFilter = MaskFilter.blur(
+          BlurStyle.normal, 
+          10.0 + clampedShineIntensity * 20.0 // 10 to 30 blur
+        );
+      
+      canvas.drawCircle(center, haloRadius, haloPaint);
+      
+      // Bright white center dot - very intense at high immersion
+      final centerDotRadius = 12.0 + clampedShineIntensity * 3.0; // 2 to 5 pixels
+      final centerDotPaint = Paint()
+        ..shader = RadialGradient(
+          center: Alignment.center,
+          colors: [
+            Colors.white.withOpacity(0.45 + clampedShineIntensity * 0.05), // 0.95 to 1.0
+            Colors.white.withOpacity(0.2 + clampedShineIntensity * 0.3),  // 0.7 to 1.0
+          ],
+          stops: const [0.0, 1.0],
+        ).createShader(Rect.fromCircle(center: center, radius: centerDotRadius))
+        ..maskFilter = MaskFilter.blur(
+          BlurStyle.normal, 
+          1.0 + clampedShineIntensity * 2.0 // 1 to 3 blur
+        );
+      
+      canvas.drawCircle(center, centerDotRadius, centerDotPaint);
+      
+      // Add subtle pulsing effect to the white glow
+      final pulseFactor = 1.0 + pulse * 0.2 * clampedShineIntensity;
+      final pulsedInnerCorePaint = Paint()
+        ..shader = RadialGradient(
+          center: Alignment.center,
+          colors: [
+            Colors.white.withOpacity(0.3 * clampedShineIntensity), // 0 to 0.8
+            Colors.white.withOpacity(0.1 * clampedShineIntensity), // 0 to 0.4
+            Colors.transparent,
+          ],
+          stops: const [0.0, 0.7, 1.0],
+        ).createShader(Rect.fromCircle(center: center, radius: innerCoreRadius * pulseFactor))
+        ..maskFilter = MaskFilter.blur(
+          BlurStyle.normal, 
+          5.0 * clampedShineIntensity // 0 to 5 blur
+        );
+      
+      canvas.drawCircle(center, innerCoreRadius * pulseFactor, pulsedInnerCorePaint);
     }
     
     // "YOU" text - theme specific - ORIGINAL

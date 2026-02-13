@@ -212,7 +212,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                                     children: [
                                       Icon(Icons.delete_forever, color: Colors.red),
                                       SizedBox(width: 8),
-                                      Text('DELETE ALL CONTACTS', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+                                      Text('Delete All Contacts', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
                                     ],
                                   ),
                                 ),
@@ -575,7 +575,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                   children: [
                     Icon(Icons.delete_forever, color: Colors.red),
                     SizedBox(width: 8),
-                    Text('DELETE ALL CONTACTS', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+                    Text('Delete All Contacts', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
                   ],
                 ),
               ),

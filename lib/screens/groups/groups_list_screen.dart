@@ -1274,7 +1274,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                         children: [
                           Icon(Icons.add, size: 16, color: theme.colorScheme.primary),
                           SizedBox(width: 4),
-                          Text('Add More', style: TextStyle(color: theme.colorScheme.primary, fontFamily: 'OpenSans')),
+                          Text('Add More', style: TextStyle(color: theme.colorScheme.primary, fontFamily: 'OpenSans', fontWeight: FontWeight.w600)),
                         ],
                       ),
                       onSelected: (String value) async {
