@@ -690,8 +690,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
     
     switch (_currentStep) {
       case 0: return _buildProfileStep();
-      case 1: return _buildGroupsStep();
-      case 2: return _buildPreviewStep();
+      case 1: return _buildPreviewStep();
+      case 2: return _buildGroupsStep();
       case 3: return _buildContactsStep();
       case 4: return _buildCloseCircleStep();
       case 5: return _buildReviewStep();
@@ -1317,7 +1317,6 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
           // Reorderable list of groups
           Container(
             decoration: BoxDecoration(
-              // border: Border.all(color: themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade300),
               borderRadius: BorderRadius.circular(10),
               color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
             ),
@@ -1327,26 +1326,29 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
               itemCount: _userGroups.length,
               itemBuilder: (context, index) {
                 final group = _userGroups[index];
-                return Container(
-                  key: Key(group.id),
-                  margin: const EdgeInsets.only(bottom: 20),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: themeProvider.isDarkMode ? Colors.grey.shade800 : const Color.fromARGB(255, 206, 203, 203), width: 1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: _buildEditableGroupItem(group, index),
-                );
+                return _buildEditableGroupItem(group, index);
               },
               onReorder: (oldIndex, newIndex) {
                 setState(() {
-                  if (oldIndex < newIndex) newIndex -= 1;
+                  if (oldIndex < newIndex) {
+                    newIndex -= 1;
+                  }
                   final item = _userGroups.removeAt(oldIndex);
                   _userGroups.insert(newIndex, item);
                   
+                  // Update order indices
                   for (int i = 0; i < _userGroups.length; i++) {
                     _userGroups[i] = _userGroups[i].copyWith(orderIndex: i);
                   }
                 });
+              },
+              // This is important - it ensures the drag handle works correctly
+              proxyDecorator: (child, index, animation) {
+                return Material(
+                  elevation: 4,
+                  color: Colors.transparent,
+                  child: child,
+                );
               },
             ),
           ),
@@ -1355,95 +1357,150 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
       ),
     );
   }
-
+    
   Widget _buildEditableGroupItem(SocialGroup group, int index) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header row with drag handle and delete button
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              ReorderableDragStartListener(
-                index: index,
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: Icon(Icons.drag_handle, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
-                ),
-              ),
-              SizedBox(
-                width: 200,
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete, color: Colors.red),
-                onPressed: () => _deleteGroup(index),
-              ),
-            ],
-          ),
-          // const SizedBox(height: 15),
-          SizedBox(
-            width: double.infinity,
-            child: Padding(
-            padding: EdgeInsets.only(left: 20, right: 20),
-            child: Expanded(
-                child: TextFormField(
-                  initialValue: group.name,
-                  onTap: () => _dismissKeyboard(),
-                  style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
-                  decoration: InputDecoration(
-                    labelText: 'GROUP NAME',
-                    labelStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : const Color(0xff555555)),
-                    border: const OutlineInputBorder(),
-                    isDense: true,
-                    filled: true,
-                    fillColor: themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade50,
+    return Container(
+      key: Key(group.id),
+      margin: const EdgeInsets.only(bottom: 20),
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: themeProvider.isDarkMode 
+              ? Colors.grey.shade800 
+              : const Color.fromARGB(255, 206, 203, 203), 
+          width: 1
+        ),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header row with drag handle and delete button
+            Row(
+              children: [
+                // Wrap the drag handle in a SizedBox with explicit size
+                ReorderableDragStartListener(
+                  index: index,
+                  child: Row(
+                    children: [
+                      Container(
+                    width: 40,
+                    height: 40,
+                    alignment: Alignment.center,
+                    child: Icon(
+                      Icons.drag_handle, 
+                      color: themeProvider.isDarkMode 
+                          ? Colors.grey.shade400 
+                          : Colors.grey,
+                    ),
                   ),
-                  onChanged: (value) {
-                    setState(() {
-                      _userGroups[index] = group.copyWith(name: value);
-                    });
-                  },
+                  SizedBox(
+                    width: 5,
+                  ),
+                  Text(
+                    'Drag to reorder',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: themeProvider.isDarkMode 
+                          ? Colors.grey.shade500 
+                          : Colors.grey.shade600,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  )]),
                 ),
-              ))),
-          const SizedBox(height: 15),
-          // Contact Frequency Dropdown
-          Padding(
-            padding: EdgeInsets.only(left: 20, right: 20),
-            child: DropdownButtonFormField<String>(
-            value: _getCurrentFrequencyChoice(group),
-            onTap: () => _dismissKeyboard(),
-            style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555)),
-            decoration: InputDecoration(
-              labelText: 'CONTACT FREQUENCY',
-              labelStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : const Color(0xff555555)),
-              border: const OutlineInputBorder(),
-              isDense: true,
-              filled: true,
-              fillColor: themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade50,
+                Expanded(
+                  child: Center(),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: () => _deleteGroup(index),
+                ),
+              ],
             ),
-            items: FrequencyPeriodMapper.frequencyMapping.keys.map((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(value, style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555)),),
-              );
-            }).toList(),
-            onChanged: (String? newValue) {
-              if (newValue != null) {
-                final frequencyData = FrequencyPeriodMapper.getFrequencyPeriod(newValue);
+            const SizedBox(height: 16),
+            
+            // Group name field
+            TextFormField(
+              initialValue: group.name,
+              onTap: () => _dismissKeyboard(),
+              style: TextStyle(
+                color: themeProvider.isDarkMode ? Colors.white : Colors.black
+              ),
+              decoration: InputDecoration(
+                labelText: 'GROUP NAME',
+                labelStyle: TextStyle(
+                  color: themeProvider.isDarkMode 
+                      ? Colors.grey.shade400 
+                      : const Color(0xff555555)
+                ),
+                border: const OutlineInputBorder(),
+                isDense: true,
+                filled: true,
+                fillColor: themeProvider.isDarkMode 
+                    ? Colors.grey.shade800 
+                    : Colors.grey.shade50,
+              ),
+              onChanged: (value) {
                 setState(() {
-                  _userGroups[index] = group.copyWith(
-                    frequency: frequencyData['frequency'] as int,
-                    period: frequencyData['period'] as String,
-                  );
+                  _userGroups[index] = group.copyWith(name: value);
                 });
-              }
-            },
-          )),
-        ],
+              },
+            ),
+            const SizedBox(height: 16),
+            
+            // Contact Frequency Dropdown
+            DropdownButtonFormField<String>(
+              value: _getCurrentFrequencyChoice(group),
+              onTap: () => _dismissKeyboard(),
+              style: TextStyle(
+                color: themeProvider.isDarkMode 
+                    ? Colors.white 
+                    : const Color(0xff555555)
+              ),
+              decoration: InputDecoration(
+                labelText: 'CONTACT FREQUENCY',
+                labelStyle: TextStyle(
+                  color: themeProvider.isDarkMode 
+                      ? Colors.grey.shade400 
+                      : const Color(0xff555555)
+                ),
+                border: const OutlineInputBorder(),
+                isDense: true,
+                filled: true,
+                fillColor: themeProvider.isDarkMode 
+                    ? Colors.grey.shade800 
+                    : Colors.grey.shade50,
+              ),
+              items: FrequencyPeriodMapper.frequencyMapping.keys.map((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(
+                    value, 
+                    style: TextStyle(
+                      color: themeProvider.isDarkMode 
+                          ? Colors.white 
+                          : const Color(0xff555555)
+                    ),
+                  ),
+                );
+              }).toList(),
+              onChanged: (String? newValue) {
+                if (newValue != null) {
+                  final frequencyData = FrequencyPeriodMapper.getFrequencyPeriod(newValue);
+                  setState(() {
+                    _userGroups[index] = group.copyWith(
+                      frequency: frequencyData['frequency'] as int,
+                      period: frequencyData['period'] as String,
+                    );
+                  });
+                }
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1639,25 +1696,6 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(
-                    child: Text(
-                    'ADD CONTACTS',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: themeProvider.isDarkMode ? Colors.white : Colors.black,
-                    ),
-                  ),
-                  ),
-                  const SizedBox(height: 8),
-                  Center(
-                    child: Text(
-                    'Choose how you want to add contacts',
-                    style: TextStyle(
-                      color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey,
-                    ),
-                  )),
-                  const SizedBox(height: 30),
                   Row(
                     children: [
                       Expanded(
@@ -1808,22 +1846,6 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'ADD CONTACTS',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: themeProvider.isDarkMode ? Colors.white : Colors.black,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Choose how you want to add contacts',
-                      style: TextStyle(
-                        color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey,
-                      ),
-                    ),
-                    const SizedBox(height: 30),
                     Row(
                       children: [
                         Expanded(
@@ -1869,7 +1891,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                         Expanded(
                           child: Column(
                             children: [
-                              Icon(Icons.contacts, size: 50, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+                              Icon(Icons.contacts, size: 50, color: Color(0xff3CB3E9)),
                               const SizedBox(height: 12),
                               OutlinedButton(
                                 onPressed: () {
@@ -2031,7 +2053,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
               _buildSummaryItem(Icons.group, '${_userGroups.length} Social Groups', 'Organized by priority'),
               _buildSummaryItem(Icons.contacts, 'Contacts', 'You can add contacts later from the dashboard'),
               _buildSummaryItem(Icons.star, 'Favourites', '${_closeCircleContacts.length} important relationships'),
-              _buildSummaryItem(Icons.notifications, 'Weekly Digest', 'Starting this Sunday'),
+              // _buildSummaryItem(Icons.notifications, 'Weekly Digest', 'Starting this Sunday'),
               
               const SizedBox(height: 40),
               

@@ -606,14 +606,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         if (user != null) {
                           // Check if user already exists in Firestore
                            print('register 3');
-                          final userData = await apiService.getUser();
+                          final userData = await apiService.getUserRaw();
+                          final userReallyExists = await apiService.userDataExists();
                            print('register 4');
-                          if (userData.id != '') {
+                          if (userData != null && userData.id != '') {
                             // Also check if email exists in Firestore (for consistency)
                              print('register 5');
                             final emailExists = await apiService.checkEmailExists(user.email!);
                             
-                            if (emailExists) {
+
+                            if (emailExists && userReallyExists) {
                               // Show error and don't create duplicate
                                print('register 6');
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -626,7 +628,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               return;
                             }
                              print('register 7');
-                            // Create initial user document
+                            }
+                           print('register 8');
+                          // Navigate to complete profile screen if profile is not completed
+                          if (userData == null) {
+                             print('register 9');
+                             // Create initial user document
                             await apiService.addUser(thisUser.User(
                               admin: false,
                               id: user.uid,
@@ -643,11 +650,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               profileCompleted: false,
                               weeklyDigestEnabled: false
                             ));
-                          }
-                           print('register 8');
-                          // Navigate to complete profile screen if profile is not completed
-                          if (userData.id == '' || !userData.profileCompleted) {
-                             print('register 9');
+                            
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(builder: (context) => const CompleteProfileScreen()),

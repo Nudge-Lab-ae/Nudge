@@ -511,6 +511,28 @@ class ApiService {
   }
 
   // Update the existing getUser method to ensure document completeness
+    Future<app_user.User?> getUserRaw() async {
+    try {
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) throw Exception('No user logged in');
+      
+      // First, ensure the document has all required fields
+      // await ensureUserDocumentCompleteness(currentUser.uid);
+      
+      final doc = await _usersCollection.doc(currentUser.uid).get();
+      
+      if (doc.exists) {
+        return app_user.User.fromMap(doc.data() as Map<String, dynamic>);
+      } else {
+        //return null if empty
+        return null;
+      }
+    } catch (e) {
+      throw Exception('Failed to load user: $e');
+    }
+  }
+
+  
   Future<app_user.User> getUser() async {
     try {
       final currentUser = _auth.currentUser;
@@ -554,6 +576,17 @@ class ApiService {
     } catch (e) {
       throw Exception('Failed to load user: $e');
     }
+  }
+
+  Future<bool> userDataExists() async {
+    final currentUser = _auth.currentUser;
+    final doc = await _usersCollection.doc(currentUser!.uid).get();
+    if (doc.exists) {
+      Map docData = doc.data() as Map<String, dynamic>;
+      var docBio = docData['bio'];
+      return (docBio!=null);
+    }
+    return false;
   }
 
   // Stream of user data
