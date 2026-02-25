@@ -6,7 +6,7 @@ import 'package:nudge/screens/dashboard/dashboard_screen.dart';
 import 'package:nudge/services/api_service.dart';
 // import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/theme/text_styles.dart';
-import 'package:nudge/widgets/feedback_floating_button.dart';
+// import 'package:nudge/widgets/feedback_floating_button.dart';
 // import 'package:nudge/widgets/gradient_text.dart';
 import 'package:provider/provider.dart';
 // import '../notifications/notifications_screen.dart';
@@ -136,7 +136,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                       style: const TextStyle(color: Colors.white, fontFamily: 'OpenSans'),
                     ),
                   )
-                : FeedbackFloatingButton(
+                : Center()/* FeedbackFloatingButton(
                     currentSection: 'contacts',
                     extraActions: !isAddToGroupMode
                         ? [
@@ -159,7 +159,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                             ),
                           ]
                         : [],
-                  ),
+                  ) */,
               ),
               body: Stack(
                 children: [
@@ -448,7 +448,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                 style: const TextStyle(color: Colors.white, fontFamily: 'OpenSans'),
               ),
             )
-          : FeedbackFloatingButton(
+          : /* FeedbackFloatingButton(
               currentSection: 'contacts',
               extraActions: !isAddToGroupMode
                   ? [
@@ -471,13 +471,14 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                       ),
                     ]
                   : [],
-            )),
+            ) */Center()),
     ));
   }
 
   Widget _buildSelectionControls({required ThemeProvider themeProvider}) {
     if (!_isSelecting) return const SizedBox.shrink();
     final theme = Theme.of(context);
+    final apiService = Provider.of<ApiService>(context, listen: false);
     
     return Container(
       padding: const EdgeInsets.all(16.0),
@@ -491,6 +492,10 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
           Expanded(
             child: OutlinedButton.icon(
               onPressed: _toggleSelectAll,
+              onLongPress: () {
+                apiService.scheduleTestNudges(_selectedContacts.toList());
+                // apiService.cleanupTestNudges();
+              },
               icon: Icon(
                 _selectedContacts.length == _getVisibleContactsCount() 
                   ? Icons.deselect 
@@ -1224,7 +1229,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: Text('Cancel', style: TextStyle(color: theme.colorScheme.primary, fontFamily: 'OpenSans')),
+            child: Text('Cancel', style: TextStyle(color: Colors.red, fontFamily: 'OpenSans')),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
@@ -1289,8 +1294,8 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     });
     
     if (successfullyAddedContacts.isNotEmpty) {
-      await apiService.cancelNudgesForContacts(contactIds);
-      await apiService.scheduleNudgesForContacts(contactIds: contactIds);
+      apiService.cancelNudgesForContacts(contactIds);
+      apiService.scheduleNudgesForContacts(contactIds: contactIds);
     }
     
     ScaffoldMessenger.of(context).showSnackBar(
@@ -1311,6 +1316,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
       _selectionMode = null;
       _currentGroupName = null;
     });
+    Navigator.pop(context);
   }
 
   void _addContactToGroup(BuildContext context, Contact contact, String groupName, String groupPeriod, int groupFrequency) async {
@@ -1393,7 +1399,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     return Scaffold(
       floatingActionButton: Padding(
         padding: EdgeInsets.only(right: 10,bottom: 55,),
-        child: FeedbackFloatingButton(
+        child: Center()/* FeedbackFloatingButton(
           currentSection: 'contacts',
           extraActions: [
             FeedbackAction(
@@ -1410,7 +1416,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
               },
             ),
           ],
-        ),
+        ) */,
       ),
       body: Container(
         color: themeProvider.getBackgroundColor(context),
@@ -1560,58 +1566,6 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
       default:
         return contacts;
     }
-  }
-
-    void _showAddContactOptions(BuildContext context, ThemeProvider themeProvider) {
-    // final themeProvider = Provider.of<ThemeProvider>(context);
-    
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      backgroundColor: themeProvider.getSurfaceColor(context),
-      builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  'ADD CONTACTS',
-                  style: TextStyle(
-                    color: themeProvider.getTextPrimaryColor(context),
-                    fontSize: 18,
-                    fontFamily: 'OpenSans',
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              ListTile(
-                leading: Icon(Icons.person_add, color: themeProvider.isDarkMode ? AppTheme.darkIconColor : AppTheme.primaryColor),
-                title: Text('ADD CONTACT MANUALLY', style: TextStyle(fontWeight: FontWeight.w700, fontFamily: 'OpenSans', color: themeProvider.getTextPrimaryColor(context))),
-                subtitle: Text('Create a new contact from scratch', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans',)),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushNamed(context, '/add_contact');
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.import_contacts, color: themeProvider.isDarkMode ? AppTheme.darkIconColor : AppTheme.primaryColor),
-                title: Text('IMPORT CONTACTS', style: TextStyle(fontWeight: FontWeight.w700, fontFamily: 'OpenSans', color: themeProvider.getTextPrimaryColor(context))),
-                subtitle: Text('Import from your device contacts', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans',)),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushNamed(context, '/import_contacts');
-                },
-              ),
-              const SizedBox(height: 20),
-            ],
-          ),
-        );
-      },
-    );
   }
 
 }

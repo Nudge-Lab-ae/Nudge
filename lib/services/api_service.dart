@@ -103,6 +103,32 @@ class ApiService {
     }
   }
 
+    Future<Map<String, dynamic>> cancelEventNotifications (List<Contact> contacts) async {
+    print('sending scheduled nudges');
+    try {
+      print('phase 1');
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) throw Exception('No user logged in');
+      
+      final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('cancelEventNotificationsForContacts');
+      print('phase 2');
+      
+      List<String> contactIds = [];
+      for (int i =0; i<contacts.length; i++) {
+        contactIds.add(contacts[i].id);
+      }
+      final result = await callable.call({
+        'contactIds': contactIds,
+      });
+      print (result.data); print(' is the result');
+
+      return result.data;
+    } catch (e) {
+      print('Error cancelling event notifications: $e');
+      throw Exception('Failed to cancel event notifications: $e');
+    }
+  }
+
    Future<Map<String, dynamic>> scheduleHourlyNotifications() async {
    try {
       final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('rescheduleUserNudgesHourlyTest');
@@ -678,6 +704,37 @@ class ApiService {
   }
 }
 
+// Add this method to your ApiService class in api_service.dart
+
+/// Delete a nudge directly from Firestore
+/// 
+/// This method permanently removes a nudge document from the user's nudges subcollection.
+/// Note: This does NOT cancel any scheduled Cloud Tasks - use with caution.
+Future<void> deleteNudgeFromFirestore({
+  required String nudgeId,
+}) async {
+  try {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) throw Exception('No user logged in');
+    
+    // Reference to the specific nudge document
+    final nudgeRef = _firestore
+        .collection('users')
+        .doc(currentUser.uid)
+        .collection('nudges')
+        .doc(nudgeId);
+    
+    // Delete the document
+    await nudgeRef.delete();
+    
+    print('✅ Successfully deleted nudge: $nudgeId from Firestore');
+    
+  } catch (e) {
+    print('❌ Error deleting nudge from Firestore: $e');
+    throw Exception('Failed to delete nudge: $e');
+  }
+}
+
   Future<void> deleteContact(String contactId) async {
     String userId = _auth.currentUser!.uid;
     try {
@@ -813,13 +870,27 @@ Future<void> addGroup(SocialGroup group) async {
       final userData = userDoc.data() as Map<String, dynamic>;
       final groups = List<Map<String, dynamic>>.from(userData['groups'] ?? []);
       
-      // Add the new group to the list
-      groups.add(group.toMap());
+      // Increment orderIndex for all existing groups
+      final updatedGroups = groups.map((groupMap) {
+        final currentIndex = groupMap['orderIndex'] as int? ?? 0;
+        groupMap['orderIndex'] = currentIndex + 1;
+        return groupMap;
+      }).toList();
+      
+      // Add the new group with orderIndex 0
+      updatedGroups.add(group.toMap());
+      
+      // Sort groups by orderIndex (optional, but good practice)
+      updatedGroups.sort((a, b) => 
+        (a['orderIndex'] as int? ?? 0).compareTo(b['orderIndex'] as int? ?? 0)
+      );
       
       await _usersCollection.doc(currentUser.uid).update({
-        'groups': groups,
+        'groups': updatedGroups,
         'updatedAt': DateTime.now(),
       });
+      
+      print('✅ Added new group "${group.name}" at top position');
     }
   } catch (e) {
     throw Exception('Failed to create group: $e');
@@ -1068,48 +1139,64 @@ Future<Map<String, dynamic>> register(String email, String password) async {
     }
   }
 
-
-Future<void> submitFeedback({
-  required String message,
-  String type = 'Feedback',
-  Map<String, dynamic>? additionalData,
-  required String screenName, // Add this parameter
-}) async {
-  try {
-    final currentUser = _auth.currentUser;
-    if (currentUser == null) throw Exception('No user logged in');
-    
-    // Get current user data
-    final userDoc = await _usersCollection.doc(currentUser.uid).get();
-    final userData = userDoc.data() as Map<String, dynamic>?;
-    
-    // Prepare feedback data with screen info
-    final feedbackData = {
-      'user': {
-        'userId': currentUser.uid,
-        'email': currentUser.email,
-        'username': userData?['username'] ?? '',
-        'photoUrl': userData?['photoUrl'] ?? '',
-      },
-      'message': message,
-      'type': type,
-      'screen': screenName, // Add screen tracking
-      'timestamp': FieldValue.serverTimestamp(),
-      'appVersion': '1.0.0',
-      'platform': _getPlatform(),
-      'additionalData': additionalData ?? {},
-      'status': 'new',
-    };
-    
-    // Add to feedbacks collection
-    await _firestore.collection('feedbacks').add(feedbackData);
-    
-    print('Feedback submitted from screen: $screenName');
-  } catch (e) {
-    print('Error submitting feedback: $e');
-    throw Exception('Failed to submit feedback: $e');
+  Future<bool> sendTestBirthdayNotification(Contact contact) async{
+     try {
+      print('attempting test birthday');
+      final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('sendTestBirthdayNotification');
+      final result = await callable.call({
+        'contact': contact.toMap()
+      });
+      print('called test birthday function');
+      print(result.data);
+      return true;
+    } catch (e) {
+      // throw Exception('Failed to trigger nudge: $e');
+      return false;
+    }
   }
-}
+
+
+  Future<void> submitFeedback({
+    required String message,
+    String type = 'Feedback',
+    Map<String, dynamic>? additionalData,
+    required String screenName, // Add this parameter
+  }) async {
+    try {
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) throw Exception('No user logged in');
+      
+      // Get current user data
+      final userDoc = await _usersCollection.doc(currentUser.uid).get();
+      final userData = userDoc.data() as Map<String, dynamic>?;
+      
+      // Prepare feedback data with screen info
+      final feedbackData = {
+        'user': {
+          'userId': currentUser.uid,
+          'email': currentUser.email,
+          'username': userData?['username'] ?? '',
+          'photoUrl': userData?['photoUrl'] ?? '',
+        },
+        'message': message,
+        'type': type,
+        'screen': screenName, // Add screen tracking
+        'timestamp': FieldValue.serverTimestamp(),
+        'appVersion': '1.0.0',
+        'platform': _getPlatform(),
+        'additionalData': additionalData ?? {},
+        'status': 'new',
+      };
+      
+      // Add to feedbacks collection
+      await _firestore.collection('feedbacks').add(feedbackData);
+      
+      print('Feedback submitted from screen: $screenName');
+    } catch (e) {
+      print('Error submitting feedback: $e');
+      throw Exception('Failed to submit feedback: $e');
+    }
+  }
 
   String _getPlatform() {
     if (Platform.isAndroid) return 'Android';

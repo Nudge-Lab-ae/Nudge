@@ -7,13 +7,14 @@ import 'package:nudge/screens/contacts/contact_detail_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/services/auth_service.dart';
 import 'package:nudge/services/nudge_service.dart';
-import 'package:nudge/widgets/add_touchpoint_modal.dart';
-import 'package:nudge/widgets/feedback_floating_button.dart';
+// import 'package:nudge/widgets/add_touchpoint_modal.dart';
+// import 'package:nudge/widgets/feedback_floating_button.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:nudge/providers/theme_provider.dart';
 import 'package:nudge/theme/app_theme.dart';
+import 'package:nudge/widgets/log_interaction_modal.dart';
 
 class NotificationsScreen extends StatefulWidget {
   final bool showAppBar;
@@ -25,7 +26,7 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-   int _selectedFilter = 0; // 0: Today, 1: This Week, 2: This Month
+  int _selectedFilter = 0; // 0: Today, 1: This Week, 2: This Month
   final NudgeService _nudgeService = NudgeService();
   CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime _focusedDay = DateTime.now();
@@ -39,13 +40,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   int _cancellationSuccessCount = 0;
   int _cancellationTotalCount = 0;
   int _cancellationErrorCount = 0;
+  
+  // Track if FAB menu is open
 
-   @override
+  @override
   void initState() {
     super.initState();
     _selectedDay = DateTime.now();
     _processOverdueNudges();
   }
+
 
   Future<void> _processOverdueNudges() async {
     try {
@@ -225,7 +229,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Future<void> _cancelSelectedNudges(BuildContext context, ThemeProvider themeProvider) async {
     if (_selectedNudgeIds.isEmpty) return;
     
-    // final themeProvider = Provider.of<ThemeProvider>(context);
     final theme = Theme.of(context);
     
     final confirmed = await showDialog<bool>(
@@ -292,66 +295,95 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     });
   }
 
-@override
-Widget build(BuildContext context) {
-  final authService = Provider.of<AuthService>(context);
-  final user = authService.currentUser;
-  final themeProvider = Provider.of<ThemeProvider>(context);
-  final theme = Theme.of(context);
-  var size = MediaQuery.of(context).size;
-  
-  if (user == null) {
-    return Scaffold(
-      backgroundColor: themeProvider.getBackgroundColor(context),
-      body: Center(child: Text('Please log in to view notifications', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'))),
-    );
-  }
-  
-  // When used from dashboard (showAppBar: false), use CustomScrollView
-  if (!widget.showAppBar) {
-    return StreamBuilder<List<Nudge>>(
-      stream: _nudgeService.getNudgesStream(user.uid),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator(color: theme.colorScheme.primary));
-        }
-        
-        if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')));
-        }
-        
-        final allNudges = snapshot.data ?? [];
-        final filteredNudges = _getFilteredNudges(allNudges, _selectedFilter);
-        
-        return Scaffold(
-           floatingActionButton: Padding(
-              padding: EdgeInsets.only(right: 6,bottom: 55,),
-              child: _selectedNudgeIds.isNotEmpty
-                ? FloatingActionButton.extended(
-                    onPressed: () => _cancelSelectedNudges(context, themeProvider),
-                    backgroundColor: Colors.red,
-                    icon: const Icon(Icons.cancel, color: Colors.white),
-                    label: Text(
-                      'CANCEL ${_selectedNudgeIds.length} NUDGE${_selectedNudgeIds.length == 1 ? '' : 'S'}',
-                      style: const TextStyle(color: Colors.white, fontFamily: 'OpenSans'),
-                    ),
-                  )
-                : FeedbackFloatingButton(
-                    currentSection: 'notifications',
-                    extraActions: [
-                       FeedbackAction(
-                        label: 'Log Interaction',
-                        icon: Icons.add,
-                        onPressed: () {
-                          _showAddTouchpointModal(context, themeProvider);
-                        },
-              ),
-                    ],
+  @override
+  Widget build(BuildContext context) {
+    final authService = Provider.of<AuthService>(context);
+    final user = authService.currentUser;
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final theme = Theme.of(context);
+    var size = MediaQuery.of(context).size;
+    
+    if (user == null) {
+      return Scaffold(
+        backgroundColor: themeProvider.getBackgroundColor(context),
+        body: Center(child: Text('Please log in to view notifications', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'))),
+      );
+    }
+    
+    // When used from dashboard (showAppBar: false), use CustomScrollView
+    if (!widget.showAppBar) {
+      return StreamBuilder<List<Nudge>>(
+        stream: _nudgeService.getNudgesStream(user.uid),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator(color: theme.colorScheme.primary));
+          }
+          
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')));
+          }
+          
+          final allNudges = snapshot.data ?? [];
+          final filteredNudges = _getFilteredNudges(allNudges, _selectedFilter);
+          
+          return Scaffold(
+            floatingActionButton: _selectedNudgeIds.isNotEmpty
+              ? FloatingActionButton.extended(
+                  onPressed: () => _cancelSelectedNudges(context, themeProvider),
+                  backgroundColor: Colors.red,
+                  icon: const Icon(Icons.cancel, color: Colors.white),
+                  label: Text(
+                    'CANCEL ${_selectedNudgeIds.length} NUDGE${_selectedNudgeIds.length == 1 ? '' : 'S'}',
+                    style: const TextStyle(color: Colors.white, fontFamily: 'OpenSans'),
                   ),
-            ),
-          body: Stack(
-            children: [
-              CustomScrollView(
+                )
+              : Center()/* FeedbackFloatingButton(
+                  currentSection: 'notifications',
+                  onMenuStateChanged: () {
+                    _onFabMenuStateChanged();
+                  },
+                  extraActions: [
+                    FeedbackAction(
+                      label: 'Log Interaction',
+                      icon: Icons.add,
+                      onPressed: () {
+                        _showAddTouchpointModal(context, themeProvider);
+                      },
+                    ),
+                    FeedbackAction(
+                      label: 'Create Nudge',
+                      icon: Icons.notifications,
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Create Nudge - Placeholder Action')),
+                        );
+                      },
+                    ),
+                    FeedbackAction(
+                      label: 'Add Contact',
+                      icon: Icons.person_add,
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Add Contact - Placeholder Action')),
+                        );
+                      },
+                    ),
+                    FeedbackAction(
+                      label: 'View Stats',
+                      icon: Icons.analytics,
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('View Stats - Placeholder Action')),
+                        );
+                      },
+                    ),
+                  ],
+                ) */,
+            floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+            body: Stack(
+              children: [
+                // Main content
+                CustomScrollView(
                   physics: const BouncingScrollPhysics(),
                   slivers: [
                     // Sliver App Bar with Calendar Toggle
@@ -411,33 +443,33 @@ Widget build(BuildContext context) {
                     
                     // Selection Controls (only when selecting in list view)
                     if (_isSelecting && !_showCalendar)
-                        SliverToBoxAdapter(
-                          child: _buildSelectionControls(filteredNudges, themeProvider: themeProvider),
-                        ),
+                      SliverToBoxAdapter(
+                        child: _buildSelectionControls(filteredNudges, themeProvider: themeProvider),
+                      ),
                     
                     if (_showCalendar) ...[
-                        // Calendar View
-                        SliverToBoxAdapter(
-                          child: SizedBox(
-                            height: size.height*0.9,
-                            child: Column(
-                              children: [
-                                // Calendar
-                                _buildCalendarView(allNudges, themeProvider: themeProvider),
-                                // Day's nudges with proper height constraint
-                                SizedBox(
-                                  height: 30,
-                                ),
-                                Expanded(
-                                  child: _selectedDay != null
-                                      ? _buildDayNudges(_getNudgesForDay(allNudges, _selectedDay!), context, themeProvider: themeProvider)
-                                      : _buildEmptyDayState(themeProvider: themeProvider),
-                                ),
-                              ],
-                            ),
+                      // Calendar View
+                      SliverToBoxAdapter(
+                        child: SizedBox(
+                          height: size.height*0.9,
+                          child: Column(
+                            children: [
+                              // Calendar
+                              _buildCalendarView(allNudges, themeProvider: themeProvider),
+                              // Day's nudges with proper height constraint
+                              SizedBox(
+                                height: 30,
+                              ),
+                              Expanded(
+                                child: _selectedDay != null
+                                    ? _buildDayNudges(_getNudgesForDay(allNudges, _selectedDay!), context, themeProvider: themeProvider)
+                                    : _buildEmptyDayState(themeProvider: themeProvider),
+                              ),
+                            ],
                           ),
                         ),
-                      ] else ...[
+                      ),
+                    ] else ...[
                       // List View - Filter Header
                       SliverPadding(
                         padding: const EdgeInsets.all(16.0),
@@ -477,38 +509,83 @@ Widget build(BuildContext context) {
                       child: SizedBox(height: 80),
                     ),
                   ],
+                ),
+                
+                // Grey overlay when FAB menu is open
+                // if (_isFabMenuOpen)
+                //   Container(
+                //     color: Colors.black.withOpacity(0.5),
+                //     width: size.width,
+                //     height: size.height,
+                //   ),
+                
+                // Cancellation progress overlay
+                _buildCancellationProgressOverlay(themeProvider: themeProvider),
+              ],
             ),
-              
-              // Cancellation progress overlay
-              _buildCancellationProgressOverlay(themeProvider: themeProvider),
-            ],
-        ));
-      },
-    );
-  }
-  
+          );
+        },
+      );
+    }
+    
     // Original implementation for standalone use
     return Scaffold(
       appBar: AppBar(
         title: const Text('Nudges & Reminders'),
         backgroundColor: theme.colorScheme.primary,
       ),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(right: 6, bottom: 55),
-        child: _selectedNudgeIds.isNotEmpty
-          ? FloatingActionButton.extended(
-              onPressed: () => _cancelSelectedNudges(context, themeProvider),
-              backgroundColor: Colors.red,
-              icon: const Icon(Icons.cancel, color: Colors.white),
-              label: Text(
-                'CANCEL ${_selectedNudgeIds.length} NUDGE${_selectedNudgeIds.length == 1 ? '' : 'S'}',
-                style: const TextStyle(color: Colors.white, fontFamily: 'OpenSans'),
-              ),
-            )
-          : FeedbackFloatingButton(
-              currentSection: 'notifications',
+      floatingActionButton: _selectedNudgeIds.isNotEmpty
+        ? FloatingActionButton.extended(
+            onPressed: () => _cancelSelectedNudges(context, themeProvider),
+            backgroundColor: Colors.red,
+            icon: const Icon(Icons.cancel, color: Colors.white),
+            label: Text(
+              'CANCEL ${_selectedNudgeIds.length} NUDGE${_selectedNudgeIds.length == 1 ? '' : 'S'}',
+              style: const TextStyle(color: Colors.white, fontFamily: 'OpenSans'),
             ),
-      ),
+          )
+        : Center()/* FeedbackFloatingButton(
+            currentSection: 'notifications',
+            onMenuStateChanged: () {
+                // _onFabMenuStateChanged();
+            },
+            extraActions: [
+              FeedbackAction(
+                label: 'Log Interaction',
+                icon: Icons.add,
+                onPressed: () {
+                  _showAddTouchpointModal(context, themeProvider);
+                },
+              ),
+              FeedbackAction(
+                label: 'Create Nudge',
+                icon: Icons.notifications,
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Create Nudge - Placeholder Action')),
+                  );
+                },
+              ),
+              FeedbackAction(
+                label: 'Add Contact',
+                icon: Icons.person_add,
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Add Contact - Placeholder Action')),
+                  );
+                },
+              ),
+              FeedbackAction(
+                label: 'View Stats',
+                icon: Icons.analytics,
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('View Stats - Placeholder Action')),
+                  );
+                },
+              ),
+            ],
+          )*/,
       body: StreamBuilder<List<Nudge>>(
         stream: _nudgeService.getNudgesStream(Provider.of<AuthService>(context).currentUser!.uid),
         builder: (context, snapshot) {
@@ -582,6 +659,8 @@ Widget build(BuildContext context) {
     );
   }
 
+  // ... rest of your existing methods (_getContactInitials, getRandomIndex, _buildDayNudges, etc.) remain exactly the same ...
+  
   String _getContactInitials(String name) {
     if (name.isEmpty) return '?';
     
@@ -605,73 +684,73 @@ Widget build(BuildContext context) {
     return (hash.abs() % 6) + 1;
   }
 
-Widget _buildDayNudges(List<Nudge> dayNudges, BuildContext context, {required ThemeProvider themeProvider}) {
-  if (dayNudges.isEmpty) {
-    return _buildEmptyDayState(themeProvider: themeProvider);
-  }
-  
-  return Expanded(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Text(
-            DateFormat('EEEE, MMMM d, y').format(_selectedDay!),
-            style: TextStyle(
-              fontSize: 18,
-              fontFamily: 'OpenSans',
-              fontWeight: FontWeight.bold,
-              color: themeProvider.getTextPrimaryColor(context),
+  Widget _buildDayNudges(List<Nudge> dayNudges, BuildContext context, {required ThemeProvider themeProvider}) {
+    if (dayNudges.isEmpty) {
+      return _buildEmptyDayState(themeProvider: themeProvider);
+    }
+    
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Text(
+              DateFormat('EEEE, MMMM d, y').format(_selectedDay!),
+              style: TextStyle(
+                fontSize: 18,
+                fontFamily: 'OpenSans',
+                fontWeight: FontWeight.bold,
+                color: themeProvider.getTextPrimaryColor(context),
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 8),
-        Expanded(
-          child: ListView.builder(
-            shrinkWrap: true,
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: dayNudges.length,
-            itemBuilder: (context, index) {
-              final nudge = dayNudges[index];
-              final isOverdue = !nudge.isCompleted && 
-                              nudge.scheduledTime.isBefore(DateTime.now());
-              return _buildNormalNudgeItem(nudge, isOverdue, context, themeProvider: themeProvider);
-            },
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-Widget _buildEmptyDayState({required ThemeProvider themeProvider}) {
-  return Expanded(
-    child: Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.notifications_off,
-            size: 64,
-            color: themeProvider.getTextSecondaryColor(context),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No nudges scheduled',
-            style: TextStyle(
-              fontSize: 16,
-              fontFamily: 'OpenSans',
-              color: themeProvider.getTextSecondaryColor(context),
-              fontWeight: FontWeight.w500,
+          const SizedBox(height: 8),
+          Expanded(
+            child: ListView.builder(
+              shrinkWrap: true,
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: dayNudges.length,
+              itemBuilder: (context, index) {
+                final nudge = dayNudges[index];
+                final isOverdue = !nudge.isCompleted && 
+                                nudge.scheduledTime.isBefore(DateTime.now());
+                return _buildNormalNudgeItem(nudge, isOverdue, context, themeProvider: themeProvider);
+              },
             ),
           ),
         ],
       ),
-    ),
-  );
-}
+    );
+  }
+
+  Widget _buildEmptyDayState({required ThemeProvider themeProvider}) {
+    return Expanded(
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.notifications_off,
+              size: 64,
+              color: themeProvider.getTextSecondaryColor(context),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No nudges scheduled',
+              style: TextStyle(
+                fontSize: 16,
+                fontFamily: 'OpenSans',
+                color: themeProvider.getTextSecondaryColor(context),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   List<Nudge> _getNudgesForDay(List<Nudge> allNudges, DateTime day) {
     return allNudges.where((nudge) {
@@ -817,7 +896,6 @@ Widget _buildEmptyDayState({required ThemeProvider themeProvider}) {
   }
 
   Widget _buildCompactFilterToggle(String text, int index, {required ThemeProvider themeProvider}) {
-    // final theme = Theme.of(context);
     bool isSelected = _selectedFilter == index;
     return Expanded(
       child: GestureDetector(
@@ -868,7 +946,7 @@ Widget _buildEmptyDayState({required ThemeProvider themeProvider}) {
       });
     }
   
-  final overdueNudges = allNudges.where((nudge) {
+    final overdueNudges = allNudges.where((nudge) {
       final nudgeDate = DateTime(
         nudge.scheduledTime.year,
         nudge.scheduledTime.month,
@@ -879,54 +957,54 @@ Widget _buildEmptyDayState({required ThemeProvider themeProvider}) {
              nudgeDate.isAfter(tenDaysAgo);
     }).toList();
   
-  switch (filterIndex) {
-    case 0: // Today
-      final todayNudges = allNudges.where((nudge) {
-        final nudgeDate = DateTime(
-          nudge.scheduledTime.year,
-          nudge.scheduledTime.month,
-          nudge.scheduledTime.day,
-        );
-        return nudgeDate == today;
-      }).toList();
-      
-      return [
-        ...overdueNudges,
-        ...todayNudges.where((nudge) => !overdueNudges.contains(nudge)),
-      ];
-      
-    case 1: // This Week
-      final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-      final endOfWeek = startOfWeek.add(const Duration(days: 6));
-      
-      final weekNudges = allNudges.where((nudge) {
-        return nudge.scheduledTime.isAfter(startOfWeek.subtract(const Duration(days: 1))) && 
-               nudge.scheduledTime.isBefore(endOfWeek.add(const Duration(days: 1)));
-      }).toList();
-      
-      return [
-        ...overdueNudges,
-        ...weekNudges.where((nudge) => !overdueNudges.contains(nudge)),
-      ];
-      
-    case 2: // This Month
-      final startOfMonth = DateTime(now.year, now.month, 1);
-      final endOfMonth = DateTime(now.year, now.month + 1, 0);
-      
-      final monthNudges = allNudges.where((nudge) {
-        return nudge.scheduledTime.isAfter(startOfMonth.subtract(const Duration(days: 1))) && 
-               nudge.scheduledTime.isBefore(endOfMonth.add(const Duration(days: 1)));
-      }).toList();
-      
-      return [
-        ...overdueNudges,
-        ...monthNudges.where((nudge) => !overdueNudges.contains(nudge)),
-      ];
+    switch (filterIndex) {
+      case 0: // Today
+        final todayNudges = allNudges.where((nudge) {
+          final nudgeDate = DateTime(
+            nudge.scheduledTime.year,
+            nudge.scheduledTime.month,
+            nudge.scheduledTime.day,
+          );
+          return nudgeDate == today;
+        }).toList();
         
-    default:
-      return allNudges;
+        return [
+          ...overdueNudges,
+          ...todayNudges.where((nudge) => !overdueNudges.contains(nudge)),
+        ];
+        
+      case 1: // This Week
+        final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+        final endOfWeek = startOfWeek.add(const Duration(days: 6));
+        
+        final weekNudges = allNudges.where((nudge) {
+          return nudge.scheduledTime.isAfter(startOfWeek.subtract(const Duration(days: 1))) && 
+                 nudge.scheduledTime.isBefore(endOfWeek.add(const Duration(days: 1)));
+        }).toList();
+        
+        return [
+          ...overdueNudges,
+          ...weekNudges.where((nudge) => !overdueNudges.contains(nudge)),
+        ];
+        
+      case 2: // This Month
+        final startOfMonth = DateTime(now.year, now.month, 1);
+        final endOfMonth = DateTime(now.year, now.month + 1, 0);
+        
+        final monthNudges = allNudges.where((nudge) {
+          return nudge.scheduledTime.isAfter(startOfMonth.subtract(const Duration(days: 1))) && 
+                 nudge.scheduledTime.isBefore(endOfMonth.add(const Duration(days: 1)));
+        }).toList();
+        
+        return [
+          ...overdueNudges,
+          ...monthNudges.where((nudge) => !overdueNudges.contains(nudge)),
+        ];
+          
+      default:
+        return allNudges;
+    }
   }
-}
 
   List<Nudge> _getOverdueNudges(List<Nudge> nudges) {
     final now = DateTime.now();
@@ -1100,16 +1178,22 @@ Widget _buildEmptyDayState({required ThemeProvider themeProvider}) {
       secondaryBackground: _buildSwipeBackground('snooze', context, themeProvider: themeProvider),
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.endToStart) {
+          // Snooze action
           _showSnoozeDialog(nudge, themeProvider, Provider.of<AuthService>(context, listen: false).currentUser!.uid);
-          return false;
+          return false; // Don't dismiss immediately, handle in dialog
         } else {
-          _completeNudge(nudge, Provider.of<AuthService>(context, listen: false).currentUser!.uid);
-          return true;
+          // Complete action
+          return await _confirmCompleteNudge(nudge, context, themeProvider);
         }
+      },
+      onDismissed: (direction) {
+        // This is called after confirmDismiss returns true
+        // We don't need to do anything here as the list will update via Stream
+        print('Nudge dismissed: ${nudge.id}');
       },
       child: GestureDetector(
         onTap: () => _showNudgeActions(context, themeProvider, nudge),
-       onLongPress: () {
+        onLongPress: () {
           if (!_isSelecting) {
             setState(() {
               _isSelecting = true;
@@ -1178,7 +1262,6 @@ Widget _buildEmptyDayState({required ThemeProvider themeProvider}) {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  // nudge.message,
                   message,
                   style: TextStyle(
                     fontSize: 12,
@@ -1203,17 +1286,6 @@ Widget _buildEmptyDayState({required ThemeProvider themeProvider}) {
                     ),
                   ],
                 ),
-                // if (nudge.groupName.isNotEmpty) ...[
-                //   const SizedBox(height: 4),
-                //   Chip(
-                //     label: Text(
-                //       nudge.groupName,
-                //       style: const TextStyle(fontSize: 10, fontFamily: 'OpenSans'),
-                //     ),
-                //     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                //     visualDensity: VisualDensity.compact,
-                //   ),
-                // ],
               ],
             ),
             trailing: nudge.isCompleted 
@@ -1227,29 +1299,140 @@ Widget _buildEmptyDayState({required ThemeProvider themeProvider}) {
     );
   }
 
-    void _showAddTouchpointModal(BuildContext context, ThemeProvider themeProvider) {
-    // final themeProvider = Provider.of<ThemeProvider>(context);
+  Future<bool> _confirmCompleteNudge(Nudge nudge, BuildContext context, ThemeProvider themeProvider) async {
+    final theme = Theme.of(context);
     
-    showModalBottomSheet(
+    final confirm = await showDialog<bool>(
       context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      builder: (context) => AlertDialog(
+        backgroundColor: themeProvider.getSurfaceColor(context),
+        title: Text(
+          'Complete Nudge',
+          style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'),
+        ),
+        content: Text(
+          'Mark nudge for ${nudge.contactName} as complete?',
+          style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text('Cancel', style: TextStyle(color: theme.colorScheme.primary, fontFamily: 'OpenSans')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Complete', style: TextStyle(color: Colors.green, fontFamily: 'OpenSans')),
+          ),
+        ],
       ),
-      backgroundColor: themeProvider.getSurfaceColor(context),
-      builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: AddTouchpointModal(
-            apiService: Provider.of<ApiService>(context, listen: false),
-          ),
-        );
-      },
     );
+    
+    if (confirm == true) {
+      // Show the log interaction modal first and get the result
+      final modalResult = await _showLogInteractionModalForNudge(context, themeProvider, nudge);
+      
+      // Check if interaction was successfully logged
+      if (modalResult != null && modalResult['success'] == true) {
+        try {
+          // Get the contact data
+          final contacts = await apiService.getAllContacts();
+          final contact = contacts.firstWhere(
+            (c) => c.name == nudge.contactName,
+          );
+          
+          // Get the interaction date from the modal result
+          final DateTime interactionDateTime = modalResult['interactionDateTime'];
+          
+          // Calculate next scheduled time based on the interaction date
+          DateTime nextScheduledTime = _calculateNextNudgeTime(
+            contact, 
+            interactionDateTime, // Use the actual interaction date as the reference point
+          );
+          
+          // Cancel the current nudge
+          await apiService.cancelSingleNudge(nudgeId: nudge.id);
+          await apiService.deleteNudgeFromFirestore(nudgeId: nudge.id);
+          
+          // Schedule a new nudge
+          final result = await apiService.scheduleSingleNudge(
+            contactId: contact.id,
+            scheduledTime: nextScheduledTime,
+          );
+          
+          if (result['success'] == true) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Nudge completed. Next reminder scheduled for ${DateFormat('MMM d, h:mm a').format(nextScheduledTime)}',
+                ),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+            return true; // Allow dismissal
+          } else {
+            throw Exception('Failed to schedule next nudge');
+          }
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error completing nudge: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return false; // Prevent dismissal
+        }
+      }
+    }
+    
+    return false; // User cancelled or interaction modal closed without logging
   }
-
+  
+  Future<Map<String, dynamic>?> _showLogInteractionModalForNudge(BuildContext context, ThemeProvider themeProvider, Nudge nudge) async {
+    final apiService = Provider.of<ApiService>(context, listen: false);
+    
+    try {
+      // Get the full contact details first
+      final contacts = await apiService.getAllContacts();
+      final contact = contacts.firstWhere(
+        (c) => c.name == nudge.contactName,
+      );
+      
+      // Show the modal and wait for result
+      final result = await showModalBottomSheet<Map<String, dynamic>>(
+        context: context,
+        isScrollControlled: true,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        backgroundColor: themeProvider.getSurfaceColor(context),
+        builder: (context) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: LogInteractionModal(
+              apiService: apiService,
+              contact: contact,
+              isDarkMode: themeProvider.isDarkMode,
+            ),
+          );
+        },
+      );
+      
+      return result; // Returns map with success and interactionDateTime
+      
+    } catch (e) {
+      print('Error showing log interaction modal: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: Could not find contact details'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return null;
+    }
+  }
 
   Widget _buildSwipeBackground(String action, BuildContext context, {required ThemeProvider themeProvider}) {
     final theme = Theme.of(context);
@@ -1284,9 +1467,6 @@ Widget _buildEmptyDayState({required ThemeProvider themeProvider}) {
   }
 
   void _showNudgeActions(BuildContext context, ThemeProvider themeProvider, Nudge nudge) {
-    // final themeProvider = Provider.of<ThemeProvider>(context);
-    // final theme = Theme.of(context);
-    
     if (_isSelecting) {
       setState(() {
         if (_selectedNudgeIds.contains(nudge.id)) {
@@ -1390,7 +1570,6 @@ Widget _buildEmptyDayState({required ThemeProvider themeProvider}) {
   }
 
   void _showFrequencyDialog(Nudge nudge, ThemeProvider themeProvider, String userId) {
-    // final themeProvider = Provider.of<ThemeProvider>(context);
     final theme = Theme.of(context);
     
     showDialog(
@@ -1555,7 +1734,6 @@ Widget _buildEmptyDayState({required ThemeProvider themeProvider}) {
   }
 
   void _showSnoozeDialog(Nudge nudge, ThemeProvider themeProvider, String userId) {
-    // final themeProvider = Provider.of<ThemeProvider>(context);
     final theme = Theme.of(context);
     int selectedSnoozeHours = 4;
     
@@ -1622,18 +1800,109 @@ Widget _buildEmptyDayState({required ThemeProvider themeProvider}) {
     );
   }
 
-  void _completeNudge(Nudge nudge, String userId) {
-    _nudgeService.markNudgeAsComplete(nudge.id, userId, nudge.contactId);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Nudge marked as completed'),
-        backgroundColor: Colors.green,
-      ),
+  void _completeNudge(Nudge nudge, String userId) async {
+    try {
+      // Step 1: Cancel the current nudge (this will delete it from Firestore and cancel its tasks)
+      await apiService.cancelSingleNudge(nudgeId: nudge.id);
+      
+      // Step 2: Get the contact data to calculate next scheduled time
+      final contacts = await apiService.getAllContacts();
+      print(nudge.toMap()); print(nudge.id); print(contacts[0].id); print(' are the ids');
+       
+      final contact = contacts.firstWhere(
+        (c) => c.name == nudge.contactName,
+      );
+      
+      // Calculate next scheduled time based on contact's period and frequency
+      DateTime nextScheduledTime = _calculateNextNudgeTime(contact, nudge.scheduledTime);
+      
+      // Step 3: Schedule a new nudge for the contact
+      final result = await apiService.scheduleSingleNudge(
+        contactId: contact.id,
+        scheduledTime: nextScheduledTime,
+      );
+      
+      if (result['success'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Nudge marked as completed. Next nudge scheduled for ${DateFormat('MMM d, h:mm a').format(nextScheduledTime)}',
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      } else {
+        throw Exception('Failed to schedule next nudge');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error completing nudge: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      print('Error completing nudge: $e');
+    }
+  }
+
+  // Helper method to calculate next nudge time based on interaction date
+  DateTime _calculateNextNudgeTime(Contact contact, DateTime interactionDateTime) {
+    DateTime nextTime;
+    
+    switch (contact.period.toLowerCase()) {
+      case 'daily':
+        nextTime = interactionDateTime.add(const Duration(days: 1));
+        break;
+      case 'weekly':
+        nextTime = interactionDateTime.add(const Duration(days: 7));
+        break;
+      case 'monthly':
+        nextTime = interactionDateTime.add(const Duration(days: 30));
+        break;
+      case 'quarterly':
+        nextTime = interactionDateTime.add(const Duration(days: 91));
+        break;
+      case 'annually':
+      case 'yearly':
+        nextTime = interactionDateTime.add(const Duration(days: 365));
+        break;
+      default:
+        nextTime = interactionDateTime.add(const Duration(days: 30));
+    }
+    
+    // Adjust based on frequency (e.g., if frequency is 2 per month, schedule halfway through)
+    if (contact.frequency > 1) {
+      // Calculate the interval between nudges based on frequency
+      final totalDays = nextTime.difference(interactionDateTime).inDays;
+      final intervalDays = totalDays ~/ contact.frequency;
+      nextTime = interactionDateTime.add(Duration(days: intervalDays));
+    }
+    
+    // Add some randomness for time of day (between 9 AM and 5 PM)
+    final randomHour = 9 + (interactionDateTime.millisecond % 8); // 9 AM - 5 PM
+    final randomMinute = interactionDateTime.millisecond % 60;
+    
+    nextTime = DateTime(
+      nextTime.year,
+      nextTime.month,
+      nextTime.day,
+      randomHour,
+      randomMinute,
     );
+    
+    // Ensure the next time is in the future
+    final now = DateTime.now();
+    if (nextTime.isBefore(now)) {
+      // If calculated time is in the past, add one more interval
+      final daysDiff = now.difference(nextTime).inDays + 1;
+      nextTime = nextTime.add(Duration(days: daysDiff));
+    }
+    
+    return nextTime;
   }
 
   void _cancelNudge(Nudge nudge, ThemeProvider themeProvider, String userId) {
-    // final themeProvider = Provider.of<ThemeProvider>(context);
     final theme = Theme.of(context);
     
     showDialog(
@@ -1650,7 +1919,7 @@ Widget _buildEmptyDayState({required ThemeProvider themeProvider}) {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              _nudgeService.cancelNudge(nudge.id, userId);
+              apiService.cancelSingleNudge(nudgeId: nudge.id);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Nudge for ${nudge.contactName} cancelled'),

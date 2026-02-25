@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:nudge/firebase_options.dart';
 import 'package:nudge/helpers/auth_refresh_helper.dart';
 import 'package:nudge/helpers/deletion_retry_helper.dart';
+import 'package:nudge/providers/feedback_provider.dart';
 import 'package:nudge/providers/theme_provider.dart';
 import 'package:nudge/screens/analytics/analytics_screen.dart';
 import 'package:nudge/screens/auth/complete_profile_screen.dart';
@@ -69,7 +70,7 @@ void _processPendingNotification() {
       navigatorKey.currentState!.pushNamedAndRemoveUntil(
         '/dashboard',
         (route) => false,
-        arguments: {'initialTab': 4}, // 3 is the index for notifications in bottom nav
+        arguments: {'initialTab': 2}, // 2 is the index for notifications in bottom nav
       );
     }
     
@@ -165,7 +166,7 @@ Future<void> initializeLocalNotifications() async {
           DarwinNotificationAction.plain(
             'dismiss',
             'Dismiss',
-            options: {DarwinNotificationActionOption.destructive},
+            // options: {DarwinNotificationActionOption.destructive},
           ),
         ],
       ),
@@ -540,7 +541,7 @@ void navigateToNotificationsScreen() {
     navigatorKey.currentState!.pushNamedAndRemoveUntil(
       '/dashboard',
       (route) => false,
-      arguments: {'initialTab': 4},
+      arguments: {'initialTab': 2},
     );
   } else {
     print('Navigator not ready, storing for later');
@@ -585,7 +586,7 @@ String _buildNotificationPayload(Map<String, dynamic> messageData) {
 //       navigatorKey.currentState!.pushNamedAndRemoveUntil(
 //         '/dashboard',
 //         (route) => false,
-//         arguments: {'initialTab': 3}, // 3 is notifications tab index
+//         arguments: {'initialTab': 2}, // 2 is notifications tab index
 //       );
 //     }
 //   });
@@ -599,7 +600,7 @@ void _handleBackgroundMessage(RemoteMessage message) {
       navigatorKey.currentState!.pushNamedAndRemoveUntil(
         '/dashboard',
         (route) => false,
-        arguments: {'initialTab': 4},
+        arguments: {'initialTab': 2},
       );
     }
   });
@@ -613,7 +614,7 @@ void _handleTerminatedMessage(RemoteMessage message) {
       navigatorKey.currentState!.pushNamedAndRemoveUntil(
         '/dashboard',
         (route) => false,
-        arguments: {'initialTab': 4},
+        arguments: {'initialTab': 2},
       );
     }
   });
@@ -640,6 +641,7 @@ class NudgeApp extends StatelessWidget {
                 create: (context) => context.read<AuthService>().user,
                 initialData: null,
               ),
+              ChangeNotifierProvider(create: (_) => FeedbackProvider()),
             ],
             child: MaterialApp(
               title: 'NUDGE',
@@ -683,7 +685,7 @@ class NudgeApp extends StatelessWidget {
                 '/complete_profile': (context) => const CompleteProfileScreen(),
                 '/dashboard': (context) {
                   final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-                  return DashboardScreen(initialTab: args?['initialTab'] ?? 0);
+                  return DashboardScreen(initialTab: args?['initialTab'] ?? 1);
                 },
                 '/contacts': (context) {
                   final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
@@ -721,7 +723,7 @@ class NudgeApp extends StatelessWidget {
                 if (settings.name == '/notifications' || 
                     settings.name?.contains('notification') == true) {
                   return MaterialPageRoute(
-                    builder: (context) => DashboardScreen(initialTab: 4),
+                    builder: (context) => DashboardScreen(initialTab: 2),
                   );
                 }
                 

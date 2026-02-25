@@ -1,11 +1,14 @@
 // lib/screens/contacts/import_contacts_screen.dart
+// import 'dart:convert';
 import 'dart:io';
+// import 'dart:typed_data';
 // import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:nudge/models/contact.dart';
 import 'package:nudge/models/social_group.dart';
 import 'package:nudge/models/user.dart';
+import 'package:nudge/providers/feedback_provider.dart';
 import 'package:nudge/screens/dashboard/dashboard_screen.dart';
 // import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
@@ -14,6 +17,7 @@ import 'package:nudge/widgets/gradient_text.dart';
 import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_contacts/flutter_contacts.dart' as fContacts;
+// import 'package:flutter_contacts_stack/flutter_contacts_stack.dart' as contacts_stack;
 import '../../providers/theme_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../services/contact_sync_service.dart';
@@ -272,6 +276,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
     );
   }
 
+  // Updated _pickContactsAndImport method using flutter_contacts for both platforms
   Future<void> _pickContactsAndImport(ThemeProvider themeProvider) async {
     // First, get the group selection
     final apiService = Provider.of<ApiService>(context, listen: false);
@@ -281,10 +286,8 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
     SocialGroup? selectedGroup;
     
     if (_preSelectedGroup != null) {
-      // Use the pre-selected group
       selectedGroup = _preSelectedGroup;
     } else {
-      // Original logic: show group selection dialog
       List<SocialGroup> groupsForSelection;
       
       if (_availableGroups.isNotEmpty) {
@@ -309,6 +312,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
 
       selectedGroup = await _showGroupSelectionDialog(groupsForSelection, themeProvider);
     }
+    
     if (selectedGroup == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Group selection cancelled')),
@@ -316,26 +320,127 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
       return;
     }
 
-    // Now check permission and get contacts
-    final permissionOk = await fContacts.FlutterContacts.requestPermission();
+    // Show loading indicator
+    setState(() {
+      _statusMessage = 'Loading contacts...';
+    });
+
+    // Check and request permission
+    print('Checking contacts permission...');
+    bool permissionOk = await fContacts.FlutterContacts.requestPermission();
+    
     if (!permissionOk) {
-      _showSettingsDialog('Contacts permission is required to pick contacts', themeProvider);
+      // For iOS, check detailed status
+      if (Platform.isIOS) {
+        final status = await Permission.contacts.status;
+        print('iOS contacts permission status: $status');
+        
+        if (status.isPermanentlyDenied) {
+          _showSettingsDialog('Contacts access is disabled. Please enable it in Settings to import your contacts.', themeProvider);
+          return;
+        } else if (status.isDenied) {
+          // Try requesting again
+          permissionOk = await Permission.contacts.request().isGranted;
+        }
+      }
+      
+      if (!permissionOk) {
+        _showSettingsDialog('Contacts permission is required to pick contacts', themeProvider);
+        return;
+      }
+    }
+
+    // Get contacts with ALL properties (including events for birthdays)
+    print('Fetching contacts with full properties...');
+    List<fContacts.Contact> contacts = [];
+    
+    try {
+      contacts = await fContacts.FlutterContacts.getContacts(
+        withProperties: true,  // This includes phones, emails, AND EVENTS
+        withPhoto: true,       // Get high-res photos
+        withThumbnail: true,   // Get thumbnails too
+      );
+      print('Successfully retrieved ${contacts.length} contacts');
+      
+      // Debug: Check if birthdays are present
+      if (contacts.isNotEmpty) {
+        int contactsWithBirthdays = 0;
+        for (var contact in contacts) {
+          if (contact.events.isNotEmpty) {
+            contactsWithBirthdays++;
+            print('Contact ${contact.displayName} has ${contact.events.length} events');
+            for (var event in contact.events) {
+              print('  Event: ${event.label}, Date: ${event.year}-${event.month}-${event.day}');
+            }
+          }
+        }
+        print('Found $contactsWithBirthdays contacts with events');
+      }
+      
+    } catch (e, stack) {
+      print('Error getting contacts: $e');
+      print('Stack trace: $stack');
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load contacts: ${e.toString()}'),
+          duration: const Duration(seconds: 3),
+        ),
+      );
       return;
     }
 
-    final contacts = await fContacts.FlutterContacts.getContacts(
-      withProperties: true,
-      withPhoto: true,
-    );
+    if (contacts.isEmpty) {
+      setState(() {
+        _statusMessage = '';
+      });
+      
+      if (Platform.isIOS) {
+        var isSimulator = Platform.isIOS && 
+            (Platform.environment['SIMULATOR_DEVICE_NAME'] != null ||
+            Platform.environment['SIMULATOR_RUNTIME_VERSION'] != null);
+        
+        if (isSimulator) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('iOS Simulator detected. Please ensure you have added contacts in the Simulator\'s Contacts app and granted permission.'),
+              duration: Duration(seconds: 5),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No contacts found on device'),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+      return;
+    }
+
+    // Filter out invalid contacts
+    final validContacts = contacts.where((contact) {
+      final hasName = contact.displayName.isNotEmpty || 
+                    contact.name.first.isNotEmpty || 
+                    contact.name.last.isNotEmpty;
+      final hasPhone = contact.phones.isNotEmpty;
+      final hasEmail = contact.emails.isNotEmpty;
+      
+      return hasName || hasPhone || hasEmail;
+    }).toList();
+    
+    print('Valid contacts after filtering: ${validContacts.length}');
 
     final existingContacts = await apiService.getAllContacts();
+    print('Existing contacts retrieved: ${existingContacts.length}');
 
     final selectedContacts = await Navigator.of(context).push<List<fContacts.Contact>>(
       MaterialPageRoute(
         builder: (context) => _FullScreenContactPicker(
-          contacts: contacts,
+          contacts: validContacts,
           existingContacts: existingContacts,
-          selectedGroup: selectedGroup, // Pass the selected group to the picker
+          selectedGroup: selectedGroup,
         ),
         fullscreenDialog: true,
       ),
@@ -373,46 +478,33 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
     );
 
     setState(() => _isImporting = false);
-    print('The result is'); print (result);
+    print('The result is: $result');
+    
     if (result['success'] == true) {
       setState(() {
         _statusMessage =
             'Successfully imported ${result['importedCount']} contacts to ${selectedGroup!.name}!';
       });
 
-      // final importedContacts = await apiService.getAllContacts();
-      // // final importedContacts = selectedContacts;
-      // final recentlyImportedContacts = importedContacts
-      //     .where((contact) => contact.connectionType.contains(selectedGroup.name))
-      //     .toList();
-
       final importedContacts = await apiService.getAllContacts();
 
-     final selectedContactNormalizedPhones = selectedContacts
-    .where((contact) => contact.phones.isNotEmpty)
-    .map((contact) => normalizePhoneNumber(contact.phones.first.normalizedNumber))
-    .where((phone) => phone.isNotEmpty) // Filter out empty phone numbers
-    .toSet();
+      final selectedContactNormalizedPhones = selectedContacts
+          .where((contact) => contact.phones.isNotEmpty)
+          .map((contact) => normalizePhoneNumber(contact.phones.first.normalizedNumber))
+          .where((phone) => phone.isNotEmpty)
+          .toSet();
 
-    // Filter imported contacts by matching normalized phone numbers
-    final recentlyImportedContacts = importedContacts
-        .where((apiContact) {
-          // Get and normalize the API contact's phone number
-          final apiPhone = apiContact.phoneNumber;
-          final normalizedApiPhone = normalizePhoneNumber(apiPhone);
-          
-          // Check if it matches any of the selected contact phone numbers
-          return selectedContactNormalizedPhones.contains(normalizedApiPhone);
-        })
-        .toList();
+      // Filter imported contacts by matching normalized phone numbers
+      final recentlyImportedContacts = importedContacts
+          .where((apiContact) {
+            final apiPhone = apiContact.phoneNumber;
+            final normalizedApiPhone = normalizePhoneNumber(apiPhone);
+            return selectedContactNormalizedPhones.contains(normalizedApiPhone);
+          })
+          .toList();
 
-
-      List<String> importedContactIds = [];
-      recentlyImportedContacts.map((contact){
-        importedContactIds.add(contact.id);
-      });
-      print(importedContactIds); print(' is the imported contact ids');
-      print (recentlyImportedContacts); print (' is the recently imported contacts');
+      List<String> importedContactIds = recentlyImportedContacts.map((contact) => contact.id).toList();
+      print('Imported contact ids: $importedContactIds');
       
       // CONDITIONALLY SCHEDULE NUDGES
       if (_isOnboarding == false && recentlyImportedContacts.isNotEmpty) {
@@ -435,10 +527,34 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
       );
     }
   }
-
+  
   String normalizePhoneNumber(String phoneNumber) {
-  return phoneNumber.replaceAll(RegExp(r'[^0-9]'), '');
-}
+    // Remove all non-digit characters
+    String digits = phoneNumber.replaceAll(RegExp(r'[^0-9]'), '');
+    
+    // Handle iOS-specific formatting issues
+    if (Platform.isIOS) {
+      // iOS often includes country code without the plus sign
+      // Common country codes to handle (US/CA: 1, UK: 44, etc.)
+      
+      // If number starts with 1 and is exactly 11 digits (US/Canada with country code)
+      if (digits.length == 11 && digits.startsWith('1')) {
+        // Keep as is, but also create a version without country code for comparison
+        return digits;
+      }
+      
+      // If number is 10 digits (US/Canada without country code)
+      if (digits.length == 10) {
+        // Also consider the version with US country code
+        return digits;
+      }
+      
+      // For other lengths, return as is
+      return digits;
+    }
+    
+    return digits;
+  }
 
   // Add this method to create default groups when none are available
   List<SocialGroup> _createDefaultGroups() {
@@ -554,21 +670,29 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     globalThemeProvider = themeProvider;
     var size = MediaQuery.of(context).size;
+    final feedbackProvider = Provider.of<FeedbackProvider>(context);
     
     // For iOS, show a simplified screen or directly open picker
     if (Platform.isIOS) {
-      return _buildIOSVersion(themeProvider);
+      return _buildIOSVersion(themeProvider, feedbackProvider);
     }
     
     // For Android, show the full import options
-    return _buildAndroidVersion(size, themeProvider);
+    return _buildAndroidVersion(size, themeProvider, feedbackProvider);
   }
 
-  Widget _buildIOSVersion(ThemeProvider themeProvider) {
+  Widget _buildIOSVersion(ThemeProvider themeProvider, FeedbackProvider feedbackProvider) {
     // final themeProvider = Provider.of<ThemeProvider>(context);
     
     return Scaffold(
-      appBar: AppBar(
+      floatingActionButton: Padding(
+        padding: EdgeInsets.only(bottom: 20),
+        child: FeedbackFloatingButton(),
+      ),
+      body: Stack(
+        children: [
+          Scaffold(
+            appBar: AppBar(
       title: Column(
         children: [
           GradientText(
@@ -596,11 +720,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
       iconTheme: IconThemeData(color: AppTheme.primaryColor),
       backgroundColor: themeProvider.getSurfaceColor(context),
     ),
-      floatingActionButton: Padding(
-        padding: EdgeInsets.only(bottom: 50),
-        child: FeedbackFloatingButton(),
-      ),
-      body: Container(
+            body: Container(
         color: themeProvider.getBackgroundColor(context),
         child: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -690,44 +810,62 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
           ),
         ),
       ),
-    );
+    ),
+    if (feedbackProvider.isFabMenuOpen)
+                  GestureDetector(
+                    onTap: () {
+                      // Optional: Close the menu when tapping the overlay
+                      // You'll need to access the FeedbackFloatingButton's state
+                      // This is handled automatically if the button listens to provider changes
+                    },
+                    child: Container(
+                      color: Colors.black.withOpacity(0.55),
+                      width: MediaQuery.of(context).size.width,
+                      height: MediaQuery.of(context).size.height,
+                    ),
+                  ),
+    ]
+    ));
   }
 
-  Widget _buildAndroidVersion(Size size, ThemeProvider themeProvider) {
+  Widget _buildAndroidVersion(Size size, ThemeProvider themeProvider, FeedbackProvider feedbackProvider) {
     return Scaffold(
-      appBar: AppBar(
-      title: Column(
-        children: [
-          GradientText(
-            text: 'NUDGE',
-            style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
-            gradient: const LinearGradient(
-              colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-          ),
-          if (_preSelectedGroup != null)
-            Text(
-              'Import to ${_preSelectedGroup!.name}',
-              style: TextStyle(
-                fontSize: 12,
-                color: AppTheme.primaryColor,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-        ],
-      ),
-      centerTitle: true,
-      surfaceTintColor: Colors.transparent,
-      iconTheme: IconThemeData(color: AppTheme.primaryColor),
-      backgroundColor: themeProvider.getSurfaceColor(context),
-    ),
       floatingActionButton: Padding(
-        padding: EdgeInsets.only(bottom: 50),
+        padding: EdgeInsets.only(bottom: 20),
         child: FeedbackFloatingButton(),
       ),
-      body: Container(
+      body: Stack(
+        children: [
+          Scaffold(
+            appBar: AppBar(
+              title: Column(
+                children: [
+                  GradientText(
+                    text: 'NUDGE',
+                    style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
+                  ),
+                  if (_preSelectedGroup != null)
+                    Text(
+                      'Import to ${_preSelectedGroup!.name}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.primaryColor,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                ],
+              ),
+              centerTitle: true,
+              surfaceTintColor: Colors.transparent,
+              iconTheme: IconThemeData(color: AppTheme.primaryColor),
+              backgroundColor: themeProvider.getSurfaceColor(context),
+            ),
+            body: Container(
         color: themeProvider.getBackgroundColor(context),
         child: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -967,14 +1105,26 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  color: Colors.green[themeProvider.isDarkMode ? 900 : 50],
+                  color: _statusMessage.contains('Successfully')
+                          ?Colors.green[themeProvider.isDarkMode ? 900 : 50]
+                          : _statusMessage.contains('failed') || _statusMessage.contains('Error')
+                          ? Colors.white
+                          : const Color.fromARGB(255, 195, 194, 194),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Row(
                       children: [
                         Icon(
-                          Icons.check_circle,
-                          color: Colors.green,
+                          _statusMessage.contains('Successfully')
+                          ?Icons.check_circle
+                          :_statusMessage.contains('failed') || _statusMessage.contains('Error')
+                          ?Icons.error
+                          :Icons.question_mark,
+                          color: _statusMessage.contains('Successfully')
+                          ?Colors.green
+                          :_statusMessage.contains('failed') || _statusMessage.contains('Error')
+                          ? Colors.red
+                          : Colors.grey,
                           size: 32,
                         ),
                         const SizedBox(width: 12),
@@ -983,18 +1133,30 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Import Successful',
+                                _statusMessage.contains('Successfully')
+                          ?'Import Successful'
+                          : _statusMessage.contains('failed') || _statusMessage.contains('Error')
+                          ?'Import Failed'
+                          :'Import Status: ',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.green,
+                                  color: _statusMessage.contains('Successfully')
+                          ?Colors.green
+                          : _statusMessage.contains('failed') || _statusMessage.contains('Error')
+                          ? Colors.white
+                          : Color(0xff555555),
                                 ),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 _statusMessage,
                                 style: TextStyle(
-                                  color: Colors.green[themeProvider.isDarkMode ? 300 : 800],
+                                  color:_statusMessage.contains('Successfully')
+                          ?Colors.green
+                          : _statusMessage.contains('failed') || _statusMessage.contains('Error')
+                          ? Colors.white
+                          : Color(0xff555555),
                                 ),
                               ),
                             ],
@@ -1051,7 +1213,22 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
           ),
         ),
       ),
-    );
+    ),
+     if (feedbackProvider.isFabMenuOpen)
+                  GestureDetector(
+                    onTap: () {
+                      // Optional: Close the menu when tapping the overlay
+                      // You'll need to access the FeedbackFloatingButton's state
+                      // This is handled automatically if the button listens to provider changes
+                    },
+                    child: Container(
+                      color: Colors.black.withOpacity(0.55),
+                      width: MediaQuery.of(context).size.width,
+                      height: MediaQuery.of(context).size.height,
+                    ),
+                  ),
+    ]
+    ));
   }
 }
 
@@ -1080,30 +1257,219 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
     final Map<String, int> _avatarIndexCache = {};
     
     // Helper method to check if a contact already exists
-    bool _isContactAlreadyExists(fContacts.Contact contact) {
-      if (widget.existingContacts.isEmpty) return false;
-      
-      // Check if any phone number matches
-      final contactPhones = contact.phones
-          .map((phone) => _normalizePhoneNumber(phone.normalizedNumber))
-          .where((phone) => phone.isNotEmpty)
-          .toList();
-      
-      if (contactPhones.isEmpty) return false;
-      
-      for (final existingContact in widget.existingContacts) {
+
+  bool _isContactAlreadyExists(fContacts.Contact contact) {
+    if (widget.existingContacts.isEmpty) return false;
+    
+    // Get all possible identifiers from the device contact
+    final devicePhoneNumbers = contact.phones
+        .map((phone) => _normalizePhoneNumber(phone.number)) // Use raw number first
+        .where((phone) => phone.isNotEmpty)
+        .toSet();
+    
+    // Also try normalized numbers
+    final deviceNormalizedPhones = contact.phones
+        .map((phone) => _normalizePhoneNumber(phone.normalizedNumber))
+        .where((phone) => phone.isNotEmpty)
+        .toSet();
+    
+    // Combine all phone variations
+    final allDevicePhones = {...devicePhoneNumbers, ...deviceNormalizedPhones};
+    
+    // Get all emails from device contact
+    final deviceEmails = contact.emails
+        .map((email) => email.address.toLowerCase().trim())
+        .where((email) => email.isNotEmpty)
+        .toSet();
+    
+    // Get device contact name variations
+    final deviceName = contact.displayName.toLowerCase().trim();
+    final deviceFirstName = contact.name.first.toLowerCase().trim();
+    final deviceLastName = contact.name.last.toLowerCase().trim();
+    
+    // Generate name variations for matching
+    final deviceNameVariations = <String>{};
+    if (deviceName.isNotEmpty) deviceNameVariations.add(deviceName);
+    if (deviceFirstName.isNotEmpty && deviceLastName.isNotEmpty) {
+      deviceNameVariations.add('$deviceFirstName $deviceLastName'.trim());
+      deviceNameVariations.add('$deviceLastName, $deviceFirstName'.trim());
+    }
+    if (deviceFirstName.isNotEmpty) deviceNameVariations.add(deviceFirstName);
+    if (deviceLastName.isNotEmpty) deviceNameVariations.add(deviceLastName);
+    
+    // Debug print
+    print('Checking contact: ${contact.displayName}');
+    print('Device phones: $allDevicePhones');
+    print('Device emails: $deviceEmails');
+    print('Device name variations: $deviceNameVariations');
+    
+    for (final existingContact in widget.existingContacts) {
+      // Check 1: Phone number match (primary identifier)
+      if (existingContact.phoneNumber.isNotEmpty) {
         final existingPhone = _normalizePhoneNumber(existingContact.phoneNumber);
-        if (contactPhones.contains(existingPhone)) {
+        
+        // Direct match
+        if (allDevicePhones.contains(existingPhone)) {
+          print('MATCH: Phone number match for ${contact.displayName}');
+          return true;
+        }
+        
+        // Partial match for numbers (last 10 digits)
+        if (existingPhone.length >= 10) {
+          final existingLast10 = existingPhone.substring(existingPhone.length - 10);
+          for (final devicePhone in allDevicePhones) {
+            if (devicePhone.length >= 10) {
+              final deviceLast10 = devicePhone.substring(devicePhone.length - 10);
+              if (existingLast10 == deviceLast10) {
+                print('MATCH: Last 10 digits match for ${contact.displayName}');
+                return true;
+              }
+            }
+          }
+        }
+      }
+      
+      // Check 2: Email match (secondary identifier)
+      if (existingContact.email.isNotEmpty && deviceEmails.isNotEmpty) {
+        final existingEmail = existingContact.email.toLowerCase().trim();
+        if (deviceEmails.contains(existingEmail)) {
+          print('MATCH: Email match for ${contact.displayName}');
           return true;
         }
       }
       
-      return false;
+      // Check 3: Name-based matching (tertiary identifier)
+      // Only use name matching if we have a name and it's reasonably unique
+      if (existingContact.name.isNotEmpty && deviceNameVariations.isNotEmpty) {
+        final existingName = existingContact.name.toLowerCase().trim();
+        
+        // Direct name match
+        if (deviceNameVariations.contains(existingName)) {
+          print('MATCH: Direct name match for ${contact.displayName}');
+          return true;
+        }
+        
+        // Check if names are very similar (for typos or slight variations)
+        // This is useful when the same contact might be stored with slight name variations
+        for (final deviceNameVar in deviceNameVariations) {
+          // If names are long enough and one contains the other
+          if (deviceNameVar.length > 3 && existingName.length > 3) {
+            if (deviceNameVar.contains(existingName) || existingName.contains(deviceNameVar)) {
+              // Calculate similarity (simple check - can be enhanced)
+              final commonChars = deviceNameVar.split('').where((c) => existingName.contains(c)).length;
+              final similarity = commonChars / existingName.length;
+              
+              if (similarity > 0.8) { // 80% similarity threshold
+                print('MATCH: High similarity name match for ${contact.displayName}');
+                return true;
+              }
+            }
+          }
+        }
+      }
+      
+      // Check 4: Combined evidence (if we have multiple partial matches)
+      int evidenceScore = 0;
+      
+      // Phone partial match evidence
+      if (existingContact.phoneNumber.isNotEmpty) {
+        final existingPhone = _normalizePhoneNumber(existingContact.phoneNumber);
+        if (existingPhone.length >= 7) {
+          final existingLast7 = existingPhone.substring(existingPhone.length - 7);
+          for (final devicePhone in allDevicePhones) {
+            if (devicePhone.length >= 7) {
+              final deviceLast7 = devicePhone.substring(devicePhone.length - 7);
+              if (existingLast7 == deviceLast7) {
+                evidenceScore += 3;
+                break;
+              }
+            }
+          }
+        }
+      }
+      
+      // Email domain match evidence
+      if (existingContact.email.isNotEmpty && deviceEmails.isNotEmpty) {
+        final existingDomain = existingContact.email.split('@').last;
+        for (final deviceEmail in deviceEmails) {
+          if (deviceEmail.contains('@')) {
+            final deviceDomain = deviceEmail.split('@').last;
+            if (existingDomain == deviceDomain) {
+              evidenceScore += 2;
+              break;
+            }
+          }
+        }
+      }
+      
+      // Name partial match evidence
+      if (existingContact.name.isNotEmpty && deviceNameVariations.isNotEmpty) {
+        final existingNameWords = existingContact.name.toLowerCase().split(' ');
+        for (final deviceNameVar in deviceNameVariations) {
+          final deviceNameWords = deviceNameVar.split(' ');
+          
+          // Check if they share at least one word
+          for (final existingWord in existingNameWords) {
+            if (existingWord.length > 2) { // Ignore short words
+              for (final deviceWord in deviceNameWords) {
+                if (deviceWord.length > 2 && deviceWord.contains(existingWord) || existingWord.contains(deviceWord)) {
+                  evidenceScore += 1;
+                  break;
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      // If we have strong combined evidence, consider it a match
+      if (evidenceScore >= 4) {
+        print('MATCH: Combined evidence (score $evidenceScore) for ${contact.displayName}');
+        return true;
+      }
     }
     
-    String _normalizePhoneNumber(String phoneNumber) {
-      return phoneNumber.replaceAll(RegExp(r'[^0-9]'), '');
+    print('NO MATCH found for ${contact.displayName}');
+    return false;
+  }
+
+  // Enhanced phone number normalization for iOS
+  String _normalizePhoneNumber(String phoneNumber) {
+    if (phoneNumber.isEmpty) return '';
+    
+    // First, extract all digits
+    String digits = phoneNumber.replaceAll(RegExp(r'[^0-9]'), '');
+    
+    // Handle iOS-specific cases
+    if (Platform.isIOS) {
+      // If we have a valid number
+      if (digits.isNotEmpty) {
+        // US/Canada: If it's 11 digits starting with 1, also consider the 10-digit version
+        if (digits.length == 11 && digits.startsWith('1')) {
+          return digits; // Keep the full number
+        }
+        
+        // If it's 10 digits, it's a standard US/Canada number
+        if (digits.length == 10) {
+          return digits;
+        }
+        
+        // For international numbers, keep as is
+        return digits;
+      }
+      
+      // If no digits found but we have a plus sign, try to extract differently
+      if (phoneNumber.contains('+')) {
+        // Keep the plus and digits
+        final plusDigits = phoneNumber.replaceAll(RegExp(r'[^0-9\+]'), '');
+        if (plusDigits.isNotEmpty) {
+          return plusDigits.replaceAll('+', ''); // Remove plus for storage
+        }
+      }
     }
+    
+    return digits;
+  }
 
     @override
     void initState() {

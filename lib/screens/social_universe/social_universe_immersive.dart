@@ -25,7 +25,7 @@ class SocialUniverseImmersiveScreen extends StatelessWidget {
           return SocialUniverseWidget(
             contacts: contacts,
             showTitle: true,
-            onContactView: (contact) {
+            onContactView: (contact, ringToUse) {
               // Use the same beautiful modal as dashboard
               showModalBottomSheet(
                 context: context,
@@ -38,6 +38,7 @@ class SocialUniverseImmersiveScreen extends StatelessWidget {
                   return ContactDetailsModal(
                     contact: contact,
                     apiService: apiService,
+                    displayRing: ringToUse,
                   );
                 },
               );

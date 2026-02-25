@@ -197,7 +197,9 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
     final formattedDate = '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}';
     final formattedTime = _selectedTime.format(context);
 
-    return Container(
+    return GestureDetector(
+              onTap: _dismissKeyboard,
+              child: Container(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.85,
       ),
@@ -629,6 +631,10 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
           const SizedBox(height: 8),
         ],
       ),
-    );
+    ));
+  }
+
+  void _dismissKeyboard() {
+    FocusScope.of(context).unfocus();
   }
 }

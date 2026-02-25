@@ -1,7 +1,11 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:nudge/providers/feedback_provider.dart';
 import 'package:nudge/screens/feedback/feedback_bottom_sheet.dart';
 import 'package:nudge/screens/feedback/feedback_forum_screen.dart';
+import 'package:provider/provider.dart';
+// import 'package:nudge/providers/theme_provider.dart';
+// import 'package:provider/provider.dart';
 
 class FeedbackAction {
   final IconData icon;
@@ -21,6 +25,8 @@ class FeedbackFloatingButton extends StatefulWidget {
   final bool isDeleteMode;
   final VoidCallback? onDeletePressed;
   final String? deleteButtonLabel;
+  final VoidCallback? onMenuStateChanged;
+  final bool fromDashboard;
 
   const FeedbackFloatingButton({
     super.key,
@@ -29,6 +35,8 @@ class FeedbackFloatingButton extends StatefulWidget {
     this.isDeleteMode = false,
     this.onDeletePressed,
     this.deleteButtonLabel = 'Delete',
+    this.onMenuStateChanged, 
+    this.fromDashboard = false
   });
 
   @override
@@ -40,41 +48,57 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
   bool _isExpanded = false;
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  late Animation<double> _opacityAnimation;
+  late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 250), // Faster animation
+      duration: const Duration(milliseconds: 300),
       vsync: this,
     );
     
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate( // Start from 0.8 instead of 0.7
+    _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
         curve: Curves.easeOutBack,
       ),
     );
     
-    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: Curves.easeIn,
+        curve: Curves.easeInOut,
       ),
     );
   }
 
   void _toggleExpanded() {
+  setState(() {
+    _isExpanded = !_isExpanded;
+    if (_isExpanded) {
+      _controller.forward();
+    } else {
+      _controller.reverse();
+    }
+    // Update the global provider
+    context.read<FeedbackProvider>().setFabMenuState(_isExpanded);
+    widget.onMenuStateChanged?.call();
+  });
+}
+
+// Update _closeMenu:
+void _closeMenu() {
+  if (_isExpanded) {
     setState(() {
-      _isExpanded = !_isExpanded;
-      if (_isExpanded) {
-        _controller.forward();
-      } else {
-        _controller.reverse();
-      }
+      _isExpanded = false;
+      _controller.reverse();
     });
+    // Update the global provider
+    context.read<FeedbackProvider>().setFabMenuState(false);
+    widget.onMenuStateChanged?.call();
   }
+}
 
   void _showFeedbackDialog(BuildContext context, String section, {String? initialType}) {
     final currentSection = widget.currentSection ?? section;
@@ -88,7 +112,7 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
         initialType: initialType,
       ),
     ).whenComplete(() {
-      _toggleExpanded();
+      _closeMenu();
     });
   }
 
@@ -99,7 +123,7 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
         builder: (context) => const FeedbackForumScreen(),
       ),
     ).whenComplete(() {
-      _toggleExpanded();
+      _closeMenu();
     });
   }
 
@@ -111,37 +135,33 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
 
   @override
   Widget build(BuildContext context) {
+    // final themeProvider = Provider.of<ThemeProvider>(context);
+    var size = MediaQuery.of(context).size;
+    
     // Build all menu items including fixed and extra actions
     final allMenuItems = <Map<String, dynamic>>[];
     
     // Fixed actions
-    allMenuItems.add({
-      'icon': Icons.feedback,
-      'text': 'Give Feedback',
-      'onTap': () {
-        final currentRoute = ModalRoute.of(context)?.settings.name ?? 'unknown';
-        _showFeedbackDialog(context, currentRoute);
-      },
-    });
+    if (!widget.fromDashboard){
+      allMenuItems.add({
+        'icon': Icons.forum,
+        'text': 'View Forum',
+        'onTap': () {
+          _openFeedbackForum(context);
+        },
+      });
+    }
     
-    allMenuItems.add({
-      'icon': Icons.forum,
-      'text': 'View Forum',
-      'onTap': () {
-        _openFeedbackForum(context);
-      },
-    });
+     allMenuItems.add({
+        'icon': Icons.feedback,
+        'text': 'Give Feedback',
+        'onTap': () {
+          final currentRoute = ModalRoute.of(context)?.settings.name ?? 'unknown';
+          _showFeedbackDialog(context, currentRoute);
+        },
+      });
     
-    // allMenuItems.add({
-    //   'icon': Icons.bug_report,
-    //   'text': 'Report Bug',
-    //   'onTap': () {
-    //     final currentRoute = ModalRoute.of(context)?.settings.name ?? 'unknown';
-    //     _showFeedbackDialog(context, currentRoute, initialType: 'Bug Report');
-    //   },
-    // });
-    
-    // Extra actions
+    // Extra actions (now we'll have 3 extra to make total of 5)
     if (widget.extraActions != null) {
       for (var action in widget.extraActions!) {
         allMenuItems.add({
@@ -164,12 +184,44 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
     final totalItems = allMenuItems.length;
     
     return SizedBox(
-      width: _isExpanded ? 130 : 40,
-      height: _isExpanded ? 130 : 40,
+      width: _isExpanded ? size.width * 2 : size.width,  // Increase width when expanded
+      height: _isExpanded ? size.height * 2 : size.width,  // Increase height when expanded
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // Radial menu items on LEFT hemisphere only
+          
+          // White glow circle (appears when menu is open)
+          if (_isExpanded)
+            Positioned(
+              right: -40,
+              bottom: -50,
+              child: AnimatedBuilder(
+                animation: _scaleAnimation,
+                builder: (context, child) {
+                  return Transform.scale(
+                    scale: _scaleAnimation.value,
+                    child: Container(
+                      width: 280,
+                      height: 280,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withOpacity(0.65),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.white.withOpacity(0.15),
+                            blurRadius: 30,
+                            spreadRadius: 5,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          
+          // Radial menu items
           if (_isExpanded)
             for (int i = 0; i < totalItems; i++)
               _buildRadialMenuItem(
@@ -183,40 +235,60 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
           // Main floating button
           Positioned(
             right: 0,
-            bottom: 0,
+            bottom: 50,
             child: Material(
               color: Colors.transparent,
               child: InkWell(
                 onTap: _toggleExpanded,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
                 child: Container(
-                  width: 55,  // You can change this to any size
-                  height: 55, // You can change this to any size
+                  width: 60,
+                  height: 60,
                   decoration: BoxDecoration(
                     color: Colors.transparent,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 200),
                     child: _isExpanded
                         ? Container(
-                            width: 35,
-                            height: 35,
+                            key: const ValueKey('close'),
+                            width: 40,
+                            height: 40,
                             decoration: BoxDecoration(
-                              color: Color(0xff3CB3E9),
+                              color: const Color.fromARGB(255, 221, 44, 44),
                               borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
-                            child: Icon(Icons.close, size: 18, color: Colors.white,),
+                            child: const Icon(
+                              Icons.close,
+                              size: 20,
+                              color: Colors.white,
+                            ),
                           )
                         : Container(
-                            width: 55,
-                            height: 55,
+                            key: const ValueKey('logo'),
+                            width: 60,
+                            height: 60,
                             decoration: BoxDecoration(
-                              image: DecorationImage(
+                              image: const DecorationImage(
                                 image: AssetImage('assets/Nudge-logo.png'),
                                 fit: BoxFit.cover,
                               ),
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                // BoxShadow(
+                                //   color: Colors.black.withOpacity(0.2),
+                                //   blurRadius: 8,
+                                //   offset: const Offset(0, 2),
+                                // ),
+                              ],
                             ),
                           ),
                   ),
@@ -229,137 +301,237 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
     );
   }
 
-Widget _buildRadialMenuItem({
-  required int index,
-  required int totalItems,
-  required IconData icon,
-  required String text,
-  required VoidCallback onTap,
-}) {
-  // Calculate angle for a compact quarter sphere (top-left focused)
-  // We'll use 60° to 120° range for a tighter spread
-  final double startAngle = 120 * (pi / 180);  // Slightly right of top
-  final double endAngle = 280 * (pi / 180);   // Slightly left of top
-  
-  // For multiple items, spread them in the quarter sphere
-  final double angleStep = totalItems > 1 ? (endAngle - startAngle) / (totalItems - 1) : 0;
-  final double angle = startAngle + (index * angleStep);
-  
-  // Use a smaller radius for compactness
-  final double radius = 45.0;
-  
-  // Calculate position
-  final double x = radius * cos(angle);
-  final double y = radius * sin(angle);
-  
-  // Main button center
-  final double centerX = 20.0;
-  final double centerY = 30.0;
-  
-  // Get gradient colors based on action type
-  final List<Color> gradientColors = _getActionGradient(text);
-  
-  return Positioned(
-    right: centerX - x - 20, // Smaller offset (20 instead of 30)
-    bottom: centerY - y - 20,
-    child: FadeTransition(
-      opacity: _opacityAnimation,
-      child: ScaleTransition(
-        scale: _scaleAnimation,
-        child: MaterialButton(
-          padding: text == 'Give Feedback'?EdgeInsets.all(10):EdgeInsets.zero,
-          onPressed: () {
-            onTap();
-            _toggleExpanded();
-          },
-          child: Container(
-            width: 44, // Smaller container
-            height: 44,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: gradientColors,
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+  Widget _buildRadialMenuItem({
+    required int index,
+    required int totalItems,
+    required IconData icon,
+    required String text,
+    required VoidCallback onTap,
+  }) {
+    // Calculate angle from 90° (top) to 270° (bottom)
+     double startAngle = 90 * (pi / 180);   // 90° - Top
+     double endAngle = 270 * (pi / 180);    // 270° - Bottom
+
+     if (totalItems < 4) {
+       startAngle = 130 * (pi / 180);   
+        endAngle = 270 * (pi / 180);
+     }
+     
+     if (totalItems < 3) {
+       startAngle = 180 * (pi / 180); 
+        endAngle = 270 * (pi / 180);
+     }
+    
+    // Spread items evenly in the range
+    final double angleStep = totalItems > 1 ? (endAngle - startAngle) / (totalItems - 1) : 0;
+    final double angle = startAngle + (index * angleStep);
+    
+    // Calculate vertical offset based on sine of angle
+    // sin(90°) = 1 (top) -> offset -15
+    // sin(180°) = 0 (middle) -> offset 0
+    // sin(270°) = -1 (bottom) -> offset 15
+    double verticalOffset = 0;
+    if (index == 0 || index == 4) {
+      verticalOffset = 20 * sin(angle);
+    }
+    
+    // Radius for compact layout
+    final double radius = 75.0;
+    
+    // Calculate position from button center
+    final double x = radius * cos(angle);
+    final double y = radius * sin(angle);
+    
+    // Button center (right: 30, bottom: 30 for 60px button)
+    final double centerX = 30.0;
+    final double centerY = 30.0;
+    
+    // Get gradient colors based on action type
+    final List<Color> gradientColors = _getActionGradient(text);
+    
+    return Positioned(
+      right: centerX - x - 25,
+      bottom: centerY - y + 30,
+      child: AnimatedBuilder(
+        animation: _scaleAnimation,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: _scaleAnimation.value,
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: index==4
+              ?Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Text label with dynamic vertical positioning
+                    Transform.translate(
+                      offset: Offset(0, verticalOffset),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          text,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xff333333),
+                            fontFamily: 'OpenSans',
+                          ),
+                        ),
+                      ),
+                    ),
+                    
+                    const SizedBox(width: 6),
+                    
+                    // Circular button
+                    GestureDetector(
+                // behavior: HitTestBehavior.opaque,
+                // padding: EdgeInsets.zero,
+                onTap: () {
+                  print('Tapped on: $text'); 
+                  onTap();
+                  _closeMenu();
+                },
+                child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: gradientColors,
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: gradientColors[0].withOpacity(0.4),
+                            blurRadius: 6,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Icon(
+                          icon,
+                          size: 18,
+                          color: Colors.white,
+                        ),
+                      ),
+                    )),
+                  ],
+                )
+              :MaterialButton(
+                // behavior: HitTestBehavior.opaque,
+                padding: EdgeInsets.zero,
+                onPressed: () {
+                  print('Tapped on: $text'); 
+                  onTap();
+                  _closeMenu();
+                },
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Text label with dynamic vertical positioning
+                    Transform.translate(
+                      offset: Offset(0, verticalOffset),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          text,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xff333333),
+                            fontFamily: 'OpenSans',
+                          ),
+                        ),
+                      ),
+                    ),
+                    
+                    const SizedBox(width: 6),
+                    
+                    // Circular button
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: gradientColors,
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: gradientColors[0].withOpacity(0.4),
+                            blurRadius: 6,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Icon(
+                          icon,
+                          size: 18,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: gradientColors[0].withOpacity(0.4),
-                  blurRadius: 6,
-                  offset: const Offset(0, 3),
-                ),
-              ],
             ),
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                // Icon in center
-               
-                Center(
-                  child: Icon(
-                    icon,
-                    size: 18, // Smaller icon
-                    color: Colors.white,
-                  ),
-                ),
-                 _buildTextTooltip(text, angle),
-                // Text tooltip positioned intelligently
-                
-              ],
-            ),
-          ),
-        ),
+          );
+        },
       ),
-    ),
-  );
-}
-
-Widget _buildTextTooltip(String text, double angle) {
-  // Position text based on angle to avoid cutoff
-  // final bool isOnLeftSide = angle > 90 * (pi / 180);
-  final bool isOnRightSide = angle < 90 * (pi / 180);
-  
-  return Positioned(
-    left: text == 'Give Feedback' ? -90 : -80,
-    right: isOnRightSide ? -80 : null,
-    top: angle>250 * (pi / 180) ?0:12,
-    child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(6),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 10, // Smaller font
-          fontWeight: FontWeight.w600,
-          color: Color(0xff555555),
-        ),
-      ),
-    ),
-  );
-}
-
-List<Color> _getActionGradient(String actionText) {
-  switch (actionText) {
-    case 'Give Feedback':
-      return [const Color(0xff3CB3E9), const Color(0xff2D85F6)];
-    case 'View Forum':
-      return [const Color(0xff4CAF50), const Color(0xff2E7D32)];
-    case 'Report Bug':
-      return [const Color(0xffF44336), const Color(0xffC62828)];
-    case 'Delete':
-      return [const Color(0xffF44336), const Color(0xffC62828)];
-    default:
-      return [const Color(0xff9C27B0), const Color(0xff7B1FA2)];
+    );
   }
-}
+    
+  List<Color> _getActionGradient(String actionText) {
+    switch (actionText) {
+      case 'Give Feedback':
+        return [const Color.fromARGB(255, 15, 194, 222), const Color.fromARGB(255, 12, 196, 228)];
+      case 'Go to Settings':
+        return [const Color(0xff4CAF50), const Color(0xff2E7D32)];
+      case 'Report Bug':
+        return [const Color(0xffF44336), const Color(0xffC62828)];
+      case 'Delete':
+        return [const Color(0xffF44336), const Color(0xffC62828)];
+      case 'Log Interaction':
+        return [const Color(0xff9C27B0), const Color(0xff7B1FA2)];
+      case 'Add Group':
+        return [const Color(0xffFF9800), const Color(0xffF57C00)];
+      case 'Add Contact':
+        return [const Color(0xff2196F3), const Color(0xff1976D2)];
+      case 'View Stats':
+        return [const Color(0xff4CAF50), const Color(0xff388E3C)];
+      case 'Settings':
+        return [const Color(0xff9E9E9E), const Color(0xff616161)];
+      default:
+        return [const Color(0xff9C27B0), const Color(0xff7B1FA2)];
+    }
+  }
 }

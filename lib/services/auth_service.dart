@@ -154,16 +154,8 @@ class AuthService {
     UserCredential? credential;
     print('stage1');
     try {
-      // credential = await SignInWithApple.getAppleIDCredential(
-      //   scopes: [
-      //     AppleIDAuthorizationScopes.email,
-      //     // AppleIDAuthorizationScopes.fullName,
-      //   ],
-      //   webAuthenticationOptions: WebAuthenticationOptions(
-      //     clientId: 'com.services.nudge', // e.g., com.example.app.service
-      //     redirectUri: Uri.parse('https://nudge-965c2.firebaseapp.com/__/auth/handler'),
-      //   ),
-      // );
+      await _clearFCMToken();
+
       final appleProvider = AppleAuthProvider()
         .addScope('email')
         .addScope('name');
@@ -183,6 +175,7 @@ class AuthService {
         idToken: credential.credential!.token.toString());
     print('stage4');
     User? user = null;
+    await _storeFCMTokenForNewUser(credential.user);
     try {
       user = (await _auth.signInWithCredential(authCredential)).user!;
     } catch (e) {
@@ -192,6 +185,35 @@ class AuthService {
     print('stage5');
     return user;
   }
+
+    Future<void> _clearFCMToken() async {
+    try {
+      // Delete the token from FCM
+      await FirebaseMessaging.instance.deleteToken();
+      print('✅ Deleted old FCM token');
+    } catch (e) {
+      // It's okay if this fails - might be first time or token doesn't exist
+      print('No existing token to delete or error: $e');
+    }
+  }
+
+  // Helper method to store token for new user
+  Future<void> _storeFCMTokenForNewUser(User? user) async {
+    if (user != null) {
+      try {
+        // Get fresh token
+        String? token = await FirebaseMessaging.instance.getToken();
+        if (token != null) {
+          final apiService = ApiService();
+          await apiService.updateUser({'fcmToken': token});
+          print('✅ Stored fresh FCM token for user: ${user.uid}');
+        }
+      } catch (e) {
+        print('Error storing FCM token: $e');
+      }
+    }
+  }
+
 
   // Sign in with Facebook
   // Future<User?> signInWithFacebook() async {

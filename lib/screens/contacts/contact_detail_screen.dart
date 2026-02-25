@@ -1,7 +1,8 @@
-// contact_detail_screen.dart - Updated with Close Circle toggle, Social Tags, and Scheduled Nudges
+// contact_detail_screen.dart - Updated with StreamBuilder for real-time updates
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:nudge/providers/feedback_provider.dart';
 import 'package:nudge/screens/contacts/edit_contact_screen.dart';
 import 'package:nudge/screens/dashboard/dashboard_screen.dart';
 import 'package:nudge/services/api_service.dart';
@@ -9,6 +10,7 @@ import 'package:nudge/services/auth_service.dart';
 import 'package:nudge/theme/text_styles.dart';
 // import 'package:nudge/widgets/add_touchpoint_modal.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
+import 'package:nudge/widgets/log_interaction_modal.dart';
 import 'package:provider/provider.dart';
 import '../../models/contact.dart';
 import '../../providers/theme_provider.dart';
@@ -25,16 +27,14 @@ class ContactDetailScreen extends StatefulWidget {
 }
 
 class _ContactDetailScreenState extends State<ContactDetailScreen> {
-  late Contact _currentContact;
   bool _isUpdatingVIP = false;
 
   @override
   void initState() {
     super.initState();
-    _currentContact = widget.contact;
   }
 
-  Future<void> _toggleVIPStatus(bool isVIP) async {
+  Future<void> _toggleVIPStatus(bool isVIP, Contact contact) async {
     if (_isUpdatingVIP) return;
     
     setState(() {
@@ -47,12 +47,8 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
       final user = authService.currentUser;
       
       if (user != null) {
-        final updatedContact = _currentContact.copyWith(isVIP: isVIP);
+        final updatedContact = contact.copyWith(isVIP: isVIP);
         await apiService.updateContact(updatedContact);
-        
-        setState(() {
-          _currentContact = updatedContact;
-        });
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(isVIP ? 'Added to Favourites' : 'Removed from Favourites')),
@@ -86,391 +82,10 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     return '?';
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final initials = _getContactInitials(_currentContact.name);
-    
-    bool isLocalImage = _currentContact.imageUrl.isNotEmpty && 
-        (_currentContact.imageUrl.startsWith('/') || 
-         _currentContact.imageUrl.startsWith('file://'));
-
-    bool hasNoInfo = _currentContact.phoneNumber.isEmpty &&
-        _currentContact.email.isEmpty &&
-        _currentContact.notes.isEmpty &&
-        _currentContact.birthday == null &&
-        _currentContact.anniversary == null &&
-        _currentContact.workAnniversary == null;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Contact Details', style: AppTextStyles.title2.copyWith(color: themeProvider.getTextPrimaryColor(context), fontSize: 22, fontWeight: FontWeight.w800, fontFamily: 'Inter')),
-        centerTitle: true,
-        iconTheme: IconThemeData(color: AppTheme.primaryColor),
-        backgroundColor: themeProvider.getSurfaceColor(context),
-        surfaceTintColor: Colors.transparent,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.edit, color: themeProvider.getTextPrimaryColor(context)),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => EditContactScreen(contactId: _currentContact.id),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-      floatingActionButton: Padding(
-        padding: EdgeInsets.only(bottom: 50, right: 6),
-        child: FeedbackFloatingButton(),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Column(
-                children: [
-                  Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(themeProvider.isDarkMode ? 0.3 : 0.01),
-                          blurRadius: 8,
-                          spreadRadius: 2,
-                        ),
-                      ],
-                    ),
-                    child: CircleAvatar(
-                      radius: 80,
-                      backgroundColor: Colors.transparent,
-                      backgroundImage: _currentContact.imageUrl.isNotEmpty
-                          ? isLocalImage
-                              ? FileImage(File(_currentContact.imageUrl.replaceFirst('file://', '')))
-                              : NetworkImage(_currentContact.imageUrl) as ImageProvider
-                          : AssetImage('assets/contact-icons/${getRandomIndex(_currentContact.id)}.png') as ImageProvider,
-                      child: _currentContact.imageUrl.isEmpty
-                          ? Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                image: DecorationImage(
-                                  image: AssetImage('assets/contact-icons/${getRandomIndex(_currentContact.id)}.png'),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  _currentContact.name.isNotEmpty ? initials.toUpperCase() : '?',
-                                  style: TextStyle(
-                                    fontSize: 30,
-                                    fontFamily: 'OpenSans',
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            )
-                          : null,
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-                  Text(
-                    (_currentContact.name),
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontFamily: 'OpenSans',
-                      fontWeight: FontWeight.bold,
-                      color: themeProvider.getTextPrimaryColor(context)
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  if (_currentContact.profession != null && _currentContact.profession!.isNotEmpty)
-                    Text(
-                      _currentContact.profession!,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontFamily: 'OpenSans',
-                        color: themeProvider.getTextSecondaryColor(context),
-                      ),
-                    ),
-                  const SizedBox(height: 20),
-                ],
-              ),
-            ),
-            
-            // Close Circle Toggle
-            Card(
-              color: themeProvider.getCardColor(context),
-              child: ListTile(
-                leading: Icon(Icons.star, color: _currentContact.isVIP ? Colors.amber : themeProvider.getTextSecondaryColor(context)),
-                title: Text('Favourites', style: TextStyle(fontWeight: FontWeight.w600, color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
-                subtitle: Text(_currentContact.isVIP 
-                    ? 'This contact is in your Favourites' 
-                    : 'Add to your Favourites for special attention',
-                    style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
-                trailing: _isUpdatingVIP
-                    ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryColor))
-                    : Switch(
-                        value: _currentContact.isVIP,
-                        onChanged: _toggleVIPStatus,
-                        activeColor: AppTheme.primaryColor,
-                        // activeTrackColor: Colors.black,
-                        inactiveThumbColor: themeProvider.getButtonColor(context),
-                        // inactiveTrackColor: themeProvider.getButtonSecondaryColor(context),
-                      ),
-              ),
-            ),
-            
-            const SizedBox(height: 20),
-            
-            // Contact Information Section
-            if (_currentContact.phoneNumber.isNotEmpty || _currentContact.email.isNotEmpty) ...[
-              Text(
-                'CONTACT INFORMATION',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontFamily: 'OpenSans',
-                  fontWeight: FontWeight.bold,
-                  color: themeProvider.getTextSecondaryColor(context),
-                  letterSpacing: 1.0,
-                ),
-              ),
-              const SizedBox(height: 10),
-              
-              if (_currentContact.phoneNumber.isNotEmpty)
-                ListTile(
-                  leading: Icon(Icons.phone, color: themeProvider.getTextPrimaryColor(context)),
-                  title: Text('Phone', style: TextStyle(fontWeight: FontWeight.w600, color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
-                  subtitle: Text(_currentContact.phoneNumber, style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
-                ),
-              
-              if (_currentContact.email.isNotEmpty)
-                ListTile(
-                  leading: Icon(Icons.email, color: themeProvider.getTextPrimaryColor(context)),
-                  title: Text('Email', style: TextStyle(fontWeight: FontWeight.w600, color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
-                  subtitle: Text(_currentContact.email, style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
-                ),
-              const SizedBox(height: 20),
-            ],
-            const SizedBox(height: 20),
-            // Connection Details Section
-            Text(
-              'CONNECTION DETAILS',
-              style: TextStyle(
-                fontSize: 17,
-                fontFamily: 'OpenSans',
-                fontWeight: FontWeight.bold,
-                color: themeProvider.getTextSecondaryColor(context),
-                // letterSpacing: 1.0,
-              ),
-            ),
-            const SizedBox(height: 10),
-            
-            ListTile(
-              leading: 
-              // Icon(Icons.category, color: themeProvider.getTextPrimaryColor(context)),
-              SvgPicture.asset(
-              'assets/contact-icons/connection-type.svg',
-              width: 22,
-              height: 22,
-              color: themeProvider.getTextPrimaryColor(context)
-            ),
-              title: Text('Connection Type', style: TextStyle(fontWeight: FontWeight.w600, color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
-              subtitle: Text(_currentContact.connectionType, style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
-            ),
-
-            ListTile(
-              leading: Icon(Icons.schedule, color: themeProvider.getTextPrimaryColor(context)),
-              title: Text('Contact Frequency', style: TextStyle(fontWeight: FontWeight.w600, color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
-              subtitle: Text(FrequencyPeriodMapper.getConversationalChoice(_currentContact.frequency, _currentContact.period),
-                style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
-            ),
-            
-            if (_currentContact.socialGroups.isNotEmpty)
-              ListTile(
-                leading: Icon(Icons.group, color: themeProvider.getTextPrimaryColor(context)),
-                title: Text('Social Groups', style: TextStyle(fontWeight: FontWeight.w600, color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
-                subtitle: Text(_currentContact.socialGroups.join(', '), style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
-              ),
-            
-            // Important Dates Section
-            if (_currentContact.birthday != null || _currentContact.anniversary != null || _currentContact.workAnniversary != null) ...[
-              const SizedBox(height: 20),
-              Text(
-                'IMPORTANT DATES',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontFamily: 'OpenSans',
-                  fontWeight: FontWeight.bold,
-                  color: themeProvider.getTextPrimaryColor(context),
-                ),
-              ),
-              const SizedBox(height: 10),
-              
-              if (_currentContact.birthday != null)
-                ListTile(
-                  leading: Icon(Icons.cake, color: themeProvider.getTextPrimaryColor(context)),
-                  title: Text('Birthday', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
-                  subtitle: Text(DateFormat('MMMM d, y').format(_currentContact.birthday!), 
-                    style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
-                ),
-              
-              if (_currentContact.anniversary != null)
-                ListTile(
-                  leading: Icon(Icons.favorite, color: themeProvider.getTextPrimaryColor(context)),
-                  title: Text('Anniversary', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
-                  subtitle: Text(DateFormat('MMMM d, y').format(_currentContact.anniversary!), 
-                    style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
-                ),
-              
-              if (_currentContact.workAnniversary != null)
-                ListTile(
-                  leading: Icon(Icons.work, color: themeProvider.getTextPrimaryColor(context)),
-                  title: Text('Work Anniversary', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
-                  subtitle: Text(DateFormat('MMMM d, y').format(_currentContact.workAnniversary!), 
-                    style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
-                ),
-            ],
-            
-            // Notes Section
-            if (_currentContact.notes.isNotEmpty) ...[
-              const SizedBox(height: 20),
-              Text(
-                'Notes',
-                style: TextStyle(
-                  color: themeProvider.getTextPrimaryColor(context),
-                  fontSize: 18,
-                  fontFamily: 'OpenSans',
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(_currentContact.notes, style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
-            ],
-            
-            // Contextual message when no info
-            if (hasNoInfo) ...[
-              const SizedBox(height: 30),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: themeProvider.getCardColor(context),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: themeProvider.getTextHintColor(context)),
-                ),
-                child: Column(
-                  children: [
-                    Icon(Icons.info, size: 40, color: themeProvider.getTextSecondaryColor(context)),
-                    const SizedBox(height: 10),
-                    Text(
-                      'Add your first Favourites contact for better insights.',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontFamily: 'OpenSans',
-                        color: themeProvider.getTextSecondaryColor(context),
-                        fontStyle: FontStyle.italic,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-            
-            const SizedBox(height: 30),
-
-            // Simpler version - add this as a Chip or Badge
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-              decoration: BoxDecoration(
-                color: _getRingColor(_currentContact.computedRing).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: _getRingColor(_currentContact.computedRing).withOpacity(0.3),
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    _getRingIcon(_currentContact.computedRing),
-                    size: 16,
-                    color: _getRingColor(_currentContact.computedRing),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    _getFormattedRingName(_currentContact.computedRing),
-                    style: TextStyle(
-                      color: _getRingColor(_currentContact.computedRing),
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                      fontFamily: 'OpenSans',
-                    ),
-                  ),
-                  if (_currentContact.cdi > 0) ...[
-                    const SizedBox(width: 12),
-                    Text(
-                      'CDI: ${_currentContact.cdi.toStringAsFixed(0)}',
-                      style: TextStyle(
-                        color: themeProvider.getTextSecondaryColor(context),
-                        fontSize: 12,
-                        fontFamily: 'OpenSans',
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(height: 36),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  _showLogInteractionModal(context, themeProvider);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.add, size: 20, color: Colors.white),
-                    SizedBox(width: 12),
-                    Text(
-                      'LOG INTERACTION',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontFamily: 'OpenSans',
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-    // Add this method to get ring color
   Color _getRingColor(String ring) {
     switch (ring) {
       case 'inner':
-        return Colors.yellow;
+        return Colors.amber;
       case 'middle':
         return const Color(0xff3CB3E9);
       case 'outer':
@@ -480,7 +95,6 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     }
   }
 
-  // Add this method to get ring icon
   IconData _getRingIcon(String ring) {
     switch (ring) {
       case 'inner':
@@ -494,7 +108,6 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     }
   }
 
-  // Add this method to get formatted ring name
   String _getFormattedRingName(String ring) {
     switch (ring) {
       case 'inner':
@@ -508,9 +121,17 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     }
   }
 
-  Future<void> _showLogInteractionModal(BuildContext context, ThemeProvider themeProvider) async {
+  int getRandomIndex(String seed) {
+    if (seed.isEmpty) return 1;
+    var hash = 0;
+    for (var i = 0; i < seed.length; i++) {
+      hash = seed.codeUnitAt(i) + ((hash << 5) - hash);
+    }
+    return (hash.abs() % 6) + 1;
+  }
+
+  Future<void> _showLogInteractionModal(BuildContext context, ThemeProvider themeProvider, Contact contact) async {
     final apiService = Provider.of<ApiService>(context, listen: false);
-    // final themeProvider = Provider.of<ThemeProvider>(context);
     
     showModalBottomSheet(
       context: context,
@@ -524,9 +145,9 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
-          child: _LogInteractionModal(
+          child: LogInteractionModal(
             apiService: apiService,
-            contact: _currentContact,
+            contact: contact,
             isDarkMode: themeProvider.isDarkMode,
           ),
         );
@@ -534,483 +155,577 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     );
   }
 
-  int getRandomIndex(String seed) {
-    if (seed.isEmpty) return 1;
-    var hash = 0;
-    for (var i = 0; i < seed.length; i++) {
-      hash = seed.codeUnitAt(i) + ((hash << 5) - hash);
-    }
-    return (hash.abs() % 6) + 1;
-  }
-}
-
-// Custom modal that shows only the log interaction part (without contact selection)
-class _LogInteractionModal extends StatefulWidget {
-  final ApiService apiService;
-  final Contact contact;
-  final bool isDarkMode;
-  
-  const _LogInteractionModal({
-    required this.apiService,
-    required this.contact,
-    required this.isDarkMode,
-  });
-
-  @override
-  State<_LogInteractionModal> createState() => __LogInteractionModalState();
-}
-
-class __LogInteractionModalState extends State<_LogInteractionModal> {
-  TextEditingController _notesController = TextEditingController();
-  String? _selectedInteractionType;
-  bool _isLoading = false;
-  DateTime _selectedDate = DateTime.now();
-  TimeOfDay _selectedTime = TimeOfDay.now();
-
-  final List<String> _interactionTypes = [
-    'call',
-    'message',
-    'meet',
-    'other'
-  ];
-
-  @override
-  void dispose() {
-    _notesController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _selectDate() async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime(2000),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-    );
-    if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-      });
-    }
-  }
-
-  Future<void> _selectTime() async {
-    final TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: _selectedTime,
-    );
-    if (picked != null && picked != _selectedTime) {
-      setState(() {
-        _selectedTime = picked;
-      });
-    }
-  }
-
-  Future<void> _logInteraction() async {
-    if (_selectedInteractionType == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select an interaction type'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      // Combine date and time
-      final interactionDateTime = DateTime(
-        _selectedDate.year,
-        _selectedDate.month,
-        _selectedDate.day,
-        _selectedTime.hour,
-        _selectedTime.minute,
-      );
-
-      // Log the interaction
-      await widget.apiService.logInteraction(
-        contactId: widget.contact.id,
-        interactionType: _selectedInteractionType!,
-        notes: _notesController.text.isNotEmpty ? _notesController.text : null,
-        interactionDate: interactionDateTime.toIso8601String(), // Add this parameter
-      );
-
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Touchpoint logged for ${widget.contact.name}! Next nudge has been rescheduled.'),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 3),
-        ),
-      );
-
-      // Close both modals after a brief delay
-      Future.delayed(const Duration(milliseconds: 500), () {
-        Navigator.pop(context); // Close the log touchpoint modal
-        Navigator.pop(context); // Close the contact detail modal
-      });
-
-    } catch (e) {
-      print('Error logging touchpoint: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to log touchpoint: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    // Format date and time for display
-    final formattedDate = '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}';
-    final formattedTime = _selectedTime.format(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final apiService = Provider.of<ApiService>(context);
+    final feedbackProvider = Provider.of<FeedbackProvider>(context);
     
-    return Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.85,
+    return Scaffold(
+      floatingActionButton: Padding(
+        padding: EdgeInsets.only(bottom: 20, right: 6),
+        child: FeedbackFloatingButton(),
       ),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'LOG TOUCHPOINT',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: widget.isDarkMode 
-                    ? const Color(0xFFCCCCCC)
-                    : const Color(0xff555555),
-                  letterSpacing: 1.2,
+      body: Stack(
+                children: [
+                  Scaffold(
+                    appBar: AppBar(
+                title: Text(
+                  'Contact Details', 
+                  style: AppTextStyles.title2.copyWith(
+                    color: themeProvider.getTextPrimaryColor(context), 
+                    fontSize: 22, 
+                    fontWeight: FontWeight.w800, 
+                    fontFamily: 'Inter'
+                  )
                 ),
-              ),
-              IconButton(
-                icon: Icon(
-                  Icons.close, 
-                  color: widget.isDarkMode 
-                    ? const Color(0xFFCCCCCC)
-                    : const Color(0xff555555)
-                ),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 20),
-          
-          // Selected Contact Display
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFF3CB3E9).withOpacity(widget.isDarkMode ? 0.2 : 0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: const Color(0xFF3CB3E9).withOpacity(widget.isDarkMode ? 0.4 : 0.3),
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Color(0xFF3CB3E9),
+                centerTitle: true,
+                iconTheme: IconThemeData(color: AppTheme.primaryColor),
+                backgroundColor: themeProvider.getSurfaceColor(context),
+                surfaceTintColor: Colors.transparent,
+                actions: [
+                  MaterialButton(
+                    padding: EdgeInsets.zero,
+                    child: Icon(Icons.edit, color: themeProvider.getTextPrimaryColor(context)),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => EditContactScreen(contactId: widget.contact.id),
+                        ),
+                      );
+                    },
+                    onLongPress: () {
+                      apiService.sendTestBirthdayNotification(widget.contact);
+                      // apiService.sendTestEventNotification();
+                    },
                   ),
-                  child: Center(
-                    child: Text(
-                      widget.contact.name.substring(0, 1).toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                ],
+              ),
+            body: StreamBuilder<List<Contact>>(
+        stream: apiService.getContactsStream(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Error loading contact',
+                    style: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
+                  ),
+                ],
+              ),
+            );
+          }
+          
+          if (!snapshot.hasData) {
+            return Center(
+              child: CircularProgressIndicator(
+                color: AppTheme.primaryColor,
+              ),
+            );
+          }
+          
+          // Find the current contact in the updated list
+          final currentContact = snapshot.data!.firstWhere(
+            (c) => c.id == widget.contact.id,
+            orElse: () => widget.contact,
+          );
+          
+          return _buildContactDetails(context, themeProvider, currentContact);
+        },
+      )),
+      if (feedbackProvider.isFabMenuOpen)
+                  GestureDetector(
+                    onTap: () {
+                      // Optional: Close the menu when tapping the overlay
+                      // You'll need to access the FeedbackFloatingButton's state
+                      // This is handled automatically if the button listens to provider changes
+                    },
+                    child: Container(
+                      color: Colors.black.withOpacity(0.55),
+                      width: MediaQuery.of(context).size.width,
+                      height: MediaQuery.of(context).size.height,
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.contact.name,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: widget.isDarkMode 
-                            ? Colors.white
-                            : const Color(0xff333333),
-                        ),
-                      ),
-                      Text(
-                        widget.contact.connectionType,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: widget.isDarkMode 
-                            ? const Color(0xFFAAAAAA)
-                            : const Color(0xff888888),
-                        ),
+    ]),
+    );
+  }
+
+  Widget _buildContactDetails(BuildContext context, ThemeProvider themeProvider, Contact contact) {
+    final initials = _getContactInitials(contact.name);
+    
+    bool isLocalImage = contact.imageUrl.isNotEmpty && 
+        (contact.imageUrl.startsWith('/') || 
+         contact.imageUrl.startsWith('file://'));
+
+    bool hasNoInfo = contact.phoneNumber.isEmpty &&
+        contact.email.isEmpty &&
+        contact.notes.isEmpty &&
+        contact.birthday == null &&
+        contact.anniversary == null &&
+        contact.workAnniversary == null;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Profile Header
+          Center(
+            child: Column(
+              children: [
+                Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(themeProvider.isDarkMode ? 0.3 : 0.01),
+                        blurRadius: 8,
+                        spreadRadius: 2,
                       ),
                     ],
                   ),
+                  child: CircleAvatar(
+                    radius: 80,
+                    backgroundColor: Colors.transparent,
+                    backgroundImage: contact.imageUrl.isNotEmpty
+                        ? isLocalImage
+                            ? FileImage(File(contact.imageUrl.replaceFirst('file://', '')))
+                            : NetworkImage(contact.imageUrl) as ImageProvider
+                        : AssetImage('assets/contact-icons/${getRandomIndex(contact.id)}.png') as ImageProvider,
+                    child: contact.imageUrl.isEmpty
+                        ? Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              image: DecorationImage(
+                                image: AssetImage('assets/contact-icons/${getRandomIndex(contact.id)}.png'),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                contact.name.isNotEmpty ? initials.toUpperCase() : '?',
+                                style: TextStyle(
+                                  fontSize: 30,
+                                  fontFamily: 'OpenSans',
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          )
+                        : null,
+                  ),
                 ),
+                const SizedBox(height: 15),
+                Text(
+                  contact.name,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontFamily: 'OpenSans',
+                    fontWeight: FontWeight.bold,
+                    color: themeProvider.getTextPrimaryColor(context)
+                  ),
+                ),
+                const SizedBox(height: 5),
+                if (contact.profession != null && contact.profession!.isNotEmpty)
+                  Text(
+                    contact.profession!,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontFamily: 'OpenSans',
+                      color: themeProvider.getTextSecondaryColor(context),
+                    ),
+                  ),
+                const SizedBox(height: 20),
               ],
             ),
           ),
           
-          const SizedBox(height: 16),
-          
-          // Interaction Type Selection
-          Text(
-            'INTERACTION TYPE',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: widget.isDarkMode 
-                ? const Color(0xFFAAAAAA)
-                : const Color(0xff888888),
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: 8),
-          
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _interactionTypes.map((type) {
-              final isSelected = _selectedInteractionType == type;
-              return ChoiceChip(
-                label: Text(
-                  type.toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: isSelected 
-                      ? Colors.white
-                      : widget.isDarkMode 
-                          ? Colors.white
-                          : const Color(0xff333333),
-                  ),
-                ),
-                selected: isSelected,
-                selectedColor: const Color(0xFF3CB3E9),
-                backgroundColor: widget.isDarkMode 
-                  ? const Color(0xFF2A2A2A)
-                  : Colors.white,
-                side: BorderSide(
-                  color: isSelected 
-                    ? const Color(0xFF3CB3E9)
-                    : widget.isDarkMode 
-                        ? const Color(0xFF444444)
-                        : const Color(0xFFEEEEEE),
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                onSelected: (selected) {
-                  setState(() {
-                    _selectedInteractionType = selected ? type : null;
-                  });
-                },
-              );
-            }).toList(),
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // Date and Time Selection
-          Text(
-            'WHEN DID THIS INTERACTION HAPPEN?',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: widget.isDarkMode 
-                ? const Color(0xFFAAAAAA)
-                : const Color(0xff888888),
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: 8),
-          
-          Row(
-            children: [
-              Expanded(
-                child: GestureDetector(
-                  onTap: _selectDate,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: widget.isDarkMode 
-                          ? const Color(0xFF444444)
-                          : const Color(0xFFEEEEEE),
-                      ),
+          // Favourites Toggle
+          Card(
+            color: themeProvider.getCardColor(context),
+            child: ListTile(
+              leading: Icon(Icons.star, color: contact.isVIP ? Colors.amber : themeProvider.getTextSecondaryColor(context)),
+              title: Text(
+                'Favourites', 
+                style: TextStyle(
+                  fontWeight: FontWeight.w600, 
+                  color: themeProvider.getTextPrimaryColor(context), 
+                  fontFamily: 'OpenSans'
+                )
+              ),
+              subtitle: Text(
+                contact.isVIP 
+                    ? 'This contact is in your Favourites' 
+                    : 'Add to your Favourites for special attention',
+                style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')
+              ),
+              trailing: _isUpdatingVIP
+                  ? SizedBox(
+                      width: 20, 
+                      height: 20, 
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2, 
+                        color: AppTheme.primaryColor
+                      )
+                    )
+                  : Switch(
+                      value: contact.isVIP,
+                      onChanged: (value) => _toggleVIPStatus(value, contact),
+                      activeColor: AppTheme.primaryColor,
+                      inactiveThumbColor: themeProvider.getButtonColor(context),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.calendar_today, size: 20, color: const Color(0xFF3CB3E9)),
-                            const SizedBox(width: 12),
-                            ],
-                        ),
-                        Text(
-                          formattedDate,
-                          style: TextStyle(
-                            color: widget.isDarkMode ? Colors.white : const Color(0xff333333),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: GestureDetector(
-                  onTap: _selectTime,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: widget.isDarkMode 
-                          ? const Color(0xFF444444)
-                          : const Color(0xFFEEEEEE),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.access_time, size: 20, color: const Color(0xFF3CB3E9)),
-                            const SizedBox(width: 12),
-                            ],
-                        ),
-                        Text(
-                          formattedTime,
-                          style: TextStyle(
-                            color: widget.isDarkMode ? Colors.white : const Color(0xff333333),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // Notes Field
-          TextField(
-            controller: _notesController,
-            style: TextStyle(
-              color: widget.isDarkMode ? Colors.white : const Color(0xff333333),
-            ),
-            maxLines: 3,
-            decoration: InputDecoration(
-              labelText: 'Notes (optional)',
-              labelStyle: TextStyle(
-                color: widget.isDarkMode 
-                  ? const Color(0xFFAAAAAA)
-                  : const Color(0xff888888),
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: widget.isDarkMode 
-                    ? const Color(0xFF444444)
-                    : const Color(0xFFEEEEEE),
-                ),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: widget.isDarkMode 
-                    ? const Color(0xFF444444)
-                    : const Color(0xFFEEEEEE),
-                ),
-              ),
-              filled: true,
-              fillColor: widget.isDarkMode 
-                ? const Color(0xFF2A2A2A)
-                : Colors.white,
             ),
           ),
           
           const SizedBox(height: 20),
           
-          // Log Button
+          // CDI Ring Display
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            decoration: BoxDecoration(
+              color: _getRingColor(contact.computedRing).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: _getRingColor(contact.computedRing).withOpacity(0.3),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  _getRingIcon(contact.computedRing),
+                  size: 16,
+                  color: _getRingColor(contact.computedRing),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  _getFormattedRingName(contact.computedRing),
+                  style: TextStyle(
+                    color: _getRingColor(contact.computedRing),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    fontFamily: 'OpenSans',
+                  ),
+                ),
+                if (contact.cdi > 0) ...[
+                  const SizedBox(width: 12),
+                  Text(
+                    'CDI: ${contact.cdi.toStringAsFixed(0)}',
+                    style: TextStyle(
+                      color: themeProvider.getTextSecondaryColor(context),
+                      fontSize: 12,
+                      fontFamily: 'OpenSans',
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: 20),
+          
+          // Contact Information Section
+          if (contact.phoneNumber.isNotEmpty || contact.email.isNotEmpty) ...[
+            Text(
+              'CONTACT INFORMATION',
+              style: TextStyle(
+                fontSize: 18,
+                fontFamily: 'OpenSans',
+                fontWeight: FontWeight.bold,
+                color: themeProvider.getTextSecondaryColor(context),
+                letterSpacing: 1.0,
+              ),
+            ),
+            const SizedBox(height: 10),
+            
+            if (contact.phoneNumber.isNotEmpty)
+              ListTile(
+                leading: Icon(Icons.phone, color: themeProvider.getTextPrimaryColor(context)),
+                title: Text(
+                  'Phone', 
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600, 
+                    color: themeProvider.getTextPrimaryColor(context), 
+                    fontFamily: 'OpenSans'
+                  )
+                ),
+                subtitle: Text(
+                  contact.phoneNumber, 
+                  style: TextStyle(
+                    color: themeProvider.getTextSecondaryColor(context), 
+                    fontFamily: 'OpenSans'
+                  )
+                ),
+              ),
+            
+            if (contact.email.isNotEmpty)
+              ListTile(
+                leading: Icon(Icons.email, color: themeProvider.getTextPrimaryColor(context)),
+                title: Text(
+                  'Email', 
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600, 
+                    color: themeProvider.getTextPrimaryColor(context), 
+                    fontFamily: 'OpenSans'
+                  )
+                ),
+                subtitle: Text(
+                  contact.email, 
+                  style: TextStyle(
+                    color: themeProvider.getTextSecondaryColor(context), 
+                    fontFamily: 'OpenSans'
+                  )
+                ),
+              ),
+            const SizedBox(height: 20),
+          ],
+          
+          // Connection Details Section
+          Text(
+            'CONNECTION DETAILS',
+            style: TextStyle(
+              fontSize: 17,
+              fontFamily: 'OpenSans',
+              fontWeight: FontWeight.bold,
+              color: themeProvider.getTextSecondaryColor(context),
+            ),
+          ),
+          const SizedBox(height: 10),
+          
+          ListTile(
+            leading: SvgPicture.asset(
+              'assets/contact-icons/connection-type.svg',
+              width: 22,
+              height: 22,
+              color: themeProvider.getTextPrimaryColor(context)
+            ),
+            title: Text(
+              'Connection Type', 
+              style: TextStyle(
+                fontWeight: FontWeight.w600, 
+                color: themeProvider.getTextPrimaryColor(context), 
+                fontFamily: 'OpenSans'
+              )
+            ),
+            subtitle: Text(
+              contact.connectionType, 
+              style: TextStyle(
+                color: themeProvider.getTextSecondaryColor(context), 
+                fontFamily: 'OpenSans'
+              )
+            ),
+          ),
+
+          ListTile(
+            leading: Icon(Icons.schedule, color: themeProvider.getTextPrimaryColor(context)),
+            title: Text(
+              'Contact Frequency', 
+              style: TextStyle(
+                fontWeight: FontWeight.w600, 
+                color: themeProvider.getTextPrimaryColor(context), 
+                fontFamily: 'OpenSans'
+              )
+            ),
+            subtitle: Text(
+              FrequencyPeriodMapper.getConversationalChoice(contact.frequency, contact.period),
+              style: TextStyle(
+                color: themeProvider.getTextSecondaryColor(context), 
+                fontFamily: 'OpenSans'
+              )
+            ),
+          ),
+          
+          if (contact.socialGroups.isNotEmpty)
+            ListTile(
+              leading: Icon(Icons.group, color: themeProvider.getTextPrimaryColor(context)),
+              title: Text(
+                'Social Groups', 
+                style: TextStyle(
+                  fontWeight: FontWeight.w600, 
+                  color: themeProvider.getTextPrimaryColor(context), 
+                  fontFamily: 'OpenSans'
+                )
+              ),
+              subtitle: Text(
+                contact.socialGroups.join(', '), 
+                style: TextStyle(
+                  color: themeProvider.getTextSecondaryColor(context), 
+                  fontFamily: 'OpenSans'
+                )
+              ),
+            ),
+          
+          // Important Dates Section
+          if (contact.birthday != null || contact.anniversary != null || contact.workAnniversary != null) ...[
+            const SizedBox(height: 20),
+            Text(
+              'IMPORTANT DATES',
+              style: TextStyle(
+                fontSize: 18,
+                fontFamily: 'OpenSans',
+                fontWeight: FontWeight.bold,
+                color: themeProvider.getTextPrimaryColor(context),
+              ),
+            ),
+            const SizedBox(height: 10),
+            
+            if (contact.birthday != null)
+              ListTile(
+                leading: Icon(Icons.cake, color: themeProvider.getTextPrimaryColor(context)),
+                title: Text(
+                  'Birthday', 
+                  style: TextStyle(
+                    color: themeProvider.getTextPrimaryColor(context), 
+                    fontFamily: 'OpenSans'
+                  )
+                ),
+                subtitle: Text(
+                  DateFormat('MMMM d, y').format(contact.birthday!), 
+                  style: TextStyle(
+                    color: themeProvider.getTextSecondaryColor(context), 
+                    fontFamily: 'OpenSans'
+                  )
+                ),
+              ),
+            
+            if (contact.anniversary != null)
+              ListTile(
+                leading: Icon(Icons.favorite, color: themeProvider.getTextPrimaryColor(context)),
+                title: Text(
+                  'Anniversary', 
+                  style: TextStyle(
+                    color: themeProvider.getTextPrimaryColor(context), 
+                    fontFamily: 'OpenSans'
+                  )
+                ),
+                subtitle: Text(
+                  DateFormat('MMMM d, y').format(contact.anniversary!), 
+                  style: TextStyle(
+                    color: themeProvider.getTextSecondaryColor(context), 
+                    fontFamily: 'OpenSans'
+                  )
+                ),
+              ),
+            
+            if (contact.workAnniversary != null)
+              ListTile(
+                leading: Icon(Icons.work, color: themeProvider.getTextPrimaryColor(context)),
+                title: Text(
+                  'Work Anniversary', 
+                  style: TextStyle(
+                    color: themeProvider.getTextPrimaryColor(context), 
+                    fontFamily: 'OpenSans'
+                  )
+                ),
+                subtitle: Text(
+                  DateFormat('MMMM d, y').format(contact.workAnniversary!), 
+                  style: TextStyle(
+                    color: themeProvider.getTextSecondaryColor(context), 
+                    fontFamily: 'OpenSans'
+                  )
+                ),
+              ),
+          ],
+          
+          // Notes Section
+          if (contact.notes.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            Text(
+              'Notes',
+              style: TextStyle(
+                color: themeProvider.getTextPrimaryColor(context),
+                fontSize: 18,
+                fontFamily: 'OpenSans',
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              contact.notes, 
+              style: TextStyle(
+                color: themeProvider.getTextSecondaryColor(context), 
+                fontFamily: 'OpenSans'
+              )
+            ),
+          ],
+          
+          // Contextual message when no info
+          if (hasNoInfo) ...[
+            const SizedBox(height: 30),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: themeProvider.getCardColor(context),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: themeProvider.getTextHintColor(context)),
+              ),
+              child: Column(
+                children: [
+                  Icon(Icons.info, size: 40, color: themeProvider.getTextSecondaryColor(context)),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Add more details to this contact for better insights.',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontFamily: 'OpenSans',
+                      color: themeProvider.getTextSecondaryColor(context),
+                      fontStyle: FontStyle.italic,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ],
+          
+          const SizedBox(height: 30),
+          
+          // Log Interaction Button
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: _isLoading ? null : _logInteraction,
+              onPressed: () {
+                _showLogInteractionModal(context, themeProvider, contact);
+              },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF3CB3E9),
+                backgroundColor: AppTheme.primaryColor,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                elevation: 2,
               ),
-              child: _isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.add, size: 20, color: Colors.white),
-                        SizedBox(width: 8),
-                        Text(
-                          'LOG TOUCHPOINT',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.add, size: 20, color: Colors.white),
+                  SizedBox(width: 12),
+                  Text(
+                    'LOG INTERACTION',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontFamily: 'OpenSans',
+                      fontWeight: FontWeight.w600,
                     ),
+                  ),
+                ],
+              ),
             ),
           ),
           
-          const SizedBox(height: 8),
+          const SizedBox(height: 36),
         ],
       ),
     );
   }
 }
+
 

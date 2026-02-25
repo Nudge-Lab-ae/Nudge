@@ -6,6 +6,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:nudge/providers/feedback_provider.dart';
 import 'package:nudge/screens/dashboard/dashboard_screen.dart';
 import 'package:nudge/services/api_service.dart';
 // import 'package:nudge/services/nudge_service.dart';
@@ -477,7 +478,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
             Expanded(
               child: Text(
                 _phoneController.text.length < 9 
-                  ? 'Phone number too short. Must be exactly 9 digits.' 
+                  ? 'Phone number too short. Must be at least 9 digits.' 
                   : 'Please use only numbers (0-9) for the phone number.',
                 style: TextStyle(
                   fontSize: 12,
@@ -663,6 +664,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
     final authService = Provider.of<AuthService>(context);
     final apiService = Provider.of<ApiService>(context);
     final user = authService.currentUser;
+    final feedbackProvider = Provider.of<FeedbackProvider>(context);
     // var size = MediaQuery.of(context).size;
     
     if (_isCropping) {
@@ -679,18 +681,22 @@ class _AddContactScreenState extends State<AddContactScreen> {
             return GestureDetector(
               onTap: _dismissKeyboard,
               child: Scaffold(
-                appBar: AppBar(
+                floatingActionButton: Padding(
+                  padding: EdgeInsets.only(bottom: 20),
+                  child: FeedbackFloatingButton(),
+                ),
+                body: Stack(
+                  children: [
+                    Scaffold(
+                  appBar: AppBar(
                   title: Text('Add Contact', style: AppTextStyles.title2.copyWith(color: themeProvider.getTextPrimaryColor(context), fontSize: 22, fontWeight: FontWeight.w800)),
                   centerTitle: true,
                   iconTheme: IconThemeData(color: AppTheme.primaryColor),
                   surfaceTintColor: Colors.transparent,
                   backgroundColor: themeProvider.getSurfaceColor(context),
                 ),
-                floatingActionButton: Padding(
-                  padding: EdgeInsets.only(bottom: 50, right: 6),
-                  child: FeedbackFloatingButton(),
-                ),
-                body: SingleChildScrollView(
+                
+                  body: SingleChildScrollView(
                   padding: const EdgeInsets.all(20),
                   child: Form(
                     key: _formKey,
@@ -768,14 +774,14 @@ class _AddContactScreenState extends State<AddContactScreen> {
                         ),
                         const SizedBox(height: 20),
 
-                        Text(
-                          'Add details below',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: themeProvider.getTextSecondaryColor(context),
-                          ),
-                        ),
-                        const SizedBox(height: 30),
+                        // Text(
+                        //   'Add details below',
+                        //   style: TextStyle(
+                        //     fontSize: 16,
+                        //     color: themeProvider.getTextSecondaryColor(context),
+                        //   ),
+                        // ),
+                        // const SizedBox(height: 30),
                         
                         // Name field
                         Text(
@@ -1369,7 +1375,21 @@ class _AddContactScreenState extends State<AddContactScreen> {
                       ],
                     ),
                   ),
-                ),
+                )),
+                if (feedbackProvider.isFabMenuOpen)
+                  GestureDetector(
+                    onTap: () {
+                      // Optional: Close the menu when tapping the overlay
+                      // You'll need to access the FeedbackFloatingButton's state
+                      // This is handled automatically if the button listens to provider changes
+                    },
+                    child: Container(
+                      color: Colors.black.withOpacity(0.55),
+                      width: MediaQuery.of(context).size.width,
+                      height: MediaQuery.of(context).size.height,
+                    ),
+                  ),
+                ])
               ));
     }));
   }

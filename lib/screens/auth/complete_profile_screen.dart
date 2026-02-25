@@ -11,6 +11,7 @@ import 'package:country_code_picker/country_code_picker.dart';
 import 'package:nudge/models/contact.dart';
 import 'package:nudge/models/social_group.dart';
 import 'package:nudge/screens/contacts/add_contact_screen.dart';
+// import 'package:nudge/screens/dashboard/dashboard_screen.dart';
 import 'package:nudge/widgets/gradient_text.dart';
 import 'package:nudge/helpers/restart_helper.dart';
 import 'package:nudge/widgets/social_universe_guide.dart';
@@ -45,6 +46,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
   bool _isLoading = false;
   final _imageDataList = <Uint8List>[];
   var _currentImage = 0;
+  String? _expandedGroupId;
   set currentImage(int value) {
     setState(() {
       _currentImage = value;
@@ -573,6 +575,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
 
     final contacts = await fContacts.FlutterContacts.getContacts(withProperties: true);
 
+    // print('existing contacts are'); print(_selectedContacts[0].name);
     final selectedContacts = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -759,7 +762,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                   child: SocialUniverseWidget(
                     contacts: _mockPreviewContacts,
                     showTitle: false,
-                    onContactView: (contact) {
+                    onContactView: (contact, ringToUse) {
                       // Preview interaction
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -906,6 +909,10 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
         groupId: group.name,
         onProgress: (processed, total) {},
       );
+
+      print('imported contact length is'); print(deviceContacts.length);
+      print(deviceContacts[0].name);
+      print('result is'); print(result);
 
       setState(() => _isLoading = false);
 
@@ -1303,22 +1310,24 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: _addNewGroup,
-              icon: const Icon(Icons.add, color: Colors.white),
+              icon: const Icon(Icons.add, color: Colors.white, size: 18),
               label: const Text('Add New Group'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xff3CB3E9),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 15),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
             ),
           ),
           const SizedBox(height: 20),
           
-          // Reorderable list of groups
+          // Reorderable list of groups - now with smaller cards
           Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
-              color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
             ),
             child: ReorderableListView.builder(
               shrinkWrap: true,
@@ -1342,7 +1351,6 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                   }
                 });
               },
-              // This is important - it ensures the drag handle works correctly
               proxyDecorator: (child, index, animation) {
                 return Material(
                   elevation: 4,
@@ -1360,154 +1368,327 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
     
   Widget _buildEditableGroupItem(SocialGroup group, int index) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    // final theme = Theme.of(context);
+    final isExpanded = _expandedGroupId == group.id;
+    
+    // Parse color from group.colorCode
+    Color groupColor;
+    try {
+      groupColor = Color(int.parse(group.colorCode.replaceFirst('#', ''), radix: 16) + 0xFF000000);
+    } catch (e) {
+      groupColor = const Color(0xff3CB3E9);
+    }
     
     return Container(
       key: Key(group.id),
-      margin: const EdgeInsets.only(bottom: 20),
+      margin: const EdgeInsets.only(bottom: 6), // Smaller margin
       decoration: BoxDecoration(
+        color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: themeProvider.isDarkMode 
               ? Colors.grey.shade800 
-              : const Color.fromARGB(255, 206, 203, 203), 
+              : Colors.grey.shade200, 
           width: 1
         ),
-        borderRadius: BorderRadius.circular(8),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            if (_expandedGroupId == group.id) {
+              _expandedGroupId = null; // Collapse if already expanded
+            } else {
+              _expandedGroupId = group.id; // Expand this group
+            }
+          });
+        },
+        behavior: HitTestBehavior.opaque,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Header row with drag handle and delete button
-            Row(
-              children: [
-                // Wrap the drag handle in a SizedBox with explicit size
-                ReorderableDragStartListener(
-                  index: index,
-                  child: Row(
-                    children: [
-                      Container(
-                    width: 40,
-                    height: 40,
-                    alignment: Alignment.center,
+            // Collapsed view - always visible
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8), // Smaller padding
+              child: Row(
+                children: [
+                  // LEFT SIDE: Circle icon
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: groupColor,
+                      shape: BoxShape.circle,
+                    ),
                     child: Icon(
-                      Icons.drag_handle, 
-                      color: themeProvider.isDarkMode 
-                          ? Colors.grey.shade400 
-                          : Colors.grey,
+                      _getGroupIcon(group.name),
+                      color: Colors.white,
+                      size: 20,
                     ),
                   ),
-                  SizedBox(
-                    width: 5,
-                  ),
-                  Text(
-                    'Drag to reorder',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: themeProvider.isDarkMode 
-                          ? Colors.grey.shade500 
-                          : Colors.grey.shade600,
-                      fontStyle: FontStyle.italic,
+                  const SizedBox(width: 15),
+                  
+                  // MIDDLE: Column with drag widget and group name
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Drag widget at the top of the column
+                        ReorderableDragStartListener(
+                          index: index,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.drag_handle, 
+                                color: themeProvider.isDarkMode 
+                                    ? Colors.grey.shade400 
+                                    : Colors.grey,
+                                size: 14,
+                              ),
+                              const SizedBox(width: 2),
+                              Text(
+                                'Drag to reorder',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  color: themeProvider.isDarkMode 
+                                      ? Colors.grey.shade500 
+                                      : Colors.grey.shade600,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        // Group name below drag widget
+                        Text(
+                          group.name,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
-                  )]),
-                ),
-                Expanded(
-                  child: Center(),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () => _deleteGroup(index),
-                ),
-              ],
+                  ),
+                  
+                  // RIGHT SIDE: Column with delete button and frequency text
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    // mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Delete button at the top
+                      GestureDetector(
+                        child: const Icon(Icons.delete, color: Colors.red, size: 16),
+                        onTap: () => _deleteGroup(index),
+                        ),
+                      const SizedBox(height: 10),
+                      // Frequency text below delete button
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: groupColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          FrequencyPeriodMapper.getConversationalChoice(group.frequency, group.period),
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w400,
+                            color: groupColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 16),
             
-            // Group name field
-            TextFormField(
-              initialValue: group.name,
-              onTap: () => _dismissKeyboard(),
-              style: TextStyle(
-                color: themeProvider.isDarkMode ? Colors.white : Colors.black
-              ),
-              decoration: InputDecoration(
-                labelText: 'GROUP NAME',
-                labelStyle: TextStyle(
-                  color: themeProvider.isDarkMode 
-                      ? Colors.grey.shade400 
-                      : const Color(0xff555555)
-                ),
-                border: const OutlineInputBorder(),
-                isDense: true,
-                filled: true,
-                fillColor: themeProvider.isDarkMode 
-                    ? Colors.grey.shade800 
-                    : Colors.grey.shade50,
-              ),
-              onChanged: (value) {
-                setState(() {
-                  _userGroups[index] = group.copyWith(name: value);
-                });
-              },
-            ),
-            const SizedBox(height: 16),
-            
-            // Contact Frequency Dropdown
-            DropdownButtonFormField<String>(
-              value: _getCurrentFrequencyChoice(group),
-              onTap: () => _dismissKeyboard(),
-              style: TextStyle(
-                color: themeProvider.isDarkMode 
-                    ? Colors.white 
-                    : const Color(0xff555555)
-              ),
-              decoration: InputDecoration(
-                labelText: 'CONTACT FREQUENCY',
-                labelStyle: TextStyle(
-                  color: themeProvider.isDarkMode 
-                      ? Colors.grey.shade400 
-                      : const Color(0xff555555)
-                ),
-                border: const OutlineInputBorder(),
-                isDense: true,
-                filled: true,
-                fillColor: themeProvider.isDarkMode 
-                    ? Colors.grey.shade800 
-                    : Colors.grey.shade50,
-              ),
-              items: FrequencyPeriodMapper.frequencyMapping.keys.map((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(
-                    value, 
-                    style: TextStyle(
-                      color: themeProvider.isDarkMode 
-                          ? Colors.white 
-                          : const Color(0xff555555)
+            // Expanded view - shows when tapped
+            if (isExpanded)
+              Container(
+                padding: const EdgeInsets.fromLTRB(8, 4, 8, 12),
+                child: Column(
+                  children: [
+                    // const Divider(height: 16),
+                    const SizedBox(height: 5),
+                    
+                    // Group name field
+                    TextFormField(
+                      initialValue: group.name,
+                      onTap: () => _dismissKeyboard(),
+                      style: TextStyle(
+                        color: themeProvider.isDarkMode 
+                            ? Colors.white 
+                            : const Color(0xff555555),
+                        fontSize: 14,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'GROUP NAME',
+                        labelStyle: TextStyle(
+                          color: themeProvider.isDarkMode 
+                              ? Colors.grey.shade400 
+                              : const Color(0xff555555),
+                          fontSize: 13,
+                          fontStyle: FontStyle.italic
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        isDense: true,
+                        filled: true,
+                        fillColor: themeProvider.isDarkMode 
+                            ? Colors.grey.shade800 
+                            : Colors.grey.shade50,
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          _userGroups[index] = group.copyWith(name: value);
+                        });
+                      },
                     ),
-                  ),
-                );
-              }).toList(),
-              onChanged: (String? newValue) {
-                if (newValue != null) {
-                  final frequencyData = FrequencyPeriodMapper.getFrequencyPeriod(newValue);
-                  setState(() {
-                    _userGroups[index] = group.copyWith(
-                      frequency: frequencyData['frequency'] as int,
-                      period: frequencyData['period'] as String,
-                    );
-                  });
-                }
-              },
-            ),
+                    const SizedBox(height: 22),
+                    
+                    // Contact Frequency Dropdown
+                    DropdownButtonFormField<String>(
+                      value: _getCurrentFrequencyChoice(group),
+                      onTap: () => _dismissKeyboard(),
+                      style: TextStyle(
+                        color: themeProvider.isDarkMode 
+                            ? Colors.white 
+                            : const Color(0xff555555),
+                        fontSize: 16,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'CONTACT FREQUENCY',
+                        labelStyle: TextStyle(
+                          color: themeProvider.isDarkMode 
+                              ? Colors.grey.shade400 
+                              : const Color(0xff555555),
+                          fontSize: 13,
+                          fontStyle: FontStyle.italic
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        isDense: true,
+                        filled: true,
+                        fillColor: themeProvider.isDarkMode 
+                            ? Colors.grey.shade800 
+                            : Colors.grey.shade50,
+                      ),
+                      items: FrequencyPeriodMapper.frequencyMapping.keys.map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(
+                            value, 
+                            style: TextStyle(
+                              color: themeProvider.isDarkMode 
+                                  ? Colors.white 
+                                  : const Color(0xff555555),
+                              fontSize: 13,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          final frequencyData = FrequencyPeriodMapper.getFrequencyPeriod(newValue);
+                          setState(() {
+                            _userGroups[index] = group.copyWith(
+                              frequency: frequencyData['frequency'] as int,
+                              period: frequencyData['period'] as String,
+                            );
+                          });
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
       ),
     );
   }
 
-  String _getCurrentFrequencyChoice(SocialGroup group) {
-    return FrequencyPeriodMapper.getConversationalChoice(group.frequency, group.period);
+  // Helper method to get icon for group
+  IconData _getGroupIcon(String groupName) {
+    if (groupName.toLowerCase().contains('family')) return Icons.family_restroom;
+    if (groupName.toLowerCase().contains('friend')) return Icons.people;
+    if (groupName.toLowerCase().contains('work') || groupName.toLowerCase().contains('colleague')) return Icons.work;
+    if (groupName.toLowerCase().contains('client')) return Icons.business_center;
+    if (groupName.toLowerCase().contains('mentor')) return Icons.school;
+    return Icons.group;
   }
+    
+  // Widget _buildColorSelector(int index, SocialGroup group) {
+  //     final themeProvider = Provider.of<ThemeProvider>(context);
+  //     final List<String> colorOptions = [
+  //       '#555555',
+  //       '#FF6B6B',
+  //       '#4ECDC4',
+  //       '#A79826',
+  //       '#F9A826',
+  //       '#6C5CE7',
+  //     ];
+      
+  //     return Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         Text(
+  //           'GROUP COLOR',
+  //           style: TextStyle(
+  //             color: themeProvider.isDarkMode 
+  //                 ? Colors.grey.shade400 
+  //                 : const Color(0xff555555),
+  //             fontSize: 14,
+  //             fontWeight: FontWeight.w600,
+  //           ),
+  //         ),
+  //         const SizedBox(height: 8),
+  //         Wrap(
+  //           spacing: 8,
+  //           children: colorOptions.map((color) {
+  //             final isSelected = group.colorCode == color;
+  //             return GestureDetector(
+  //               onTap: () {
+  //                 setState(() {
+  //                   _userGroups[index] = group.copyWith(colorCode: color);
+  //                 });
+  //               },
+  //               child: Container(
+  //                 width: 28, // Reduced from 36
+  //                 height: 28, // Reduced from 36
+  //                 decoration: BoxDecoration(
+  //                   color: Color(int.parse(color.substring(1, 7), radix: 16) + 0xFF000000),
+  //                   shape: BoxShape.circle,
+  //                   border: isSelected 
+  //                       ? Border.all(
+  //                           color: themeProvider.getTextPrimaryColor(context), 
+  //                           width: 2
+  //                         ) 
+  //                       : null,
+  //                 ),
+  //               ),
+  //             );
+  //           }).toList(),
+  //         ),
+  //       ],
+  //     );
+  //   }
+
+  String _getCurrentFrequencyChoice(SocialGroup group) {
+      return FrequencyPeriodMapper.getConversationalChoice(group.frequency, group.period);
+    }
 
   bool _isValidPhoneNumber(String phone) {
     String cleanedPhone = phone.replaceAll(RegExp(r'[^\d]'), '');
@@ -1546,7 +1727,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
             Expanded(
               child: Text(
                 _phoneController.text.length < 9 
-                  ? 'Phone number too short. Must be exactly 9 digits.' 
+                  ? 'Phone number too short. Must be at least 9 digits.' 
                   : 'Please use only numbers (0-9) for the phone number.',
                 style: TextStyle(
                   fontSize: 12,
@@ -1588,7 +1769,13 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
   void _addNewGroup() {
     _dismissKeyboard();
     setState(() {
-      _userGroups.add(SocialGroup(
+      // First, increment orderIndex for all existing groups
+      for (int i = 0; i < _userGroups.length; i++) {
+        _userGroups[i] = _userGroups[i].copyWith(orderIndex: i + 1);
+      }
+      
+      // Then add the new group at the top with orderIndex 0
+      _userGroups.insert(0, SocialGroup(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         name: 'New Group',
         description: '',
@@ -1600,16 +1787,17 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
         colorCode: '#2596BE',
         birthdayNudgesEnabled: true,
         anniversaryNudgesEnabled: true,
-        orderIndex: _userGroups.length
+        orderIndex: 0 // Set to 0 to appear at the top
       ));
     });
-     ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Added a new group at the bottom.'),
-          duration: Duration(seconds: 2),
-          backgroundColor: Colors.green,
-        ),
-      );
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Added a new group at the top.'),
+        duration: Duration(seconds: 2),
+        backgroundColor: Colors.green,
+      ),
+    );
   }
 
   void _deleteGroup(int index) {
@@ -1617,7 +1805,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title:  Text('Delete Group', style: TextStyle(color: Color(0xff777777)),),
+        title:  Text('Delete Group', style: TextStyle(color: Color(0xff777777), fontWeight: FontWeight.w600),),
         content: const Text('Are you sure you want to delete this group?'),
         actions: [
           TextButton(
@@ -1651,7 +1839,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Let\'s fill your Social Universe',
+                'Let\'s Fill Your Social Universe',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
@@ -2204,7 +2392,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                             _currentStep == _steps.length - 1 
                               ? 'Launch Your Universe' 
                               : 'Continue',
-                            style: TextStyle(fontSize: _currentStep == _steps.length - 1 ? 14 :16, fontWeight: FontWeight.bold, color: Colors.white),
+                            style: TextStyle(fontSize: _currentStep == _steps.length - 1 ? 14 :16, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode?Colors.black:Colors.white),
                             textAlign: TextAlign.center,
                           ),
                   ),
@@ -2263,7 +2451,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
       
       // Check if any phone number matches
       final contactPhones = contact.phones
-          .map((phone) => _normalizePhoneNumber(phone.normalizedNumber))
+          .map((phone) => _normalizePhoneNumber(phone.number))
           .where((phone) => phone.isNotEmpty)
           .toList();
       

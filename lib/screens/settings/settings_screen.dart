@@ -1346,7 +1346,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       _currentUser!.admin
                       ? Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.only(top: 16, bottom: 16),
+                          padding: const EdgeInsets.only(top: 16, bottom: 16, left: 16, right: 16),
                           decoration: BoxDecoration(
                             color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.grey.shade50,
                             borderRadius: BorderRadius.circular(10),

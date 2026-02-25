@@ -9,11 +9,13 @@ import 'package:provider/provider.dart'; // Add this import
 class ContactDetailsModal extends StatefulWidget {
   final Contact contact;
   final ApiService apiService;
+  final String? displayRing;
   
   const ContactDetailsModal({
     super.key,
     required this.contact,
     required this.apiService,
+    this.displayRing,
   });
 
   @override
@@ -28,7 +30,8 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
     
     final contact = widget.contact;
     final daysSinceLastContact = DateTime.now().difference(contact.lastContacted).inDays;
-    final ringColor = _getRingColor(contact.computedRing);
+    final displayRing = widget.displayRing ?? contact.computedRing;
+    final ringColor = _getRingColor(displayRing);
     
     return Container(
       height: MediaQuery.of(context).size.height * 0.65,
@@ -665,13 +668,19 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
     }
   }
 
+  void _dismissKeyboard() {
+    FocusScope.of(context).unfocus();
+  }
+
   @override
   Widget build(BuildContext context) {
     // Format date and time for display
     final formattedDate = '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}';
     final formattedTime = _selectedTime.format(context);
     
-    return Container(
+    return GestureDetector(
+              onTap: _dismissKeyboard,
+              child: Container(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.85,
       ),
@@ -1006,7 +1015,7 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
           const SizedBox(height: 8),
         ],
       ),
-    );
+    ));
   }
 }
 

@@ -375,13 +375,22 @@ class ContactSyncService {
       // Filter out already imported contacts
       final contactsToImport = pickedContacts.where((deviceContact) {
         final hasMatchingPhone = deviceContact.phones.any((phone) {
-          return existingPhoneNumbers.contains(_normalizePhoneNumber(phone.normalizedNumber));
+          return existingPhoneNumbers.contains(_normalizePhoneNumber(phone.number));
+          // return false;
         });
         final hasMatchingEmail = deviceContact.emails.any((email) {
           return existingEmails.contains(email.address.toLowerCase());
+          // return false;
         });
         return !hasMatchingPhone && !hasMatchingEmail;
       }).toList();
+
+      print('picked contacts length is'); print(pickedContacts.length);
+      if (pickedContacts.isNotEmpty) {
+        print(pickedContacts[0].name);
+      }
+      print('existing phone numbers are'); print(existingPhoneNumbers);
+      print('existing emails are '); print(existingEmails);
 
       if (contactsToImport.isEmpty) {
         return {
@@ -425,11 +434,16 @@ class ContactSyncService {
           }
         }
 
+        print('phone number is'); print(deviceContact.phones);
+        if (deviceContact.phones.isNotEmpty){
+          print(deviceContact.phones.first.number);
+        }
+
         Contact nudgeContact = Contact(
           id: '',
           name: displayName,
           phoneNumber: deviceContact.phones.isNotEmpty
-              ? deviceContact.phones.first.normalizedNumber
+              ? deviceContact.phones.first.number
               : '',
           email: deviceContact.emails.isNotEmpty
               ? deviceContact.emails.first.address
@@ -469,6 +483,7 @@ class ContactSyncService {
     }
   }
 
+  // Updated importFromContactPicker method with better phone number handling
   Future<Map<String, dynamic>> importFromContactPicker({
     required List<fContacts.Contact> pickedContacts,
     required String groupId, 
@@ -486,23 +501,51 @@ class ContactSyncService {
 
       // Get existing contacts to avoid duplicates
       final existingContacts = await _getExistingContacts(currentUser.uid);
-      final existingPhoneNumbers =
-          existingContacts.map((c) => _normalizePhoneNumber(c.phoneNumber)).toSet();
-      final existingEmails =
-          existingContacts.map((c) => c.email.toLowerCase()).toSet();
+      
+      // Create a map of existing phone numbers for quick lookup
+      final existingPhoneNumbers = existingContacts
+          .map((c) => c.phoneNumber)
+          .where((phone) => phone.isNotEmpty)
+          .toList();
+      
+      final existingEmails = existingContacts
+          .map((c) => c.email.toLowerCase())
+          .where((email) => email.isNotEmpty)
+          .toSet();
 
       int importedCount = 0;
       int processedCount = 0;
       int totalContacts = pickedContacts.length;
 
-      // Filter out already imported contacts
+      // Filter out already imported contacts with improved matching
       final contactsToImport = pickedContacts.where((deviceContact) {
-        final hasMatchingPhone = deviceContact.phones.any((phone) {
-          return existingPhoneNumbers.contains(_normalizePhoneNumber(phone.normalizedNumber));
-        });
+        // Check if any phone number matches using the improved _phoneNumbersMatch method
+        bool hasMatchingPhone = false;
+        for (final phone in deviceContact.phones) {
+          // Try multiple phone number formats
+          final phoneVariations = <String>[
+            phone.number, // Raw number as stored
+            phone.normalizedNumber, // Normalized version
+            _extractPhoneNumber(phone.number), // Custom extraction
+          ].where((p) => p.isNotEmpty).toSet(); // Remove duplicates
+          
+          for (final devicePhone in phoneVariations) {
+            for (final existingPhone in existingPhoneNumbers) {
+              if (_phoneNumbersMatch(devicePhone, existingPhone)) {
+                hasMatchingPhone = true;
+                break;
+              }
+            }
+            if (hasMatchingPhone) break;
+          }
+          if (hasMatchingPhone) break;
+        }
+        
+        // Check if any email matches
         final hasMatchingEmail = deviceContact.emails.any((email) {
           return existingEmails.contains(email.address.toLowerCase());
         });
+        
         return !hasMatchingPhone && !hasMatchingEmail;
       }).toList();
 
@@ -548,15 +591,19 @@ class ContactSyncService {
           }
         }
 
+        // IMPROVED: Get the best phone number with multiple fallback options
+        String primaryPhoneNumber = await _getBestPhoneNumber(deviceContact);
+        
+        // Get the best email
+        String primaryEmail = _getBestEmail(deviceContact);
+
+        print('Importing contact: $displayName - Phone: $primaryPhoneNumber - Email: $primaryEmail');
+
         Contact nudgeContact = Contact(
           id: '',
           name: displayName,
-          phoneNumber: deviceContact.phones.isNotEmpty
-              ? deviceContact.phones.first.normalizedNumber
-              : '',
-          email: deviceContact.emails.isNotEmpty
-              ? deviceContact.emails.first.address
-              : '',
+          phoneNumber: primaryPhoneNumber,
+          email: primaryEmail,
           connectionType: groupId,
           frequency: 2,
           period: 'Monthly',
@@ -591,6 +638,121 @@ class ContactSyncService {
       };
     }
   }
+
+  // New helper method to extract phone number from various formats
+  String _extractPhoneNumber(String phoneNumber) {
+    if (phoneNumber.isEmpty) return '';
+    
+    // Remove all non-digit characters
+    String digits = phoneNumber.replaceAll(RegExp(r'[^0-9]'), '');
+    
+    // If we have digits, return them
+    if (digits.isNotEmpty) {
+      return digits;
+    }
+    
+    // If no digits found, try to clean the original string
+    String cleaned = phoneNumber
+        .replaceAll(RegExp(r'[^\d\+]'), '') // Keep digits and plus sign
+        .trim();
+    
+    return cleaned;
+  }
+
+  // New method to get the best available phone number
+  Future<String> _getBestPhoneNumber(fContacts.Contact deviceContact) async {
+    if (deviceContact.phones.isEmpty) {
+      return '';
+    }
+    
+    // Priority 1: Try to find a mobile number
+    for (final phone in deviceContact.phones) {
+      final label = phone.label.name.toLowerCase();
+      if (label.contains('mobile') || label.contains('cell') || label.contains('iphone')) {
+        final extracted = _extractPhoneNumber(phone.number);
+        if (extracted.isNotEmpty) return extracted;
+      }
+    }
+    
+    // Priority 2: Try to find a work number
+    for (final phone in deviceContact.phones) {
+      final label = phone.label.name.toLowerCase();
+      if (label.contains('work') || label.contains('office') || label.contains('business')) {
+        final extracted = _extractPhoneNumber(phone.number);
+        if (extracted.isNotEmpty) return extracted;
+      }
+    }
+    
+    // Priority 3: Try to find a home number
+    for (final phone in deviceContact.phones) {
+      final label = phone.label.name.toLowerCase();
+      if (label.contains('home') || label.contains('personal')) {
+        final extracted = _extractPhoneNumber(phone.number);
+        if (extracted.isNotEmpty) return extracted;
+      }
+    }
+    
+    // Priority 4: Try all phones in order, using multiple extraction methods
+    for (final phone in deviceContact.phones) {
+      // Try multiple sources in order of reliability
+      final possibleNumbers = <String>[
+        // First try the raw number
+        phone.number,
+        
+        // Then try normalized number
+        phone.normalizedNumber,
+        
+        // Then try custom extraction from raw number
+        _extractPhoneNumber(phone.number),
+        
+        // Finally try custom extraction from normalized number
+        phone.normalizedNumber.isNotEmpty ? _extractPhoneNumber(phone.normalizedNumber) : '',
+      ];
+      
+      for (final possibleNumber in possibleNumbers) {
+        if (possibleNumber.isNotEmpty) {
+          final cleaned = _extractPhoneNumber(possibleNumber);
+          if (cleaned.isNotEmpty && cleaned.length >= 7) { // Valid phone number should have at least 7 digits
+            return cleaned;
+          }
+        }
+      }
+    }
+    
+    // Last resort: return whatever we can get from the first phone
+    if (deviceContact.phones.isNotEmpty) {
+      return _extractPhoneNumber(deviceContact.phones.first.number);
+    }
+    
+    return '';
+  }
+
+  // New method to get the best email
+  String _getBestEmail(fContacts.Contact deviceContact) {
+    if (deviceContact.emails.isEmpty) {
+      return '';
+    }
+    
+    // Priority 1: Try to find a personal/home email
+    for (final email in deviceContact.emails) {
+      final label = email.label.name.toLowerCase();
+      if (label.contains('personal') || label.contains('home')) {
+        return email.address;
+      }
+    }
+    
+    // Priority 2: Try to find a work email
+    for (final email in deviceContact.emails) {
+      final label = email.label.name.toLowerCase();
+      if (label.contains('work') || label.contains('business') || label.contains('office')) {
+        return email.address;
+      }
+    }
+    
+    // Priority 3: Return the first email
+    return deviceContact.emails.first.address;
+  }
+
 
   // Helper method to get display name
   String _getDisplayName(fContacts.Contact deviceContact) {
@@ -886,6 +1048,105 @@ class ContactSyncService {
 
   // Helper method to normalize phone numbers for comparison
   String _normalizePhoneNumber(String phoneNumber) {
-    return phoneNumber.replaceAll(RegExp(r'[^0-9]'), '');
+    // Remove all non-digit characters
+    String digits = phoneNumber.replaceAll(RegExp(r'[^0-9]'), '');
+    
+    // Handle iOS-specific formatting issues
+    if (Platform.isIOS) {
+      // iOS often includes country code without the plus sign
+      // Common country codes to handle (US/CA: 1, UK: 44, etc.)
+      
+      // If number starts with 1 and is exactly 11 digits (US/Canada with country code)
+      if (digits.length == 11 && digits.startsWith('1')) {
+        // Keep as is, but also create a version without country code for comparison
+        return digits;
+      }
+      
+      // If number is 10 digits (US/Canada without country code)
+      if (digits.length == 10) {
+        // Also consider the version with US country code
+        return digits;
+      }
+      
+      // For other lengths, return as is
+      return digits;
+    }
+    
+    return digits;
   }
+
+// Enhanced phone number matching
+bool _phoneNumbersMatch(String phone1, String phone2) {
+  if (phone1.isEmpty || phone2.isEmpty) return false;
+  
+  // Extract digits from both numbers
+  String normalized1 = _extractPhoneNumber(phone1);
+  String normalized2 = _extractPhoneNumber(phone2);
+  
+  if (normalized1.isEmpty || normalized2.isEmpty) return false;
+  
+  // Direct match
+  if (normalized1 == normalized2) return true;
+  
+  // Check if one contains the other (for numbers with/without country code)
+  if (normalized1.contains(normalized2) || normalized2.contains(normalized1)) {
+    // Make sure the difference is reasonable (country code length)
+    int lengthDiff = (normalized1.length - normalized2.length).abs();
+    if (lengthDiff <= 3) {
+      return true;
+    }
+  }
+  
+  // Check last 10 digits (for international numbers)
+  if (normalized1.length >= 10 && normalized2.length >= 10) {
+    String last10Digits1 = normalized1.substring(normalized1.length - 10);
+    String last10Digits2 = normalized2.substring(normalized2.length - 10);
+    if (last10Digits1 == last10Digits2) {
+      return true;
+    }
+  }
+  
+  // Check last 9 digits (for numbers with different area codes)
+  if (normalized1.length >= 9 && normalized2.length >= 9) {
+    String last9Digits1 = normalized1.substring(normalized1.length - 9);
+    String last9Digits2 = normalized2.substring(normalized2.length - 9);
+    if (last9Digits1 == last9Digits2) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+
+  // Set<String> _getPhoneNumberVariations(String phoneNumber) {
+  //   final variations = <String>{};
+  //   final normalized = _normalizePhoneNumber(phoneNumber);
+    
+  //   variations.add(normalized);
+    
+  //   if (Platform.isIOS) {
+  //     // Add US/Canada format variations
+  //     if (normalized.length == 10) {
+  //       variations.add('1$normalized'); // With US country code
+  //     } else if (normalized.length == 11 && normalized.startsWith('1')) {
+  //       variations.add(normalized.substring(1)); // Without country code
+  //     }
+      
+  //     // Add variations with common international prefixes
+  //     final commonCountryCodes = ['1', '44', '61', '49', '33']; // US, UK, Australia, Germany, France
+  //     for (final code in commonCountryCodes) {
+  //       if (normalized.startsWith(code) && normalized.length > code.length) {
+  //         variations.add(normalized.substring(code.length));
+  //       } else if (!normalized.startsWith(code)) {
+  //         variations.add('$code$normalized');
+  //       }
+  //     }
+  //   }
+    
+  //   return variations;
+  // }
+
+
+
 }

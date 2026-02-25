@@ -688,7 +688,7 @@ Future<List<DateTime>> _getExistingScheduledNudges(String userId) async {
           .delete();
       
       // Cancel the notification
-      await _notificationService.cancelNotification(nudgeId.hashCode);
+      // await _notificationService.cancelNotification(nudgeId.hashCode);
     } catch (e) {
       print('Error canceling nudge: $e');
       rethrow;

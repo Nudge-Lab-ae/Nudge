@@ -3,6 +3,8 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:nudge/models/social_group.dart';
+import 'package:nudge/services/api_service.dart';
 import 'package:nudge/test/mock_data_generator.dart';
 import 'package:nudge/widgets/social_universe_guide.dart';
 import 'package:nudge/providers/theme_provider.dart';
@@ -13,7 +15,7 @@ import '../models/contact.dart';
 
 class SocialUniverseWidget extends StatefulWidget {
   final List<Contact> contacts;
-  final Function(Contact) onContactView;
+  final Function(Contact, String) onContactView;
   final double height;
   final bool isImmersive;
   final bool showTitle;
@@ -58,6 +60,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
   bool _useMockData = false;
   List<Contact> _mockContacts = [];
   late List<Contact> _displayContacts;
+  // String? _selectedContactRing;
 
   // Star texture caching only
   final Map<String, ui.Image> _starImages = {};
@@ -66,11 +69,33 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
   ui.Image? _lightBackgroundImage;
   ui.Image? _lightImmersiveBackgroundImage;
   bool _isBackgroundCachingComplete = false;
+  List<SocialGroup> _socialGroups = [];
+  // bool _groupsLoaded = false;
+
 
   // bool _isExpandedForContact = false;
   // double get _currentHeight => _isExpandedForContact ? widget.height + 80 : widget.height;
   // late Size _universeSize;
   
+
+  Future<void> _loadSocialGroups() async {
+  try {
+    final apiService = ApiService();
+    final groups = await apiService.getGroupsStream().first;
+    if (mounted) {
+      setState(() {
+        _socialGroups = groups;
+        // _groupsLoaded = true;
+        // Clear positions to recalculate with new group data
+        _starPositions.clear();
+        _starSizes.clear();
+      });
+    }
+  } catch (e) {
+    print('Error loading social groups: $e');
+  }
+}
+
 
   @override
   void initState() {
@@ -110,6 +135,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
     _startStarCaching(widget.isDarkMode!);
     _cacheBackgroundImages();
     _showControls = false;
+    _loadSocialGroups();
   }
 
   @override
@@ -158,28 +184,24 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
   }
 
   Future<void> _startStarCaching(bool isDarkMode) async {
-    
     _isCachingComplete = false;
-    
     _disposeCachedImages();
     
     Future.microtask(() async {
       try {
-        // Cache star types with proper glow from second version
+        // Cache star types with proper ring names (no _vip suffix in base keys)
         await _cacheStarTypeWithGlow('inner', Colors.yellow, isDarkMode);
         await _cacheStarTypeWithGlow('inner_vip', Colors.yellow, isDarkMode);
         await _cacheStarTypeWithGlow('middle', const Color(0xff3CB3E9), isDarkMode);
         await _cacheStarTypeWithGlow('middle_vip', const Color(0xff3CB3E9), isDarkMode);
         await _cacheStarTypeWithGlow('outer', const Color(0xff897ED6), isDarkMode);
         await _cacheStarTypeWithGlow('outer_vip', const Color(0xff897ED6), isDarkMode);
-        // await _cacheStarTypeWithGlow('vip', const Color(0xFFFFD700), isDarkMode);
         
         setState(() {
           _isCachingComplete = true;
         });
       } catch (e) {
         print('Error caching star shapes: $e');
-        // Fallback to original rendering
       }
     });
   }
@@ -411,15 +433,27 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                     return CustomPaint(
                       painter: UniversePainter(
                         contacts: _displayContacts,
+                        socialGroups: Map.fromIterable(
+                          _socialGroups,
+                          key: (group) => (group as SocialGroup).name,
+                          value: (group) => group as SocialGroup,
+                        ),
                         selectedContact: _selectedContact,
+                        groupsList: _socialGroups,
                         isImmersive: false,
                         immersionLevel: 1.0,
                         rotation: _rotationAnimation.value,
                         selectedStarSpin: _selectedStarSpinAnimation.value,
-                        onStarDrawn: (contactId, position, starSize) {
+                        onStarDrawn: (contactId, position, starSize, ring) {
                           if (mounted) {
                             _starPositions[contactId] = position;
                             _starSizes[contactId] = starSize;
+
+                             // Find and update the contact in _displayContacts
+                            final contactIndex = _displayContacts.indexWhere((c) => c.id == contactId);
+                            if (contactIndex != -1) {
+                              _displayContacts[contactIndex].computedRing = ring;
+                            }
                           }
                         },
                         isDarkMode: isDarkMode,
@@ -737,16 +771,28 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                       child: CustomPaint(
                       painter: UniversePainter(
                         contacts: _displayContacts,
+                        socialGroups: Map.fromIterable(
+                          _socialGroups,
+                          key: (group) => (group as SocialGroup).name,
+                          value: (group) => group as SocialGroup,
+                        ),
                         selectedContact: _selectedContact,
+                        groupsList: _socialGroups,
                         isImmersive: true,
                         immersionLevel: _immersionLevel,
                         rotation: _rotationAnimation.value,
                         selectedStarSpin: _selectedStarSpinAnimation.value,
-                        onStarDrawn: (contactId, position, starSize) {
+                        onStarDrawn: (contactId, position, starSize, ring) {
                           if (mounted) {
                             _starPositions[contactId] = position;
                             _starSizes[contactId] = starSize;
                           }
+
+                           // Find and update the contact in _displayContacts
+                            final contactIndex = _displayContacts.indexWhere((c) => c.id == contactId);
+                            if (contactIndex != -1) {
+                              _displayContacts[contactIndex].computedRing = ring;
+                            }
                         },
                         isDarkMode: isDarkMode,
                         isCachingComplete: _isCachingComplete,
@@ -868,6 +914,9 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                               onTap: () {
                                 _showSocialUniverseGuide(themeProvider);
                               },
+                              // onLongPress: (){
+                              //    Navigator.pushNamed(context, '/settings');
+                              // },
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 12,
@@ -896,164 +945,10 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
             ),
           ),
           
-          // if (_showControls && _selectedContact == null)
-          //   // Visual Intensity Control - Collapsed by default
-          //   Positioned(
-          //     bottom: 70,
-          //     right: 20,
-          //     child: AnimatedContainer(
-          //       duration: const Duration(milliseconds: 300),
-          //       width: _showControls ? MediaQuery.of(context).size.width * 0.85 : 48,
-          //       padding:  EdgeInsets.all(_showControls ? 16 : 12),
-          //       decoration: BoxDecoration(
-          //         color: isDarkMode ? Colors.black.withOpacity(0.05) : Colors.grey.withOpacity(0.45),
-          //         borderRadius: BorderRadius.circular(_showControls ? 16 : 24),
-          //         border: Border.all(color: isDarkMode ? Colors.white24 : Colors.blue.shade100),
-          //         boxShadow: [
-          //           BoxShadow(
-          //             color: Colors.black.withOpacity(isDarkMode ? 0.5 : 0.1),
-          //             blurRadius: 20,
-          //             spreadRadius: 2,
-          //           ),
-          //         ],
-          //       ),
-          //       child: _showControls && _selectedContact == null
-          //           ? Column(
-          //               crossAxisAlignment: CrossAxisAlignment.start,
-          //               children: [
-          //                 Row(
-          //                   children: [
-          //                     Icon(
-          //                       Icons.tune,
-          //                       size: 18,
-          //                       color: isDarkMode ? AppTheme.darkUniverseSecondary : const ui.Color.fromARGB(255, 223, 228, 232),
-          //                     ),
-          //                     const SizedBox(width: 8),
-          //                     Text(
-          //                       'Visual Intensity',
-          //                       style: TextStyle(
-          //                         color: isDarkMode ? Colors.white : Colors.white,
-          //                         fontSize: 16,
-          //                         fontWeight: FontWeight.w600,
-          //                       ),
-          //                     ),
-          //                     const Spacer(),
-          //                     // GestureDetector(
-          //                     //   onTap: (){
-          //                     //     setState(() {
-          //                     //       _showControls = false;
-          //                     //     });
-          //                     //   },
-          //                     //   child: Icon(
-          //                     //     Icons.visibility_off,
-          //                     //     size: 18,
-          //                     //     color: isDarkMode ? Colors.white70 : Colors.white70,
-          //                     //   ),
-          //                     // )
-          //                   ],
-          //                 ),
-          //                 const SizedBox(height: 12),
-          //                 Row(
-          //                   children: [
-          //                     GestureDetector(
-          //                       onTap: (){
-          //                         if (_sliderValue > 0.55){
-          //                           setState(() {
-          //                             _sliderValue -= 0.1;
-          //                             _immersionLevel -= 0.1;
-          //                           });
-          //                           print('decreased ${_sliderValue}');
-          //                         }
-          //                       },
-          //                       child: Icon(
-          //                       Icons.remove,
-          //                       color: isDarkMode ? Colors.white70 : Colors.white70,
-          //                       size: 22,
-          //                     ),
-          //                     ),
-          //                     const SizedBox(width: 12),
-          //                     Expanded(
-          //                       child: Slider(
-          //                         value: _sliderValue,
-          //                         min: 0.5,
-          //                         max: 1.0,
-          //                         divisions: 5,
-          //                         activeColor: isDarkMode ? AppTheme.darkUniverseSecondary : const ui.Color.fromARGB(255, 192, 203, 214),
-          //                         inactiveColor: isDarkMode ? Colors.white24 : Colors.white24,
-          //                         onChanged: (value) {
-          //                           setState(() {
-          //                             _sliderValue = value;
-          //                             _immersionLevel = value;
-          //                           });
-          //                         },
-          //                       ),
-          //                     ),
-          //                     const SizedBox(width: 12),
-          //                     GestureDetector(
-          //                       onTap: (){
-          //                         if (_sliderValue <0.98){
-          //                           setState(() {
-          //                               _sliderValue += 0.1;
-          //                               _immersionLevel += 0.1;
-          //                           });
-          //                           print('added');
-          //                         }
-          //                       },
-          //                       child: Icon(
-          //                       Icons.add,
-          //                       color: isDarkMode ? Colors.white70 : Colors.white70,
-          //                       size: 22,
-          //                     )),
-          //                     const SizedBox(width: 16),
-          //                     Container(
-          //                       padding: const EdgeInsets.symmetric(
-          //                         horizontal: 16,
-          //                         vertical: 8,
-          //                       ),
-          //                       decoration: BoxDecoration(
-          //                         color: (isDarkMode ? AppTheme.darkUniverseSecondary : const ui.Color.fromARGB(255, 101, 160, 220)).withOpacity(0.2),
-          //                         borderRadius: BorderRadius.circular(12),
-          //                       ),
-          //                       child: Text(
-          //                         '${(_sliderValue * 100).toInt()}%',
-          //                         style: TextStyle(
-          //                           color: isDarkMode ? AppTheme.darkUniverseSecondary : const ui.Color.fromARGB(255, 133, 173, 213),
-          //                           fontSize: 16,
-          //                           fontWeight: FontWeight.bold,
-          //                         ),
-          //                       ),
-          //                     ),
-          //                   ],
-          //                 ),
-          //                 const SizedBox(height: 8),
-          //                 Text(
-          //                   'Adjust the visual depth of your social connections',
-          //                   style: TextStyle(
-          //                     color: isDarkMode ? Colors.white54 : Colors.white54,
-          //                     fontSize: 12,
-          //                   ),
-          //                 ),
-          //               ],
-          //             )
-          //           : GestureDetector(
-          //               onTap: () {
-          //                 setState(() {
-          //                   _showControls = true;
-          //                 });
-          //               },
-          //               child: Icon(
-          //                 Icons.tune,
-          //                 size: 24,
-          //                 color: isDarkMode ? AppTheme.darkUniverseSecondary : const ui.Color.fromARGB(255, 192, 203, 214),
-          //               ),
-          //             ),
-          //     ),
-          //   ),
-          
           // Visual Intensity Control - Collapsed by default
             if (!_showControls)
               Positioned(
-                bottom: 150,
+                bottom: 190,
                 right: 20,
                 child: GestureDetector(
                   onTap: () {
@@ -1235,16 +1130,6 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                 constraints: BoxConstraints(
                   maxHeight: MediaQuery.of(context).size.height * 0.35,
                 ),
-                decoration: BoxDecoration(
-                  // gradient: LinearGradient(
-                  //   begin: Alignment.topCenter,
-                  //   end: Alignment.bottomCenter,
-                  //   colors: [
-                  //     Colors.transparent,
-                  //     isDarkMode ? Colors.black.withOpacity(0.95) : Colors.white.withOpacity(0.95),
-                  //   ],
-                  // ),
-                ),
                 child: SingleChildScrollView(
                   child: Padding(
                     padding: const EdgeInsets.all(20),
@@ -1258,161 +1143,6 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
       ),
     );
   }
-
-  // void _showIntensityDialog(BuildContext context, ThemeProvider themeProvider) {
-  //   final isDarkMode = themeProvider.isDarkMode;
-  //   double tempSliderValue = _sliderValue;
-    
-  //   showDialog(
-  //     context: context,
-  //     builder: (context) {
-  //       return StatefulBuilder(
-  //         builder: (context, setState) {
-  //           return Dialog(
-  //             backgroundColor: isDarkMode ? Colors.black.withOpacity(0.9) : Colors.white.withOpacity(0.95),
-  //             shape: RoundedRectangleBorder(
-  //               borderRadius: BorderRadius.circular(16),
-  //               side: BorderSide(color: isDarkMode ? Colors.white24 : Colors.blue.shade100),
-  //             ),
-  //             child: Padding(
-  //               padding: const EdgeInsets.all(24),
-  //               child: Column(
-  //                 mainAxisSize: MainAxisSize.min,
-  //                 crossAxisAlignment: CrossAxisAlignment.start,
-  //                 children: [
-  //                   Text(
-  //                     'Visual Intensity',
-  //                     style: TextStyle(
-  //                       color: isDarkMode ? Colors.white : Colors.blue.shade900,
-  //                       fontSize: 20,
-  //                       fontWeight: FontWeight.bold,
-  //                     ),
-  //                   ),
-  //                   const SizedBox(height: 16),
-  //                   Text(
-  //                     'Adjust the visual depth of your social universe',
-  //                     style: TextStyle(
-  //                       color: isDarkMode ? Colors.white70 : Colors.blueGrey.shade600,
-  //                       fontSize: 14,
-  //                     ),
-  //                   ),
-  //                   const SizedBox(height: 24),
-  //                   Row(
-  //                     children: [
-  //                       GestureDetector(
-  //                         onTap: (){
-  //                           if (tempSliderValue > 0.55){
-  //                             setState(() {
-  //                                tempSliderValue -= 0.1;
-  //                                //  _immersionLevel -= 0.1;
-  //                             });
-  //                             print('decreased ${_sliderValue}');
-  //                           }
-  //                         },
-  //                         child: Icon(
-  //                         Icons.remove,
-  //                         color: isDarkMode ? Colors.white70 : Colors.blue.shade600,
-  //                         size: 22,
-  //                       ),
-  //                       ),
-  //                       const SizedBox(width: 16),
-  //                       Expanded(
-  //                         child: Slider(
-  //                           value: tempSliderValue,
-  //                           min: 0.5,
-  //                           max: 1.0,
-  //                           divisions: 5,
-  //                           activeColor: isDarkMode ? AppTheme.darkUniverseSecondary : AppTheme.lightUniversePrimary,
-  //                           inactiveColor: isDarkMode ? Colors.white24 : Colors.blue.shade100,
-  //                           onChanged: (value) {
-  //                             setState(() {
-  //                               tempSliderValue = value;
-  //                             });
-  //                           },
-  //                         ),
-  //                       ),
-  //                       const SizedBox(width: 16),
-  //                       GestureDetector(
-  //                         onTap: (){
-  //                           if (tempSliderValue <0.98){
-  //                             setState(() {
-  //                                 tempSliderValue += 0.1;
-  //                                 // _immersionLevel += 0.1;
-  //                             });
-  //                             print('added');
-  //                           }
-  //                         },
-  //                         child: Icon(
-  //                         Icons.add,
-  //                         color: isDarkMode ? Colors.white70 : Colors.blue.shade600,
-  //                         size: 22,
-  //                       )),
-  //                     ],
-  //                   ),
-  //                   const SizedBox(height: 16),
-  //                   Center(
-  //                     child: Container(
-  //                       padding: const EdgeInsets.symmetric(
-  //                         horizontal: 24,
-  //                         vertical: 12,
-  //                       ),
-  //                       decoration: BoxDecoration(
-  //                         color: (isDarkMode ? AppTheme.darkUniverseSecondary : AppTheme.lightUniversePrimary).withOpacity(0.2),
-  //                         borderRadius: BorderRadius.circular(12),
-  //                       ),
-  //                       child: Text(
-  //                         'Current: ${(tempSliderValue * 100).toInt()}%',
-  //                         style: TextStyle(
-  //                           color: isDarkMode ? AppTheme.darkUniverseSecondary : AppTheme.lightUniversePrimary,
-  //                           fontSize: 16,
-  //                           fontWeight: FontWeight.bold,
-  //                         ),
-  //                       ),
-  //                     ),
-  //                   ),
-  //                   const SizedBox(height: 24),
-  //                   Row(
-  //                     mainAxisAlignment: MainAxisAlignment.end,
-  //                     children: [
-  //                       TextButton(
-  //                         onPressed: () {
-  //                           Navigator.pop(context);
-  //                         },
-  //                         child: Text(
-  //                           'CANCEL',
-  //                           style: TextStyle(
-  //                             color: isDarkMode ? Colors.white70 : Colors.blueGrey.shade600,
-  //                           ),
-  //                         ),
-  //                       ),
-  //                       const SizedBox(width: 12),
-  //                       TextButton(
-  //                         onPressed: () {
-  //                           setState(() {
-  //                             _sliderValue = tempSliderValue;
-  //                             _immersionLevel = tempSliderValue;
-  //                           });
-  //                           Navigator.pop(context);
-  //                         },
-  //                         child: Text(
-  //                           'APPLY',
-  //                           style: TextStyle(
-  //                             color: isDarkMode ? AppTheme.darkUniverseSecondary : AppTheme.lightUniversePrimary,
-  //                             fontWeight: FontWeight.bold,
-  //                           ),
-  //                         ),
-  //                       ),
-  //                     ],
-  //                   ),
-  //                 ],
-  //               ),
-  //             ),
-  //           );
-  //         },
-  //       );
-  //     },
-  //   );
-  // }
 
   void _handleUniverseTap(Offset tapPosition, Size size) {
     String? tappedContactId;
@@ -1439,10 +1169,18 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
         orElse: () => _displayContacts.first,
       );
       
+      // Determine the ring for this contact using the same logic as UniversePainter
+      // final socialGroupsMap = Map.fromIterable(
+      //   _socialGroups,
+      //   key: (group) => (group as SocialGroup).name,
+      //   value: (group) => group as SocialGroup,
+      // );
+      
+      // String ring = _determineContactRing(contact, socialGroupsMap);
+      
       setState(() {
         _selectedContact = contact;
-        // _isExpandedForContact = true; // Expand the container
-        // Restart the spin animation when a new star is selected
+        // _selectedContactRing = ring; // Simple state variable
         _selectedStarSpinController
           ..stop()
           ..repeat();
@@ -1450,13 +1188,42 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
     } else {
       setState(() {
         _selectedContact = null;
-        // _isExpandedForContact = false; // Collapse the container
-        // Stop the spin animation when no star is selected
+        // _selectedContactRing = null;
         _selectedStarSpinController.stop();
       });
     }
   }
+
+  // Simple helper method
+  // String _determineContactRing(Contact contact, Map<String, SocialGroup> socialGroups) {
+  //   // VIP always inner
+  //   if (contact.isVIP) return 'inner';
     
+  //   // Try to find group by connectionType
+  //   SocialGroup? group = socialGroups[contact.connectionType];
+    
+  //   if (group != null) {
+  //     if (group.orderIndex <= 2) return 'inner';
+  //     if (group.orderIndex <= 5) return 'middle';
+  //     return 'outer';
+  //   }
+    
+  //   // Fallback to CDI if we have meaningful data
+  //   bool hasMeaningfulData = contact.interactionCountInWindow > 5 || 
+  //                           contact.cdi != 50.0 ||
+  //                           DateTime.now().difference(contact.lastContacted).inDays < 90;
+    
+  //   if (hasMeaningfulData) {
+  //     if (contact.cdi >= 70) return 'inner';
+  //     if (contact.cdi >= 40) return 'middle';
+  //   }
+    
+  //   // Final fallback to frequency/period
+  //   if (contact.frequency >= 4) return 'inner';
+  //   if (contact.frequency >= 2) return 'middle';
+  //   return 'outer';
+  // }
+      
 
   Widget _buildLegendItem(String label, Color color, IconData icon, bool isDarkMode) {
     return Column(
@@ -1737,6 +1504,9 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
   }
 
   Widget _buildCompactContactCard(Contact contact, bool isDarkMode, ThemeProvider themeProvider) {
+    final ringToUse = contact.computedRing;
+    final ringColor = _getRingColor(ringToUse);
+
     var size = MediaQuery.of(context).size;
     if (!_useMockData && contact.id.startsWith('mock_')) {
       return Container(
@@ -1906,7 +1676,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                     if (_useMockData && contact.id.startsWith('mock_')) {
                       _showMockContactDetails(contact, themeProvider);
                     } else {
-                      widget.onContactView(contact);
+                      widget.onContactView(contact, ringToUse);
                     }
                   },
                   child: Container(
@@ -1940,7 +1710,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
 
     final daysAgo = DateTime.now().difference(contact.lastContacted).inDays;
     final lastContactText = _getTimeAgoText(daysAgo);
-    final ringColor = _getRingColor(contact.computedRing);
+    // final ringColor = _getRingColor(contact.computedRing);
     
     return Container(
       padding: const EdgeInsets.all(12),
@@ -2044,7 +1814,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
           
           GestureDetector(
             onTap: () {
-              widget.onContactView(contact);
+              widget.onContactView(contact, ringToUse);
             },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -2083,7 +1853,11 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
   Widget _buildImmersiveContactCard(Contact contact, bool isDarkMode, ThemeProvider themeProvider) {
     final daysAgo = DateTime.now().difference(contact.lastContacted).inDays;
     final lastContactText = _getTimeAgoText(daysAgo);
-    final ringColor = _getRingColor(contact.computedRing);
+    // final ringColor = _getRingColor(contact.computedRing);
+
+    final ringToUse =contact.computedRing;
+    print(ringToUse); print(' is the ring to use');
+    final ringColor = _getRingColor(ringToUse);
     
     return Container(
       padding: const EdgeInsets.all(20),
@@ -2308,7 +2082,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                     if (!_useMockData && contact.id.startsWith('mock_')) {
                       _showMockContactDetails(contact, themeProvider);
                     } else {
-                      widget.onContactView(contact);
+                      widget.onContactView(contact, ringToUse);
                     }
                   },
                   child: Container(
@@ -2438,7 +2212,7 @@ class UniversePainter extends CustomPainter {
   final double immersionLevel;
   final double rotation;
   final double selectedStarSpin;
-  final Function(String contactId, Offset position, double size)? onStarDrawn;
+  final Function(String contactId, Offset position, double size, String ring)? onStarDrawn;
   final bool isDarkMode;
   final bool isCachingComplete;
   final Map<String, ui.Image> starImages;
@@ -2446,6 +2220,8 @@ class UniversePainter extends CustomPainter {
   final ui.Image? lightBackgroundImage;
   final ui.Image? lightImmersiveBackgroundImage;
   final bool isBackgroundCachingComplete;
+  final Map<String, SocialGroup> socialGroups;
+  final List<SocialGroup>? groupsList;
   
   // Performance optimization: Use pre-allocated Paint objects
   final Paint _backgroundPaint = Paint();
@@ -2481,6 +2257,8 @@ class UniversePainter extends CustomPainter {
     required this.starImages,
     required this.vipStarImages,
     this.lightBackgroundImage,
+    this.groupsList,
+    required this.socialGroups, 
     this.lightImmersiveBackgroundImage,
     required this.isBackgroundCachingComplete,
   }) {
@@ -2555,165 +2333,62 @@ class UniversePainter extends CustomPainter {
       final starInfo = _drawStar(canvas, center, contact, maxRadius, size, isDarkMode);
       
       if (onStarDrawn != null && starInfo != null) {
-        onStarDrawn!(contact.id, starInfo.position, starInfo.size);
+        onStarDrawn!(contact.id, starInfo.position, starInfo.size, starInfo.ring);
       }
     }
   }
 
-  // void _drawVIPRays(Canvas canvas, Offset center, double size, Color color, double rotation, double immersionLevel) {
-  //   final rayCount = 5;
-  //   final innerRadius = size * 0.4; // Rays start from inner part of star
-  //   final outerRadius = size * 2.2; // Rays extend beyond the star
-  //   // final rayWidth = size * 0.08; // Thin single lines
-    
-  //   for (int i = 0; i < rayCount; i++) {
-  //     final angle = rotation + (i * 2 * pi / rayCount);
-  //     final startX = center.dx + innerRadius * cos(angle);
-  //     final startY = center.dy + innerRadius * sin(angle);
-  //     final endX = center.dx + outerRadius * cos(angle);
-  //     final endY = center.dy + outerRadius * sin(angle);
-      
-  //     // Single clean ray line
-  //     final rayPaint = Paint()
-  //       ..color = color
-  //       ..style = PaintingStyle.stroke
-  //       ..strokeWidth = 5
-  //       ..strokeCap = StrokeCap.round;
-      
-  //     canvas.drawLine(
-  //       Offset(startX, startY),
-  //       Offset(endX, endY),
-  //       rayPaint,
-  //     );
-  //   }
-  // }   
-    
   StarInfo? _drawStar(Canvas canvas, Offset center, Contact contact, double maxRadius, Size size, bool isDarkMode) {
-      final isSelected = selectedContact?.id == contact.id;
-      final isVIP = contact.isVIP;
-      
-      // Calculate or get cached position
-      final positionCache = _getPositionCache(contact, maxRadius);
-      final spreadRadius = positionCache.spreadRadius;
-      final angle = positionCache.contactAngleRad + rotation;
-      
-      final x = center.dx + spreadRadius * cos(angle);
-      final y = center.dy + spreadRadius * sin(angle);
-      final position = Offset(x, y);
-      
-      // Calculate visual size - EXACT SAME CALCULATION AS ORIGINAL
-      double baseSize = isImmersive ? 9.0 : 7.0;
-      
-      if (contact.computedRing == 'inner') {
-        baseSize *= 1.2;
-      } else {
-        baseSize *= 0.8;
-      }
+    final isSelected = selectedContact?.id == contact.id;
+    final isVIP = contact.isVIP;
+    
+    // Get cached position which now includes the determined ring
+    final positionCache = _getPositionCache(contact, maxRadius);
+    final spreadRadius = positionCache.spreadRadius;
+    final angle = positionCache.contactAngleRad + rotation;
+    final determinedRing = positionCache.determinedRing; // Use this for color
+    
+    final x = center.dx + spreadRadius * cos(angle);
+    final y = center.dy + spreadRadius * sin(angle);
+    final position = Offset(x, y);
+    
+    // Calculate visual size
+    double baseSize = isImmersive ? 9.0 : 7.0;
+    
+    if (determinedRing == 'inner') {
+      baseSize *= 1;
+    } else {
+      baseSize *= 0.8;
+    }
 
-      if (isVIP) baseSize *= 1.4;
-      if (isSelected) baseSize *= 2.2;
+    if (isVIP) baseSize *= 1.1;
+    if (isSelected) baseSize *= 2.2;
 
-      final visualSize = baseSize * (1 + 0.5 * immersionLevel);
+    final visualSize = baseSize * (1 + 0.5 * immersionLevel);
+    
+    // Get color based on determinedRing, NOT contact.computedRing
+    Color color;
+    switch (determinedRing) {
+      case 'inner':
+        color = Colors.yellow;
+        break;
+      case 'middle':
+        color = const Color(0xff3CB3E9); // Blue
+        break;
+      case 'outer':
+        color = const Color(0xff897ED6); // Purple
+        break;
+      default:
+        color = Colors.grey;
+    }
+    
+    // Draw star using cached image if available
+    if (isCachingComplete) {
+      // Use determinedRing to get the correct cached image
+      final imageKey = isVIP ? '${determinedRing}_vip' : determinedRing;
+      final image = isVIP ? vipStarImages[imageKey] : starImages[imageKey];
       
-      // Get color
-      Color color;
-      switch (contact.computedRing) {
-        case 'inner':
-          color = Colors.yellow;
-          break;
-        case 'inner_vip':
-          color = Colors.yellow;
-          break;
-        case 'middle':
-          color = const Color(0xff3CB3E9);
-          break;
-        case 'middle_vip':
-          color = const Color(0xff3CB3E9);
-          break;
-        case 'outer':
-          color = const Color(0xff897ED6);
-          break;
-        case 'outer_vip':
-          color = const Color(0xff897ED6);
-          break;
-        default:
-          color = Colors.grey;
-      }
-      
-      if (isVIP) {
-        // Keep the star color as the ring color (not yellow)
-        // VIP stars will be distinguished by the ray lines we'll add
-        
-        // Add ray lines for VIP stars
-        // if (isCachingComplete) {
-        //   // If using cached images, we need to add rays when drawing the image
-        //   // This would require modifying the cached image generation
-        // } else {
-        //   // For non-cached drawing, add ray lines
-        //   _drawVIPRays(canvas, center, visualSize, color, selectedStarSpin, immersionLevel);
-        // }
-      }
-      
-      // Draw star using cached image if available
-      if (isCachingComplete) {
-        final image = isVIP ? vipStarImages[contact.computedRing] : starImages[contact.computedRing];
-        
-        if (image != null) {
-          // Draw cached star shape
-          final scale = visualSize / (image.width / 2);
-          
-          if (isSelected) {
-            // Add bright central glow for selected stars
-            _drawSelectedStarCentralGlow(canvas, position, visualSize, color);
-            
-            // Draw spinning elements around the star
-            _drawSpinningElements(canvas, position, visualSize, color);
-          }
-          
-          canvas.save();
-          if (isSelected) {
-            // Apply rotation to selected star
-            canvas.translate(position.dx, position.dy);
-            canvas.rotate(selectedStarSpin);
-            canvas.translate(-position.dx, -position.dy);
-          }
-          
-          canvas.translate(position.dx, position.dy);
-          canvas.scale(scale);
-          canvas.translate(-image.width / 2, -image.height / 2);
-          canvas.drawImage(image, Offset.zero, _imagePaint);
-          canvas.restore();
-          
-          // Draw selection glow for selected stars
-          if (isSelected) {
-            _drawSelectionGlow(canvas, position, visualSize, contact.computedRing);
-          }
-        } else {
-          // Fallback to original drawing
-          if (isSelected) {
-            _drawSelectedStarCentralGlow(canvas, position, visualSize, color);
-            _drawSpinningElements(canvas, position, visualSize, color);
-          }
-          
-          canvas.save();
-          if (isSelected) {
-            canvas.translate(position.dx, position.dy);
-            canvas.rotate(selectedStarSpin);
-            canvas.translate(-position.dx, -position.dy);
-          }
-          
-          _drawStarCentralGlow(canvas, position, visualSize, color, immersionLevel, isDarkMode, isSelected);
-          _drawStarShape(canvas, position, visualSize, color, isSelected, isDarkMode, immersionLevel);
-          
-          if (isVIP /* && isSelected */) {
-            _drawVIPCrown(canvas, position, visualSize);
-            // _drawVIPRays(canvas, center, visualSize, color, rotation, immersionLevel);
-          }
-          
-          canvas.restore();
-        }
-      } else {
-        // Fallback to original drawing while caching
+      if (image != null) {
         if (isSelected) {
           _drawSelectedStarCentralGlow(canvas, position, visualSize, color);
           _drawSpinningElements(canvas, position, visualSize, color);
@@ -2726,18 +2401,51 @@ class UniversePainter extends CustomPainter {
           canvas.translate(-position.dx, -position.dy);
         }
         
-        _drawStarCentralGlow(canvas, position, visualSize, color, immersionLevel, isDarkMode, isSelected);
-        _drawStarShape(canvas, position, visualSize, color, isSelected, isDarkMode, immersionLevel);
-        
-        if (isVIP /* && isSelected */) {
-          _drawVIPCrown(canvas, position, visualSize);
-        }
-        
+        canvas.translate(position.dx, position.dy);
+        canvas.scale(visualSize / (image.width / 2));
+        canvas.translate(-image.width / 2, -image.height / 2);
+        canvas.drawImage(image, Offset.zero, _imagePaint);
         canvas.restore();
+        
+        if (isSelected) {
+          _drawSelectionGlow(canvas, position, visualSize, determinedRing);
+        }
+      } else {
+        // Fallback drawing
+        _drawStarFallback(canvas, position, visualSize, color, isSelected, isDarkMode, immersionLevel, isVIP);
       }
-      
-      return StarInfo(position: position, size: visualSize);
+    } else {
+      // Fallback drawing
+      _drawStarFallback(canvas, position, visualSize, color, isSelected, isDarkMode, immersionLevel, isVIP);
     }
+    
+    return StarInfo(position: position, size: visualSize, ring: determinedRing);
+  }
+
+  // Helper method for fallback drawing
+  void _drawStarFallback(Canvas canvas, Offset position, double size, Color color, 
+      bool isSelected, bool isDarkMode, double immersionLevel, bool isVIP) {
+    if (isSelected) {
+      _drawSelectedStarCentralGlow(canvas, position, size, color);
+      _drawSpinningElements(canvas, position, size, color);
+    }
+    
+    canvas.save();
+    if (isSelected) {
+      canvas.translate(position.dx, position.dy);
+      canvas.rotate(selectedStarSpin);
+      canvas.translate(-position.dx, -position.dy);
+    }
+    
+    _drawStarCentralGlow(canvas, position, size, color, immersionLevel, isDarkMode, isSelected);
+    _drawStarShape(canvas, position, size, color, isSelected, isDarkMode, immersionLevel);
+    
+    if (isVIP) {
+      _drawVIPCrown(canvas, position, size);
+    }
+    
+    canvas.restore();
+  }
     
   void _drawSelectedStarCentralGlow(Canvas canvas, Offset center, double size, Color color) {
     // Bright central circular glow for selected stars
@@ -2829,57 +2537,131 @@ class UniversePainter extends CustomPainter {
   }
     
   _StarPositionCache _getPositionCache(Contact contact, double maxRadius) {
-    if (_positionCache.containsKey(contact.id)) {
-      return _positionCache[contact.id]!;
-    }
-    
-    final hash = _stringToHash(contact.id);
-    final spreadOffset = (hash.abs() % 35) / 100.0;
-    final contactAngleDeg = contact.angleDeg != 0 ? contact.angleDeg : (hash % 360).toDouble();
-    final contactAngleRad = contactAngleDeg * (pi / 180);
-    
-    double innerRadius, outerRadius;
-    switch (contact.computedRing) {
-      case 'inner':
-        innerRadius = maxRadius * _innerInnerRadius;
-        outerRadius = maxRadius * _innerOuterRadius;
-        break;
-      case 'middle':
-        innerRadius = maxRadius * _middleInnerRadius;
-        outerRadius = maxRadius * _middleOuterRadius;
-        break;
-      case 'outer':
-        innerRadius = maxRadius * _outerInnerRadius;
-        outerRadius = maxRadius * _outerOuterRadius;
-        break;
-      case 'inner_vip':
-        innerRadius = maxRadius * _innerInnerRadius;
-        outerRadius = maxRadius * _innerOuterRadius;
-        break;
-      case 'middle_vip':
-        innerRadius = maxRadius * _middleInnerRadius;
-        outerRadius = maxRadius * _middleOuterRadius;
-        break;
-      case 'outer_vip':
-        innerRadius = maxRadius * _outerInnerRadius;
-        outerRadius = maxRadius * _outerOuterRadius;
-        break;
-      default:
-        innerRadius = maxRadius * _outerInnerRadius;
-        outerRadius = maxRadius * _outerOuterRadius;
-    }
-    
+  if (_positionCache.containsKey(contact.id)) {
+    return _positionCache[contact.id]!;
+  }
+  
+  final hash = _stringToHash(contact.id);
+  final spreadOffset = (hash.abs() % 35) / 100.0;
+  final contactAngleDeg = contact.angleDeg != 0 ? contact.angleDeg : (hash % 360).toDouble();
+  final contactAngleRad = contactAngleDeg * (pi / 180);
+  
+  // STEP 1: VIP always inner circle
+  if (contact.isVIP) {
+    final innerRadius = maxRadius * _innerInnerRadius;
+    final outerRadius = maxRadius * _innerOuterRadius;
     final ringWidth = outerRadius - innerRadius;
-    final spreadRadius = innerRadius + (ringWidth * (0.2 + spreadOffset * 0.6));
+    // Ensure star stays within bounds - use 80% of ring width max
+    final spreadRadius = innerRadius + (ringWidth * (0.1 + spreadOffset * 0.7));
     
     final cache = _StarPositionCache(
       spreadRadius: spreadRadius,
       contactAngleRad: contactAngleRad,
+      determinedRing: 'inner', // Store the ring for color consistency
     );
-    
     _positionCache[contact.id] = cache;
     return cache;
   }
+  
+  // STEP 2: Find the contact's group by connectionType
+  SocialGroup? contactGroup;
+  for (final group in socialGroups.values) {
+    if (group.name == contact.connectionType) {
+      contactGroup = group;
+      break;
+    }
+  }
+  
+  // STEP 3: Determine group-based ring using orderIndex (smaller = higher priority)
+  String groupBasedRing = 'outer'; // default
+  int groupLength = groupsList!.length;
+  if (contactGroup != null) {
+    if (contactGroup.orderIndex <= (groupLength/3).toInt()) {
+      groupBasedRing = 'inner';
+    } else if (contactGroup.orderIndex <= (groupLength/1.5).toInt()) {
+      groupBasedRing = 'middle';
+    } else {
+      groupBasedRing = 'outer';
+    }
+  } else {
+    // Fallback if group not found
+    if (contact.frequency >= 4) groupBasedRing = 'inner';
+    else if (contact.frequency >= 2) groupBasedRing = 'middle';
+    else groupBasedRing = 'outer';
+  }
+  
+  // STEP 4: Calculate interaction-based ring
+  String interactionBasedRing = 'outer';
+  if (contact.cdi >= 70) interactionBasedRing = 'inner';
+  else if (contact.cdi >= 40) interactionBasedRing = 'middle';
+  else interactionBasedRing = 'outer';
+  
+  // STEP 5: Determine if we have meaningful interaction data
+  bool hasMeaningfulInteractions = contact.interactionCountInWindow > 5 || 
+                                   contact.cdi != 50.0 
+                                   //  || DateTime.now().difference(contact.lastContacted).inDays < 90
+                                   ;
+                                   
+                                  
+  
+  // STEP 6: Calculate final ring with weighting
+  String finalRing;
+  if (!hasMeaningfulInteractions) {
+    // No meaningful data yet - use group priority
+    finalRing = groupBasedRing;
+  } else {
+    // Have some data - weight based on interaction count (max 70% interaction)
+    double interactionWeight = (contact.interactionCountInWindow / 20).clamp(0.2, 0.7);
+    double groupWeight = 1.0 - interactionWeight;
+    
+    // Convert rings to numbers for weighted average
+    int groupVal = groupBasedRing == 'inner' ? 3 : groupBasedRing == 'middle' ? 2 : 1;
+    int interactionVal = interactionBasedRing == 'inner' ? 3 : interactionBasedRing == 'middle' ? 2 : 1;
+    
+    double weightedAvg = (groupVal * groupWeight) + (interactionVal * interactionWeight);
+    int roundedVal = weightedAvg.round().clamp(1, 3);
+    
+    finalRing = roundedVal == 3 ? 'inner' : roundedVal == 2 ? 'middle' : 'outer';
+  }
+  
+  // STEP 7: Calculate position based on final ring with strict boundaries
+  double innerRadius, outerRadius;
+  switch (finalRing) {
+    case 'inner':
+      innerRadius = maxRadius * _innerInnerRadius;
+      outerRadius = maxRadius * _innerOuterRadius;
+      break;
+    case 'middle':
+      innerRadius = maxRadius * _middleInnerRadius;
+      outerRadius = maxRadius * _middleOuterRadius;
+      break;
+    default: // outer
+      innerRadius = maxRadius * _outerInnerRadius;
+      outerRadius = maxRadius * _outerOuterRadius;
+  }
+  
+  // Ensure stars stay within ring boundaries with some padding
+  // Use only 70% of the ring width to keep stars away from edges
+  final ringWidth = outerRadius - innerRadius;
+  final usableWidth = ringWidth * 0.5;
+  final startOffset = innerRadius + (ringWidth * 0.15); // Start 15% into the ring
+  
+  // Use hash for deterministic but varied positioning
+  final randomFactor = (hash.abs() % 100) / 100.0;
+  final spreadRadius = startOffset + (usableWidth * randomFactor);
+  
+  // Final safety clamp to ensure we never exceed boundaries
+  final clampedRadius = spreadRadius.clamp(innerRadius * 1.05, outerRadius * 0.95);
+  
+  final cache = _StarPositionCache(
+    spreadRadius: clampedRadius,
+    contactAngleRad: contactAngleRad,
+    determinedRing: finalRing, // Store the ring for color consistency
+  );
+  
+  _positionCache[contact.id] = cache;
+  return cache;
+}
 
   // =========== ORIGINAL DRAWING METHODS ===========
   
@@ -3446,19 +3228,23 @@ class UniversePainter extends CustomPainter {
 class _StarPositionCache {
   final double spreadRadius;
   final double contactAngleRad;
+  final String determinedRing; // Add this to store which ring the star belongs to
   
   _StarPositionCache({
     required this.spreadRadius,
     required this.contactAngleRad,
+    required this.determinedRing, // Make it required
   });
 }
 
 class StarInfo {
   final Offset position;
   final double size;
+  final String ring;
   
   StarInfo({
     required this.position,
     required this.size,
+    required this.ring,
   });
 }

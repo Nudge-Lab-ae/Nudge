@@ -6,6 +6,7 @@ import 'package:nudge/helpers/deletion_retry_helper.dart';
 import 'package:nudge/models/analytics.dart';
 import 'package:nudge/models/nudge.dart';
 import 'package:nudge/models/social_group.dart';
+import 'package:nudge/providers/feedback_provider.dart';
 import 'package:nudge/providers/theme_provider.dart';
 import 'package:nudge/screens/contacts/contact_detail_screen.dart';
 import 'package:nudge/screens/contacts/contacts_list_screen.dart';
@@ -38,7 +39,7 @@ import '../../models/contact.dart';
 class DashboardScreen extends StatefulWidget {
   final int initialTab;
   
-  const DashboardScreen({super.key, this.initialTab = 0});
+  const DashboardScreen({super.key, this.initialTab = 1});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -46,7 +47,7 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   final NudgeService nudgeService = NudgeService();
-  int _currentIndex = 0;
+  int _currentIndex = 1;
   bool vipFilter = false;
   bool attentionFilter = false;
   List<Contact> totalContacts = [];
@@ -206,16 +207,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       return _buildDashboardWithSliver(themeProvider, contacts, groups, apiService);
                     case 1: // Social Universe is now at index 1
                       return const SocialUniverseImmersiveScreen();
-                    case 2: // Contacts moved to index 2
+                    case 2: // Notifications moved to index 4
+                      return const NotificationsScreen(showAppBar: false);
+                      case 3: // Groups moved to index 3
+                      return const GroupsListScreen(showAppBar: false);
+                    case 4: // Contacts moved to index 2
                       return ContactsListScreen(
                         showAppBar: false,
                         filter: vipFilter ? 'vip' : attentionFilter ? 'needs_attention' : '',
                         hideButton: hideButton,
                       );
-                    case 3: // Groups moved to index 3
-                      return const GroupsListScreen(showAppBar: false);
-                    case 4: // Notifications moved to index 4
-                      return const NotificationsScreen(showAppBar: false);
                     default:
                       return _buildDashboardWithSliver(themeProvider, contacts, groups, apiService);
                   }
@@ -223,7 +224,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
           ),
-          
           // Floating Navigation Bar
           Positioned(
             bottom: 20,
@@ -231,25 +231,65 @@ class _DashboardScreenState extends State<DashboardScreen> {
             right: 16,
             child: _buildFloatingNavigationBar(context, themeProvider),
           ),
-          _currentIndex==0 || _currentIndex==1
-          ? Positioned(
-          bottom: 90,
-          right: 20,
-          child: FeedbackFloatingButton(
-            currentSection: getCurrentSection(),
-            extraActions: _currentIndex == 1
-            ?[
-              FeedbackAction(
-                label: 'Log Interaction',
-                icon: Icons.add,
-                onPressed: () {
-                  _showAddTouchpointModal(context, themeProvider);
-                },
-              ),
-            ] 
-            : []
+          
+          Consumer<FeedbackProvider>(
+            builder: (context, feedbackProvider, child) {
+              return feedbackProvider.isFabMenuOpen
+                  ? Container(
+                      color: Colors.black.withOpacity(0.55),
+                      width: MediaQuery.of(context).size.width,
+                      height: MediaQuery.of(context).size.height,
+                    )
+                  : const SizedBox.shrink();
+            },
           ),
-        ):Center(),
+          
+          Consumer<FeedbackProvider>(
+            builder: (context, feedbackProvider, child) {
+              return Positioned(
+                bottom: 70,
+                right: 20,
+                child: FeedbackFloatingButton(
+                  currentSection: getCurrentSection(),
+                  fromDashboard: true,
+                  extraActions: [
+                    FeedbackAction(
+                      label: 'Add Contact',
+                      icon: Icons.person_add,
+                      onPressed: () {
+                        _showAddContactOptions(context, themeProvider);
+                      },
+                    ),
+                    FeedbackAction(
+                      label: 'Log Interaction',
+                      icon: Icons.add,
+                      onPressed: () {
+                        _showAddTouchpointModal(context, themeProvider);
+                      },
+                    ),
+                    FeedbackAction(
+                      label: 'Add Group',
+                      icon: Icons.group,
+                      onPressed: () {
+                       setState(() {
+                         _currentIndex = 3;
+                       });
+                      },
+                    ),
+                    
+                    FeedbackAction(
+                      label: 'Go to Settings',
+                      icon: Icons.settings,
+                      onPressed: () {
+                       Navigator.pushNamed(context, '/settings');
+                      },
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          
         ],
       ),
     );
@@ -332,8 +372,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       margin: const EdgeInsets.only(top: 4, left: 4),
                       child: SocialUniverseWidget(
                         contacts: contacts,
-                        onContactView: (contact) {
-                          _showContactQuickPanel(themeProvider, contact, apiService);
+                        onContactView: (contact, ringToUse) {
+                          _showContactQuickPanel(themeProvider, contact, ringToUse, apiService);
                         },
                         showTitle: true,
                         height: 550,
@@ -366,7 +406,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         child: Row(
                           children: [
                             Text(
-                              'CLOSE CIRCLE',
+                              'FAVOURITES',
                               style: TextStyle(
                                 fontFamily: 'OpenSans',
                                 fontSize: 15,
@@ -378,7 +418,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             TextButton(
                               onPressed: () {
                                 setState(() {
-                                  _currentIndex = 2;
+                                  _currentIndex = 4;
                                   attentionFilter = false;
                                   vipFilter = true;
                                 });
@@ -479,6 +519,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       });
     }
   }
+  
 
   void _showAddContactOptions(BuildContext context, ThemeProvider themeProvider) {
     // final themeProvider = Provider.of<ThemeProvider>(context);
@@ -567,80 +608,50 @@ class _DashboardScreenState extends State<DashboardScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           // Home
-          _buildNavItem(
-            index: 0,
-            icon: SvgPicture.asset(
-              'assets/navbar-icons/home-icon.svg',
-              width: 22,
-              height: 22,
-              colorFilter: ColorFilter.mode(
-                _currentIndex == 0 
-                  ? themeProvider.isDarkMode ? AppTheme.darkIconColor : AppTheme.primaryColor 
-                  : themeProvider.getTextHintColor(context),
-                BlendMode.srcIn,
-              ),
-            ),
-            themeProvider: themeProvider,
-          ),
+          // _buildNavItem(
+          //   index: 0,
+          //   icon: SvgPicture.asset(
+          //     'assets/navbar-icons/home-icon.svg',
+          //     width: 22,
+          //     height: 22,
+          //     colorFilter: ColorFilter.mode(
+          //       _currentIndex == 0 
+          //         ? themeProvider.isDarkMode ? AppTheme.darkIconColor : AppTheme.primaryColor 
+          //         : themeProvider.getTextHintColor(context),
+          //       BlendMode.srcIn,
+          //     ),
+          //   ),
+          //   themeProvider: themeProvider,
+          // ),
           
           // Social Universe
           _buildNavItem(
             index: 1,
-            icon: Icon(
-              Icons.star_border,
-              size: 25,
-              color: _currentIndex == 1 
-                ? (themeProvider.isDarkMode ? const Color.fromARGB(255, 32, 144, 196) : AppTheme.primaryColor)
-                : themeProvider.getTextHintColor(context),
-            ),
+            icon: SvgPicture.asset(
+                  'assets/navbar-icons/star.svg',
+                  width: 30,
+                  height: 30,
+                  colorFilter: ColorFilter.mode(
+                    _currentIndex == 1 
+                      ? themeProvider.isDarkMode ? AppTheme.darkIconColor : AppTheme.primaryColor 
+                      : themeProvider.getTextHintColor(context),
+                    BlendMode.srcIn,
+                  ),
+                ),
             themeProvider: themeProvider,
           ),
           
-          // Contacts
+         // Notifications
           _buildNavItem(
             index: 2,
-            icon: SvgPicture.asset(
-              'assets/navbar-icons/contacts-icon.svg',
-              width: 22,
-              height: 22,
-              colorFilter: ColorFilter.mode(
-                _currentIndex == 2 
-                  ? themeProvider.isDarkMode ? AppTheme.darkIconColor : AppTheme.primaryColor 
-                  : themeProvider.getTextHintColor(context),
-                BlendMode.srcIn,
-              ),
-            ),
-            themeProvider: themeProvider,
-          ),
-          
-          // Groups
-          _buildNavItem(
-            index: 3,
-            icon: SvgPicture.asset(
-              'assets/navbar-icons/groups-icon.svg',
-              width: 22,
-              height: 22,
-              colorFilter: ColorFilter.mode(
-                _currentIndex == 3 
-                  ? themeProvider.isDarkMode ? AppTheme.darkIconColor : AppTheme.primaryColor 
-                  : themeProvider.getTextHintColor(context),
-                BlendMode.srcIn,
-              ),
-            ),
-            themeProvider: themeProvider,
-          ),
-          
-          // Notifications
-          _buildNavItem(
-            index: 4,
             icon: Stack(
               children: [
                 SvgPicture.asset(
-                  'assets/navbar-icons/notifications-icon.svg',
+                  'assets/navbar-icons/nudges.svg',
                   width: 22,
                   height: 22,
                   colorFilter: ColorFilter.mode(
-                    _currentIndex == 4 
+                    _currentIndex == 2 
                       ? themeProvider.isDarkMode ? AppTheme.darkIconColor : AppTheme.primaryColor 
                       : themeProvider.getTextHintColor(context),
                     BlendMode.srcIn,
@@ -667,6 +678,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
               ],
+            ),
+            themeProvider: themeProvider,
+          ),
+          
+          // Groups
+          _buildNavItem(
+            index: 3,
+            icon: SvgPicture.asset(
+              'assets/navbar-icons/groups-icon.svg',
+              width: 25,
+              height: 25,
+              colorFilter: ColorFilter.mode(
+                _currentIndex == 3 
+                  ? themeProvider.isDarkMode ? AppTheme.darkIconColor : AppTheme.primaryColor 
+                  : themeProvider.getTextHintColor(context),
+                BlendMode.srcIn,
+              ),
+            ),
+            themeProvider: themeProvider,
+          ),
+          
+          // Contacts
+           _buildNavItem(
+            index: 4,
+            icon: SvgPicture.asset(
+              'assets/navbar-icons/contacts.svg',
+              width: 22,
+              height: 22,
+              colorFilter: ColorFilter.mode(
+                _currentIndex == 4 
+                  ? themeProvider.isDarkMode ? AppTheme.darkIconColor : AppTheme.primaryColor 
+                  : themeProvider.getTextHintColor(context),
+                BlendMode.srcIn,
+              ),
             ),
             themeProvider: themeProvider,
           ),
@@ -704,7 +749,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  void _showContactQuickPanel(ThemeProvider themeProvider, Contact contact, ApiService apiService) {
+  void _showContactQuickPanel(ThemeProvider themeProvider, Contact contact, String ringToUse, ApiService apiService) {
     // final themeProvider = Provider.of<ThemeProvider>(context);
     
     showModalBottomSheet(
@@ -718,6 +763,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return ContactDetailsModal(
           contact: contact,
           apiService: apiService,
+          displayRing: ringToUse,
         );
       },
     );
@@ -767,7 +813,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   iconAsset: 'assets/quick-insights/total-contacts.svg',
                   backgroundAsset: 'assets/card-backgrounds/nudges-this-week.jpg',
                   iconColor: theme.colorScheme.primary,
-                  onTap: () => setState(() => _currentIndex = 2),
+                  onTap: () => setState(() => _currentIndex = 4),
                   context: context,
                 ),
                 _buildStatCard(
@@ -779,7 +825,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   iconColor: themeProvider.isDarkMode ? theme.colorScheme.primary : Colors.white,
                   onTap: () {
                     setState(() {
-                      _currentIndex = 2;
+                      _currentIndex = 4;
                       vipFilter = true;
                       attentionFilter = false;
                     });
@@ -1307,6 +1353,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     
     return '?';
   }
+
 
   // Pie chart section
   Widget _buildInteractivePieChartSection(List<Contact> contacts, BuildContext context) {

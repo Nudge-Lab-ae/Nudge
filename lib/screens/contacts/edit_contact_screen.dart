@@ -6,6 +6,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:nudge/providers/feedback_provider.dart';
 import 'package:nudge/screens/dashboard/dashboard_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
@@ -533,7 +534,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
             Expanded(
               child: Text(
                 _phoneController.text.length < 9 
-                  ? 'Phone number too short. Must be exactly 9 digits.' 
+                  ? 'Phone number too short. Must be at least 9 digits.' 
                   : 'Please use only numbers (0-9) for the phone number.',
                 style: TextStyle(
                   fontSize: 12,
@@ -713,6 +714,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final apiService = Provider.of<ApiService>(context, listen: false);
+    final feedbackProvider = Provider.of<FeedbackProvider>(context);
     
     if (_isCropping) {
       return _buildCropScreen();
@@ -729,7 +731,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
           backgroundColor: themeProvider.getSurfaceColor(context),
         ),
         floatingActionButton: Padding(
-          padding: EdgeInsets.only(bottom: 50, right: 6),
+          padding: EdgeInsets.only(bottom: 20, right: 6),
           child: FeedbackFloatingButton(),
         ),
         body: Center(child: CircularProgressIndicator(color: AppTheme.primaryColor)),
@@ -744,7 +746,14 @@ class _EditContactScreenState extends State<EditContactScreen> {
           return GestureDetector(
               onTap: _dismissKeyboard,
               child: Scaffold(
-            appBar: AppBar(
+            floatingActionButton: Padding(
+              padding: EdgeInsets.only(bottom: 20, right: 6),
+              child: FeedbackFloatingButton(),
+            ),
+            body: Stack(
+              children: [
+                Scaffold(
+                  appBar: AppBar(
               title: Text('Edit Contact', style: AppTextStyles.title2.copyWith(color: themeProvider.getTextPrimaryColor(context), fontSize: 22, fontWeight: FontWeight.w800)),
               centerTitle: true,
               iconTheme: IconThemeData(color: AppTheme.primaryColor),
@@ -753,18 +762,21 @@ class _EditContactScreenState extends State<EditContactScreen> {
               actions: [
                 IconButton(
                   icon: saving
-                  ?Text('...', style: TextStyle(color: themeProvider.getTextPrimaryColor(context)),)
-                  :Icon(Icons.save, color: themeProvider.getTextPrimaryColor(context)),
+                  ? SizedBox(
+                    width: 25,
+                    height: 25,
+                    child: CircularProgressIndicator(
+                     color: themeProvider.getTextPrimaryColor(context),
+                  ),
+                  )
+                  // Text('...', style: TextStyle(color: themeProvider.getTextPrimaryColor(context)),)
+                  : Icon(Icons.save, color: themeProvider.getTextPrimaryColor(context)),
                   onPressed: () => _saveContact(groups),
                   tooltip: 'Save Changes',
                 ),
               ],
             ),
-            floatingActionButton: Padding(
-              padding: EdgeInsets.only(bottom: 50, right: 6),
-              child: FeedbackFloatingButton(),
-            ),
-            body: SingleChildScrollView(
+                  body: SingleChildScrollView(
               padding: const EdgeInsets.all(20),
               child: Form(
                 key: _formKey,
@@ -1221,7 +1233,23 @@ class _EditContactScreenState extends State<EditContactScreen> {
                 ),
               ),
             ),
-          ));
+          ),
+           if (feedbackProvider.isFabMenuOpen)
+                  GestureDetector(
+                    onTap: () {
+                      // Optional: Close the menu when tapping the overlay
+                      // You'll need to access the FeedbackFloatingButton's state
+                      // This is handled automatically if the button listens to provider changes
+                    },
+                    child: Container(
+                      color: Colors.black.withOpacity(0.55),
+                      width: MediaQuery.of(context).size.width,
+                      height: MediaQuery.of(context).size.height,
+                    ),
+                  ),
+          ]
+        )
+        ));
         },
       ),
     );
@@ -1344,6 +1372,13 @@ class _EditContactScreenState extends State<EditContactScreen> {
           if (_originalContact!.connectionType != updatedContact.connectionType) {
             await apiService.cancelNudgesForContacts([updatedContact.id]);
             await apiService.scheduleNudgesForContacts(contactIds: [updatedContact.id]);
+          }
+          if (_originalContact!.birthday != updatedContact.birthday
+          || _originalContact!.anniversary != updatedContact.anniversary
+          || _originalContact!.workAnniversary != updatedContact.workAnniversary
+          ) {
+            print('updating birthday');
+            await apiService.cancelEventNotifications([updatedContact]);
             await apiService.scheduleEventNotifications([updatedContact]);
           }
           print('phase 6');
@@ -1351,6 +1386,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Contact updated successfully')),
           );
+
         } else {
           print('here');
         }

@@ -191,7 +191,7 @@ class NotificationService {
         navigatorKey.currentState!.pushNamedAndRemoveUntil(
           '/dashboard',
           (route) => false,
-          arguments: {'initialTab': 4}, // 3 is notifications tab index
+          arguments: {'initialTab': 2}, // 2 is notifications tab index
         );
       }
     });
@@ -204,20 +204,20 @@ class NotificationService {
       print('No notificationId found in data');
       return;
     }
-    
+    _showSnackBar('Reminder rescheduled!', Color.fromARGB(255, 18, 132, 27));
     try {
       final result = await FirebaseFunctions.instance
           .httpsCallable('scheduleEventReminderForActualDate')
           .call({'notificationId': notificationId});
       
       if (result.data['success'] == true) {
-        _showSnackBar('Reminder scheduled!');
+        _showSnackBar('Reminder scheduled!', Color.fromARGB(255, 18, 132, 27));
       } else {
-        _showSnackBar('Could not schedule reminder');
+        _showSnackBar('Could not schedule reminder', Color.fromARGB(255, 149, 19, 30));
       }
     } catch (e) {
       print('Error scheduling reminder: $e');
-      _showSnackBar('Error scheduling reminder');
+      _showSnackBar('Error scheduling reminder', Color.fromARGB(255, 136, 17, 27));
     }
   }
 
@@ -228,29 +228,30 @@ class NotificationService {
       print('No notificationId found in data');
       return;
     }
-    
+    _showSnackBar('Dismissed Reminder', Color(0xff999999));
     try {
       final result = await FirebaseFunctions.instance
           .httpsCallable('dismissEventNotification')
           .call({'notificationId': notificationId});
       
       if (result.data['success'] == true) {
-        _showSnackBar('Notification dismissed');
+        _showSnackBar('Notification dismissed', Color.fromARGB(255, 19, 144, 29));
       } else {
-        _showSnackBar('Could not dismiss notification');
+        _showSnackBar('Could not dismiss notification', Color.fromARGB(255, 152, 21, 32));
       }
     } catch (e) {
       print('Error dismissing notification: $e');
-      _showSnackBar('Error dismissing notification');
+      _showSnackBar('Error dismissing notification',  Color.fromARGB(255, 134, 17, 27));
     }
   }
 
-  void _showSnackBar(String message) {
+  void _showSnackBar(String message, Color messageColor) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (navigatorKey.currentState != null) {
         final scaffoldMessenger = ScaffoldMessenger.of(navigatorKey.currentState!.context);
         scaffoldMessenger.showSnackBar(
           SnackBar(
+            backgroundColor: messageColor,
             content: Text(message),
             duration: const Duration(seconds: 2),
           ),
@@ -269,7 +270,7 @@ void _handleFCMNotificationTap(RemoteMessage message) {
       navigatorKey.currentState!.pushNamedAndRemoveUntil(
         '/dashboard',
         (route) => false,
-        arguments: {'initialTab': 4}, // 3 is notifications tab index
+        arguments: {'initialTab': 2}, // 3 is notifications tab index
       );
     }
   });
