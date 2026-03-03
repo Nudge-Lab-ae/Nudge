@@ -1,7 +1,10 @@
 // notifications_screen.dart with Dark Mode
+// import 'package:another_flushbar/flushbar.dart';
+import 'package:another_flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:nudge/models/contact.dart';
 import 'package:nudge/models/nudge.dart';
+// import 'package:nudge/models/social_group.dart';
 // import 'package:nudge/models/social_group.dart';
 import 'package:nudge/screens/contacts/contact_detail_screen.dart';
 import 'package:nudge/services/api_service.dart';
@@ -18,8 +21,9 @@ import 'package:nudge/widgets/log_interaction_modal.dart';
 
 class NotificationsScreen extends StatefulWidget {
   final bool showAppBar;
+  final String? pendingNudgeId;
   
-  const NotificationsScreen({super.key, this.showAppBar = true});
+  const NotificationsScreen({super.key, this.showAppBar = true, this.pendingNudgeId});
 
   @override
   State<NotificationsScreen> createState() => _NotificationsScreenState();
@@ -40,6 +44,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   int _cancellationSuccessCount = 0;
   int _cancellationTotalCount = 0;
   int _cancellationErrorCount = 0;
+
+  bool _hasProcessedPendingNudge = false;
   
   // Track if FAB menu is open
 
@@ -48,6 +54,54 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     super.initState();
     _selectedDay = DateTime.now();
     _processOverdueNudges();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Process pending nudge after dependencies are loaded
+    if (!_hasProcessedPendingNudge && widget.pendingNudgeId != null) {
+      _processPendingNudge();
+    }
+  }
+
+  Nudge defaultNudge(){
+    return Nudge(id: '', nudgeId: '', contactId: '', contactName: '', nudgeType: '', message: '', scheduledTime: DateTime.now(), userId: '', period: '', frequency: 2, isPushNotification: false, priority: 1, isVIP: false, contactImageUrl: 'contactImageUrl', groupName: 'groupName');
+  }
+
+  Future<void> _processPendingNudge() async {
+    if (_hasProcessedPendingNudge) return;
+    
+    // Small delay to ensure the stream has loaded data
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    if (!mounted) return;
+    
+    final userId = Provider.of<AuthService>(context, listen: false).currentUser!.uid;
+    
+    // Get all nudges to find the one with matching ID
+    final allNudges = await _nudgeService.getAllNudges(userId);
+    final targetNudge = allNudges.firstWhere(
+      (nudge) => nudge.id == widget.pendingNudgeId,
+      orElse: () => defaultNudge(),
+    );
+    
+    if (targetNudge.id != '' && mounted) {
+      // Get theme provider
+      final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+      
+      // Trigger the showNudgeActions method
+      _showNudgeActions(context, themeProvider, targetNudge);
+      
+      setState(() {
+        _hasProcessedPendingNudge = true;
+      });
+    } else {
+      print('Pending nudge not found: ${widget.pendingNudgeId}');
+      setState(() {
+        _hasProcessedPendingNudge = true; // Mark as processed even if not found
+      });
+    }
   }
 
 
@@ -100,7 +154,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         style: TextStyle(
           fontFamily: 'OpenSans',
           fontWeight: FontWeight.w600,
-          color: isOverdue ? Colors.orange[800] : themeProvider.getTextPrimaryColor(context),
+          color: isOverdue ? const Color.fromRGBO(243, 87, 87, 1) : themeProvider.getTextPrimaryColor(context),
         ),
       ),
       subtitle: Text(nudge.message, style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
@@ -109,7 +163,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         style: TextStyle(
           fontSize: 12,
           fontFamily: 'OpenSans',
-          color: isOverdue ? Colors.orange[800] : themeProvider.getTextSecondaryColor(context),
+          color: isOverdue ? const Color.fromRGBO(243, 87, 87, 1) : themeProvider.getTextSecondaryColor(context),
         ),
       ),
       onTap: () {
@@ -945,7 +999,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         _processOverdueNudges();
       });
     }
-  
+
     final overdueNudges = allNudges.where((nudge) {
       final nudgeDate = DateTime(
         nudge.scheduledTime.year,
@@ -953,10 +1007,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         nudge.scheduledTime.day,
       );
       return !nudge.isCompleted && 
-             nudgeDate.isBefore(today) && 
-             nudgeDate.isAfter(tenDaysAgo);
+            nudgeDate.isBefore(today) && 
+            nudgeDate.isAfter(tenDaysAgo);
     }).toList();
-  
+
     switch (filterIndex) {
       case 0: // Today
         final todayNudges = allNudges.where((nudge) {
@@ -979,7 +1033,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         
         final weekNudges = allNudges.where((nudge) {
           return nudge.scheduledTime.isAfter(startOfWeek.subtract(const Duration(days: 1))) && 
-                 nudge.scheduledTime.isBefore(endOfWeek.add(const Duration(days: 1)));
+                nudge.scheduledTime.isBefore(endOfWeek.add(const Duration(days: 1)));
         }).toList();
         
         return [
@@ -987,25 +1041,39 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ...weekNudges.where((nudge) => !overdueNudges.contains(nudge)),
         ];
         
-      case 2: // This Month
+      case 2: // This Month (Enhanced with next month extension if less than 5 days left)
+        // Calculate days left in current month
+        final lastDayOfMonth = DateTime(now.year, now.month + 1, 0);
+        final daysLeftInMonth = lastDayOfMonth.difference(now).inDays;
+        
+        // Determine end date - if less than 5 days left, extend into next month
+        final DateTime endDate;
+        if (daysLeftInMonth < 5) {
+          // Add 30 days to current date to get a full month window
+          endDate = now.add(const Duration(days: 30));
+        } else {
+          // Use end of current month
+          endDate = lastDayOfMonth;
+        }
+        
+        // Start from beginning of current month
         final startOfMonth = DateTime(now.year, now.month, 1);
-        final endOfMonth = DateTime(now.year, now.month + 1, 0);
         
         final monthNudges = allNudges.where((nudge) {
           return nudge.scheduledTime.isAfter(startOfMonth.subtract(const Duration(days: 1))) && 
-                 nudge.scheduledTime.isBefore(endOfMonth.add(const Duration(days: 1)));
+                nudge.scheduledTime.isBefore(endDate.add(const Duration(days: 1)));
         }).toList();
         
         return [
           ...overdueNudges,
           ...monthNudges.where((nudge) => !overdueNudges.contains(nudge)),
         ];
-          
+        
       default:
         return allNudges;
     }
   }
-
+    
   List<Nudge> _getOverdueNudges(List<Nudge> nudges) {
     final now = DateTime.now();
     return nudges.where((nudge) {
@@ -1167,8 +1235,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final initials = _getContactInitials(nudge.contactName);
     final iconIndex = getRandomIndex(nudge.contactId);
     String message = 'Time to reconnect.';
-    if (nudge.message.contains('Rescheduled')){
+    if (nudge.message.contains('Rescheduled') || nudge.isSnoozed){
       message = 'Time to reconnect | [Rescheduled]';
+    }
+
+    if (nudge.message.contains('birthday')){
+      message = nudge.message;
     }
     
     return Dismissible(
@@ -1202,7 +1274,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           }
         },
         child: Card(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          margin: const EdgeInsets.symmetric(/* horizontal: 16, */ vertical: 4),
           elevation: 2,
           color: themeProvider.getSurfaceColor(context),
           child: ListTile(
@@ -1250,12 +1322,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       fontWeight: FontWeight.w600,
                       fontSize: 15,
                       fontFamily: 'OpenSans',
-                      color: isOverdue ? Colors.orange[800] : themeProvider.getTextPrimaryColor(context),
+                      color: isOverdue ? const Color.fromRGBO(243, 87, 87, 1) : themeProvider.getTextPrimaryColor(context),
                     ),
                   ),
                 ),
-                if (isOverdue)
-                  Icon(Icons.warning, color: Colors.orange[800], size: 16),
+                // Positioned(
+                //   right: -70,
+                //   child: isOverdue
+                //   ?Icon(Icons.warning, color: const Color.fromARGB(255, 226, 14, 81) , size: 16)
+                //   :Center()
+                // )
               ],
             ),
             subtitle: Column(
@@ -1280,8 +1356,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       style: TextStyle(
                         fontSize: 12,
                         fontFamily: 'OpenSans',
-                        color: isOverdue ? Colors.orange[800] : themeProvider.getTextSecondaryColor(context),
-                        fontWeight: isOverdue ? FontWeight.w600 : FontWeight.normal,
+                        color: isOverdue ? const Color.fromRGBO(243, 87, 87, 1)  : themeProvider.getTextSecondaryColor(context),
+                        fontWeight: FontWeight.normal,
                       ),
                     ),
                   ],
@@ -1290,7 +1366,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ),
             trailing: nudge.isCompleted 
                 ? Icon(Icons.check_circle, color: theme.colorScheme.primary)
-                : const SizedBox(
+                : isOverdue
+                  ? Padding(
+                    padding: EdgeInsets.only(bottom: 50),
+                    child: Icon(Icons.warning, color: const Color.fromRGBO(243, 87, 87, 1) , size: 16),
+                  )
+                  : const SizedBox(
                     height: 10,
                   ),
           ),
@@ -1332,7 +1413,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       final modalResult = await _showLogInteractionModalForNudge(context, themeProvider, nudge);
       
       // Check if interaction was successfully logged
-      if (modalResult != null && modalResult['success'] == true) {
+      if (modalResult == null || modalResult['success'] != true) {
         try {
           // Get the contact data
           final contacts = await apiService.getAllContacts();
@@ -1341,7 +1422,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           );
           
           // Get the interaction date from the modal result
-          final DateTime interactionDateTime = modalResult['interactionDateTime'];
+          final DateTime interactionDateTime = modalResult!['interactionDateTime'];
           
           // Calculate next scheduled time based on the interaction date
           DateTime nextScheduledTime = _calculateNextNudgeTime(
@@ -1352,37 +1433,29 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           // Cancel the current nudge
           await apiService.cancelSingleNudge(nudgeId: nudge.id);
           await apiService.deleteNudgeFromFirestore(nudgeId: nudge.id);
+
+          if (nudge.nudgeType == 'event') {
+            return true;
+          }
           
           // Schedule a new nudge
-          final result = await apiService.scheduleSingleNudge(
+          await apiService.scheduleSingleNudge(
             contactId: contact.id,
             scheduledTime: nextScheduledTime,
           );
           
-          if (result['success'] == true) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Nudge completed. Next reminder scheduled for ${DateFormat('MMM d, h:mm a').format(nextScheduledTime)}',
-                ),
-                backgroundColor: Colors.green,
-                duration: const Duration(seconds: 3),
-              ),
-            );
-            return true; // Allow dismissal
-          } else {
-            throw Exception('Failed to schedule next nudge');
-          }
+          
         } catch (e) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error completing nudge: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          // ScaffoldMessenger.of(context).showSnackBar(
+          //   SnackBar(
+          //     content: Text('Error completing nudge: $e'),
+          //     backgroundColor: Colors.red,
+          //   ),
+          // );
           return false; // Prevent dismissal
         }
       }
+
     }
     
     return false; // User cancelled or interaction modal closed without logging
@@ -1516,7 +1589,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 title: Text('Mark Complete', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
                 onTap: () {
                   Navigator.pop(context);
-                  _completeNudge(nudge, Provider.of<AuthService>(context, listen: false).currentUser!.uid);
+                  // _completeNudge(nudge, Provider.of<AuthService>(context, listen: false).currentUser!.uid);
+                  _confirmCompleteNudge(nudge, context, themeProvider);
                 },
               ),
               ListTile(
@@ -1569,104 +1643,160 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
-  void _showFrequencyDialog(Nudge nudge, ThemeProvider themeProvider, String userId) {
+  void _showFrequencyDialog(Nudge nudge, ThemeProvider themeProvider, String userId) async{
     final theme = Theme.of(context);
+    final apiService = Provider.of<ApiService>(context, listen: false);
+    final thisUser = await apiService.getUser();
+    List<Map<String, dynamic>> groups = thisUser.groups!;
+    List<Contact> contacts = await apiService.getAllContacts();
+    Contact nudgeContact = contacts.where((contact) => contact.name == nudge.contactName).first;
+    Map<String, dynamic> group = groups.where((group) => nudgeContact.connectionType == group['name']).first;
     
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        String selectedPeriod = nudge.period;
-        int selectedFrequency = nudge.frequency;
+        // Get current group settings
+        String _selectedFrequencyChoice = FrequencyPeriodMapper.getConversationalChoice(
+          nudge.frequency, 
+          nudge.period
+        );
         
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
               backgroundColor: themeProvider.getSurfaceColor(context),
-              title: Text('Adjust Nudge Frequency', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+              title: Text(
+                'Adjust Group Frequency',
+                style: TextStyle(
+                  color: theme.colorScheme.primary,
+                  fontFamily: 'OpenSans',
+                  fontWeight: FontWeight.w600,
+                ), textAlign: TextAlign.center,
+              ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Change how often you want to be reminded to contact ${nudge.contactName}:', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
-                  const SizedBox(height: 16),
-                  
-                  DropdownButtonFormField<String>(
-                    value: selectedPeriod,
-                    style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'),
-                    decoration: InputDecoration(
-                      labelText: 'Period',
-                      labelStyle: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'),
-                      border: OutlineInputBorder(
-                        borderSide: BorderSide(color: themeProvider.isDarkMode ? AppTheme.darkCardBorder : Colors.grey, width: 1),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: themeProvider.isDarkMode ? AppTheme.darkCardBorder : Colors.grey, width: 1),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
-                      ),
-                      fillColor: themeProvider.getSurfaceColor(context),
-                      filled: true,
+                  Text(
+                    'This will update the "${group['name']}" group settings for ${nudge.contactName} and all other members.',
+                    style: TextStyle(
+                      color: themeProvider.getTextPrimaryColor(context),
+                      fontFamily: 'OpenSans',
+                      fontSize: 14,
                     ),
-                    items: [
-                      'Daily',
-                      'Weekly', 
-                      'Monthly',
-                      'Quarterly',
-                      'Yearly',
-                    ].map((String period) {
-                      return DropdownMenuItem<String>(
-                        value: period,
-                        child: Text(period, style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
-                      );
-                    }).toList(),
+                  ),
+                  const SizedBox(height: 20),
+                  
+                  // Group selection indicator
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.group,
+                          color: theme.colorScheme.primary,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Group: ${nudge.groupName}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: themeProvider.getTextPrimaryColor(context),
+                                  fontFamily: 'OpenSans',
+                                ),
+                              ),
+                              Text(
+                                '${nudge.contactName} will be updated with group',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: themeProvider.getTextSecondaryColor(context),
+                                  fontFamily: 'OpenSans',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 20),
+                  
+                  // Frequency dropdown (reusing the same selection as in groups_list_screen)
+                  DropdownButtonFormField<String>(
+                    value: _selectedFrequencyChoice,
+                    style: TextStyle(
+                      color: themeProvider.getTextPrimaryColor(context),
+                      fontFamily: 'OpenSans',
+                    ),
                     onChanged: (String? newValue) {
                       if (newValue != null) {
                         setState(() {
-                          selectedPeriod = newValue;
-                          selectedFrequency = _getDefaultFrequencyForPeriod(newValue);
+                          _selectedFrequencyChoice = newValue;
                         });
                       }
                     },
-                  ),
-                  
-                  const SizedBox(height: 16),
-                  
-                  DropdownButtonFormField<int>(
-                    value: selectedFrequency,
-                    style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'),
+                    items: FrequencyPeriodMapper.frequencyMapping.keys
+                        .map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(
+                          value,
+                          style: TextStyle(
+                            color: themeProvider.getTextPrimaryColor(context),
+                            fontFamily: 'OpenSans',
+                          ),
+                        ),
+                      );
+                    }).toList(),
                     decoration: InputDecoration(
-                      labelText: 'Times per $selectedPeriod',
-                      labelStyle: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'),
+                      labelText: 'Contact Frequency',
+                      labelStyle: TextStyle(
+                        color: themeProvider.getTextPrimaryColor(context),
+                        fontFamily: 'OpenSans',
+                      ),
                       border: OutlineInputBorder(
-                        borderSide: BorderSide(color: themeProvider.isDarkMode ? AppTheme.darkCardBorder : Colors.grey, width: 1),
+                        borderSide: BorderSide(
+                          color: themeProvider.isDarkMode 
+                              ? AppTheme.darkCardBorder 
+                              : Colors.grey,
+                          width: 1,
+                        ),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: themeProvider.isDarkMode ? AppTheme.darkCardBorder : Colors.grey, width: 1),
+                        borderSide: BorderSide(
+                          color: themeProvider.isDarkMode 
+                              ? AppTheme.darkCardBorder 
+                              : Colors.grey,
+                          width: 1,
+                        ),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
+                        borderSide: BorderSide(
+                          color: theme.colorScheme.primary,
+                          width: 2,
+                        ),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       fillColor: themeProvider.getSurfaceColor(context),
                       filled: true,
                     ),
-                    items: _getFrequencyOptionsForPeriod(selectedPeriod).map((int frequency) {
-                      return DropdownMenuItem<int>(
-                        value: frequency,
-                        child: Text('$frequency time${frequency > 1 ? 's' : ''}', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
-                      );
-                    }).toList(),
-                    onChanged: (int? newValue) {
-                      if (newValue != null) {
-                        setState(() {
-                          selectedFrequency = newValue;
-                        });
-                      }
-                    },
                   ),
                   
                   const SizedBox(height: 8),
                   Text(
-                    _getFrequencyDescription(selectedPeriod, selectedFrequency),
+                    'This will affect all contacts in the ${nudge.groupName} group',
                     style: TextStyle(
                       fontSize: 12,
                       fontFamily: 'OpenSans',
@@ -1679,51 +1809,137 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: Text('Cancel', style: TextStyle(color: theme.colorScheme.primary, fontFamily: 'OpenSans')),
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(
+                      color: theme.colorScheme.primary,
+                      fontFamily: 'OpenSans',
+                    ),
+                  ),
                 ),
-                TextButton(
+                ElevatedButton(
                   onPressed: () async {
+                    // Show loading dialog
+                    Navigator.pop(context); // Close frequency dialog
+                    
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) => const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+                    
                     try {
-                      final contacts = Provider.of<List<Contact>>(context, listen: false);
-                      final contact = contacts.firstWhere(
-                        (contact) => contact.id == nudge.contactId,
+                      // Get frequency and period from selection
+                      final frequencyData = FrequencyPeriodMapper.getFrequencyPeriod(
+                        _selectedFrequencyChoice
+                      );
+                      final newPeriod = frequencyData['period'] as String;
+                      final newFrequency = frequencyData['frequency'] as int;
+                      
+                      // Get all groups
+                      final groups = await apiService.getGroupsStream().first;
+                      
+                      // Find the group to update
+                      final groupToUpdate = groups.firstWhere(
+                        (g) => g.name == nudge.groupName,
                       );
                       
-                      if (contact.id.isEmpty) {
-                        throw Exception('Contact not found');
+                      if (groupToUpdate.id.isNotEmpty) {
+                        // Update the group
+                        final updatedGroup = groupToUpdate.copyWith(
+                          period: newPeriod,
+                          frequency: newFrequency,
+                        );
+                        
+                        // Update groups list
+                        final updatedGroups = groups.map((g) {
+                          return g.id == groupToUpdate.id ? updatedGroup : g;
+                        }).toList();
+                        
+                        await apiService.updateGroups(updatedGroups);
+                        
+                        // Get all contacts in this group
+                        final allContacts = await apiService.getAllContacts();
+                        final groupContacts = allContacts.where((contact) =>
+                          contact.connectionType == groupToUpdate.name ||
+                          contact.connectionType == groupToUpdate.id
+                        ).toList();
+                        
+                        // Cancel all existing nudges for these contacts
+                        final allNudges = await apiService.getAllNudges();
+                        final contactNudges = allNudges.where((n) =>
+                          groupContacts.any((c) => c.id == n.contactId)
+                        ).toList();
+                        
+                        if (contactNudges.isNotEmpty) {
+                          final nudgeIds = contactNudges.map((n) => n.id).toList();
+                          await apiService.cancelMultipleNudge(nudgeIds: nudgeIds);
+                          
+                          // Also delete from Firestore
+                          for (var nudge in contactNudges) {
+                            await apiService.deleteNudgeFromFirestore(nudgeId: nudge.id);
+                          }
+                        }
+                        
+                        // Schedule new nudges for all contacts in the group
+                        for (var contact in groupContacts) {
+                          // Calculate next scheduled time based on new group settings
+                          DateTime nextScheduledTime = _calculateNextNudgeTime(
+                            contact,
+                            DateTime.now(),
+                          );
+                          
+                          await apiService.scheduleSingleNudge(
+                            contactId: contact.id,
+                            scheduledTime: nextScheduledTime,
+                          );
+                        }
+                        
+                        // Close loading dialog
+                        if (context.mounted) Navigator.pop(context);
+                        
+                        // Show success message
+                        if (context.mounted) {
+                          Flushbar(
+                            padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+                            flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+                            forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+                            messageText: Center(
+                                child: Text('Group "${groupToUpdate.name}" updated to $_selectedFrequencyChoice. '
+                                '${groupContacts.length} contact nudges rescheduled.', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+                                    color: Colors.white, fontWeight: FontWeight.w400),)),
+                          ).show(context);
+                        }
+                      } else {
+                        throw Exception('Group not found');
                       }
+                    } catch (e) {
+                      // Close loading dialog
+                      if (context.mounted) Navigator.pop(context);
                       
-                      await _nudgeService.cancelNudge(nudge.id, userId);
-                      
-                      final success = await _nudgeService.scheduleNudgeForContact(
-                        contact,
-                        userId,
-                        period: selectedPeriod,
-                        frequency: selectedFrequency,
-                      );
-                      
-                      if (success) {
-                        Navigator.pop(context);
+                      // Show error message
+                      if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('Frequency updated to $selectedFrequency times per $selectedPeriod'),
-                            backgroundColor: Colors.green,
+                            content: Text('Failed to update group: $e'),
+                            backgroundColor: Colors.red,
                           ),
                         );
-                      } else {
-                        throw Exception('Failed to schedule updated nudge');
                       }
-                    } catch (error) {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Failed to update frequency: $error'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
                     }
                   },
-                  child: Text('Save', style: TextStyle(color: theme.colorScheme.primary, fontFamily: 'OpenSans')),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                  ),
+                  child: const Text(
+                    'Update Group',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontFamily: 'OpenSans',
+                    ),
+                  ),
                 ),
               ],
             );
@@ -1733,7 +1949,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  void _showSnoozeDialog(Nudge nudge, ThemeProvider themeProvider, String userId) {
+  void _showSnoozeDialog(Nudge nudge, ThemeProvider themeProvider, String userId){
     final theme = Theme.of(context);
     int selectedSnoozeHours = 4;
     
@@ -1773,23 +1989,31 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 child: Text('Cancel', style: TextStyle(color: theme.colorScheme.primary, fontFamily: 'OpenSans')),
               ),
               TextButton(
-                onPressed: () {
+                onPressed: () async{
                   Navigator.pop(context);
-                  _nudgeService.snoozeNudge(
-                    nudge.id, 
-                    userId, 
-                    Duration(hours: selectedSnoozeHours),
-                    nudge.contactName,
+                  // _nudgeService.snoozeNudge(
+                  //   nudge.id, 
+                  //   userId, 
+                  //   Duration(hours: selectedSnoozeHours),
+                  //   nudge.contactName,
+                  // );
+                  final contacts = await apiService.getAllContacts();
+                  final contact = contacts.firstWhere(
+                    (c) => c.name == nudge.contactName,
                   );
+
                   final newScheduledTime = DateTime.now().add(Duration(hours: selectedSnoozeHours));
                   apiService.cancelSingleNudge(nudgeId: nudge.id);
-                  apiService.scheduleSingleNudge(contactId: nudge.contactId, scheduledTime: newScheduledTime);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Nudge snoozed for $selectedSnoozeHours hour${selectedSnoozeHours > 1 ? 's' : ''}'),
-                      backgroundColor: theme.colorScheme.primary,
-                    ),
-                  );
+                  apiService.scheduleSingleNudge(contactId: contact.id, scheduledTime: newScheduledTime, rescheduled: true);
+                  
+                  Flushbar(
+                    padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+                    flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+                    forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+                    messageText: Center(
+                        child: Text('Nudge snoozed for $selectedSnoozeHours hour${selectedSnoozeHours > 1 ? 's' : ''}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+                            color: Colors.white, fontWeight: FontWeight.w400),)),
+                  ).show(context);
                 },
                 child: Text('Snooze', style: TextStyle(color: theme.colorScheme.primary, fontFamily: 'OpenSans')),
               ),
@@ -1800,51 +2024,51 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  void _completeNudge(Nudge nudge, String userId) async {
-    try {
-      // Step 1: Cancel the current nudge (this will delete it from Firestore and cancel its tasks)
-      await apiService.cancelSingleNudge(nudgeId: nudge.id);
+  // void _completeNudge(Nudge nudge, String userId) async {
+  //   try {
+  //     // Step 1: Cancel the current nudge (this will delete it from Firestore and cancel its tasks)
+  //     await apiService.cancelSingleNudge(nudgeId: nudge.id);
       
-      // Step 2: Get the contact data to calculate next scheduled time
-      final contacts = await apiService.getAllContacts();
-      print(nudge.toMap()); print(nudge.id); print(contacts[0].id); print(' are the ids');
+  //     // Step 2: Get the contact data to calculate next scheduled time
+  //     final contacts = await apiService.getAllContacts();
+  //     print(nudge.toMap()); print(nudge.id); print(contacts[0].id); print(' are the ids');
        
-      final contact = contacts.firstWhere(
-        (c) => c.name == nudge.contactName,
-      );
+  //     final contact = contacts.firstWhere(
+  //       (c) => c.name == nudge.contactName,
+  //     );
       
-      // Calculate next scheduled time based on contact's period and frequency
-      DateTime nextScheduledTime = _calculateNextNudgeTime(contact, nudge.scheduledTime);
+  //     // Calculate next scheduled time based on contact's period and frequency
+  //     DateTime nextScheduledTime = _calculateNextNudgeTime(contact, nudge.scheduledTime);
       
-      // Step 3: Schedule a new nudge for the contact
-      final result = await apiService.scheduleSingleNudge(
-        contactId: contact.id,
-        scheduledTime: nextScheduledTime,
-      );
+  //     // Step 3: Schedule a new nudge for the contact
+  //     final result = await apiService.scheduleSingleNudge(
+  //       contactId: contact.id,
+  //       scheduledTime: nextScheduledTime,
+  //     );
       
-      if (result['success'] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Nudge marked as completed. Next nudge scheduled for ${DateFormat('MMM d, h:mm a').format(nextScheduledTime)}',
-            ),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      } else {
-        throw Exception('Failed to schedule next nudge');
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error completing nudge: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      print('Error completing nudge: $e');
-    }
-  }
+  //     if (result['success'] == true) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(
+  //           content: Text(
+  //             'Nudge marked as completed. Next nudge scheduled for ${DateFormat('MMM d, h:mm a').format(nextScheduledTime)}',
+  //           ),
+  //           backgroundColor: Colors.green,
+  //           duration: const Duration(seconds: 3),
+  //         ),
+  //       );
+  //     } else {
+  //       throw Exception('Failed to schedule next nudge');
+  //     }
+  //   } catch (e) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text('Error completing nudge: $e'),
+  //         backgroundColor: Colors.red,
+  //       ),
+  //     );
+  //     print('Error completing nudge: $e');
+  //   }
+  // }
 
   // Helper method to calculate next nudge time based on interaction date
   DateTime _calculateNextNudgeTime(Contact contact, DateTime interactionDateTime) {
@@ -1932,48 +2156,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         ],
       ),
     );
-  }
-
-  List<int> _getFrequencyOptionsForPeriod(String period) {
-    switch (period) {
-      case 'Daily':
-        return [1, 2, 3, 4];
-      case 'Weekly':
-        return [1, 2, 3, 4, 5, 6, 7];
-      case 'Monthly':
-        return [1, 2, 3, 4, 6, 8, 12];
-      case 'Quarterly':
-        return [1, 2, 3, 4, 6, 12];
-      case 'Yearly':
-        return [1, 2, 3, 4, 6, 12];
-      default:
-        return [1, 2, 3, 4];
-    }
-  }
-
-  int _getDefaultFrequencyForPeriod(String period) {
-    switch (period) {
-      case 'Daily':
-        return 1;
-      case 'Weekly':
-        return 1;
-      case 'Monthly':
-        return 2;
-      case 'Quarterly':
-        return 3;
-      case 'Yearly':
-        return 4;
-      default:
-        return 1;
-    }
-  }
-
-  String _getFrequencyDescription(String period, int frequency) {
-    if (frequency == 1) {
-      return 'Once per $period';
-    } else {
-      return '$frequency times per $period';
-    }
   }
 
   Widget _buildCalendarView(List<Nudge> allNudges, {required ThemeProvider themeProvider}) {

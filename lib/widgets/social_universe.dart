@@ -1,4 +1,5 @@
 // social_universe.dart - HYBRID CACHED VERSION (Stars only)
+import 'dart:async';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -44,7 +45,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
   Contact? _selectedContact;
   bool _showControls = true;
   bool _showTitle = true;
-  double _immersionLevel = 1.0;
+  double _immersionLevel = 0.5;
   
   double _sliderValue = 1.0;
   final Map<String, Offset> _starPositions = {};
@@ -60,6 +61,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
   bool _useMockData = false;
   List<Contact> _mockContacts = [];
   late List<Contact> _displayContacts;
+  Timer? _debounceTimer;
   // String? _selectedContactRing;
 
   // Star texture caching only
@@ -70,6 +72,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
   ui.Image? _lightImmersiveBackgroundImage;
   bool _isBackgroundCachingComplete = false;
   List<SocialGroup> _socialGroups = [];
+  bool darkModeControlled = false;
   // bool _groupsLoaded = false;
 
 
@@ -79,23 +82,65 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
   
 
   Future<void> _loadSocialGroups() async {
-  try {
-    final apiService = ApiService();
-    final groups = await apiService.getGroupsStream().first;
-    if (mounted) {
-      setState(() {
-        _socialGroups = groups;
-        // _groupsLoaded = true;
-        // Clear positions to recalculate with new group data
-        _starPositions.clear();
-        _starSizes.clear();
-      });
+    try {
+      final apiService = ApiService();
+      final groups = await apiService.getGroupsStream().first;
+      if (mounted) {
+        setState(() {
+          _socialGroups = groups;
+          // _groupsLoaded = true;
+          // Clear positions to recalculate with new group data
+          _starPositions.clear();
+          _starSizes.clear();
+        });
+      }
+    } catch (e) {
+      print('Error loading social groups: $e');
     }
-  } catch (e) {
-    print('Error loading social groups: $e');
   }
-}
 
+  Future<void> _loadSavedImmersionLevel() async {
+    try {
+      final apiService = ApiService();
+      final userData = await apiService.getUser();
+      
+      if (mounted) {
+        setState(() {
+          _immersionLevel = userData.immersionLevel;
+          _sliderValue = userData.immersionLevel;
+        });
+        print('Loaded immersion level: ${userData.immersionLevel}');
+      }
+    } catch (e) {
+      print('Error loading immersion level: $e');
+      // Keep default value if loading fails
+      if (mounted) {
+        setState(() {
+          _immersionLevel = 0.5;
+          _sliderValue = 0.5;
+        });
+      }
+    }
+  }
+
+  Future<void> _saveImmersionLevel(double newLevel) async {
+    try {
+      final apiService = ApiService();
+      await apiService.updateUser({'immersionLevel': newLevel});
+      print('Saved immersion level: $newLevel');
+    } catch (e) {
+      print('Error saving immersion level: $e');
+    }
+  }
+
+  void _debounceSaveImmersionLevel(double newLevel) {
+    if (_debounceTimer?.isActive ?? false) {
+      _debounceTimer!.cancel();
+    }
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+      _saveImmersionLevel(newLevel);
+    });
+  }
 
   @override
   void initState() {
@@ -130,6 +175,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
     ).animate(_selectedStarSpinController);
     
     _sliderValue = _immersionLevel;
+     _loadSavedImmersionLevel();
     
     // Start caching star shapes only
     _startStarCaching(widget.isDarkMode!);
@@ -169,6 +215,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
     _disposeCachedImages();
     _lightBackgroundImage?.dispose();
     _lightImmersiveBackgroundImage?.dispose();
+    _debounceTimer?.cancel();
     super.dispose();
   }
 
@@ -397,7 +444,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
   }
 
   Widget _buildCompactView(ThemeProvider themeProvider) {
-    final isDarkMode = themeProvider.isDarkMode;
+    final isDarkMode = darkModeControlled;
     
     return AnimatedContainer(
      duration: const Duration(milliseconds: 300),
@@ -742,7 +789,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
     var size = MediaQuery.of(context).size;
     
     return Container(
-      color: isDarkMode ? ui.Color.fromARGB(255, 21, 25, 46) : const ui.Color.fromARGB(255, 6, 13, 76),
+      color: /* isDarkMode ? ui.Color.fromARGB(255, 21, 25, 46) : */ const ui.Color.fromARGB(255, 6, 13, 76),
       child: Stack(
         children: [
           Positioned.fill(
@@ -1045,6 +1092,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                                     _sliderValue -= 0.1;
                                     _immersionLevel -= 0.1;
                                   });
+                                  _debounceSaveImmersionLevel(_sliderValue);
                                   print('decreased ${_sliderValue}');
                                 }
                               },
@@ -1068,6 +1116,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                                     _sliderValue = value;
                                     _immersionLevel = value;
                                   });
+                                  _debounceSaveImmersionLevel(value);
                                 },
                               ),
                             ),
@@ -1079,6 +1128,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                                       _sliderValue += 0.1;
                                       _immersionLevel += 0.1;
                                   });
+                                  _debounceSaveImmersionLevel(_sliderValue);
                                   print('added');
                                 }
                               },
@@ -2597,8 +2647,7 @@ class UniversePainter extends CustomPainter {
   else interactionBasedRing = 'outer';
   
   // STEP 5: Determine if we have meaningful interaction data
-  bool hasMeaningfulInteractions = contact.interactionCountInWindow > 5 || 
-                                   contact.cdi != 50.0 
+  bool hasMeaningfulInteractions = contact.interactionCountInWindow > 5 
                                    //  || DateTime.now().difference(contact.lastContacted).inDays < 90
                                    ;
                                    
@@ -2790,26 +2839,26 @@ class UniversePainter extends CustomPainter {
   void _drawCosmicBackground(Canvas canvas, Size size, double immersionLevel, bool isDarkMode) {
     final clampedImmersionLevel = immersionLevel.clamp(0.0, 1.0);
     
-    if (isDarkMode) {
-      // DARK MODE: Deep space with bright stars - ORIGINAL
-      _backgroundPaint
-        ..shader = RadialGradient(
-          center: Alignment.center,
-          colors: [
-            const Color.fromARGB(255, 3, 4, 10),
-            const Color.fromARGB(255, 13, 16, 29),
-            const Color.fromARGB(255, 20, 23, 36),
-          ],
-          stops: const [0.0, 0.6, 1.0],
-        ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+    // if (isDarkMode) {
+    //   // DARK MODE: Deep space with bright stars - ORIGINAL
+    //   _backgroundPaint
+    //     ..shader = RadialGradient(
+    //       center: Alignment.center,
+    //       colors: [
+    //         const Color.fromARGB(255, 3, 4, 10),
+    //         const Color.fromARGB(255, 13, 16, 29),
+    //         const Color.fromARGB(255, 20, 23, 36),
+    //       ],
+    //       stops: const [0.0, 0.6, 1.0],
+    //     ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
       
-      canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), _backgroundPaint);
+    //   canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), _backgroundPaint);
       
-      // _drawNebula(canvas, size, clampedImmersionLevel, false);
-      // Draw background stars with CLEAR DIFFERENCE between modes - ORIGINAL
-      _drawBackgroundStars(canvas, size, clampedImmersionLevel, isDarkMode);
+    //   // _drawNebula(canvas, size, clampedImmersionLevel, false);
+    //   // Draw background stars with CLEAR DIFFERENCE between modes - ORIGINAL
+    //   _drawBackgroundStars(canvas, size, clampedImmersionLevel, isDarkMode);
       
-    } else {
+    // } else {
       // LIGHT MODE: Use background image if available
       if (isBackgroundCachingComplete) {
         final backgroundImage = isImmersive ? lightImmersiveBackgroundImage : lightBackgroundImage;
@@ -2837,7 +2886,7 @@ class UniversePainter extends CustomPainter {
       
       // Still draw some background stars but fewer
       _drawBackgroundStars(canvas, size, clampedImmersionLevel, isDarkMode);
-    }
+    // }
   }
   
   void _drawFallbackLightBackground(Canvas canvas, Size size) {
@@ -3137,9 +3186,9 @@ class UniversePainter extends CustomPainter {
         )
         ..style = PaintingStyle.fill;
       
-      if (isDarkMode) {
-        canvas.drawCircle(center, outerRadius, _ringPaint);
-      }
+      // if (isDarkMode) {
+      //   canvas.drawCircle(center, outerRadius, _ringPaint);
+      // }
       
       // Only draw glow border in dark mode
       
@@ -3165,9 +3214,9 @@ class UniversePainter extends CustomPainter {
         )
         ..style = PaintingStyle.fill;
       
-      if (isDarkMode) {
-        canvas.drawCircle(center, outerRadius, _ringPaint);
-      }
+      // if (isDarkMode) {
+      //   canvas.drawCircle(center, outerRadius, _ringPaint);
+      // }
       
       // Only draw glow border in dark mode
       _glowPaint

@@ -1,6 +1,7 @@
 // lib/screens/contacts/edit_contact_screen.dart
 import 'dart:typed_data';
 
+import 'package:another_flushbar/flushbar.dart';
 import 'package:crop_your_image/crop_your_image.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -1383,9 +1384,14 @@ class _EditContactScreenState extends State<EditContactScreen> {
           }
           print('phase 6');
           
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Contact updated successfully')),
-          );
+          Flushbar(
+            padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+            flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+            forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+            messageText: Center(
+                child: Text( 'Contact updated successfully', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+                    color: Colors.white, fontWeight: FontWeight.w400),)),
+          ).show(context);
 
         } else {
           print('here');
@@ -1395,7 +1401,9 @@ class _EditContactScreenState extends State<EditContactScreen> {
         });
         
         // Navigate back
-        Navigator.pop(context);
+        Future.delayed(Duration(seconds: 2)).then((value){
+          Navigator.pop(context);
+        });
       } else {
         print('user is null');
       }

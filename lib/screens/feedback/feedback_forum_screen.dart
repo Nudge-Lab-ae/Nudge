@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:provider/provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../widgets/scrollable_roadmap.dart'; // Import the roadmap widget
 
 class FeedbackForumScreen extends StatefulWidget {
   const FeedbackForumScreen({super.key});
@@ -10,10 +11,13 @@ class FeedbackForumScreen extends StatefulWidget {
   State<FeedbackForumScreen> createState() => _FeedbackForumScreenState();
 }
 
-class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
+class _FeedbackForumScreenState extends State<FeedbackForumScreen> with SingleTickerProviderStateMixin {
   final ApiService _apiService = ApiService();
   String _filterStatus = 'all';
   final List<String> _statusOptions = ['all', 'received', 'planned', 'in_progress', 'completed'];
+  
+  // Tab controller
+  late TabController _tabController;
   
   // Track upvoted feedbacks by user
   Map<String, bool> _upvotedFeedbacks = {};
@@ -74,6 +78,18 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDarkMode = themeProvider.isDarkMode;
@@ -81,7 +97,7 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Feature Requests Forum',
+          'Feedback Forum',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -94,174 +110,203 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
         ),
         backgroundColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
         elevation: 0,
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: const Color(0xff3CB3E9),
+          labelColor: const Color(0xff3CB3E9),
+          unselectedLabelColor: isDarkMode ? Colors.grey.shade500 : Colors.grey.shade600,
+          tabs: const [
+            Tab(
+              icon: Icon(Icons.lightbulb_outline),
+              text: 'Feature Requests',
+            ),
+            Tab(
+              icon: Icon(Icons.map_outlined),
+              text: 'Roadmap',
+            ),
+          ],
+        ),
       ),
       backgroundColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
-      body: Column(
+      body: TabBarView(
+        controller: _tabController,
         children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.all(16),
-            color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey.shade50,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Browse and upvote feature requests. Track their progress and share your support!',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: isDarkMode ? const Color(0xFFAAAAAA) : Colors.grey,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          // Feature Requests Tab (existing content)
+          _buildFeatureRequestsTab(context, themeProvider, isDarkMode),
           
-          // Filter
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-              border: Border(
-                bottom: BorderSide(
-                  color: isDarkMode ? const Color(0xFF444444) : Colors.grey.shade300,
-                ),
-              ),
-            ),
-            child: Row(
-              children: [
-                Text(
-                  'Filter by status:',
-                  style: TextStyle(
-                    color: isDarkMode ? const Color(0xFFCCCCCC) : const Color(0xff333333),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: isDarkMode ? const Color(0xFF3A3A3A) : Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: isDarkMode ? const Color(0xFF555555) : Colors.grey.shade400,
-                    ),
-                  ),
-                  child: DropdownButton<String>(
-                    value: _filterStatus,
-                    dropdownColor: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-                    underline: const SizedBox(),
-                    items: _statusOptions.map((status) {
-                      return DropdownMenuItem(
-                        value: status,
-                        child: Text(
-                          status == 'all' ? 'All Statuses' : _getStatusDisplayName(status),
-                          style: TextStyle(
-                            color: status == 'all' 
-                              ? (isDarkMode ? const Color(0xFFCCCCCC) : const Color(0xff333333))
-                              : _getStatusColor(status),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _filterStatus = value!;
-                      });
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-          // Feedback List
-          Expanded(
-            child: StreamBuilder<List<Map<String, dynamic>>>(
-              stream: _apiService.getFeedbacksStream(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(
-                    child: CircularProgressIndicator(
-                      color: isDarkMode ? const Color(0xFF3CB3E9) : const Color(0xff3CB3E9),
-                    ),
-                  );
-                }
-                
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 64,
-                          color: isDarkMode ? const Color(0xFFAAAAAA) : Colors.grey,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Error loading feature requests: ${snapshot.error}',
-                          style: TextStyle(
-                            color: isDarkMode ? const Color(0xFFAAAAAA) : Colors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-                
-                final allFeedbacks = snapshot.data ?? [];
-                
-                // Initialize upvote states
-                if (_upvotedFeedbacks.isEmpty && allFeedbacks.isNotEmpty) {
-                  _initializeUpvoteStates(allFeedbacks);
-                }
-                
-                final filteredFeedbacks = _filterFeedbacks(allFeedbacks);
-                
-                if (filteredFeedbacks.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.auto_awesome_outlined,
-                          size: 64,
-                          color: isDarkMode ? const Color(0xFF555555) : Colors.grey,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No feature requests yet',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: isDarkMode ? const Color(0xFFCCCCCC) : Colors.grey,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _filterStatus != 'all' 
-                              ? 'No feature requests with status "${_getStatusDisplayName(_filterStatus)}"'
-                              : 'Be the first to suggest a new feature!',
-                          style: TextStyle(
-                            color: isDarkMode ? const Color(0xFFAAAAAA) : Colors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-                
-                return ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: filteredFeedbacks.length,
-                  itemBuilder: (context, index) {
-                    return _buildFeedbackItem(filteredFeedbacks[index], isDarkMode);
-                  },
-                );
-              },
-            ),
-          ),
+          // Roadmap Tab (new)
+          const ScrollableRoadmapWidget(),
         ],
       ),
+    );
+  }
+
+  Widget _buildFeatureRequestsTab(BuildContext context, ThemeProvider themeProvider, bool isDarkMode) {
+    return Column(
+      children: [
+        // Header
+        Container(
+          padding: const EdgeInsets.all(16),
+          color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey.shade50,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Browse and upvote feature requests. Track their progress and share your support!',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: isDarkMode ? const Color(0xFFAAAAAA) : Colors.grey,
+                ),
+              ),
+            ],
+          ),
+        ),
+        
+        // Filter
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+            border: Border(
+              bottom: BorderSide(
+                color: isDarkMode ? const Color(0xFF444444) : Colors.grey.shade300,
+              ),
+            ),
+          ),
+          child: Row(
+            children: [
+              Text(
+                'Filter by status:',
+                style: TextStyle(
+                  color: isDarkMode ? const Color(0xFFCCCCCC) : const Color(0xff333333),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: isDarkMode ? const Color(0xFF3A3A3A) : Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isDarkMode ? const Color(0xFF555555) : Colors.grey.shade400,
+                  ),
+                ),
+                child: DropdownButton<String>(
+                  value: _filterStatus,
+                  dropdownColor: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+                  underline: const SizedBox(),
+                  items: _statusOptions.map((status) {
+                    return DropdownMenuItem(
+                      value: status,
+                      child: Text(
+                        status == 'all' ? 'All Statuses' : _getStatusDisplayName(status),
+                        style: TextStyle(
+                          color: status == 'all' 
+                              ? (isDarkMode ? const Color(0xFFCCCCCC) : const Color(0xff333333))
+                              : _getStatusColor(status),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _filterStatus = value!;
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+        
+        // Feedback List
+        Expanded(
+          child: StreamBuilder<List<Map<String, dynamic>>>(
+            stream: _apiService.getFeedbacksStream(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(
+                  child: CircularProgressIndicator(
+                    color: isDarkMode ? const Color(0xFF3CB3E9) : const Color(0xff3CB3E9),
+                  ),
+                );
+              }
+              
+              if (snapshot.hasError) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 64,
+                        color: isDarkMode ? const Color(0xFFAAAAAA) : Colors.grey,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Error loading feature requests: ${snapshot.error}',
+                        style: TextStyle(
+                          color: isDarkMode ? const Color(0xFFAAAAAA) : Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              
+              final allFeedbacks = snapshot.data ?? [];
+              
+              // Initialize upvote states
+              if (_upvotedFeedbacks.isEmpty && allFeedbacks.isNotEmpty) {
+                _initializeUpvoteStates(allFeedbacks);
+              }
+              
+              final filteredFeedbacks = _filterFeedbacks(allFeedbacks);
+              
+              if (filteredFeedbacks.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.auto_awesome_outlined,
+                        size: 64,
+                        color: isDarkMode ? const Color(0xFF555555) : Colors.grey,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No feature requests yet',
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: isDarkMode ? const Color(0xFFCCCCCC) : Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _filterStatus != 'all' 
+                            ? 'No feature requests with status "${_getStatusDisplayName(_filterStatus)}"'
+                            : 'Be the first to suggest a new feature!',
+                        style: TextStyle(
+                          color: isDarkMode ? const Color(0xFFAAAAAA) : Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              
+              return ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: filteredFeedbacks.length,
+                itemBuilder: (context, index) {
+                  return _buildFeedbackItem(filteredFeedbacks[index], isDarkMode);
+                },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -270,9 +315,7 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
     final title = feedback['adminTitle'] ?? 'No Title';
     final message = feedback['message'] ?? '';
     final status = feedback['status'] ?? 'received';
-    // final type = feedback['type'] ?? 'Feature Request';
     final section = feedback['section'] ?? 'General';
-    // final user = feedback['user'] ?? {};
     final adminResponse = feedback['adminResponse'];
     final upvotes = feedback['upvotes'] as List<dynamic>? ?? [];
     final upvoteCount = upvotes.length;
@@ -384,20 +427,6 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> {
             // Meta information
             Row(
               children: [
-                // Icon(
-                //   Icons.person_outline,
-                //   size: 14,
-                //   color: isDarkMode ? const Color(0xFF888888) : Colors.grey.shade600,
-                // ),
-                // const SizedBox(width: 4),
-                // Text(
-                //   user['username'] ?? user['email'] ?? 'Anonymous',
-                //   style: TextStyle(
-                //     fontSize: 12,
-                //     color: isDarkMode ? const Color(0xFFAAAAAA) : Colors.grey.shade600,
-                //   ),
-                // ),
-                // const SizedBox(width: 12),
                 Icon(
                   Icons.location_on_outlined,
                   size: 14,

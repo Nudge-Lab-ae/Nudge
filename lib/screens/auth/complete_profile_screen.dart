@@ -1,6 +1,7 @@
 // complete_profile_screen.dart - Enhanced with Social Universe Preview
 import 'dart:typed_data';
 
+import 'package:another_flushbar/flushbar.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +15,9 @@ import 'package:nudge/screens/contacts/add_contact_screen.dart';
 // import 'package:nudge/screens/dashboard/dashboard_screen.dart';
 import 'package:nudge/widgets/gradient_text.dart';
 import 'package:nudge/helpers/restart_helper.dart';
+import 'package:nudge/widgets/roadmap_widget.dart';
+// import 'package:nudge/widgets/roadmap_widget.dart';
+// import 'package:nudge/widgets/scrollable_roadmap.dart';
 import 'package:nudge/widgets/social_universe_guide.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
@@ -28,7 +32,7 @@ import '../../services/contact_sync_service.dart';
 import '../../providers/theme_provider.dart';
 
 // Import the Social Universe widget
-import 'package:nudge/widgets/social_universe.dart';
+// import 'package:nudge/widgets/social_universe.dart';
 
 class CompleteProfileScreen extends StatefulWidget {
   const CompleteProfileScreen({super.key});
@@ -73,195 +77,196 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
   final List<Map<String, dynamic>> _steps = [
     {'title': 'Complete Your Profile', 'subtitle': 'Tell us about yourself'},
     {'title': 'Create Social Groups', 'subtitle': 'Organize your contacts'},
-    {'title': 'Welcome to Your Social Universe', 'subtitle': 'See what we\'re building'},
+    // {'title': 'Welcome to Your Social Universe', 'subtitle': 'See what we\'re building'},
     {'title': 'Add Your Contacts', 'subtitle': 'Import or add contacts'},
     {'title': 'Identify Favourites', 'subtitle': 'Mark important relationships'},
-    {'title': 'Review Setup', 'subtitle': 'You\'re all set!'},
+    // {'title': 'Review Setup', 'subtitle': 'You\'re all set!'},
+    {'title': 'What\'s Coming to NUDGE', 'subtitle': 'See our roadmap'}, // New step
   ];
 
   // Mock contacts for preview
-  final List<Contact> _mockPreviewContacts = [
-    Contact(
-      id: 'preview_1',
-      name: 'Alex Johnson',
-      phoneNumber: '+1234567890',
-      email: 'alex@example.com',
-      priority: 1,
-      notes: '',
-      imageUrl: '',
-      interactionHistory: {},
-      connectionType: 'Friend',
-      socialGroups: [],
-      frequency: 2,
-      period: 'Weekly',
-      lastContacted: DateTime.now().subtract(const Duration(days: 3)),
-      computedRing: 'inner',
-      rawBand: 'inner',
-      rawBandSince: DateTime.now().subtract(const Duration(days: 30)),
-      cdi: 85,
-      angleDeg: 45,
-      isVIP: true,
-      interactionCountInWindow: 12,
-      tags: ['Close', 'Gym buddy'],
-    ),
-    Contact(
-      id: 'preview_2',
-      name: 'Sarah Miller',
-      phoneNumber: '+1234567891',
-      email: 'sarah@example.com',
-      priority: 1,
-      notes: '',
-      imageUrl: '',
-      interactionHistory: {},
-      socialGroups: [],
-      connectionType: 'Family',
-      frequency: 1,
-      period: 'Weekly',
-      lastContacted: DateTime.now().subtract(const Duration(days: 7)),
-      computedRing: 'inner',
-      rawBand: 'inner',
-      rawBandSince: DateTime.now().subtract(const Duration(days: 90)),
-      cdi: 90,
-      angleDeg: 120,
-      isVIP: false,
-      interactionCountInWindow: 8,
-      tags: ['Sister', 'Emergency'],
-    ),
-    Contact(
-      id: 'preview_3',
-      name: 'Michael Chen',
-      phoneNumber: '+1234567892',
-      email: 'michael@example.com',
-      priority: 1,
-      notes: '',
-      imageUrl: '',
-      socialGroups: [],
-      interactionHistory: {},connectionType: 'Colleague',
-      frequency: 2,
-      period: 'Monthly',
-      lastContacted: DateTime.now().subtract(const Duration(days: 14)),
-      computedRing: 'middle',
-      rawBand: 'middle',
-      rawBandSince: DateTime.now().subtract(const Duration(days: 60)),
-      cdi: 65,
-      angleDeg: 210,
-      isVIP: false,
-      interactionCountInWindow: 5,
-      tags: ['Work', 'Project'],
-    ),
-    Contact(
-      id: 'preview_4',
-      name: 'David Wilson',
-      phoneNumber: '+1234567893',
-      email: 'david@example.com',
-      priority: 1,
-      notes: '',
-      imageUrl: '',
-      socialGroups: [],
-      interactionHistory: {},
-      connectionType: 'Client',
-      frequency: 1,
-      period: 'Quarterly',
-      lastContacted: DateTime.now().subtract(const Duration(days: 45)),
-      computedRing: 'outer',
-      rawBand: 'outer',
-      rawBandSince: DateTime.now().subtract(const Duration(days: 120)),
-      cdi: 40,
-      angleDeg: 300,
-      isVIP: false,
-      interactionCountInWindow: 2,
-      tags: ['Business', 'Important'],
-    ),
-    Contact(
-      id: 'preview_5',
-      name: 'Emma Davis',
-      phoneNumber: '+1234567894',
-      email: 'emma@example.com',
-      priority: 1,
-      notes: '',
-      imageUrl: '',
-      socialGroups: [],
-      interactionHistory: {},connectionType: 'Friend',
-      frequency: 1,
-      period: 'Monthly',
-      lastContacted: DateTime.now().subtract(const Duration(days: 21)),
-      computedRing: 'middle',
-      rawBand: 'middle',
-      rawBandSince: DateTime.now().subtract(const Duration(days: 75)),
-      cdi: 55,
-      angleDeg: 150,
-      isVIP: false,
-      interactionCountInWindow: 4,
-      tags: ['College', 'Travel'],
-    ),
-    Contact(
-      id: 'preview_6',
-      name: 'Robert Taylor',
-      phoneNumber: '+1234567895',
-      email: 'robert@example.com',
-       priority: 1,
-      notes: '',
-      imageUrl: '',
-      socialGroups: [],
-      interactionHistory: {},connectionType: 'Mentor',
-      frequency: 2,
-      period: 'Annually',
-      lastContacted: DateTime.now().subtract(const Duration(days: 90)),
-      computedRing: 'outer',
-      rawBand: 'outer',
-      rawBandSince: DateTime.now().subtract(const Duration(days: 180)),
-      cdi: 35,
-      angleDeg: 30,
-      isVIP: true,
-      interactionCountInWindow: 1,
-      tags: ['Advisor', 'Expert'],
-    ),
-    Contact(
-      id: 'preview_7',
-      name: 'Lisa Brown',
-      phoneNumber: '+1234567896',
-      email: 'lisa@example.com',
-      connectionType: 'Family',
-      priority: 1,
-      notes: '',
-      imageUrl: '',
-      socialGroups: [],
-      interactionHistory: {},
-      frequency: 3,
-      period: 'Weekly',
-      lastContacted: DateTime.now().subtract(const Duration(days: 1)),
-      computedRing: 'inner',
-      rawBand: 'inner',
-      rawBandSince: DateTime.now().subtract(const Duration(days: 365)),
-      cdi: 95,
-      angleDeg: 75,
-      isVIP: false,
-      interactionCountInWindow: 15,
-      tags: ['Mother', 'Close'],
-    ),
-    Contact(
-      id: 'preview_8',
-      name: 'James Wilson',
-      phoneNumber: '+1234567897',
-      email: 'james@example.com',
-      connectionType: 'Colleague',
-      priority: 1,
-      notes: '',
-      imageUrl: '',
-      socialGroups: [],
-      interactionHistory: {},frequency: 1,
-      period: 'Monthly',
-      lastContacted: DateTime.now().subtract(const Duration(days: 28)),
-      computedRing: 'outer',
-      rawBand: 'outer',
-      rawBandSince: DateTime.now().subtract(const Duration(days: 150)),
-      cdi: 30,
-      angleDeg: 250,
-      isVIP: false,
-      interactionCountInWindow: 3,
-      tags: ['Work', 'Team'],
-    ),
-  ];
+  // final List<Contact> _mockPreviewContacts = [
+  //   Contact(
+  //     id: 'preview_1',
+  //     name: 'Alex Johnson',
+  //     phoneNumber: '+1234567890',
+  //     email: 'alex@example.com',
+  //     priority: 1,
+  //     notes: '',
+  //     imageUrl: '',
+  //     interactionHistory: {},
+  //     connectionType: 'Friend',
+  //     socialGroups: [],
+  //     frequency: 2,
+  //     period: 'Weekly',
+  //     lastContacted: DateTime.now().subtract(const Duration(days: 3)),
+  //     computedRing: 'inner',
+  //     rawBand: 'inner',
+  //     rawBandSince: DateTime.now().subtract(const Duration(days: 30)),
+  //     cdi: 85,
+  //     angleDeg: 45,
+  //     isVIP: true,
+  //     interactionCountInWindow: 12,
+  //     tags: ['Close', 'Gym buddy'],
+  //   ),
+  //   Contact(
+  //     id: 'preview_2',
+  //     name: 'Sarah Miller',
+  //     phoneNumber: '+1234567891',
+  //     email: 'sarah@example.com',
+  //     priority: 1,
+  //     notes: '',
+  //     imageUrl: '',
+  //     interactionHistory: {},
+  //     socialGroups: [],
+  //     connectionType: 'Family',
+  //     frequency: 1,
+  //     period: 'Weekly',
+  //     lastContacted: DateTime.now().subtract(const Duration(days: 7)),
+  //     computedRing: 'inner',
+  //     rawBand: 'inner',
+  //     rawBandSince: DateTime.now().subtract(const Duration(days: 90)),
+  //     cdi: 90,
+  //     angleDeg: 120,
+  //     isVIP: false,
+  //     interactionCountInWindow: 8,
+  //     tags: ['Sister', 'Emergency'],
+  //   ),
+  //   Contact(
+  //     id: 'preview_3',
+  //     name: 'Michael Chen',
+  //     phoneNumber: '+1234567892',
+  //     email: 'michael@example.com',
+  //     priority: 1,
+  //     notes: '',
+  //     imageUrl: '',
+  //     socialGroups: [],
+  //     interactionHistory: {},connectionType: 'Colleague',
+  //     frequency: 2,
+  //     period: 'Monthly',
+  //     lastContacted: DateTime.now().subtract(const Duration(days: 14)),
+  //     computedRing: 'middle',
+  //     rawBand: 'middle',
+  //     rawBandSince: DateTime.now().subtract(const Duration(days: 60)),
+  //     cdi: 65,
+  //     angleDeg: 210,
+  //     isVIP: false,
+  //     interactionCountInWindow: 5,
+  //     tags: ['Work', 'Project'],
+  //   ),
+  //   Contact(
+  //     id: 'preview_4',
+  //     name: 'David Wilson',
+  //     phoneNumber: '+1234567893',
+  //     email: 'david@example.com',
+  //     priority: 1,
+  //     notes: '',
+  //     imageUrl: '',
+  //     socialGroups: [],
+  //     interactionHistory: {},
+  //     connectionType: 'Client',
+  //     frequency: 1,
+  //     period: 'Quarterly',
+  //     lastContacted: DateTime.now().subtract(const Duration(days: 45)),
+  //     computedRing: 'outer',
+  //     rawBand: 'outer',
+  //     rawBandSince: DateTime.now().subtract(const Duration(days: 120)),
+  //     cdi: 40,
+  //     angleDeg: 300,
+  //     isVIP: false,
+  //     interactionCountInWindow: 2,
+  //     tags: ['Business', 'Important'],
+  //   ),
+  //   Contact(
+  //     id: 'preview_5',
+  //     name: 'Emma Davis',
+  //     phoneNumber: '+1234567894',
+  //     email: 'emma@example.com',
+  //     priority: 1,
+  //     notes: '',
+  //     imageUrl: '',
+  //     socialGroups: [],
+  //     interactionHistory: {},connectionType: 'Friend',
+  //     frequency: 1,
+  //     period: 'Monthly',
+  //     lastContacted: DateTime.now().subtract(const Duration(days: 21)),
+  //     computedRing: 'middle',
+  //     rawBand: 'middle',
+  //     rawBandSince: DateTime.now().subtract(const Duration(days: 75)),
+  //     cdi: 55,
+  //     angleDeg: 150,
+  //     isVIP: false,
+  //     interactionCountInWindow: 4,
+  //     tags: ['College', 'Travel'],
+  //   ),
+  //   Contact(
+  //     id: 'preview_6',
+  //     name: 'Robert Taylor',
+  //     phoneNumber: '+1234567895',
+  //     email: 'robert@example.com',
+  //      priority: 1,
+  //     notes: '',
+  //     imageUrl: '',
+  //     socialGroups: [],
+  //     interactionHistory: {},connectionType: 'Mentor',
+  //     frequency: 2,
+  //     period: 'Annually',
+  //     lastContacted: DateTime.now().subtract(const Duration(days: 90)),
+  //     computedRing: 'outer',
+  //     rawBand: 'outer',
+  //     rawBandSince: DateTime.now().subtract(const Duration(days: 180)),
+  //     cdi: 35,
+  //     angleDeg: 30,
+  //     isVIP: true,
+  //     interactionCountInWindow: 1,
+  //     tags: ['Advisor', 'Expert'],
+  //   ),
+  //   Contact(
+  //     id: 'preview_7',
+  //     name: 'Lisa Brown',
+  //     phoneNumber: '+1234567896',
+  //     email: 'lisa@example.com',
+  //     connectionType: 'Family',
+  //     priority: 1,
+  //     notes: '',
+  //     imageUrl: '',
+  //     socialGroups: [],
+  //     interactionHistory: {},
+  //     frequency: 3,
+  //     period: 'Weekly',
+  //     lastContacted: DateTime.now().subtract(const Duration(days: 1)),
+  //     computedRing: 'inner',
+  //     rawBand: 'inner',
+  //     rawBandSince: DateTime.now().subtract(const Duration(days: 365)),
+  //     cdi: 95,
+  //     angleDeg: 75,
+  //     isVIP: false,
+  //     interactionCountInWindow: 15,
+  //     tags: ['Mother', 'Close'],
+  //   ),
+  //   Contact(
+  //     id: 'preview_8',
+  //     name: 'James Wilson',
+  //     phoneNumber: '+1234567897',
+  //     email: 'james@example.com',
+  //     connectionType: 'Colleague',
+  //     priority: 1,
+  //     notes: '',
+  //     imageUrl: '',
+  //     socialGroups: [],
+  //     interactionHistory: {},frequency: 1,
+  //     period: 'Monthly',
+  //     lastContacted: DateTime.now().subtract(const Duration(days: 28)),
+  //     computedRing: 'outer',
+  //     rawBand: 'outer',
+  //     rawBandSince: DateTime.now().subtract(const Duration(days: 150)),
+  //     cdi: 30,
+  //     angleDeg: 250,
+  //     isVIP: false,
+  //     interactionCountInWindow: 3,
+  //     tags: ['Work', 'Team'],
+  //   ),
+  // ];
 
   @override
   void initState() {
@@ -474,9 +479,15 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
          _showSocialUniverseGuide(context);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
+     
+      Flushbar(
+      padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+      flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+      forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+      messageText: Center(
+          child: Text('Error: ${e.toString()}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+              color: Colors.white, fontWeight: FontWeight.w400),)),
+    ).show(context);
       setState(() => _isLoading = false);
     }
   }
@@ -619,11 +630,9 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
   }
 
   Widget _buildStepIndicator(ThemeProvider themeProvider) {
-    // Don't show step indicator on preview screen (step 2)
-    // if (_currentStep == 2) return const SizedBox.shrink();
-    
     return Container(
-      padding: EdgeInsets.only(top: 16, bottom: 16, right: 16, left: 16),
+      width: double.infinity, // Make container full width
+      padding: const EdgeInsets.only(top: 16, bottom: 16),
       decoration: BoxDecoration(
         color: themeProvider.getSurfaceColor(context),
         border: Border(
@@ -634,52 +643,61 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
       ),
       child: Column(
         children: [
-          // Staggered (broken) lines indicator
+          // Staggered (broken) lines indicator - full width with horizontal padding
           Container(
             height: 6,
-            margin: const EdgeInsets.only(bottom: 12),
+            margin: const EdgeInsets.symmetric(horizontal: 16), // Add horizontal margin
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween, // Distribute space evenly
               children: List.generate(_steps.length, (index) {
                 // Only show lines up to current step
                 bool isActive = index <= _currentStep;
-                bool isLast = index == _steps.length - 1;
                 
-                return Row(
-                  children: [
-                    // Line segment
-                    Container(
-                      width: 24,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: isActive ? const Color(0xff3CB3E9) : (themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.grey[300]),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
+                return Expanded(
+                  child: Container(
+                    height: 4,
+                    margin: EdgeInsets.only(
+                      left: index == 0 ? 0 : 4, // Add gap between segments
+                      right: index == _steps.length - 1 ? 0 : 4,
                     ),
-                    // Gap between lines (except after last line)
-                    if (!isLast) const SizedBox(width: 8),
-                  ],
+                    decoration: BoxDecoration(
+                      color: isActive 
+                          ? const Color(0xff3CB3E9) 
+                          : (themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.grey[300]),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
                 );
               }),
             ),
           ),
           
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Step ${_currentStep + 1} of ${_steps.length}',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xff3CB3E9),
+          const SizedBox(height: 12),
+          
+          // Step text - also with horizontal padding
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Step ${_currentStep + 1} of ${_steps.length}',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xff3CB3E9),
+                  ),
                 ),
-              ),
-              Text(
-                _steps[_currentStep]['title'],
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
-              ),
-            ],
+                Text(
+                  _steps[_currentStep]['title'],
+                  style: TextStyle(
+                    fontSize: 14, 
+                    fontWeight: FontWeight.w500, 
+                    color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -693,203 +711,204 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
     
     switch (_currentStep) {
       case 0: return _buildProfileStep();
-      case 1: return _buildPreviewStep();
-      case 2: return _buildGroupsStep();
-      case 3: return _buildContactsStep();
-      case 4: return _buildCloseCircleStep();
-      case 5: return _buildReviewStep();
+      // case 1: return _buildPreviewStep();
+      case 1: return _buildGroupsStep();
+      case 2: return _buildContactsStep();
+      case 3: return _buildCloseCircleStep();
+      // case 5: return _buildReviewStep();
+      case 4: return _buildRoadmapStep();
       default: return _buildProfileStep();
     }
   }
 
   // NEW: Preview Step with Social Universe
-  Widget _buildPreviewStep() {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    // final theme = Theme.of(context);
+  // Widget _buildPreviewStep() {
+  //   final themeProvider = Provider.of<ThemeProvider>(context);
+  //   // final theme = Theme.of(context);
     
-    return Expanded(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        // crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Hero section
-          Container(
-            padding: const EdgeInsets.only(left: 24, right: 24, top: 10, bottom: 40),
-            child: Column(
-              children: [
-                Text(
-                  'Welcome to',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w700,
-                    color: Color.fromARGB(255, 15, 57, 142), // Navy blue color
-                  ),
-                ),
-                Text(
-                  'Your Social Universe',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w700,
-                    color: Color.fromARGB(255, 15, 57, 142), // Navy blue color
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Visualize your connections like never before',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: themeProvider.isDarkMode ? Colors.white70 : Colors.grey.shade700,
-                  ),
-                ),
-              ],
-            ),
-          ),
+  //   return Expanded(
+  //     child: ListView(
+  //       padding: EdgeInsets.zero,
+  //       // crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         // Hero section
+  //         Container(
+  //           padding: const EdgeInsets.only(left: 24, right: 24, top: 10, bottom: 40),
+  //           child: Column(
+  //             children: [
+  //               Text(
+  //                 'Welcome to',
+  //                 style: TextStyle(
+  //                   fontSize: 32,
+  //                   fontWeight: FontWeight.w700,
+  //                   color: Color.fromARGB(255, 15, 57, 142), // Navy blue color
+  //                 ),
+  //               ),
+  //               Text(
+  //                 'Your Social Universe',
+  //                 style: TextStyle(
+  //                   fontSize: 32,
+  //                   fontWeight: FontWeight.w700,
+  //                   color: Color.fromARGB(255, 15, 57, 142), // Navy blue color
+  //                 ),
+  //               ),
+  //               const SizedBox(height: 16),
+  //               Text(
+  //                 'Visualize your connections like never before',
+  //                 textAlign: TextAlign.center,
+  //                 style: TextStyle(
+  //                   fontSize: 18,
+  //                   color: themeProvider.isDarkMode ? Colors.white70 : Colors.grey.shade700,
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //         ),
           
-          // Social Universe Preview
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            child: Card(
-              elevation: 8,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: Container(
-                  height: 350,
-                  color: themeProvider.isDarkMode ? Colors.black : const Color(0xFF0A1A3B),
-                  child: SocialUniverseWidget(
-                    contacts: _mockPreviewContacts,
-                    showTitle: false,
-                    onContactView: (contact, ringToUse) {
-                      // Preview interaction
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('In your actual Social Universe, you can view details for ${contact.name}'),
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                    },
-                    height: 350,
-                    isImmersive: false,
-                    isDarkMode: themeProvider.isDarkMode,
-                  ),
-                ),
-              ),
-            ),
-          ),
+  //         // Social Universe Preview
+  //         Container(
+  //           margin: const EdgeInsets.symmetric(horizontal: 16),
+  //           child: Card(
+  //             elevation: 8,
+  //             shape: RoundedRectangleBorder(
+  //               borderRadius: BorderRadius.circular(20),
+  //             ),
+  //             child: ClipRRect(
+  //               borderRadius: BorderRadius.circular(20),
+  //               child: Container(
+  //                 height: 350,
+  //                 color: themeProvider.isDarkMode ? Colors.black : const Color(0xFF0A1A3B),
+  //                 child: SocialUniverseWidget(
+  //                   contacts: _mockPreviewContacts,
+  //                   showTitle: false,
+  //                   onContactView: (contact, ringToUse) {
+  //                     // Preview interaction
+  //                     ScaffoldMessenger.of(context).showSnackBar(
+  //                       SnackBar(
+  //                         content: Text('In your actual Social Universe, you can view details for ${contact.name}'),
+  //                         duration: const Duration(seconds: 2),
+  //                       ),
+  //                     );
+  //                   },
+  //                   height: 350,
+  //                   isImmersive: false,
+  //                   isDarkMode: themeProvider.isDarkMode,
+  //                 ),
+  //               ),
+  //             ),
+  //           ),
+  //         ),
           
-          const SizedBox(height: 24),
+  //         const SizedBox(height: 24),
           
-          // Features list
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildFeatureItem(
-                  Icons.star,
-                  'Visualize Connections',
-                  'See your relationships in beautiful rings',
-                  themeProvider,
-                ),
-                const SizedBox(height: 16),
-                _buildFeatureItem(
-                  Icons.notifications,
-                  'Smart Reminders',
-                  'Never lose touch with important people',
-                  themeProvider,
-                ),
-                const SizedBox(height: 16),
-                _buildFeatureItem(
-                  Icons.group,
-                  'Organize Groups',
-                  'Categorize contacts by relationship type',
-                  themeProvider,
-                ),
-              ],
-            ),
-          ),
+  //         // Features list
+  //         Padding(
+  //           padding: const EdgeInsets.symmetric(horizontal: 24),
+  //           child: Column(
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             children: [
+  //               _buildFeatureItem(
+  //                 Icons.star,
+  //                 'Visualize Connections',
+  //                 'See your relationships in beautiful rings',
+  //                 themeProvider,
+  //               ),
+  //               const SizedBox(height: 16),
+  //               _buildFeatureItem(
+  //                 Icons.notifications,
+  //                 'Smart Reminders',
+  //                 'Never lose touch with important people',
+  //                 themeProvider,
+  //               ),
+  //               const SizedBox(height: 16),
+  //               _buildFeatureItem(
+  //                 Icons.group,
+  //                 'Organize Groups',
+  //                 'Categorize contacts by relationship type',
+  //                 themeProvider,
+  //               ),
+  //             ],
+  //           ),
+  //         ),
           
-          const SizedBox(height: 40),
+  //         const SizedBox(height: 40),
           
-          // Call to action
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Text(
-                //   'Customize your social universe in a few easy steps',
-                //   style: TextStyle(
-                //     fontSize: 20,
-                //     fontWeight: FontWeight.w700,
-                //     color: themeProvider.isDarkMode ? Colors.white : Colors.black,
-                //   ),
-                // ),
-                const SizedBox(height: 8),
-                Text(
-                  'Let\'s build a Social Universe customized to you',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: themeProvider.isDarkMode ? Colors.white70 : Colors.grey.shade700,
-                  ),
-                ),
-              ],
-            ),
-          ),
+  //         // Call to action
+  //         Padding(
+  //           padding: const EdgeInsets.symmetric(horizontal: 24),
+  //           child: Column(
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             children: [
+  //               // Text(
+  //               //   'Customize your social universe in a few easy steps',
+  //               //   style: TextStyle(
+  //               //     fontSize: 20,
+  //               //     fontWeight: FontWeight.w700,
+  //               //     color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+  //               //   ),
+  //               // ),
+  //               const SizedBox(height: 8),
+  //               Text(
+  //                 'Let\'s build a Social Universe customized to you',
+  //                 style: TextStyle(
+  //                   fontSize: 16,
+  //                   fontWeight: FontWeight.w700,
+  //                   color: themeProvider.isDarkMode ? Colors.white70 : Colors.grey.shade700,
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //         ),
           
-          const SizedBox(height: 40),
-        ],
-      ),
-    );
-  }
+  //         const SizedBox(height: 40),
+  //       ],
+  //     ),
+  //   );
+  // }
 
-  Widget _buildFeatureItem(IconData icon, String title, String description, ThemeProvider themeProvider) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: const Color(0xff3CB3E9).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            icon,
-            color: const Color(0xff3CB3E9),
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: themeProvider.isDarkMode ? Colors.white : Colors.black,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                description,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: themeProvider.isDarkMode ? Colors.white70 : Colors.grey.shade600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
+  // Widget _buildFeatureItem(IconData icon, String title, String description, ThemeProvider themeProvider) {
+  //   return Row(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       Container(
+  //         width: 40,
+  //         height: 40,
+  //         decoration: BoxDecoration(
+  //           color: const Color(0xff3CB3E9).withOpacity(0.1),
+  //           borderRadius: BorderRadius.circular(12),
+  //         ),
+  //         child: Icon(
+  //           icon,
+  //           color: const Color(0xff3CB3E9),
+  //         ),
+  //       ),
+  //       const SizedBox(width: 16),
+  //       Expanded(
+  //         child: Column(
+  //           crossAxisAlignment: CrossAxisAlignment.start,
+  //           children: [
+  //             Text(
+  //               title,
+  //               style: TextStyle(
+  //                 fontSize: 16,
+  //                 fontWeight: FontWeight.w600,
+  //                 color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+  //               ),
+  //             ),
+  //             const SizedBox(height: 4),
+  //             Text(
+  //               description,
+  //               style: TextStyle(
+  //                 fontSize: 14,
+  //                 color: themeProvider.isDarkMode ? Colors.white70 : Colors.grey.shade600,
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
 
   Future<void> _importContactsWithGroup(List<fContacts.Contact> deviceContacts, SocialGroup group) async {
     final authService = Provider.of<AuthService>(context, listen: false);
@@ -922,19 +941,34 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
           _selectedContacts = updatedContacts;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Successfully imported contacts to ${group.name}!')),
-        );
+        Flushbar(
+      padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+      flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+      forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+      messageText: Center(
+          child: Text('Successfully imported contacts to ${group.name}!}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+              color: Colors.white, fontWeight: FontWeight.w400),)),
+    ).show(context);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to import contacts: ${result['message']}')),
-        );
+        Flushbar(
+      padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+      flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+      forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+      messageText: Center(
+          child: Text('Failed to import contacts: ${result['message']}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+              color: Colors.white, fontWeight: FontWeight.w400),)),
+    ).show(context);
       }
     } catch (e) {
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error importing contacts: $e')),
-      );
+      Flushbar(
+      padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+      flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+      forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+      messageText: Center(
+          child: Text('Error importing contacts: $e}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+              color: Colors.white, fontWeight: FontWeight.w400),)),
+    ).show(context);
     }
   }
 
@@ -1294,13 +1328,16 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                 ),
               ),
               const SizedBox(height: 8),
-              Text(
+              Padding(
+                padding: EdgeInsets.only(left: 20, right: 20),
+                child: Text(
                 'Create groups to categorize your relationships.\n1. Add, edit or remove groups\n2. Drag to reorder groups by priority',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 14,
                   color: themeProvider.isDarkMode ? Colors.white70 : Colors.grey.shade600,
                 ),
               ),
+              )
             ],
           ),
           const SizedBox(height: 30),
@@ -1454,7 +1491,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                                   color: themeProvider.isDarkMode 
                                       ? Colors.grey.shade500 
                                       : Colors.grey.shade600,
-                                  fontStyle: FontStyle.italic,
+                                  fontStyle: FontStyle.normal,
                                 ),
                               ),
                             ],
@@ -1478,7 +1515,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                   
                   // RIGHT SIDE: Column with delete button and frequency text
                   Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     mainAxisAlignment: MainAxisAlignment.center,
                     // mainAxisSize: MainAxisSize.min,
                     children: [
@@ -1536,7 +1573,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                               ? Colors.grey.shade400 
                               : const Color(0xff555555),
                           fontSize: 13,
-                          fontStyle: FontStyle.italic
+                          fontStyle: FontStyle.normal
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -1573,7 +1610,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                               ? Colors.grey.shade400 
                               : const Color(0xff555555),
                           fontSize: 13,
-                          fontStyle: FontStyle.italic
+                          fontStyle: FontStyle.normal
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -1790,14 +1827,14 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
         orderIndex: 0 // Set to 0 to appear at the top
       ));
     });
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Added a new group at the top.'),
-        duration: Duration(seconds: 2),
-        backgroundColor: Colors.green,
-      ),
-    );
+    Flushbar(
+      padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+      flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+      forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+      messageText: Center(
+          child: Text('Added a new group at the top!}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+              color: Colors.white, fontWeight: FontWeight.w400),)),
+    ).show(context);
   }
 
   void _deleteGroup(int index) {
@@ -2200,102 +2237,114 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
         );
       }
 
-      Widget _buildReviewStep() {
-        final themeProvider = Provider.of<ThemeProvider>(context);
-        final theme = Theme.of(context);
+      // Widget _buildReviewStep() {
+      //   final themeProvider = Provider.of<ThemeProvider>(context);
+      //   final theme = Theme.of(context);
         
-        return SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 40),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                child: Column(children: [
-                  Container(
-                    width: 100, height: 100,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Icons.check, size: 50, color: theme.colorScheme.primary),
-                  ),
-                  const SizedBox(height: 20),
-                  Text('Your Social Universe is Ready! 🎉', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black), textAlign: TextAlign.center,),
-                  const SizedBox(height: 16),
-                  Text(
-                    'We\'ve created your groups and scheduled your first nudges. You\'ll start seeing reminders soon — and get your first Weekly Digest this Sunday!',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey, height: 1.5),
-                  ),
-                ]),
-              ),
+      //   return SingleChildScrollView(
+      //     padding: const EdgeInsets.symmetric(horizontal: 16),
+      //     child: Column(
+      //       crossAxisAlignment: CrossAxisAlignment.start,
+      //       children: [
+      //         const SizedBox(height: 40),
+      //         Container(
+      //           width: double.infinity,
+      //           padding: const EdgeInsets.all(20),
+      //           child: Column(children: [
+      //             Container(
+      //               width: 100, height: 100,
+      //               decoration: BoxDecoration(
+      //                 color: theme.colorScheme.primary.withOpacity(0.1),
+      //                 shape: BoxShape.circle,
+      //               ),
+      //               child: Icon(Icons.check, size: 50, color: theme.colorScheme.primary),
+      //             ),
+      //             const SizedBox(height: 20),
+      //             Text('Your Social Universe is Ready! 🎉', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black), textAlign: TextAlign.center,),
+      //             const SizedBox(height: 16),
+      //             Text(
+      //               'We\'ve created your groups and scheduled your first nudges. You\'ll start seeing reminders soon — and get your first Weekly Digest this Sunday!',
+      //               textAlign: TextAlign.center,
+      //               style: TextStyle(fontSize: 16, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey, height: 1.5),
+      //             ),
+      //           ]),
+      //         ),
               
-              const SizedBox(height: 40),
-              Text('Your Nudge Setup:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
-              const SizedBox(height: 20),
+      //         const SizedBox(height: 40),
+      //         Text('Your Nudge Setup:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
+      //         const SizedBox(height: 20),
               
-              _buildSummaryItem(Icons.person, 'Profile Complete', 'Username: ${_usernameController.text}'),
-              _buildSummaryItem(Icons.group, '${_userGroups.length} Social Groups', 'Organized by priority'),
-              _buildSummaryItem(Icons.contacts, 'Contacts', 'You can add contacts later from the dashboard'),
-              _buildSummaryItem(Icons.star, 'Favourites', '${_closeCircleContacts.length} important relationships'),
-              // _buildSummaryItem(Icons.notifications, 'Weekly Digest', 'Starting this Sunday'),
+      //         _buildSummaryItem(Icons.person, 'Profile Complete', 'Username: ${_usernameController.text}'),
+      //         _buildSummaryItem(Icons.group, '${_userGroups.length} Social Groups', 'Organized by priority'),
+      //         _buildSummaryItem(Icons.contacts, 'Contacts', 'You can add contacts later from the dashboard'),
+      //         _buildSummaryItem(Icons.star, 'Favourites', '${_closeCircleContacts.length} important relationships'),
+      //         // _buildSummaryItem(Icons.notifications, 'Weekly Digest', 'Starting this Sunday'),
               
-              const SizedBox(height: 40),
+      //         const SizedBox(height: 40),
               
-              // Preview of what's next
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: theme.colorScheme.primary.withOpacity(0.2)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.star, color: theme.colorScheme.primary),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Explore Your Social Universe',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: themeProvider.isDarkMode ? Colors.white : Colors.black,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Visit your dashboard to explore your personalized Social Universe visualization and manage your connections.',
-                      style: TextStyle(
-                        color: themeProvider.isDarkMode ? Colors.white70 : Colors.grey.shade700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+      //         // Preview of what's next
+      //         Container(
+      //           padding: const EdgeInsets.all(16),
+      //           decoration: BoxDecoration(
+      //             color: theme.colorScheme.primary.withOpacity(0.05),
+      //             borderRadius: BorderRadius.circular(12),
+      //             border: Border.all(color: theme.colorScheme.primary.withOpacity(0.2)),
+      //           ),
+      //           child: Column(
+      //             crossAxisAlignment: CrossAxisAlignment.start,
+      //             children: [
+      //               Row(
+      //                 children: [
+      //                   Icon(Icons.star, color: theme.colorScheme.primary),
+      //                   const SizedBox(width: 8),
+      //                   Text(
+      //                     'Explore Your Social Universe',
+      //                     style: TextStyle(
+      //                       fontWeight: FontWeight.bold,
+      //                       color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+      //                     ),
+      //                   ),
+      //                 ],
+      //               ),
+      //               const SizedBox(height: 8),
+      //               Text(
+      //                 'Visit your dashboard to explore your personalized Social Universe visualization and manage your connections.',
+      //                 style: TextStyle(
+      //                   color: themeProvider.isDarkMode ? Colors.white70 : Colors.grey.shade700,
+      //                 ),
+      //               ),
+      //             ],
+      //           ),
+      //         ),
               
-              const SizedBox(height: 40),
-            ],
-          ),
+      //         const SizedBox(height: 40),
+      //       ],
+      //     ),
+      //   );
+      // }
+
+      Widget _buildRoadmapStep() {
+        // final themeProvider = Provider.of<ThemeProvider>(context);
+        
+        return Column(
+          children: [
+            // _buildStepIndicator(themeProvider),
+            const RoadmapStepWidget(),
+            // const ScrollableRoadmapWidget(),
+          ],
         );
       }
 
-      Widget _buildSummaryItem(IconData icon, String title, String subtitle) {
-        final themeProvider = Provider.of<ThemeProvider>(context);
-        final theme = Theme.of(context);
+      // Widget _buildSummaryItem(IconData icon, String title, String subtitle) {
+      //   final themeProvider = Provider.of<ThemeProvider>(context);
+      //   final theme = Theme.of(context);
         
-        return ListTile(
-          leading: Icon(icon, color: theme.colorScheme.primary),
-          title: Text(title, style: TextStyle(fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
-          subtitle: Text(subtitle, style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey)),
-        );
-      }
+      //   return ListTile(
+      //     leading: Icon(icon, color: theme.colorScheme.primary),
+      //     title: Text(title, style: TextStyle(fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
+      //     subtitle: Text(subtitle, style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey)),
+      //   );
+      // }
 
       @override
       Widget build(BuildContext context) {
@@ -2369,12 +2418,14 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                         if (_userGroups.isNotEmpty) {
                           _nextStep();
                         } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Please add at least one group'),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
+                          Flushbar(
+                            padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+                            flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+                            forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+                            messageText: Center(
+                                child: Text('Please add at least one group!}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+                                    color: Colors.white, fontWeight: FontWeight.w400),)),
+                          ).show(context);
                         }
                       } else {
                         // All other steps (preview, contacts, close circle, review) - just continue

@@ -144,6 +144,7 @@ class ApiService {
   Future<Map<String, dynamic>> scheduleSingleNudge({
     required String contactId,
     required DateTime scheduledTime,
+    bool rescheduled = false,
   }) async {
     try {
       final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('scheduleSingleNudge');
@@ -154,6 +155,7 @@ class ApiService {
       final result = await callable.call({
         'contactId': contactId,
         'scheduledTime': scheduledTimeIso,
+        'rescheduled': rescheduled
       });
       
       print('✅ Called scheduleSingleNudge function for contact: $contactId');
@@ -580,6 +582,7 @@ class ApiService {
           username: currentUser.displayName ?? currentUser.email!.split('@')[0],
           createdAt: DateTime.now(),
           weeklyDigestEnabled: true,
+          immersionLevel: 0.5,
           groups: [
             {"name": "Family", "id": "Family", "period": "Monthly", "frequency": 4, "colorCode": "#4FC3F7"},
             {"name": "Friend", "id": "Friend", "period": "Quarterly", "frequency": 8, "colorCode": "#FF6F61"},
@@ -627,6 +630,7 @@ class ApiService {
           admin: false,
           id: user.uid,
           email: user.email ?? '',
+          immersionLevel: 0.5,
           username: user.displayName ?? user.email!.split('@')[0],
           createdAt: DateTime.now(),
           groups: [],
@@ -660,6 +664,7 @@ class ApiService {
     QuerySnapshot snap = await _getUserContactsCollection(userId).orderBy('name').get();
     return snap.docs.map((doc) => Contact.fromMap(doc.data() as Map<String, dynamic>..['id'] = doc.id)).toList();
   }
+
 
   Future<void> addContact(Contact contact) async {
     String userId = _auth.currentUser!.uid;
@@ -1045,6 +1050,7 @@ Future<Map<String, dynamic>> register(String email, String password) async {
       email: email,
       username: '', // Will be set in CompleteProfileScreen
       phoneNumber: '',
+      immersionLevel: 0.5,
       bio: '',
       description: '',
       photoUrl: '',
@@ -1082,6 +1088,7 @@ Future<Map<String, dynamic>> register(String email, String password) async {
       id: result.user!.uid,
       email: email,
       username: username,
+      immersionLevel: 0.5,
       phoneNumber: '',
       bio: '',
       description: '',
@@ -1343,8 +1350,28 @@ Future<void> updateFeedbackAdminData({
 
   Future<void> updateContactCDI(Contact contact) async {
     try {
+      final currentUser = _auth.currentUser;
+      final userDoc = await _usersCollection.doc(currentUser!.uid).get();
+      final userData = userDoc.data() as Map<String, dynamic>;
+      
+      // Convert groups to SocialGroup objects
+      final groupsList = (userData['groups'] as List? ?? [])
+          .map((g) => SocialGroup.fromMap(g))
+          .toList();
+      
+      // Create socialGroups map
+      final socialGroups = Map.fromIterable(
+        groupsList,
+        key: (group) => (group as SocialGroup).name,
+        value: (group) => group as SocialGroup,
+      );
+
       final socialUniverseService = SocialUniverseService();
-      final updatedContact = socialUniverseService.updateContactCDI(contact);
+      final updatedContact = socialUniverseService.updateContactCDI(
+        contact,
+        socialGroups: socialGroups,
+        groupsList: groupsList
+      );
       
       await updateContact(updatedContact);
     } catch (e) {
@@ -1357,7 +1384,7 @@ Future<void> updateFeedbackAdminData({
     required String contactId,
     required String interactionType,
     String? notes,
-    String? interactionDate, // Add this optional parameter
+    String? interactionDate,
   }) async {
     try {
       final currentUser = _auth.currentUser;
@@ -1375,10 +1402,25 @@ Future<void> updateFeedbackAdminData({
         contactDoc.data() as Map<String, dynamic>..['id'] = contactDoc.id,
       );
       
+      // Get groups
+      final userDoc = await _usersCollection.doc(currentUser.uid).get();
+      final userData = userDoc.data() as Map<String, dynamic>;
+      
+      // Convert groups to SocialGroup objects
+      final groupsList = (userData['groups'] as List? ?? [])
+          .map((g) => SocialGroup.fromMap(g))
+          .toList();
+      
+      // Create socialGroups map
+      final socialGroups = Map.fromIterable(
+        groupsList,
+        key: (group) => (group as SocialGroup).name,
+        value: (group) => group as SocialGroup,
+      );
+      
       // Determine interaction timestamp
       DateTime interactionTimestamp;
       if (interactionDate != null && interactionDate.isNotEmpty) {
-        // Parse the provided date
         try {
           interactionTimestamp = DateTime.parse(interactionDate);
         } catch (e) {
@@ -1386,7 +1428,6 @@ Future<void> updateFeedbackAdminData({
           interactionTimestamp = DateTime.now();
         }
       } else {
-        // Use current time as default
         interactionTimestamp = DateTime.now();
       }
       
@@ -1400,7 +1441,7 @@ Future<void> updateFeedbackAdminData({
         'notes': notes,
       };
       
-      // Count interactions in last 90 days (from the interaction date)
+      // Count interactions in last 90 days
       final ninetyDaysAgo = interactionTimestamp.subtract(const Duration(days: 90));
       final recentInteractions = interactionHistory.values
           .where((interaction) {
@@ -1412,7 +1453,6 @@ Future<void> updateFeedbackAdminData({
           .length;
       
       // Update contact with new interaction
-      // IMPORTANT: Only update lastContacted if this interaction is the most recent
       final isMostRecent = interactionTimestamp.isAfter(contact.lastContacted);
       final updatedContact = contact.copyWith(
         lastContacted: isMostRecent ? interactionTimestamp : contact.lastContacted,
@@ -1420,9 +1460,13 @@ Future<void> updateFeedbackAdminData({
         interactionCountInWindow: recentInteractions,
       );
       
-      // Calculate new CDI
+      // Calculate new CDI and ring using groups
       final socialUniverseService = SocialUniverseService();
-      final contactWithCDI = socialUniverseService.updateContactCDI(updatedContact);
+      final contactWithCDI = socialUniverseService.updateContactCDI(
+        updatedContact,
+        socialGroups: socialGroups,
+        groupsList: groupsList,
+      );
       
       // Save to Firestore
       await updateContact(contactWithCDI);
@@ -1431,10 +1475,10 @@ Future<void> updateFeedbackAdminData({
       await nudgeService.rescheduleNudgeAfterInteraction(
         contactWithCDI, 
         currentUser.uid,
-        interactionTimestamp, // Pass the interaction timestamp to the nudge service
+        interactionTimestamp,
       );
       
-      print('Interaction logged for ${contact.name} at $interactionTimestamp, new CDI: ${contactWithCDI.cdi}');
+      print('Interaction logged for ${contact.name} at $interactionTimestamp, new CDI: ${contactWithCDI.cdi}, ring: ${contactWithCDI.computedRing}');
       
     } catch (e) {
       print('Error logging interaction: $e');
@@ -1448,11 +1492,30 @@ Future<void> updateFeedbackAdminData({
       final currentUser = _auth.currentUser;
       if (currentUser == null) throw Exception('No user logged in');
       
+      // Get contacts and groups in parallel
       final contacts = await getAllContacts();
+      app_user.User userDoc = await getUser();
+      
+      
+      // Convert groups
+      final groupsList = (userDoc.groups as List? ?? [])
+          .map((g) => SocialGroup.fromMap(g))
+          .toList();
+      
+      final socialGroups = Map.fromIterable(
+        groupsList,
+        key: (group) => (group as SocialGroup).name,
+        value: (group) => group as SocialGroup,
+      );
+      
       final socialUniverseService = SocialUniverseService();
       
       for (var contact in contacts) {
-        final updatedContact = socialUniverseService.updateContactCDI(contact);
+        final updatedContact = socialUniverseService.updateContactCDI(
+          contact,
+          socialGroups: socialGroups,
+          groupsList: groupsList,
+        );
         await updateContact(updatedContact);
       }
       
@@ -1462,7 +1525,6 @@ Future<void> updateFeedbackAdminData({
       throw Exception('Failed to batch update CDI: $e');
     }
   }
-
 
 }
 

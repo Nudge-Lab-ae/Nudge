@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:nudge/providers/feedback_provider.dart';
 import 'package:nudge/screens/contacts/edit_contact_screen.dart';
-import 'package:nudge/screens/dashboard/dashboard_screen.dart';
+// import 'package:nudge/screens/dashboard/dashboard_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/services/auth_service.dart';
 import 'package:nudge/theme/text_styles.dart';
@@ -262,12 +262,12 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
         (contact.imageUrl.startsWith('/') || 
          contact.imageUrl.startsWith('file://'));
 
-    bool hasNoInfo = contact.phoneNumber.isEmpty &&
-        contact.email.isEmpty &&
-        contact.notes.isEmpty &&
-        contact.birthday == null &&
-        contact.anniversary == null &&
-        contact.workAnniversary == null;
+    // bool hasNoInfo = contact.phoneNumber.isEmpty &&
+    //     contact.email.isEmpty &&
+    //     contact.notes.isEmpty &&
+    //     contact.birthday == null &&
+    //     contact.anniversary == null &&
+    //     contact.workAnniversary == null;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -658,33 +658,33 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
           ],
           
           // Contextual message when no info
-          if (hasNoInfo) ...[
-            const SizedBox(height: 30),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: themeProvider.getCardColor(context),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: themeProvider.getTextHintColor(context)),
-              ),
-              child: Column(
-                children: [
-                  Icon(Icons.info, size: 40, color: themeProvider.getTextSecondaryColor(context)),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Add more details to this contact for better insights.',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontFamily: 'OpenSans',
-                      color: themeProvider.getTextSecondaryColor(context),
-                      fontStyle: FontStyle.italic,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-          ],
+          // if (hasNoInfo) ...[
+          //   const SizedBox(height: 30),
+          //   Container(
+          //     padding: const EdgeInsets.all(16),
+          //     decoration: BoxDecoration(
+          //       color: themeProvider.getCardColor(context),
+          //       borderRadius: BorderRadius.circular(10),
+          //       border: Border.all(color: themeProvider.getTextHintColor(context)),
+          //     ),
+          //     child: Column(
+          //       children: [
+          //         Icon(Icons.info, size: 40, color: themeProvider.getTextSecondaryColor(context)),
+          //         const SizedBox(height: 10),
+          //         Text(
+          //           'Add more details to this contact for better insights.',
+          //           style: TextStyle(
+          //             fontSize: 16,
+          //             fontFamily: 'OpenSans',
+          //             color: themeProvider.getTextSecondaryColor(context),
+          //             fontStyle: FontStyle.italic,
+          //           ),
+          //           textAlign: TextAlign.center,
+          //         ),
+          //       ],
+          //     ),
+          //   ),
+          // ],
           
           const SizedBox(height: 30),
           

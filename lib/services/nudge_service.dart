@@ -45,6 +45,23 @@ class NudgeService {
             .toList());
   }
 
+  Future<List<Nudge>> getAllNudges(String userId) async {
+  try {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('nudges')
+        .get();
+    
+    return snapshot.docs
+        .map((doc) => Nudge.fromMap(doc.data()))
+        .toList();
+  } catch (e) {
+    print('Error getting all nudges: $e');
+    return [];
+  }
+}
+
    List<DateTime> _calculateStaggeredTimes(DateTime baseTime, int count, Duration interval) {
     List<DateTime> times = [];
     for (int i = 0; i < count; i++) {

@@ -1,4 +1,6 @@
 // lib/screens/contacts/contacts_list_screen.dart
+import 'package:another_flushbar/flushbar.dart';
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:nudge/models/social_group.dart';
 import 'package:nudge/screens/contacts/import_contacts_screen.dart';
@@ -48,6 +50,10 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
   String? _currentGroupName;
   bool emptyContacts = false;
   List<SocialGroup> allGroups = [];
+    final ConfettiController _confettiController = ConfettiController(
+    duration: const Duration(seconds: 3)
+  );
+  bool _showConfetti = false;
 
   @override
   void initState() {
@@ -66,6 +72,20 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
           _selectionMode = 'add_to_group';
         });
       }
+    });
+  }
+
+  showConfetti() {
+    setState(() {
+      _showConfetti = true;
+    });
+    // Start confetti
+    _confettiController.play();
+     // Close after animation
+    Future.delayed(const Duration(seconds: 3), () {
+      setState(() {
+          _showConfetti = false;
+        });
     });
   }
 
@@ -307,7 +327,23 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                       ),
                     ],
                   ),
-                  
+                   if (_showConfetti)
+                    Positioned.fill(
+                      child: ConfettiWidget(
+                        confettiController: _confettiController,
+                        blastDirectionality: BlastDirectionality.explosive,
+                        shouldLoop: false,
+                        colors: const [
+                          Colors.green,
+                          Colors.blue,
+                          Colors.pink,
+                          Colors.orange,
+                          Colors.purple,
+                          Color(0xFF3CB3E9), // Your app's primary color
+                        ],
+                        // createParticlePath: _drawStar, // Optional: for star-shaped confetti
+                      ),
+                    ),
                   // Progress overlays
                   _buildDeletionProgressOverlay(themeProvider: themeProvider),
                   _buildAddingToGroupProgressOverlay(themeProvider: themeProvider),
@@ -1124,14 +1160,15 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
 
     apiService.cancelNudgesForContacts(_selectedContacts.toList());
     
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Deleted $_deletionSuccessCount contacts${_deletionErrorCount > 0 ? '. $_deletionErrorCount failed' : ''}',
-        ),
-        duration: const Duration(seconds: 3),
-      ),
-    );
+    
+    Flushbar(
+      padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+      flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+      forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+      messageText: Center(
+          child: Text('Deleted $_deletionSuccessCount contacts${_deletionErrorCount > 0 ? '. $_deletionErrorCount failed' : ''}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+              color: Colors.white, fontWeight: FontWeight.w400),)),
+    ).show(context);
     
     setState(() {
       _isDeletingInProgress = false;
@@ -1202,14 +1239,14 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
       }
     }
     
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Deleted $_deletionSuccessCount contacts${_deletionErrorCount > 0 ? '. $_deletionErrorCount failed' : ''}',
-        ),
-        duration: const Duration(seconds: 3),
-      ),
-    );
+    Flushbar(
+      padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+      flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+      forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+      messageText: Center(
+          child: Text('Deleted $_deletionSuccessCount contacts${_deletionErrorCount > 0 ? '. $_deletionErrorCount failed' : ''}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+              color: Colors.white, fontWeight: FontWeight.w400),)),
+    ).show(context);
     
     setState(() {
       _isDeletingInProgress = false;
@@ -1298,14 +1335,14 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
       apiService.scheduleNudgesForContacts(contactIds: contactIds);
     }
     
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Added $_addingSuccessCount contacts to $groupName${_addingErrorCount > 0 ? '. $_addingErrorCount failed' : ''}',
-        ),
-        duration: const Duration(seconds: 3),
-      ),
-    );
+    Flushbar(
+      padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+      flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+      forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+      messageText: Center(
+          child: Text( 'Added $_addingSuccessCount contacts to $groupName${_addingErrorCount > 0 ? '. $_addingErrorCount failed' : ''}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+              color: Colors.white, fontWeight: FontWeight.w400),)),
+    ).show(context);
 
     widget.hideButton();
     

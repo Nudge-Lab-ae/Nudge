@@ -1,10 +1,13 @@
 // lib/widgets/contact_details_modal.dart
+import 'package:another_flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../models/contact.dart';
 import '../services/api_service.dart';
 import '../providers/theme_provider.dart'; // Add this import
 import 'package:provider/provider.dart'; // Add this import
+import 'package:confetti/confetti.dart';
+
 
 class ContactDetailsModal extends StatefulWidget {
   final Contact contact;
@@ -23,6 +26,9 @@ class ContactDetailsModal extends StatefulWidget {
 }
 
 class _ContactDetailsModalState extends State<ContactDetailsModal> {
+
+  // bool _showConfetti = false;
+ 
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
@@ -32,6 +38,7 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
     final daysSinceLastContact = DateTime.now().difference(contact.lastContacted).inDays;
     final displayRing = widget.displayRing ?? contact.computedRing;
     final ringColor = _getRingColor(displayRing);
+    
     
     return Container(
       height: MediaQuery.of(context).size.height * 0.65,
@@ -256,7 +263,7 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                   Icon(Icons.add, size: 20, color: Colors.white),
                   SizedBox(width: 12),
                   Text(
-                    'ADD TOUCHPOINT',
+                    'LOG INTERACTION',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -565,6 +572,21 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
   bool _isLoading = false;
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
+  bool _showConfetti = false;
+  late ConfettiController _confettiController;
+
+  @override 
+  void initState(){
+    super.initState();
+    _confettiController = ConfettiController(duration: const Duration(seconds: 3));
+  }
+
+  @override
+  void dispose() {
+    _confettiController.dispose();
+    _notesController.dispose();
+    super.dispose();
+  }
 
   final List<String> _interactionTypes = [
     'call',
@@ -573,12 +595,7 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
     'other'
   ];
 
-  @override
-  void dispose() {
-    _notesController.dispose();
-    super.dispose();
-  }
-
+ 
   Future<void> _selectDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -607,18 +624,26 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
 
   Future<void> _logInteraction() async {
     if (_selectedInteractionType == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select an interaction type'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      Flushbar(
+        padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero,
+        backgroundGradient: LinearGradient(
+          colors: [Color.fromARGB(255, 207, 82, 73), Color.fromARGB(255, 207, 82, 73)],
+          stops: [0.6, 1],
+        ), duration: Duration(seconds: 2),
+        dismissDirection: FlushbarDismissDirection.HORIZONTAL, forwardAnimationCurve: Curves.fastLinearToSlowEaseIn,
+        flushbarPosition: FlushbarPosition.TOP,
+        messageText: Center(
+            child: Text( 'Please select an interaction type', style: TextStyle(fontFamily: 'Inter',fontSize: 14,
+              color: Colors.white, fontWeight: FontWeight.w600), textAlign: TextAlign.center,)),).show(context);
       return;
     }
 
     setState(() {
       _isLoading = true;
+      
     });
+      
+     
 
     try {
       // Combine date and time
@@ -637,18 +662,27 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
         notes: _notesController.text.isNotEmpty ? _notesController.text : null,
         interactionDate: interactionDateTime.toIso8601String(), // Add this parameter
       );
+      
+      setState(() {
+         _showConfetti = true;
+      });
 
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Touchpoint logged for ${widget.contact.name}! Next nudge has been rescheduled.'),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 3),
-        ),
-      );
+       _confettiController.play();
+
+      Flushbar(
+        padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero,
+        backgroundGradient: LinearGradient(
+          colors: [Colors.green, Colors.green],
+          stops: [0.6, 1],
+        ), duration: Duration(seconds: 2),
+        dismissDirection: FlushbarDismissDirection.HORIZONTAL, forwardAnimationCurve: Curves.fastLinearToSlowEaseIn,
+        flushbarPosition: FlushbarPosition.TOP,
+        messageText: Center(
+            child: Text( 'Touchpoint logged for ${widget.contact.name}! Next nudge has been rescheduled.', style: TextStyle(fontFamily: 'Inter',fontSize: 14,
+              color: Colors.white, fontWeight: FontWeight.w600), textAlign: TextAlign.center,)),).show(context);
 
       // Close both modals after a brief delay
-      Future.delayed(const Duration(milliseconds: 500), () {
+      Future.delayed(const Duration(milliseconds: 2500), () {
         Navigator.pop(context); // Close the log touchpoint modal
         Navigator.pop(context); // Close the contact detail modal
       });
@@ -685,7 +719,9 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
         maxHeight: MediaQuery.of(context).size.height * 0.85,
       ),
       padding: const EdgeInsets.all(20),
-      child: Column(
+      child: Stack(
+        children: [
+          Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1015,6 +1051,32 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
           const SizedBox(height: 8),
         ],
       ),
+      if (_showConfetti)
+          Positioned.fill(
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                // color: Colors.black.withOpacity(0.5),
+                child: ConfettiWidget(
+                  confettiController: _confettiController,
+                  blastDirectionality: BlastDirectionality.explosive,
+                  shouldLoop: false,
+                  colors: const [
+                    Colors.green,
+                    Colors.blue,
+                    Colors.pink,
+                    Colors.orange,
+                    Colors.purple,
+                    Color(0xFF3CB3E9),
+                  ],
+                  // createParticlePath: _drawStar,
+                  numberOfParticles: 30,
+                  gravity: 0.1,
+                ),
+              ),
+            ),
+          ),
+      ])
     ));
   }
 }

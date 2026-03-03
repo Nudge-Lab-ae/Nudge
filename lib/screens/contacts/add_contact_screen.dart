@@ -1,6 +1,8 @@
 // lib/screens/contacts/add_contact_screen.dart
 import 'dart:typed_data';
 
+import 'package:another_flushbar/flushbar.dart';
+import 'package:confetti/confetti.dart';
 import 'package:crop_your_image/crop_your_image.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +15,7 @@ import 'package:nudge/services/api_service.dart';
 import 'package:nudge/theme/text_styles.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
 import 'package:country_code_picker/country_code_picker.dart';
+// import 'package:nudge/widgets/hi_five_animation.dart';
 // import 'package:nudge/widgets/gradient_text.dart';
 import 'package:provider/provider.dart';
 // import '../../services/database_service.dart';
@@ -69,6 +72,11 @@ class _AddContactScreenState extends State<AddContactScreen> {
   Uint8List? _imageBytes;
   bool saving = false;
   CountryCode _selectedCountry = CountryCode(dialCode: '+971', code: 'AE');
+  // bool _showCelebration = false;
+  final ConfettiController _confettiController = ConfettiController(
+    duration: const Duration(seconds: 3)
+  );
+  bool _showConfetti = false;
 
   @override
   void initState() {
@@ -1245,9 +1253,14 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                   try {
                                     _imageUrl = await uploadImageToFirebase(_imageBytes!, 'new_contact_${DateTime.now().millisecondsSinceEpoch}');
                                   } catch (e) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Failed to upload image: $e')),
-                                    );
+                                    Flushbar(
+                                      padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+                                      flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+                                      forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+                                      messageText: Center(
+                                          child: Text('Failed to upload image: $e', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+                                              color: Colors.white, fontWeight: FontWeight.w400),)),
+                                    ).show(context);
                                     return;
                                   }
                                 }
@@ -1316,43 +1329,37 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                   print('Error scheduling automatic nudge: $e');
                                   // Don't show error to user - nudge scheduling is secondary
                                 }
-                                                              
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Row(
-                                      children: [
-                                        const Icon(Icons.celebration, color: Colors.white),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              const Text(
-                                                'Successfully Created Contact!',
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    backgroundColor: Colors.green,
-                                    duration: const Duration(seconds: 4),
-                                  ),
-                                );
+                               
+                                Flushbar(
+                                  padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+                                  flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+                                  forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+                                  messageText: Center(
+                                      child: Text('Successfully Created Contact', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+                                          color: Colors.white, fontWeight: FontWeight.w400),)),
+                                ).show(context);
+                                // Show success animation
                                 setState(() {
+                                  _showConfetti = true;
                                   saving = false;
                                 });
-                                // Navigate back
-                                if (widget.isOnboarding) {
-                                  Navigator.pop(context, newContact); // Return the created contact
-                                } else {
-                                  Navigator.pop(context); // Regular navigation
-                                }
+
+                                // Start confetti
+                                _confettiController.play();
+
+                                // Close after animation
+                                Future.delayed(const Duration(seconds: 3), () {
+                                  if (mounted) {
+                                    setState(() {
+                                      _showConfetti = false;
+                                    });
+                                    if (widget.isOnboarding) {
+                                      Navigator.pop(context, newContact);
+                                    } else {
+                                      Navigator.pop(context);
+                                    }
+                                  }
+                                });
 
                               }
                             },
@@ -1389,6 +1396,23 @@ class _AddContactScreenState extends State<AddContactScreen> {
                       height: MediaQuery.of(context).size.height,
                     ),
                   ),
+                 if (_showConfetti)
+                    Positioned.fill(
+                      child: ConfettiWidget(
+                        confettiController: _confettiController,
+                        blastDirectionality: BlastDirectionality.explosive,
+                        shouldLoop: false,
+                        colors: const [
+                          Colors.green,
+                          Colors.blue,
+                          Colors.pink,
+                          Colors.orange,
+                          Colors.purple,
+                          Color(0xFF3CB3E9), // Your app's primary color
+                        ],
+                        // createParticlePath: _drawStar, // Optional: for star-shaped confetti
+                      ),
+                    ),
                 ])
               ));
     }));
@@ -1396,6 +1420,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
   
   @override
   void dispose() {
+     _confettiController.dispose();
     _nameController.dispose();
     _phoneController.dispose();
     _emailController.dispose();

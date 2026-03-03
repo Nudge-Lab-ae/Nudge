@@ -74,6 +74,8 @@ dependencies:
   phone_number:
   path_provider:
   flutter_contacts_stack:
+  another_flushbar: 
+  # animations_plus:
   # firebase_app_check: 0.4.1
   # device_info_plus: ^8.0.0
 

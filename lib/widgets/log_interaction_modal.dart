@@ -1,5 +1,8 @@
+import 'package:another_flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:nudge/services/api_service.dart';
+import 'package:confetti/confetti.dart';
+// import 'package:nudge/widgets/hi_five_animation.dart';
 import '../../models/contact.dart';
 
 // Custom modal for logging interactions
@@ -24,6 +27,9 @@ class LogInteractionModalState extends State<LogInteractionModal> {
   bool _isLoading = false;
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
+  bool _showConfetti = false;
+  late ConfettiController _confettiController;
+  // bool _showCelebration = false;
 
   final List<String> _interactionTypes = [
     'call',
@@ -33,8 +39,15 @@ class LogInteractionModalState extends State<LogInteractionModal> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _confettiController = ConfettiController(duration: const Duration(seconds: 3));
+  }
+
+  @override
   void dispose() {
     _notesController.dispose();
+    _confettiController.dispose();
     super.dispose();
   }
 
@@ -64,20 +77,47 @@ class LogInteractionModalState extends State<LogInteractionModal> {
     }
   }
 
+  void showSelectFlushbar(BuildContext context) {
+    Flushbar(
+      padding: EdgeInsets.all(10),
+      borderRadius: BorderRadius.zero,
+      backgroundGradient: LinearGradient(
+        colors: [Color.fromRGBO(243, 87, 87, 1), Color.fromRGBO(243, 87, 87, 1)],
+        stops: [0.6, 1],
+      ),
+      duration: Duration(seconds: 2),
+      flushbarPosition: FlushbarPosition.TOP,
+      dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+      forwardAnimationCurve: Curves.fastLinearToSlowEaseIn,
+      messageText: Center(
+          child: Text(
+        'Please select an interaction type',
+        style: TextStyle(
+            fontFamily: 'OpenSans',
+            fontSize: 14,
+            color: Colors.white,
+            fontWeight: FontWeight.w400),
+      )),
+    ).show(context);
+  }
+
   Future<void> _logInteraction() async {
     if (_selectedInteractionType == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select an interaction type'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   const SnackBar(
+      //     content: Text('Please select an interaction type'),
+      //     backgroundColor: Colors.orange,
+      //   ),
+      // );
+      showSelectFlushbar(context);
       return;
     }
 
     setState(() {
-      _isLoading = true;
-    });
+        _showConfetti = true;
+        _isLoading = false;
+      });
+      
 
     try {
       // Combine date and time
@@ -96,32 +136,54 @@ class LogInteractionModalState extends State<LogInteractionModal> {
         notes: _notesController.text.isNotEmpty ? _notesController.text : null,
         interactionDate: interactionDateTime.toIso8601String(),
       );
+      _confettiController.play();
 
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Touchpoint logged for ${widget.contact.name}! Next nudge has been rescheduled.'),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 3),
-        ),
-      );
+     
+       Flushbar(
+      padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero,
+      backgroundGradient: LinearGradient(
+        colors: [Color.fromRGBO(38, 184, 19, 1), Color.fromRGBO(38, 184, 19, 1)],
+        stops: [0.6, 1],
+      ), duration: Duration(seconds: 2),
+      dismissDirection: FlushbarDismissDirection.HORIZONTAL, forwardAnimationCurve: Curves.fastLinearToSlowEaseIn,
+      flushbarPosition: FlushbarPosition.TOP,
+      messageText: Center(
+          child: Text( 'Touchpoint logged for ${widget.contact.name}! Next nudge has been rescheduled.', style: TextStyle(fontFamily: 'Inter',fontSize: 14,
+            color: Colors.white, fontWeight: FontWeight.w600), textAlign: TextAlign.center,)),).show(context);
 
-      // Close the modal and return both success and the interaction date
-      if (mounted) {
-        Navigator.pop(context, {
-          'success': true,
-          'interactionDateTime': interactionDateTime,
-        });
-      }
+      // Show hi-five animation
+      setState(() {
+        // _showCelebration = true;
+        _isLoading = false;
+      });
+
+      // Close after animation
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) {
+          setState(() {
+            // _showCelebration = false;
+          });
+          Navigator.pop(context, {
+            'success': true,
+            'interactionDateTime': interactionDateTime,
+          });
+        }
+      });
 
     } catch (e) {
       print('Error logging touchpoint: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to log touchpoint: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      
+      Flushbar(
+      padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero,
+      backgroundGradient: LinearGradient(
+        colors: [Colors.red, Colors.red],
+        stops: [0.6, 1],
+      ), duration: Duration(seconds: 2),
+      dismissDirection: FlushbarDismissDirection.HORIZONTAL, forwardAnimationCurve: Curves.fastLinearToSlowEaseIn,
+      flushbarPosition: FlushbarPosition.TOP,
+      messageText: Center(
+          child: Text( 'Failed to log touchpoint: $e', style: TextStyle(fontFamily: 'Inter',fontSize: 14,
+            color: Colors.white, fontWeight: FontWeight.w600), textAlign: TextAlign.center,)),).show(context);
       setState(() {
         _isLoading = false;
       });
@@ -135,7 +197,9 @@ class LogInteractionModalState extends State<LogInteractionModal> {
     final formattedDate = '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}';
     final formattedTime = _selectedTime.format(context);
     
-    return Container(
+    return Stack(
+    children: [
+      Container(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.85,
       ),
@@ -470,6 +534,42 @@ class LogInteractionModalState extends State<LogInteractionModal> {
           const SizedBox(height: 8),
         ],
       ),
-    );
+    ),
+    if (_showConfetti)
+          Positioned.fill(
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                color: Colors.black.withOpacity(0.5),
+                child: ConfettiWidget(
+                  confettiController: _confettiController,
+                  blastDirectionality: BlastDirectionality.explosive,
+                  shouldLoop: false,
+                  colors: const [
+                    Colors.green,
+                    Colors.blue,
+                    Colors.pink,
+                    Colors.orange,
+                    Colors.purple,
+                    Color(0xFF3CB3E9),
+                  ],
+                  // createParticlePath: _drawStar,
+                  numberOfParticles: 30,
+                  gravity: 0.1,
+                ),
+              ),
+            ),
+          ),
+    // if (_showCelebration)
+    //     Container(
+    //       color: Colors.black.withOpacity(0.7),
+    //       width: MediaQuery.of(context).size.width,
+    //       height: MediaQuery.of(context).size.height,
+    //       child: HiFiveAnimation(
+    //         onComplete: (){}, // This will be overridden in state
+    //       ),
+    //     ),
+    ])
+    ;
   }
 }

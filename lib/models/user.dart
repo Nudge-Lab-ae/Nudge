@@ -9,6 +9,7 @@ class User {
   bool admin;
   String description;
   DateTime createdAt;
+  double immersionLevel;
   final Map<String, dynamic>? goals;
   final List<Map<String, dynamic>>? groups;
   final List<Map<String, dynamic>> nudges;
@@ -29,6 +30,7 @@ class User {
     required this.photoUrl,
     required this.profileCompleted,
     required this.admin,
+    required this.immersionLevel,
     required this.weeklyDigestEnabled,
   });
 
@@ -41,6 +43,7 @@ class User {
       'createdAt': DateTime.now().millisecondsSinceEpoch,
       'nudges': [],
       'goals': {},
+      'immersionLevel': 0.5,
       'groups': [
         {"name": "Family", "id": "Family", "period": "Monthly", "frequency": 4, "colorCode": "#4FC3F7"},
         {"name": "Friend", "id": "Friend", "period": "Quarterly", "frequency": 7, "colorCode": "#FF6F61"},
@@ -72,6 +75,7 @@ class User {
       'id': id,
       'email': email,
       'username': username,
+      'immersionLevel': immersionLevel,
       'createdAt': createdAt.millisecondsSinceEpoch,
       'nudges': nudges,
       'goals': goals ?? {},
@@ -101,6 +105,7 @@ class User {
       goals: Map<String, dynamic>.from(map['goals'] ?? defaultValues['goals']!),
       groups: List<Map<String, dynamic>>.from(map['groups'] ?? defaultValues['groups']!),
       bio: map['bio'] ?? defaultValues['bio']!,
+      immersionLevel: map['immersionLevel'] ?? defaultValues['immersionLevel'],
       description: map['description'] ?? defaultValues['description']!,
       phoneNumber: map['phoneNumber'] ?? defaultValues['phoneNumber']!,
       photoUrl: map['photoUrl'] ?? defaultValues['photoUrl']!,

@@ -4,6 +4,7 @@ import 'dart:io';
 // import 'dart:typed_data';
 // import 'dart:typed_data';
 
+import 'package:another_flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:nudge/models/contact.dart';
 import 'package:nudge/models/social_group.dart';
@@ -193,11 +194,14 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
           
           Navigator.pop(context, recentlyImportedContacts);
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Successfully imported ${result['importedCount']} contacts to ${selectedGroup.name}!'),
-            ),
-          );
+           Flushbar(
+            padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+            flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+            forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+            messageText: Center(
+                child: Text( 'Successfully imported ${result['importedCount']} contacts to ${selectedGroup.name}!', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+                    color: Colors.white, fontWeight: FontWeight.w400),)),
+          ).show(context);
         }
       } else {
         setState(() {
@@ -513,11 +517,14 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
 
       Navigator.pop(context, recentlyImportedContacts);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Successfully imported ${result['importedCount']} contacts to ${selectedGroup.name}!'),
-        ),
-      );
+      Flushbar(
+            padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+            flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+            forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+            messageText: Center(
+                child: Text( 'Successfully imported ${result['importedCount']} contacts to ${selectedGroup.name}!', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+                    color: Colors.white, fontWeight: FontWeight.w400),)),
+          ).show(context);
     } else {
       setState(() {
         _statusMessage = 'Import failed: ${result['message']}';

@@ -183,6 +183,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   email: user.email!,
                                   username: user.displayName ?? '',
                                   phoneNumber: '',
+                                  immersionLevel: 0.5,
                                   bio: '',
                                   description: '',
                                   photoUrl: user.photoURL ?? '',
@@ -262,6 +263,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             email: user.email!,
                             username: user.displayName ?? '',
                             phoneNumber: '',
+                            immersionLevel: 0.5,
                             bio: '',
                             description: '',
                             photoUrl: user.photoURL ?? '',
@@ -320,6 +322,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           await apiService.addUser(thisUser.User(
                             admin: false,
                             id: user.uid,
+                            immersionLevel: 0.5,
                             email: user.email!,
                             username: user.displayName ?? '',
                             phoneNumber: '',

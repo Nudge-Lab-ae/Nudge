@@ -500,6 +500,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     email: user.email!,
                                     username: '',
                                     phoneNumber: '',
+                                    immersionLevel: 0.5,
                                     bio: '',
                                     description: '',
                                     photoUrl: '',
@@ -638,6 +639,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               admin: false,
                               id: user.uid,
                               email: user.email!,
+                              immersionLevel: 0.5,
                               username: user.displayName ?? '',
                               phoneNumber: '',
                               bio: '',
@@ -731,6 +733,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             await apiService.addUser(thisUser.User(
                               admin: false,
                               id: user.uid,
+                              immersionLevel: 0.5,
                               email: user.email!,
                               username: user.displayName ?? '',
                               phoneNumber: '',

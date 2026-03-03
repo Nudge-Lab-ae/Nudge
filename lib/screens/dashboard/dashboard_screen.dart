@@ -208,7 +208,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     case 1: // Social Universe is now at index 1
                       return const SocialUniverseImmersiveScreen();
                     case 2: // Notifications moved to index 4
-                      return const NotificationsScreen(showAppBar: false);
+                      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+                      final pendingNudgeId = args?['pendingNudgeId'];
+                      return  NotificationsScreen(showAppBar: false, pendingNudgeId: pendingNudgeId);
                       case 3: // Groups moved to index 3
                       return const GroupsListScreen(showAppBar: false);
                     case 4: // Contacts moved to index 2

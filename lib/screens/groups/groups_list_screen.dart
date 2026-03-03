@@ -1,3 +1,4 @@
+import 'package:another_flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:nudge/screens/contacts/contact_detail_screen.dart';
 import 'package:nudge/screens/contacts/import_contacts_screen.dart';
@@ -123,14 +124,14 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
     return sortedGroups;
   }
 
-  void _showDeleteConfirmation(BuildContext context, SocialGroup group, ApiService apiService, ThemeProvider themeProvider) {
+  void _showDeleteConfirmation(BuildContext context, SocialGroup group, ApiService apiService, ThemeProvider themeProvider, bool doubleTap) {
     final theme = Theme.of(context);
     
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
         backgroundColor: themeProvider.getSurfaceColor(context),
-        title: Text('Delete Group', style: TextStyle(color: theme.colorScheme.primary, fontFamily: 'OpenSans')),
+        title: Text('Delete Group', style: TextStyle(color: theme.colorScheme.primary, fontFamily: 'OpenSans', fontWeight: FontWeight.w700)),
         content: Text('Are you sure you want to delete the "${group.name}" group?', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
         actions: [
           TextButton(
@@ -181,23 +182,9 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                       availableGroups,
                       apiService,
                       onSuccess: (message) {
-                        // ScaffoldMessenger.of(context).showSnackBar(
-                        //   SnackBar(
-                        //     content: Text(message),
-                        //     backgroundColor: Colors.green,
-                        //     behavior: SnackBarBehavior.floating,
-                        //   ),
-                        // );
                         _showSuccessMessage(message);
                       },
                       onError: (error) {
-                        // ScaffoldMessenger.of(context).showSnackBar(
-                        //   SnackBar(
-                        //     content: Text('Error: $error'),
-                        //     backgroundColor: Colors.red,
-                        //     behavior: SnackBarBehavior.floating,
-                        //   ),
-                        // );
                         _showFailureMessage(error);
                       },
                     );
@@ -205,36 +192,36 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                   }
                 }
                 
-                // Delete the group
+                // Delete the group and reorder remaining groups
                 if (context.mounted) {
+                  // Get current groups
                   final updatedGroups = await apiService.getGroupsStream().first;
-                  updatedGroups.removeWhere((g) => g.id == group.id);
-                  await apiService.updateGroups(updatedGroups);
                   
-                  // ScaffoldMessenger.of(context).showSnackBar(
-                  //   SnackBar(
-                  //     content: Text('Deleted "${group.name}" group'),
-                  //     backgroundColor: Colors.green,
-                  //     behavior: SnackBarBehavior.floating,
-                  //   ),
-                  // );
+                  // Remove the deleted group
+                  updatedGroups.removeWhere((g) => g.id == group.id);
+                  
+                  // Reorder the remaining groups to have sequential orderIndex starting from 0
+                  final reorderedGroups = updatedGroups.asMap().entries.map((entry) {
+                    return entry.value.copyWith(orderIndex: entry.key);
+                  }).toList();
+                  
+                  // Save the reordered groups
+                  await apiService.updateGroups(reorderedGroups);
+                  
                   _showSuccessMessage('Deleted "${group.name}" group');
                   
                   // Refresh the UI
                   setState(() {
                     _initializeStreams();
                   });
+                  
+                  if (!doubleTap) {
+                    Navigator.pop(context);
+                  }
                 }
                 
               } catch (e) {
                 if (context.mounted) {
-                  // ScaffoldMessenger.of(context).showSnackBar(
-                  //   SnackBar(
-                  //     content: Text('Error deleting group: $e'),
-                  //     backgroundColor: Colors.red,
-                  //     behavior: SnackBarBehavior.floating,
-                  //   ),
-                  // );
                   _showFailureMessage('Error deleting group: $e');
                 }
               }
@@ -308,7 +295,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'The "${deletedGroup.name}" group is being deleted. Please assign each contact to a new group or leave them unassigned.',
+                      'The "${deletedGroup.name}" group is being deleted. Please assign each contact to a new group.',
                       style: TextStyle(
                         fontSize: 14,
                         color: themeProvider.getTextSecondaryColor(context),
@@ -413,14 +400,14 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                                         ),
                                       ),
                                       const SizedBox(height: 4),
-                                      Text(
+                                      /* Text(
                                         'Previously: ${contactOriginalGroups[contact.id] ?? 'No group'}',
                                         style: TextStyle(
                                           fontSize: 12,
                                           color: themeProvider.getTextSecondaryColor(context),
                                           fontStyle: FontStyle.italic,
                                         ),
-                                      ),
+                                      ), */
                                     ],
                                   ),
                                 ),
@@ -1155,7 +1142,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () => _showGroupDetails(context, group, members, apiService, themeProvider: themeProvider),
-          onDoubleTap: () => _showDeleteConfirmation(context, group, apiService, themeProvider),
+          onDoubleTap: () => _showDeleteConfirmation(context, group, apiService, themeProvider, true),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -1813,9 +1800,14 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                       onUpdate();
                       Navigator.of(context).pop();
                       
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Updated "${updatedGroup.name}" group')),
-                      );
+                     Flushbar(
+                        padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+                        flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+                        forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+                        messageText: Center(
+                            child: Text( 'Updated "${updatedGroup.name}" group!', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+                                color: Colors.white, fontWeight: FontWeight.w400),)),
+                      ).show(context);
                     } catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Error updating group: $e')),
@@ -1917,7 +1909,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                     const SizedBox(width: 10),
                     IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => _showDeleteConfirmation(context, group, apiService, themeProvider),
+                      onPressed: () => _showDeleteConfirmation(context, group, apiService, themeProvider, false),
                     ),
                   ],
                 ),

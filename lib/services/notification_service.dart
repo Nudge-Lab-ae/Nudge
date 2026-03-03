@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:another_flushbar/flushbar.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -19,6 +20,14 @@ class NotificationService {
   }
 
   NotificationService._internal();
+
+  String? _pendingNudgeId;
+
+  String? getPendingNudgeId() {
+  final id = _pendingNudgeId;
+  _pendingNudgeId = null; // Clear after retrieval
+  return id;
+}
 
   Future<void> initialize() async {
     // Initialize timezone database
@@ -206,18 +215,18 @@ class NotificationService {
     }
     _showSnackBar('Reminder rescheduled!', Color.fromARGB(255, 18, 132, 27));
     try {
-      final result = await FirebaseFunctions.instance
+      await FirebaseFunctions.instance
           .httpsCallable('scheduleEventReminderForActualDate')
           .call({'notificationId': notificationId});
       
-      if (result.data['success'] == true) {
-        _showSnackBar('Reminder scheduled!', Color.fromARGB(255, 18, 132, 27));
-      } else {
-        _showSnackBar('Could not schedule reminder', Color.fromARGB(255, 149, 19, 30));
-      }
+      // if (result.data['success'] == true) {
+      //   _showSnackBar('Reminder scheduled!', Color.fromARGB(255, 18, 132, 27));
+      // } else {
+      //   _showSnackBar('Could not schedule reminder', Color.fromARGB(255, 149, 19, 30));
+      // }
     } catch (e) {
       print('Error scheduling reminder: $e');
-      _showSnackBar('Error scheduling reminder', Color.fromARGB(255, 136, 17, 27));
+      // _showSnackBar('Error scheduling reminder', Color.fromARGB(255, 136, 17, 27));
     }
   }
 
@@ -230,15 +239,15 @@ class NotificationService {
     }
     _showSnackBar('Dismissed Reminder', Color(0xff999999));
     try {
-      final result = await FirebaseFunctions.instance
+      await FirebaseFunctions.instance
           .httpsCallable('dismissEventNotification')
           .call({'notificationId': notificationId});
       
-      if (result.data['success'] == true) {
-        _showSnackBar('Notification dismissed', Color.fromARGB(255, 19, 144, 29));
-      } else {
-        _showSnackBar('Could not dismiss notification', Color.fromARGB(255, 152, 21, 32));
-      }
+      // if (result.data['success'] == true) {
+      //   _showSnackBar('Notification dismissed', Color.fromARGB(255, 19, 144, 29));
+      // } else {
+      //   _showSnackBar('Could not dismiss notification', Color.fromARGB(255, 152, 21, 32));
+      // }
     } catch (e) {
       print('Error dismissing notification: $e');
       _showSnackBar('Error dismissing notification',  Color.fromARGB(255, 134, 17, 27));
@@ -246,47 +255,57 @@ class NotificationService {
   }
 
   void _showSnackBar(String message, Color messageColor) {
+     Flushbar(
+        padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+        flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+        forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+        backgroundColor: messageColor,
+        messageText: Center(
+            child: Text(message, style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+                color: Colors.white, fontWeight: FontWeight.w400),)),
+      ).show(navigatorKey.currentContext!);
+  }
+
+
+  void _handleFCMNotificationTap(RemoteMessage message) {
+    print('FCM notification tapped - forcing to notifications screen');
+    
+    // Extract nudgeId from message data
+    final nudgeId = message.data['nudgeId'];
+    print('NudgeId from notification: $nudgeId');
+    
+    // Store nudgeId in a global variable or pass through navigation
+    if (nudgeId != null) {
+      // Use a global variable to track pending nudge action
+      _pendingNudgeId = nudgeId;
+    }
+    
+    // Always navigate to notifications screen
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (navigatorKey.currentState != null) {
-        final scaffoldMessenger = ScaffoldMessenger.of(navigatorKey.currentState!.context);
-        scaffoldMessenger.showSnackBar(
-          SnackBar(
-            backgroundColor: messageColor,
-            content: Text(message),
-            duration: const Duration(seconds: 2),
-          ),
+        navigatorKey.currentState!.pushNamedAndRemoveUntil(
+          '/dashboard',
+          (route) => false,
+          arguments: {
+            'initialTab': 2, // 2 is notifications tab index
+            'pendingNudgeId': nudgeId, // Pass nudgeId through arguments
+          },
         );
       }
     });
   }
 
-
-void _handleFCMNotificationTap(RemoteMessage message) {
-  print('FCM notification tapped - forcing to notifications screen');
-  
-  // Always navigate to notifications screen
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    if (navigatorKey.currentState != null) {
-      navigatorKey.currentState!.pushNamedAndRemoveUntil(
-        '/dashboard',
-        (route) => false,
-        arguments: {'initialTab': 2}, // 3 is notifications tab index
-      );
-    }
-  });
-}
-
-String _buildNotificationPayload(Map<String, dynamic> messageData) {
-  // Always return the same payload for notifications tab
-  final payload = {
-    'screen': 'notifications',
-    'timestamp': DateTime.now().millisecondsSinceEpoch.toString(),
-  };
-  
-  return payload.entries
-      .map((entry) => '${entry.key}=${entry.value}')
-      .join('&');
-}
+  String _buildNotificationPayload(Map<String, dynamic> messageData) {
+    // Always return the same payload for notifications tab
+    final payload = {
+      'screen': 'notifications',
+      'timestamp': DateTime.now().millisecondsSinceEpoch.toString(),
+    };
+    
+    return payload.entries
+        .map((entry) => '${entry.key}=${entry.value}')
+        .join('&');
+  }
 
   Future<void> _showLocalNotificationFromFCM(RemoteMessage message) async {
     final data = message.data;
@@ -312,7 +331,8 @@ String _buildNotificationPayload(Map<String, dynamic> messageData) {
           AndroidNotificationAction(
             'dismiss',
             'Dismiss',
-            cancelNotification: true,
+            showsUserInterface: true,
+            // cancelNotification: true,
           ),
         ],
       );
@@ -330,7 +350,7 @@ String _buildNotificationPayload(Map<String, dynamic> messageData) {
       await notificationsPlugin.show(
         message.hashCode,
         message.notification?.title ?? '🎉 Upcoming Event!',
-        message.notification?.body ?? 'Time to connect!',
+        message.notification?.body ?? 'This is a reminder for the event!',
         platformChannelSpecifics,
         payload: message.data.isNotEmpty ? message.data.toString() : null,
       );

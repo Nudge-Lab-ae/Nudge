@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:another_flushbar/flushbar.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -17,6 +18,7 @@ import 'package:nudge/screens/contacts/edit_contact_screen.dart';
 import 'package:nudge/screens/feedback/feedback_forum_screen.dart';
 import 'package:nudge/screens/splash_screen.dart';
 import 'package:nudge/services/api_service.dart';
+import 'package:nudge/services/notification_service.dart';
 import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/theme/app_theme.dart';
 import 'package:nudge/theme/text_styles.dart';
@@ -162,11 +164,16 @@ Future<void> initializeLocalNotifications() async {
           DarwinNotificationAction.plain(
             'remind_me_then',
             'Remind Me Then',
+            options: {DarwinNotificationActionOption.foreground},
           ),
           DarwinNotificationAction.plain(
             'dismiss',
             'Dismiss',
-            // options: {DarwinNotificationActionOption.destructive},
+            options: {
+              DarwinNotificationActionOption.destructive,
+              DarwinNotificationActionOption.foreground,
+            },
+            
           ),
         ],
       ),
@@ -342,14 +349,14 @@ void showEventNotificationDialog(Map<String, dynamic> data) {
               TextButton(
                 onPressed: () {
                   Navigator.of(context).pop();
-                  _handleDismissAction(data);
+                  _handleDismissAction(data, context);
                 },
                 child: const Text('Dismiss'),
               ),
               ElevatedButton(
                 onPressed: () {
                   Navigator.of(context).pop();
-                  _handleRemindMeThenAction(data);
+                  _handleRemindMeThenAction(data, context);
                 },
                 child: const Text('Remind Me Then'),
               ),
@@ -361,7 +368,7 @@ void showEventNotificationDialog(Map<String, dynamic> data) {
   });
 }
 
-Future<void> _handleRemindMeThenAction(Map<String, dynamic> data) async {
+Future<void> _handleRemindMeThenAction(Map<String, dynamic> data, BuildContext context) async {
   final notificationId = data['notificationId'];
   
   if (notificationId == null) {
@@ -375,17 +382,17 @@ Future<void> _handleRemindMeThenAction(Map<String, dynamic> data) async {
         .call({'notificationId': notificationId});
     
     if (result.data['success'] == true) {
-      _showSnackBar('Reminder scheduled!');
+      _showFlushbar('Reminder scheduled!', context);
     } else {
-      _showSnackBar('Could not schedule reminder');
+      _showFlushbar('Could not schedule reminder', context);
     }
   } catch (e) {
     print('Error scheduling reminder: $e');
-    _showSnackBar('Error scheduling reminder');
+    _showFlushbar('Error scheduling reminder', context);
   }
 }
 
-Future<void> _handleDismissAction(Map<String, dynamic> data) async {
+Future<void> _handleDismissAction(Map<String, dynamic> data, BuildContext context) async {
   final notificationId = data['notificationId'];
   
   if (notificationId == null) {
@@ -399,28 +406,49 @@ Future<void> _handleDismissAction(Map<String, dynamic> data) async {
         .call({'notificationId': notificationId});
     
     if (result.data['success'] == true) {
-      _showSnackBar('Notification dismissed');
+      _showFlushbar('Notification dismissed', context);
     } else {
-      _showSnackBar('Could not dismiss notification');
+      _showFlushbar('Could not dismiss notification', context);
     }
   } catch (e) {
     print('Error dismissing notification: $e');
-    _showSnackBar('Error dismissing notification');
+    _showFlushbar('Error dismissing notification', context);
   }
 }
 
-void _showSnackBar(String message) {
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    if (navigatorKey.currentState != null) {
-      final scaffoldMessenger = ScaffoldMessenger.of(navigatorKey.currentState!.context);
-      scaffoldMessenger.showSnackBar(
-        SnackBar(
-          content: Text(message),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    }
-  });
+// void _showSnackBar(String message) {
+//   WidgetsBinding.instance.addPostFrameCallback((_) {
+//     if (navigatorKey.currentState != null) {
+//       final scaffoldMessenger = ScaffoldMessenger.of(navigatorKey.currentState!.context);
+//       scaffoldMessenger.showSnackBar(
+//         SnackBar(
+//           content: Text(message),
+//           duration: const Duration(seconds: 2),
+//         ),
+//       );
+//     }
+//   });
+// }
+
+void _showFlushbar (String message, BuildContext context) {
+  
+  Flushbar(
+      padding: EdgeInsets.all(10),
+      borderRadius: BorderRadius.zero,
+      duration: Duration(seconds: 2),
+      flushbarPosition: FlushbarPosition.TOP,
+      dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+      forwardAnimationCurve: Curves.fastLinearToSlowEaseIn,
+      messageText: Center(
+          child: Text(
+        message,
+        style: TextStyle(
+            fontFamily: 'OpenSans',
+            fontSize: 14,
+            color: Colors.white,
+            fontWeight: FontWeight.w400),
+      )),
+    ).show(context);
 }
 
 // Add a function to schedule event notifications for contacts:
@@ -537,11 +565,17 @@ void navigateToNotificationsScreen() {
   print('Direct navigation to notifications screen');
   
   if (navigatorKey.currentState != null) {
+    // Get the pending nudge ID if any
+    final pendingNudgeId = NotificationService().getPendingNudgeId();
+    
     // Clear all existing routes and go to dashboard with notifications tab
     navigatorKey.currentState!.pushNamedAndRemoveUntil(
       '/dashboard',
       (route) => false,
-      arguments: {'initialTab': 2},
+      arguments: {
+        'initialTab': 2,
+        'pendingNudgeId': pendingNudgeId, // Pass through arguments
+      },
     );
   } else {
     print('Navigator not ready, storing for later');
@@ -592,33 +626,43 @@ String _buildNotificationPayload(Map<String, dynamic> messageData) {
 //   });
 // }
 
-void _handleBackgroundMessage(RemoteMessage message) {
-  print('Background message - forcing to notifications screen');
-  
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    if (navigatorKey.currentState != null) {
-      navigatorKey.currentState!.pushNamedAndRemoveUntil(
-        '/dashboard',
-        (route) => false,
-        arguments: {'initialTab': 2},
-      );
-    }
-  });
-}
+  void _handleBackgroundMessage(RemoteMessage message) {
+    print('Background message - forcing to notifications screen');
+    
+    final nudgeId = message.data['nudgeId'];
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (navigatorKey.currentState != null) {
+        navigatorKey.currentState!.pushNamedAndRemoveUntil(
+          '/dashboard',
+          (route) => false,
+          arguments: {
+            'initialTab': 2,
+            'pendingNudgeId': nudgeId,
+          },
+        );
+      }
+    });
+  }
 
-void _handleTerminatedMessage(RemoteMessage message) {
-  print('Terminated message - forcing to notifications screen');
-  
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    if (navigatorKey.currentState != null) {
-      navigatorKey.currentState!.pushNamedAndRemoveUntil(
-        '/dashboard',
-        (route) => false,
-        arguments: {'initialTab': 2},
-      );
-    }
-  });
-}
+  void _handleTerminatedMessage(RemoteMessage message) {
+    print('Terminated message - forcing to notifications screen');
+    
+    final nudgeId = message.data['nudgeId'];
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (navigatorKey.currentState != null) {
+        navigatorKey.currentState!.pushNamedAndRemoveUntil(
+          '/dashboard',
+          (route) => false,
+          arguments: {
+            'initialTab': 2,
+            'pendingNudgeId': nudgeId,
+          },
+        );
+      }
+    });
+  }
 
 class NudgeApp extends StatelessWidget {
   const NudgeApp({super.key});
