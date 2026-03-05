@@ -35,7 +35,7 @@ class VIPBadge extends StatelessWidget {
           ),
           const SizedBox(width: 2),
           Text(
-            'VIP',
+            'Favourite',
             style: TextStyle(
               color: Colors.white,
               fontSize: size - 6,

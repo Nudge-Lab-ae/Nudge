@@ -88,6 +88,37 @@ class Contact {
     };
   }
 
+  factory Contact.empty() {
+    return Contact(
+      id: '',
+      name: '',
+      connectionType: '',
+      frequency: 0,
+      period: '',
+      socialGroups: [],
+      phoneNumber: '',
+      email: '',
+      notes: '',
+      imageUrl: '',
+      lastContacted: DateTime.now(),
+      isVIP: false,
+      priority: 3,
+      tags:[],
+      interactionHistory: {},
+      profession: '',
+      birthday: null,
+      anniversary: null,
+      workAnniversary: null,
+      // New fields
+      cdi: 0,
+      computedRing: 'middle',
+      rawBand: 'middle',
+      rawBandSince: DateTime.now(),
+      angleDeg: 0,
+      interactionCountInWindow: 0,
+    );
+  }
+
   factory Contact.fromMap(Map<String, dynamic> map) {
     return Contact(
       id: map['id'] ?? '',

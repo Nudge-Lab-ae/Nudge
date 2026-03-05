@@ -2,8 +2,10 @@
 // import 'package:another_flushbar/flushbar.dart';
 import 'package:another_flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
+import 'package:nudge/main.dart';
 import 'package:nudge/models/contact.dart';
 import 'package:nudge/models/nudge.dart';
+import 'package:nudge/models/social_group.dart';
 // import 'package:nudge/models/social_group.dart';
 // import 'package:nudge/models/social_group.dart';
 import 'package:nudge/screens/contacts/contact_detail_screen.dart';
@@ -46,6 +48,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   int _cancellationErrorCount = 0;
 
   bool _hasProcessedPendingNudge = false;
+  bool _showCircularProgress = false;
   
   // Track if FAB menu is open
 
@@ -54,6 +57,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     super.initState();
     _selectedDay = DateTime.now();
     _processOverdueNudges();
+    _processPendingNudge();
   }
 
   @override
@@ -366,7 +370,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     
     // When used from dashboard (showAppBar: false), use CustomScrollView
     if (!widget.showAppBar) {
-      return StreamBuilder<List<Nudge>>(
+      return Scaffold(
+        body: StreamBuilder<List<Nudge>>(
         stream: _nudgeService.getNudgesStream(user.uid),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -391,48 +396,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     style: const TextStyle(color: Colors.white, fontFamily: 'OpenSans'),
                   ),
                 )
-              : Center()/* FeedbackFloatingButton(
-                  currentSection: 'notifications',
-                  onMenuStateChanged: () {
-                    _onFabMenuStateChanged();
-                  },
-                  extraActions: [
-                    FeedbackAction(
-                      label: 'Log Interaction',
-                      icon: Icons.add,
-                      onPressed: () {
-                        _showAddTouchpointModal(context, themeProvider);
-                      },
-                    ),
-                    FeedbackAction(
-                      label: 'Create Nudge',
-                      icon: Icons.notifications,
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Create Nudge - Placeholder Action')),
-                        );
-                      },
-                    ),
-                    FeedbackAction(
-                      label: 'Add Contact',
-                      icon: Icons.person_add,
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Add Contact - Placeholder Action')),
-                        );
-                      },
-                    ),
-                    FeedbackAction(
-                      label: 'View Stats',
-                      icon: Icons.analytics,
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('View Stats - Placeholder Action')),
-                        );
-                      },
-                    ),
-                  ],
-                ) */,
+              : Center(),
             floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
             body: Stack(
               children: [
@@ -548,14 +512,29 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                                 nudge.scheduledTime.isBefore(DateTime.now());
                                 final isSelected = _selectedNudgeIds.contains(nudge.id);
                                 
-                                return _isSelecting
-                                    ? _buildSelectableNudgeItem(nudge, isSelected, isOverdue, context, themeProvider: themeProvider)
-                                    : _buildNormalNudgeItem(nudge, isOverdue, context, themeProvider: themeProvider);
+                                if (_isSelecting) {
+                                  return _buildSelectableNudgeItemWithKey(
+                                    nudge, 
+                                    isSelected, 
+                                    isOverdue, 
+                                    context, 
+                                    themeProvider: themeProvider
+                                  );
+                                } else {
+                                  return _buildNormalNudgeItemWithKey(
+                                    nudge, 
+                                    isOverdue, 
+                                    context, 
+                                    themeProvider: themeProvider
+                                  );
+                                }
                               },
                               childCount: filteredNudges.length,
+                              addAutomaticKeepAlives: false,
+                              addRepaintBoundaries: true,
                             ),
                           ),
-                        ),
+                        )
                     ],
                     
                     // Bottom padding for FAB
@@ -575,11 +554,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 
                 // Cancellation progress overlay
                 _buildCancellationProgressOverlay(themeProvider: themeProvider),
+                _showCircularProgress?Center(
+                        child: CircularProgressIndicator(),
+                      ):Center()
               ],
             ),
           );
         },
-      );
+      ));
     }
     
     // Original implementation for standalone use
@@ -772,6 +754,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                 nudge.scheduledTime.isBefore(DateTime.now());
                 return _buildNormalNudgeItem(nudge, isOverdue, context, themeProvider: themeProvider);
               },
+              addAutomaticKeepAlives: false,
             ),
           ),
         ],
@@ -1129,18 +1112,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Widget _buildNudgeList(List<Nudge> nudges, {required ThemeProvider themeProvider}) {
-    if (_isSelecting) {
-      return ListView.builder(
-        itemCount: nudges.length,
-        itemBuilder: (context, index) {
-          final nudge = nudges[index];
-          final isOverdue = !nudge.isCompleted && nudge.scheduledTime.isBefore(DateTime.now());
-          final isSelected = _selectedNudgeIds.contains(nudge.id);
-          return _buildSelectableNudgeItem(nudge, isSelected, isOverdue, context, themeProvider: themeProvider);
-        },
-      );
-    }
-
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     
@@ -1172,26 +1143,54 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }).toList();
 
     return ListView(
+      key: const PageStorageKey<String>('nudge_list'),
       children: [
         if (overdueNudges.isNotEmpty) ...[
           _buildSectionHeader('Overdue', overdueNudges.length, themeProvider: themeProvider),
           ...overdueNudges.map((nudge) {
-            final isOverdue = true;
-            return _buildNormalNudgeItem(nudge, isOverdue, context, themeProvider: themeProvider);
+            final isSelected = _selectedNudgeIds.contains(nudge.id);
+            return _isSelecting
+                ? _buildSelectableNudgeItemWithKey(nudge, isSelected, true, context, themeProvider: themeProvider)
+                : _buildNormalNudgeItemWithKey(nudge, true, context, themeProvider: themeProvider);
           }),
         ],
         if (todayNudges.isNotEmpty) ...[
           _buildSectionHeader('Today', todayNudges.length, themeProvider: themeProvider),
-          ...todayNudges.map((nudge) => _buildNormalNudgeItem(nudge, false, context, themeProvider: themeProvider)),
+          ...todayNudges.map((nudge) {
+            final isSelected = _selectedNudgeIds.contains(nudge.id);
+            return _isSelecting
+                ? _buildSelectableNudgeItemWithKey(nudge, isSelected, false, context, themeProvider: themeProvider)
+                : _buildNormalNudgeItemWithKey(nudge, false, context, themeProvider: themeProvider);
+          }),
+
         ],
         if (upcomingNudges.isNotEmpty) ...[
           _buildSectionHeader('Upcoming', upcomingNudges.length, themeProvider: themeProvider),
-          ...upcomingNudges.map((nudge) => _buildNormalNudgeItem(nudge, false, context, themeProvider: themeProvider)),
+          ...upcomingNudges.map((nudge) {
+            final isSelected = _selectedNudgeIds.contains(nudge.id);
+            return _isSelecting
+                ? _buildSelectableNudgeItemWithKey(nudge, isSelected, false, context, themeProvider: themeProvider)
+                : _buildNormalNudgeItemWithKey(nudge, false, context, themeProvider: themeProvider);
+          }),
         ],
         const SizedBox(height: 20),
       ],
     );
   }
+
+Widget _buildSelectableNudgeItemWithKey(Nudge nudge, bool isSelected, bool isOverdue, BuildContext context, {required ThemeProvider themeProvider}) {
+  return RepaintBoundary(
+    key: ValueKey('selectable_${nudge.id}_${isSelected}'),
+    child: _buildSelectableNudgeItem(nudge, isSelected, isOverdue, context, themeProvider: themeProvider),
+  );
+}
+
+Widget _buildNormalNudgeItemWithKey(Nudge nudge, bool isOverdue, BuildContext context, {required ThemeProvider themeProvider}) {
+  return RepaintBoundary(
+    key: ValueKey('nudge_${nudge.id}_${nudge.isCompleted}_${isOverdue}'),
+    child: _buildNormalNudgeItem(nudge, isOverdue, context, themeProvider: themeProvider),
+  );
+}
 
   Widget _buildSectionHeader(String title, int count, {required ThemeProvider themeProvider}) {
     final theme = Theme.of(context);
@@ -1235,6 +1234,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final initials = _getContactInitials(nudge.contactName);
     final iconIndex = getRandomIndex(nudge.contactId);
     String message = 'Time to reconnect.';
+    
+    // Check if this is a birthday nudge
+    final bool isBirthday = nudge.message.toLowerCase().contains('birthday');
+    
     if (nudge.message.contains('Rescheduled') || nudge.isSnoozed){
       message = 'Time to reconnect | [Rescheduled]';
     }
@@ -1242,6 +1245,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (nudge.message.contains('birthday')){
       message = nudge.message;
     }
+    
+    // Birthday colors
+    final Color? birthdayTextColor = isBirthday ? Colors.green.shade700 : null;
+    final Color? birthdaySubtitleColor = isBirthday ? Colors.green.shade600 : null;
+    final Color? birthdayCardColor = isBirthday 
+        ? (themeProvider.isDarkMode 
+            ? const Color.fromARGB(255, 40, 143, 47).withOpacity(0.3) 
+            : Colors.green.shade50) 
+        : null;
     
     return Dismissible(
       key: Key(nudge.id),
@@ -1276,20 +1288,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         child: Card(
           margin: const EdgeInsets.symmetric(/* horizontal: 16, */ vertical: 4),
           elevation: 2,
-          color: themeProvider.getSurfaceColor(context),
+          color: birthdayCardColor ?? themeProvider.getSurfaceColor(context),
           child: ListTile(
             leading: Stack(
               children: [
                 CircleAvatar(
                   radius: 24,
-                  backgroundColor: themeProvider.isDarkMode ? AppTheme.darkSurfaceVariant : Colors.transparent,
+                  backgroundColor: (themeProvider.isDarkMode ? AppTheme.darkSurfaceVariant : Colors.transparent),
                   backgroundImage: nudge.contactImageUrl.isNotEmpty
                       ? NetworkImage(nudge.contactImageUrl)
                       : AssetImage('assets/contact-icons/$iconIndex.png') as ImageProvider,
                   child: nudge.contactImageUrl.isEmpty
                       ? Text(
                           initials,
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'OpenSans',
@@ -1310,8 +1322,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       ),
                       child: const Icon(Icons.star, size: 12, color: Colors.white),
                     ),
-                  ),
-              ],
+                ),
+                // Add birthday hat or balloon for birthday nudges
+                ],
             ),
             title: Row(
               children: [
@@ -1322,16 +1335,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       fontWeight: FontWeight.w600,
                       fontSize: 15,
                       fontFamily: 'OpenSans',
-                      color: isOverdue ? const Color.fromRGBO(243, 87, 87, 1) : themeProvider.getTextPrimaryColor(context),
+                      color: isBirthday
+                          ? Colors.green.shade600
+                          : isOverdue 
+                          ? const Color.fromRGBO(243, 87, 87, 1) 
+                          : (birthdayTextColor ?? themeProvider.getTextPrimaryColor(context)),
                     ),
                   ),
                 ),
-                // Positioned(
-                //   right: -70,
-                //   child: isOverdue
-                //   ?Icon(Icons.warning, color: const Color.fromARGB(255, 226, 14, 81) , size: 16)
-                //   :Center()
-                // )
               ],
             ),
             subtitle: Column(
@@ -1343,20 +1354,29 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     fontSize: 12,
                     height: 1.4,
                     fontFamily: 'OpenSans',
-                    color: themeProvider.getTextSecondaryColor(context),
+                    color: /* birthdaySubtitleColor ??  */themeProvider.getTextSecondaryColor(context),
+                    // fontWeight: isBirthday ? FontWeight.w600 : null,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Icon(Icons.access_time, size: 12, color: themeProvider.getTextSecondaryColor(context)),
+                    Icon(
+                      Icons.access_time, 
+                      size: 12, 
+                      color: birthdaySubtitleColor ?? themeProvider.getTextSecondaryColor(context)
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       DateFormat('MMM d, y • h:mm a').format(nudge.scheduledTime),
                       style: TextStyle(
                         fontSize: 12,
                         fontFamily: 'OpenSans',
-                        color: isOverdue ? const Color.fromRGBO(243, 87, 87, 1)  : themeProvider.getTextSecondaryColor(context),
+                        color: isBirthday
+                          ? Colors.green.shade600
+                          : isOverdue 
+                            ? const Color.fromRGBO(243, 87, 87, 1)  
+                            : (birthdaySubtitleColor ?? themeProvider.getTextSecondaryColor(context)),
                         fontWeight: FontWeight.normal,
                       ),
                     ),
@@ -1366,14 +1386,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ),
             trailing: nudge.isCompleted 
                 ? Icon(Icons.check_circle, color: theme.colorScheme.primary)
-                : isOverdue
-                  ? Padding(
-                    padding: EdgeInsets.only(bottom: 50),
-                    child: Icon(Icons.warning, color: const Color.fromRGBO(243, 87, 87, 1) , size: 16),
-                  )
-                  : const SizedBox(
-                    height: 10,
-                  ),
+                : isBirthday
+                  ? const Text('🎉', style: TextStyle(fontSize: 20),)
+                  : isOverdue
+                    ? Padding(
+                      padding: EdgeInsets.only(bottom: 50),
+                      child: Icon(Icons.warning, color: const Color.fromRGBO(243, 87, 87, 1) , size: 16),
+                    )
+                    : const SizedBox(
+                      height: 10,
+                    ),
           ),
         ),
       ),
@@ -1462,23 +1484,29 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
   
   Future<Map<String, dynamic>?> _showLogInteractionModalForNudge(BuildContext context, ThemeProvider themeProvider, Nudge nudge) async {
-    final apiService = Provider.of<ApiService>(context, listen: false);
+    final apiService = ApiService();
     
     try {
       // Get the full contact details first
       final contacts = await apiService.getAllContacts();
-      final contact = contacts.firstWhere(
-        (c) => c.name == nudge.contactName,
-      );
+      final contactNames = [];
+      for (int i =0; i<contacts.length; i ++) {
+        contactNames.add(contacts[i].name);
+      }
+      print(contactNames);
+      print(nudge.contactName); print(' is the contact name');
+      final contact = contacts.where((contact) {
+        return contact.name == nudge.contactName;
+      }).first;
       
       // Show the modal and wait for result
       final result = await showModalBottomSheet<Map<String, dynamic>>(
-        context: context,
+        context: navigatorKey.currentContext!,
         isScrollControlled: true,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
-        backgroundColor: themeProvider.getSurfaceColor(context),
+        backgroundColor: themeProvider.getSurfaceColor(navigatorKey.currentContext!),
         builder: (context) {
           return Padding(
             padding: EdgeInsets.only(
@@ -1497,12 +1525,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       
     } catch (e) {
       print('Error showing log interaction modal: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: Could not find contact details'),
-          backgroundColor: Colors.red,
-        ),
-      );
+       Flushbar(
+        padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+        flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+        forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+        messageText: Center(
+            child: Text('Error: $e', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+                color: Colors.white, fontWeight: FontWeight.w400),)),
+      ).show(navigatorKey.currentContext!);
       return null;
     }
   }
@@ -1565,7 +1595,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 title: Text('View Contact', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
                 onTap: () {
                   Navigator.pop(context);
-                  _viewContact(nudge.contactId);
+                  _viewContact(nudge.contactName);
                 },
               ),
               ListTile(
@@ -1623,9 +1653,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   void _viewContact(String contactId) {
     final contacts = Provider.of<List<Contact>>(context, listen: false);
     final contact = contacts.firstWhere(
-      (contact) => contact.id == contactId,
+      (contact) => contact.name == contactId,
     );
     
+    print('contact is'); print(contact.name);
     if (contact.id.isNotEmpty) {
       Navigator.push(
         context,
@@ -1822,13 +1853,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     // Show loading dialog
                     Navigator.pop(context); // Close frequency dialog
                     
-                    showDialog(
-                      context: context,
-                      barrierDismissible: false,
-                      builder: (context) => const Center(
-                        child: CircularProgressIndicator(),
-                      ),
-                    );
+                    // showDialog(
+                    //   context: context,
+                    //   barrierDismissible: false,
+                    //   builder: (context) => const Center(
+                    //     child: CircularProgressIndicator(),
+                    //   ),
+                    // );
+                    setState((){
+                      _showCircularProgress = true;
+                    });
                     
                     try {
                       // Get frequency and period from selection
@@ -1838,13 +1872,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       final newPeriod = frequencyData['period'] as String;
                       final newFrequency = frequencyData['frequency'] as int;
                       
-                      // Get all groups
-                      final groups = await apiService.getGroupsStream().first;
-                      
-                      // Find the group to update
-                      final groupToUpdate = groups.firstWhere(
-                        (g) => g.name == nudge.groupName,
-                      );
+                      final socialGroups = await apiService.getGroupsStream().first;
+                      SocialGroup groupToUpdate = SocialGroup.fromMap(group);
                       
                       if (groupToUpdate.id.isNotEmpty) {
                         // Update the group
@@ -1854,8 +1883,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         );
                         
                         // Update groups list
-                        final updatedGroups = groups.map((g) {
-                          return g.id == groupToUpdate.id ? updatedGroup : g;
+                        final updatedGroups = socialGroups.map((g) {
+                          return g.name == groupToUpdate.name ? updatedGroup : g;
                         }).toList();
                         
                         await apiService.updateGroups(updatedGroups);
@@ -1898,7 +1927,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         }
                         
                         // Close loading dialog
-                        if (context.mounted) Navigator.pop(context);
+                        // if (context.mounted) Navigator.pop(context);
+                        setState((){
+                          _showCircularProgress = false;
+                        });
                         
                         // Show success message
                         if (context.mounted) {
@@ -1917,7 +1949,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       }
                     } catch (e) {
                       // Close loading dialog
-                      if (context.mounted) Navigator.pop(context);
+                      // if (context.mounted) Navigator.pop(context);
+                      setState((){
+                        _showCircularProgress = false;
+                      });
                       
                       // Show error message
                       if (context.mounted) {

@@ -2073,7 +2073,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                                 ),
                                 SizedBox(width: 6),
                                 Text(
-                                  'VIP',
+                                  'FAVOURITE',
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,

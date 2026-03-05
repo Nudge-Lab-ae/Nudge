@@ -1326,22 +1326,27 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     }
     
     List<String> contactIds = [];
-    contacts.map((contact){
-      contactIds.add(contact.id);
-    });
+    for (int i=0; i<successfullyAddedContacts.length; i++) {
+      contactIds.add(successfullyAddedContacts[i].id);
+    }
+
+    print(' the contacts that are reassigned are'); print(contacts);
+    print(contactIds);
     
     if (successfullyAddedContacts.isNotEmpty) {
       apiService.cancelNudgesForContacts(contactIds);
       apiService.scheduleNudgesForContacts(contactIds: contactIds);
+      
     }
     
     Flushbar(
       padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
       flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
       forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+      backgroundColor: Colors.lightGreenAccent,
       messageText: Center(
           child: Text( 'Added $_addingSuccessCount contacts to $groupName${_addingErrorCount > 0 ? '. $_addingErrorCount failed' : ''}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-              color: Colors.white, fontWeight: FontWeight.w400),)),
+              color: Colors.black, fontWeight: FontWeight.w400),)),
     ).show(context);
 
     widget.hideButton();
@@ -1353,7 +1358,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
       _selectionMode = null;
       _currentGroupName = null;
     });
-    Navigator.pop(context);
+    // Navigator.pop(context);
   }
 
   void _addContactToGroup(BuildContext context, Contact contact, String groupName, String groupPeriod, int groupFrequency) async {

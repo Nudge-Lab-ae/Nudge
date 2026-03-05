@@ -203,8 +203,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   
                   // Return different screens based on current index
                   switch (_currentIndex) {
-                    case 0:
-                      return _buildDashboardWithSliver(themeProvider, contacts, groups, apiService);
+                    // case 0:
+                    //   return _buildDashboardWithSliver(themeProvider, contacts, groups, apiService);
                     case 1: // Social Universe is now at index 1
                       return const SocialUniverseImmersiveScreen();
                     case 2: // Notifications moved to index 4

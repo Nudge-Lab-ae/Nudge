@@ -155,7 +155,7 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                             ),
                             const SizedBox(width: 6),
                             Text(
-                              'VIP CONTACT',
+                              'FAVOURITE',
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,

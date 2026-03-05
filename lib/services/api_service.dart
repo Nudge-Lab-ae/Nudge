@@ -662,7 +662,8 @@ class ApiService {
   Future<List<Contact>> getAllContacts() async{
     String userId = _auth.currentUser!.uid;
     QuerySnapshot snap = await _getUserContactsCollection(userId).orderBy('name').get();
-    return snap.docs.map((doc) => Contact.fromMap(doc.data() as Map<String, dynamic>..['id'] = doc.id)).toList();
+    print(snap.docs.length); print(' is the contact length');
+    return snap.docs.map((doc) => Contact.fromMap(doc.data() as Map<String, dynamic>)).toList();
   }
 
 

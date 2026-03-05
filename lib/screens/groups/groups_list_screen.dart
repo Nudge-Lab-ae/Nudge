@@ -1,5 +1,6 @@
 import 'package:another_flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
+import 'package:nudge/main.dart';
 import 'package:nudge/screens/contacts/contact_detail_screen.dart';
 import 'package:nudge/screens/contacts/import_contacts_screen.dart';
 import 'package:nudge/services/api_service.dart';
@@ -162,7 +163,8 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                   
                   // Show reassignment modal
                   final result = await showModalBottomSheet<Map<String, String?>>(
-                    context: context,
+                    context: navigatorKey.currentContext!,
+                    // context: context,
                     isScrollControlled: true,
                     backgroundColor: Colors.transparent,
                     builder: (modalContext) => _buildReassignmentModal(
@@ -176,19 +178,37 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                   
                   // Process the selections
                   if (result != null && context.mounted) {
-                    await _processContactReassignments(
-                      result,
-                      groupContacts,
-                      availableGroups,
-                      apiService,
-                      onSuccess: (message) {
-                        _showSuccessMessage(message);
-                      },
-                      onError: (error) {
-                        _showFailureMessage(error);
-                      },
-                    );
-                    Navigator.pop(context);
+                      try {
+                        await _processContactReassignments(
+                          result,
+                          groupContacts,
+                          availableGroups,
+                          apiService,
+                          // Remove the onSuccess callback that shows message here
+                        );
+                        
+                        // Show success message after all navigation is complete
+                        if (context.mounted) {
+                          // Use a microtask to ensure navigation is complete
+                          Future.microtask(() {
+                            if (context.mounted) {
+                              _showSuccessMessage('Contacts reassigned successfully');
+                            }
+                          });
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          Future.microtask(() {
+                            if (context.mounted) {
+                              _showFailureMessage(e.toString());
+                            }
+                          });
+                        }
+                        // Re-throw to prevent group deletion if reassignment failed
+                        rethrow;
+                      }
+                    } else if (result == null){
+                    return;
                   }
                 }
                 
@@ -215,9 +235,9 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                     _initializeStreams();
                   });
                   
-                  if (!doubleTap) {
-                    Navigator.pop(context);
-                  }
+                  // if (!doubleTap) {
+                  //   Navigator.pop(context);
+                  // }
                 }
                 
               } catch (e) {
@@ -551,7 +571,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () => Navigator.pop(context, null),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           side: BorderSide(color: theme.colorScheme.primary),
@@ -573,7 +593,33 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
-                          Navigator.pop(context, contactSelections);
+                          // Check if any contact is unassigned
+                          final unassignedContacts = contactSelections.entries
+                              .where((entry) => entry.value == null)
+                              .map((entry) => affectedContacts.firstWhere(
+                                (contact) => contact.id == entry.key,
+                                orElse: () => Contact.empty(),
+                              ))
+                              .where((contact) => contact.name.isNotEmpty)
+                              .toList();
+                          
+                          if (unassignedContacts.isNotEmpty) {
+                            // Show a snackbar instead of a dialog to avoid navigation conflicts
+                            Flushbar(
+                              padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+                              backgroundColor: Colors.deepOrange,
+                              flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+                              forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+                              messageText: Center(
+                                  child: Text( 'Please assign all ${unassignedContacts.length} contact${unassignedContacts.length > 1 ? 's' : ''} to a group', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+                                      color: Colors.white, fontWeight: FontWeight.w400),)),
+                            ).show(context);
+
+                          } else {
+                            // All contacts are assigned, proceed
+                            Navigator.pop(navigatorKey.currentContext!, contactSelections);
+                            // Navigator.pop(context, contactSelections);
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: theme.colorScheme.primary,
@@ -648,11 +694,21 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
       }
       
       if (onSuccess != null) {
-        onSuccess('${affectedContacts.length} contacts reassigned successfully');
+        // onSuccess('${affectedContacts.length} contacts reassigned successfully');
+        
+        //  Flushbar(
+        //     padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+        //     flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+        //     forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+        //     messageText: Center(
+        //         child: Text( '${affectedContacts.length} contacts reassigned successfully', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+        //             color: Colors.white, fontWeight: FontWeight.w400),)),
+        //   ).show(navigatorKey.currentContext!);
+
       }
     } catch (e) {
       if (onError != null) {
-        onError(e.toString());
+        // onError(e.toString());
       }
     }
   }
@@ -1829,13 +1885,15 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
 }
 
   _showSuccessMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+    Flushbar(
+        padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+        flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+        forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+        backgroundColor: Colors.green,
+        messageText: Center(
+            child: Text( message, style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+                color: Colors.white, fontWeight: FontWeight.w400),)),
+      ).show(context);
   }
 
   _showFailureMessage (String error) {
