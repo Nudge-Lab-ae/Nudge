@@ -10,6 +10,7 @@ import 'package:nudge/providers/feedback_provider.dart';
 import 'package:nudge/providers/theme_provider.dart';
 import 'package:nudge/screens/contacts/contact_detail_screen.dart';
 import 'package:nudge/screens/contacts/contacts_list_screen.dart';
+import 'package:nudge/screens/contacts/import_contacts_screen.dart';
 import 'package:nudge/screens/groups/groups_list_screen.dart';
 import 'package:nudge/screens/notifications/notifications_screen.dart';
 import 'package:nudge/screens/social_universe/social_universe_immersive.dart';
@@ -34,6 +35,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/auth_service.dart';
 import '../../services/nudge_service.dart';
 import '../../models/contact.dart';
+import 'package:confetti/confetti.dart';
 // import '../../widgets/vip_badge.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -62,6 +64,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedPieSegmentIndex = -1;
   String? _explodedCategory;
 
+  final ConfettiController _confettiController = ConfettiController(
+    duration: const Duration(seconds: 3)
+  );
+  bool _showConfetti = false;
+
   // final Random _random = Random();
 
   @override
@@ -75,6 +82,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _scrollController.addListener(() {
       _handleScroll();
     });
+
+  }
+
+    @override
+  void dispose() {
+    _confettiController.dispose(); // Add this
+    super.dispose();
   }
 
   Future<void> _initializeSocialUniverse() async {
@@ -291,6 +305,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
               );
             },
           ),
+
+          if (_showConfetti)
+            Positioned.fill(
+              child: ConfettiWidget(
+                confettiController: _confettiController,
+                blastDirectionality: BlastDirectionality.explosive,
+                shouldLoop: false,
+                colors: const [
+                  Colors.green,
+                  Colors.blue,
+                  Colors.pink,
+                  Colors.orange,
+                  Colors.purple,
+                  Color(0xFF3CB3E9), // Your app's primary color
+                ],
+                // createParticlePath: _drawStar, // Optional: for star-shaped confetti
+              ),
+            ),
           
         ],
       ),
@@ -521,6 +553,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
       });
     }
   }
+
+  void showConfetti() {
+    setState(() {
+      _showConfetti = true;
+    });
+    // Start confetti
+    _confettiController.play();
+    
+    // Close after animation
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() {
+          _showConfetti = false;
+        });
+      }
+    });
+  }
+
+  void _handleImportResult(dynamic result) {
+    if (result != null && result is Map<String, dynamic>) {
+      if (result['showConfetti'] == true) {
+        setState(() {
+          _currentIndex = 4;
+        });
+        showConfetti();
+      }
+    }
+  }
   
 
   void _showAddContactOptions(BuildContext context, ThemeProvider themeProvider) {
@@ -562,9 +622,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 leading: Icon(Icons.import_contacts, color: themeProvider.isDarkMode ? AppTheme.darkIconColor : AppTheme.primaryColor),
                 title: Text('IMPORT CONTACTS', style: TextStyle(fontWeight: FontWeight.w700, fontFamily: 'OpenSans', color: themeProvider.getTextPrimaryColor(context))),
                 subtitle: Text('Import from your device contacts', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans',)),
-                onTap: () {
+                onTap: () async{
                   Navigator.pop(context);
-                  Navigator.pushNamed(context, '/import_contacts');
+                  // Navigator.pushNamed(context, '/import_contacts');
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ImportContactsScreen(
+                        isOnboarding: false,
+                        // No preSelectedGroup means it's from FAB
+                        ),
+                      ),
+                    );
+
+                  _handleImportResult(result);
                 },
               ),
               const SizedBox(height: 20),

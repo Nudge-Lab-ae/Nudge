@@ -1589,7 +1589,7 @@ void _showCreateGroupDialog(BuildContext context, ApiService apiService, {requir
                     
                     try {
                       await apiService.addGroup(newGroup);
-                      _confettiController.play();
+                      // _confettiController.play();
                       Navigator.of(context).pop();
                     } catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -2010,6 +2010,9 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                           );
                           
                           if (result != null && result is List<Contact>) {
+                            // Play confetti when contacts are successfully imported
+                            _confettiController.play();
+                            
                             // Refresh the group details if contacts were imported
                             setState(() {});
                           }

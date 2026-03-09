@@ -115,7 +115,7 @@ class LogInteractionModalState extends State<LogInteractionModal> {
 
     setState(() {
         _showConfetti = true;
-        _isLoading = false;
+        _isLoading = true;
       });
       
 
@@ -511,7 +511,7 @@ class LogInteractionModalState extends State<LogInteractionModal> {
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
                       ),
                     )
                   : const Row(
@@ -540,7 +540,7 @@ class LogInteractionModalState extends State<LogInteractionModal> {
             child: Material(
               color: Colors.transparent,
               child: Container(
-                color: Colors.black.withOpacity(0.5),
+                // color: Colors.black.withOpacity(0.5),
                 child: ConfettiWidget(
                   confettiController: _confettiController,
                   blastDirectionality: BlastDirectionality.explosive,

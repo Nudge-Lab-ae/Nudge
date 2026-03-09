@@ -82,6 +82,23 @@ class SocialGroup {
     );
   }
 
+  factory SocialGroup.empty() {
+    return SocialGroup(
+      id: '',
+      name: '',
+      description: '',
+      period: 'Monthly',
+      frequency: 2,
+      memberIds: [],
+      memberCount: 0,
+      lastInteraction: DateTime.now(),
+      colorCode: '#2596BE',
+      birthdayNudgesEnabled: false,
+      anniversaryNudgesEnabled: false,
+      orderIndex: 0,
+    );
+  }
+
   SocialGroup copyWith({
     String? id,
     String? name,

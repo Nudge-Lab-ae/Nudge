@@ -1,4 +1,6 @@
 // lib/services/nudge_service.dart
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:nudge/services/api_service.dart';
@@ -30,9 +32,13 @@ class NudgeService {
     await _notificationService.initialize();
   }
 
-  // final OverdueManager _overdueManager = OverdueManager();
 
-  // Get all nudges for a user
+  // Stream<List<Nudge>>? _cachedStream;
+  // String? _lastUserId;
+  // StreamSubscription<QuerySnapshot>? _streamSubscription;
+  // List<Nudge> _lastEmittedData = [];
+  // final _controller = StreamController<List<Nudge>>.broadcast();
+
   Stream<List<Nudge>> getNudgesStream(String userId) {
     return _firestore
         .collection('users')
@@ -44,6 +50,71 @@ class NudgeService {
             .map((doc) => Nudge.fromMap(doc.data()))
             .toList());
   }
+  
+  // Stream<List<Nudge>> getNudgesStream(String userId) {
+  //   // Return cached stream if same user and stream exists
+  //   if (_cachedStream != null && _lastUserId == userId) {
+  //     return _cachedStream!;
+  //   }
+    
+  //   _lastUserId = userId;
+    
+  //   // Cancel previous subscription if any
+  //   _streamSubscription?.cancel();
+    
+  //   // Reset last emitted data when creating new stream
+  //   _lastEmittedData = [];
+    
+  //   // Create new stream with debouncing and caching
+  //   _cachedStream = _firestore
+  //       .collection('users')
+  //       .doc(userId)
+  //       .collection('nudges')
+  //       .orderBy('scheduledTime', descending: false)
+  //       .snapshots()
+  //       .map((snapshot) {
+  //         final nudges = snapshot.docs
+  //             .map((doc) => Nudge.fromMap(doc.data()))
+  //             .toList();
+          
+  //         // Always emit on first load of this stream instance
+  //         if (_lastEmittedData.isEmpty) {
+  //           _lastEmittedData = nudges;
+  //           return nudges;
+  //         }
+          
+  //         // Only emit if data actually changed for subsequent updates
+  //         if (_hasDataChanged(nudges, _lastEmittedData)) {
+  //           _lastEmittedData = nudges;
+  //           return nudges;
+  //         }
+          
+  //         // Return last emitted data if no change
+  //         return _lastEmittedData;
+  //       })
+  //       .handleError((error) {
+  //         print('Error in nudges stream: $error');
+  //         return <Nudge>[];
+  //       })
+  //       .asBroadcastStream(); // Make it broadcast for multiple listeners
+    
+  //   return _cachedStream!;
+  // }
+  
+  // Helper method to check if data actually changed
+  // bool _hasDataChanged(List<Nudge> newData, List<Nudge> oldData) {
+  //   if (newData.length != oldData.length) return true;
+    
+  //   for (int i = 0; i < newData.length; i++) {
+  //     if (newData[i].id != oldData[i].id ||
+  //         newData[i].isCompleted != oldData[i].isCompleted ||
+  //         newData[i].scheduledTime != oldData[i].scheduledTime) {
+  //       return true;
+  //     }
+  //   }
+    
+  //   return false;
+  // }
 
   Future<List<Nudge>> getAllNudges(String userId) async {
   try {

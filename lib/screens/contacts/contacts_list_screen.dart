@@ -50,7 +50,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
   String? _currentGroupName;
   bool emptyContacts = false;
   List<SocialGroup> allGroups = [];
-    final ConfettiController _confettiController = ConfettiController(
+  final ConfettiController _confettiController = ConfettiController(
     duration: const Duration(seconds: 3)
   );
   bool _showConfetti = false;
@@ -75,19 +75,6 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     });
   }
 
-  showConfetti() {
-    setState(() {
-      _showConfetti = true;
-    });
-    // Start confetti
-    _confettiController.play();
-     // Close after animation
-    Future.delayed(const Duration(seconds: 3), () {
-      setState(() {
-          _showConfetti = false;
-        });
-    });
-  }
 
   fetchGroups() async{
     final apiService = Provider.of<ApiService>(context, listen: false);

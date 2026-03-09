@@ -170,7 +170,17 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
             const SnackBar(content: Text('All contacts already imported')),
           );
           
-          Navigator.pop(context, importedContacts);
+          // Different navigation based on source
+          if (_isOnboarding) {
+            // Onboarding: just return the contacts
+            Navigator.pop(context, importedContacts);
+          } else if (_preSelectedGroup != null) {
+            // From group card: return to group details
+            Navigator.pop(context, importedContacts);
+          } else {
+            // From FAB: return with confetti flag
+            Navigator.pop(context, {'showConfetti': true, 'contacts': importedContacts});
+          }
         } else {
           setState(() {
             _statusMessage =
@@ -192,9 +202,19 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
             await apiService.scheduleEventNotifications(recentlyImportedContacts);
           }
           
-          Navigator.pop(context, recentlyImportedContacts);
+          // Different navigation based on source
+          if (_isOnboarding) {
+            // Onboarding: just return the contacts
+            Navigator.pop(context, recentlyImportedContacts);
+          } else if (_preSelectedGroup != null) {
+            // From group card: return to group details
+            Navigator.pop(context, recentlyImportedContacts);
+          } else {
+            // From FAB: return with confetti flag
+            Navigator.pop(context, {'showConfetti': true, 'contacts': recentlyImportedContacts});
+          }
 
-           Flushbar(
+          Flushbar(
             padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
             flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
             forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
@@ -492,30 +512,45 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
 
       final importedContacts = await apiService.getAllContacts();
 
-      final selectedContactNormalizedPhones = selectedContacts
-          .where((contact) => contact.phones.isNotEmpty)
-          .map((contact) => normalizePhoneNumber(contact.phones.first.normalizedNumber))
-          .where((phone) => phone.isNotEmpty)
-          .toSet();
+      // final selectedContactNormalizedPhones = selectedContacts
+      //     .where((contact) => contact.phones.isNotEmpty)
+      //     .map((contact) => normalizePhoneNumber(contact.phones.first.normalizedNumber))
+      //     .where((phone) => phone.isNotEmpty)
+      //     .toSet();
 
       // Filter imported contacts by matching normalized phone numbers
-      final recentlyImportedContacts = importedContacts
-          .where((apiContact) {
-            final apiPhone = apiContact.phoneNumber;
-            final normalizedApiPhone = normalizePhoneNumber(apiPhone);
-            return selectedContactNormalizedPhones.contains(normalizedApiPhone);
-          })
-          .toList();
+      final recentlyImportedContacts = result['theImportedContacts'];
 
-      List<String> importedContactIds = recentlyImportedContacts.map((contact) => contact.id).toList();
+      // List<String> importedContactIds = recentlyImportedContacts.map((contact) => contact.id).toList();
+      List<String> importedContactIds = [];
+      
+      for (int i =0; i<recentlyImportedContacts.length; i++) {
+        Contact indexContact = recentlyImportedContacts[i];
+        Contact thisContact = importedContacts.where((contact) => contact.name == indexContact.name).first;
+        String contactId = thisContact.id;
+        importedContactIds.add(contactId);
+        print(contactId); print(recentlyImportedContacts[i].name); print(thisContact.toMap());
+        importedContacts.add(recentlyImportedContacts[i]);
+      }
       print('Imported contact ids: $importedContactIds');
+      print('Imported contacts are: $importedContacts');
       
       // CONDITIONALLY SCHEDULE NUDGES
       if (_isOnboarding == false && recentlyImportedContacts.isNotEmpty) {
         await apiService.scheduleNudgesForContacts(contactIds: importedContactIds);
       }
 
-      Navigator.pop(context, recentlyImportedContacts);
+      // Different navigation based on source
+      if (_isOnboarding) {
+        // Onboarding: just return the contacts
+        Navigator.pop(context, recentlyImportedContacts);
+      } else if (_preSelectedGroup != null) {
+        // From group card: return to group details
+        Navigator.pop(context, recentlyImportedContacts);
+      } else {
+        // From FAB: return with confetti flag
+        Navigator.pop(context, {'showConfetti': true, 'contacts': recentlyImportedContacts});
+      }
 
       Flushbar(
             padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
@@ -662,9 +697,11 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   }
 
   void _getArgumentsFromRoute() {
-    _availableGroups = widget.groups as List<SocialGroup>;
+    if (widget.groups!=null) {
+      _availableGroups = widget.groups as List<SocialGroup>;
+    }
      _isOnboarding = widget.isOnboarding;
-      _preSelectedGroup = widget.preSelectedGroup; // Get pre-selected group
+    _preSelectedGroup = widget.preSelectedGroup; // Get pre-selected group
     
     // If we have a pre-selected group, add it to available groups
     if (_preSelectedGroup != null && !_availableGroups.contains(_preSelectedGroup)) {

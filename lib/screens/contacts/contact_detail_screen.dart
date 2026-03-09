@@ -1,5 +1,6 @@
 // contact_detail_screen.dart - Updated with StreamBuilder for real-time updates
 import 'dart:io';
+import 'package:another_flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:nudge/providers/feedback_provider.dart';
@@ -16,11 +17,14 @@ import '../../models/contact.dart';
 import '../../providers/theme_provider.dart';
 import '../../theme/app_theme.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:confetti/confetti.dart';
 
 class ContactDetailScreen extends StatefulWidget {
   final Contact contact;
+  final bool showConfetti;
+  final Function? navigate;
   
-  const ContactDetailScreen({super.key, required this.contact});
+  const ContactDetailScreen({super.key, required this.contact, this.showConfetti = false, this.navigate});
 
   @override
   State<ContactDetailScreen> createState() => _ContactDetailScreenState();
@@ -28,10 +32,49 @@ class ContactDetailScreen extends StatefulWidget {
 
 class _ContactDetailScreenState extends State<ContactDetailScreen> {
   bool _isUpdatingVIP = false;
+  late ConfettiController _confettiController; // Add this
+  bool _showConfetti = false; 
 
   @override
   void initState() {
     super.initState();
+     _confettiController = ConfettiController(duration: const Duration(seconds: 3));
+    
+    // Check if we should show confetti (newly created contact)
+    if (widget.showConfetti) {
+      // Small delay to ensure the UI is built
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {
+          _showConfetti = true;
+        });
+        _confettiController.play();
+
+        Flushbar(
+          padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+          flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+          forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+          backgroundColor: Colors.green,
+          messageText: Center(
+              child: Text('Successfully added contact', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+                  color: Colors.white, fontWeight: FontWeight.w400),)),
+        ).show(context);
+        
+        // Auto-hide confetti after animation
+        Future.delayed(const Duration(seconds: 4), () {
+          if (mounted) {
+            setState(() {
+              _showConfetti = false;
+            });
+          }
+        });
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _confettiController.dispose(); // Add this
+    super.dispose();
   }
 
   Future<void> _toggleVIPStatus(bool isVIP, Contact contact) async {
@@ -180,6 +223,14 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                   )
                 ),
                 centerTitle: true,
+                leading: IconButton(
+                  onPressed: (){
+                    Navigator.pop(context);
+                    if (widget.showConfetti){
+                      widget.navigate!();
+                    }
+                  },
+                  icon: Icon(Icons.arrow_back, color: themeProvider.getTextPrimaryColor(context))),
                 iconTheme: IconThemeData(color: AppTheme.primaryColor),
                 backgroundColor: themeProvider.getSurfaceColor(context),
                 surfaceTintColor: Colors.transparent,
@@ -251,6 +302,23 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                       height: MediaQuery.of(context).size.height,
                     ),
                   ),
+
+                   if (_showConfetti)
+          Positioned.fill(
+            child: ConfettiWidget(
+              confettiController: _confettiController,
+              blastDirectionality: BlastDirectionality.explosive,
+              shouldLoop: false,
+              colors: const [
+                Colors.green,
+                Colors.blue,
+                Colors.pink,
+                Colors.orange,
+                Colors.purple,
+                Color(0xFF3CB3E9), // Your app's primary color
+              ],
+            ),
+          ),
     ]),
     );
   }

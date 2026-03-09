@@ -671,10 +671,11 @@ class ApiService {
     String userId = _auth.currentUser!.uid;
     try {
       final contactData = contact.toMap();
+      String contactId = contact.id;
       // Remove the id since Firestore will generate it
-      contactData.remove('id');
+      // contactData.remove('id');
       
-      await _getUserContactsCollection(userId).add(contactData);
+      await _getUserContactsCollection(userId).doc(contactId).set(contactData);
     } catch (e) {
       throw Exception('Failed to create contact: $e');
     }
@@ -1165,6 +1166,7 @@ Future<Map<String, dynamic>> register(String email, String password) async {
 
 
   Future<void> submitFeedback({
+    String? title,
     required String message,
     String type = 'Feedback',
     Map<String, dynamic>? additionalData,
@@ -1186,6 +1188,7 @@ Future<Map<String, dynamic>> register(String email, String password) async {
           'username': userData?['username'] ?? '',
           'photoUrl': userData?['photoUrl'] ?? '',
         },
+        'adminTitle': title,
         'message': message,
         'type': type,
         'screen': screenName, // Add screen tracking

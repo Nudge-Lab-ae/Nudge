@@ -2960,7 +2960,7 @@ class UniversePainter extends CustomPainter {
   void _drawBackgroundStars(Canvas canvas, Size size, double immersionLevel, bool isDarkMode) {
       // Increased star count for more vividness without blur - ORIGINAL
       final baseStarCount = isImmersive ? 850: 450; // More stars
-      final starCount = (baseStarCount * (0.5 + immersionLevel * 1.2)).toInt();
+      final starCount = (baseStarCount * (0.1 + pow(immersionLevel, 2) * 0.9)).toInt();
       
       for (int i = 0; i < starCount; i++) {
         final x = (_random.nextDouble() * size.width);

@@ -1,4 +1,4 @@
-// complete_profile_screen.dart - Enhanced with Social Universe Preview
+// scrollable_roadmap.dart - Enhanced with Social Universe Preview
 import 'package:flutter/material.dart';
 import 'package:nudge/providers/theme_provider.dart';
 import 'package:provider/provider.dart';
@@ -136,7 +136,7 @@ class _ScrollableRoadmapWidgetState extends State<ScrollableRoadmapWidget> {
     final rocketPosition = rocketStartPosition - (scrollRatio * (rocketStartPosition - rocketEndPosition));
     
     return Container(
-      width: 24, // Thinner rocket
+      width: 30, // Thinner rocket
       height: 150,
       child: Stack(
         clipBehavior: Clip.none,
@@ -156,7 +156,7 @@ class _ScrollableRoadmapWidgetState extends State<ScrollableRoadmapWidget> {
           if (scrollRatio >=0)
             Positioned(
               top: rocketPosition + 58,
-              left: 4,
+              left: 3,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 width: 8,
@@ -186,169 +186,168 @@ class _ScrollableRoadmapWidgetState extends State<ScrollableRoadmapWidget> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     
-    return Expanded(
-      child: Container(
-        color: themeProvider.getBackgroundColor(context),
-        child: Column(
-          children: [
-            // Living roadmap text at the very top
-            Padding(
-              padding: const EdgeInsets.only(top: 8, bottom: 4),
-              child: Text(
-                '✨ This is a living roadmap — it evolves as we grow with you ✨',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: themeProvider.isDarkMode ? Colors.grey.shade500 : Colors.grey.shade400,
-                  fontStyle: FontStyle.italic,
-                ),
-                textAlign: TextAlign.center,
+    // Fix: Wrap the entire widget in a Column instead of using Expanded directly
+    return Container(
+      color: themeProvider.getBackgroundColor(context),
+      child: Column(
+        children: [
+          // Living roadmap text at the very top
+          Padding(
+            padding: const EdgeInsets.only(top: 8, bottom: 4),
+            child: Text(
+              '✨ This is a living roadmap — it evolves as we grow with you ✨',
+              style: TextStyle(
+                fontSize: 11,
+                color: themeProvider.isDarkMode ? Colors.grey.shade500 : Colors.grey.shade400,
+                fontStyle: FontStyle.italic,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          
+          // Top fade (minimal)
+          Container(
+            height: 8,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  themeProvider.getBackgroundColor(context),
+                  themeProvider.getBackgroundColor(context).withOpacity(0),
+                ],
               ),
             ),
-            
-            // Top fade (minimal)
-            Container(
-              height: 8,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    themeProvider.getBackgroundColor(context),
-                    themeProvider.getBackgroundColor(context).withOpacity(0),
-                  ],
-                ),
-              ),
-            ),
-            
-            // Scrollable content
-            Expanded(
-              child: SingleChildScrollView(
-                controller: _scrollController,
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Content with rocket timeline (only for the three phases)
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+          
+          // Scrollable content - Expanded now properly used inside Column
+          Expanded(
+            child: SingleChildScrollView(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Content with rocket timeline (only for the three phases)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Left side with thinner rocket and timeline (only for phases)
+                      SizedBox(
+                        width: 40, // Reduced width for thinner rocket
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 10),
+                          child: _buildRocket(themeProvider, _scrollRatio),
+                        ),
+                      ),
+                      
+                      // Right side content with phases
+                      Expanded(
+                        child: Column(
+                          children: [
+                            // ON THE HORIZON section (top)
+                            _buildPhaseSection(_phases[0], themeProvider),
+                            
+                            // Separator
+                            _buildPhaseSeparator(themeProvider),
+                            
+                            // NEXT UP section (middle)
+                            _buildPhaseSection(_phases[1], themeProvider),
+                            
+                            // Separator
+                            _buildPhaseSeparator(themeProvider),
+                            
+                            // NOW section (bottom)
+                            _buildPhaseSection(_phases[2], themeProvider),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  // Bottom intro section - FULL WIDTH (outside the Row with rocket)
+                  Container(
+                    width: double.infinity, // Full width
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                    child: Column(
                       children: [
-                        // Left side with thinner rocket and timeline (only for phases)
-                        SizedBox(
-                          width: 40, // Reduced width for thinner rocket
-                          child: Padding(
-                            padding: const EdgeInsets.only(left: 10),
-                            child: _buildRocket(themeProvider, _scrollRatio),
+                        // Small up arrow
+                        TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0.0, end: 1.0),
+                          duration: const Duration(milliseconds: 1500),
+                          curve: Curves.easeInOut,
+                          builder: (context, value, child) {
+                            return Transform.translate(
+                              offset: Offset(0, -4 * value),
+                              child: Icon(
+                                Icons.keyboard_arrow_up,
+                                color: themeProvider.isDarkMode ? Colors.grey.shade500 : Colors.grey.shade400,
+                                size: 24,
+                              ),
+                            );
+                          },
+                        ),
+                        
+                        const SizedBox(height: 12),
+                        
+                        // Live roadmap pill
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF059669).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: const Color(0xFF059669).withOpacity(0.2),
+                            ),
+                          ),
+                          child: const Text(
+                            'LIVE ROADMAP',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF059669),
+                              letterSpacing: 0.5,
+                            ),
                           ),
                         ),
                         
-                        // Right side content with phases
-                        Expanded(
-                          child: Column(
-                            children: [
-                              // ON THE HORIZON section (top)
-                              _buildPhaseSection(_phases[0], themeProvider),
-                              
-                              // Separator
-                              _buildPhaseSeparator(themeProvider),
-                              
-                              // NEXT UP section (middle)
-                              _buildPhaseSection(_phases[1], themeProvider),
-                              
-                              // Separator
-                              _buildPhaseSeparator(themeProvider),
-                              
-                              // NOW section (bottom)
-                              _buildPhaseSection(_phases[2], themeProvider),
-                            ],
+                        const SizedBox(height: 12),
+                        
+                        // Title
+                        const Text(
+                          "What's Coming\nto NUDGE",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w700,
+                            height: 1.2,
                           ),
                         ),
-                      ],
-                    ),
-                    
-                    // Bottom intro section - FULL WIDTH (outside the Row with rocket)
-                    Container(
-                      width: double.infinity, // Full width
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                      child: Column(
-                        children: [
-                          // Small up arrow
-                          TweenAnimationBuilder<double>(
-                            tween: Tween(begin: 0.0, end: 1.0),
-                            duration: const Duration(milliseconds: 1500),
-                            curve: Curves.easeInOut,
-                            builder: (context, value, child) {
-                              return Transform.translate(
-                                offset: Offset(0, -4 * value),
-                                child: Icon(
-                                  Icons.keyboard_arrow_up,
-                                  color: themeProvider.isDarkMode ? Colors.grey.shade500 : Colors.grey.shade400,
-                                  size: 24,
-                                ),
-                              );
-                            },
-                          ),
-                          
-                          const SizedBox(height: 12),
-                          
-                          // Live roadmap pill
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF059669).withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: const Color(0xFF059669).withOpacity(0.2),
-                              ),
-                            ),
-                            child: const Text(
-                              'LIVE ROADMAP',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF059669),
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ),
-                          
-                          const SizedBox(height: 12),
-                          
-                          // Title
-                          const Text(
-                            "What's Coming\nto NUDGE",
+                        
+                        const SizedBox(height: 8),
+                        
+                        // Description
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Text(
+                            'Your relationships are about to get a whole lot stronger. Scroll up to explore what\'s ahead and tell us what you\'d like to add to the list in the feedback forum at any time.',
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w700,
-                              height: 1.2,
+                              fontSize: 13,
+                              color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
                             ),
                           ),
-                          
-                          const SizedBox(height: 8),
-                          
-                          // Description
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: Text(
-                              'Your relationships are about to get a whole lot stronger. Scroll up to explore what\'s ahead and tell us what you\'d like to add to the list in the feedback forum at any time.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
-                              ),
-                            ),
-                          ),
-                          
-                          const SizedBox(height: 8),
-                        ],
-                      ),
+                        ),
+                        
+                        const SizedBox(height: 8),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

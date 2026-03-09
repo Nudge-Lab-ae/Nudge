@@ -1,5 +1,6 @@
 // lib/services/contact_sync_service.dart
 import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -483,6 +484,12 @@ class ContactSyncService {
     }
   }
 
+  String generateRandomId(int length) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    final rand = Random.secure();
+    return List.generate(length, (index) => chars[rand.nextInt(chars.length)]).join();
+  }
+
   // Updated importFromContactPicker method with better phone number handling
   Future<Map<String, dynamic>> importFromContactPicker({
     required List<fContacts.Contact> pickedContacts,
@@ -563,6 +570,8 @@ class ContactSyncService {
           .doc(currentUser.uid)
           .collection('contacts');
 
+      List <Contact> theImportedContacts = [];
+
       for (var deviceContact in contactsToImport) {
         processedCount++;
         onProgress(processedCount, totalContacts);
@@ -599,8 +608,11 @@ class ContactSyncService {
 
         print('Importing contact: $displayName - Phone: $primaryPhoneNumber - Email: $primaryEmail');
 
+        String contactId = generateRandomId(16) + displayName.substring(0, 4);
+
+
         Contact nudgeContact = Contact(
-          id: '',
+          id: contactId,
           name: displayName,
           phoneNumber: primaryPhoneNumber,
           email: primaryEmail,
@@ -619,14 +631,16 @@ class ContactSyncService {
           anniversary: anniversary,
         );
 
-        await contactsRef.add(nudgeContact.toMap());
+        await contactsRef.doc(contactId).set(nudgeContact.toMap());
         importedCount++;
+        theImportedContacts.add(nudgeContact);
       }
 
       return {
         'success': true,
         'message': 'Successfully imported contacts from picker',
-        'importedCount': importedCount
+        'importedCount': importedCount,
+        'theImportedContacts': theImportedContacts
       };
     } catch (e, stack) {
       print('Error in contact picker: $e');

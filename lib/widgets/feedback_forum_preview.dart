@@ -84,7 +84,7 @@ class FeedbackForumPreview extends StatelessWidget {
           children: [
             // Header
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
               child: Row(
                 children: [
                   Text(
@@ -119,13 +119,15 @@ class FeedbackForumPreview extends StatelessWidget {
             
             // Feedback items
             Expanded(
+              child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 25),
               child: ListView.builder(
                 itemCount: filteredFeedbacks.length,
                 itemBuilder: (context, index) {
                   return _buildPreviewItem(filteredFeedbacks[index], isDarkMode);
                 },
               ),
-            ),
+            )),
           ],
         );
       },

@@ -9,6 +9,8 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:crop_your_image/crop_your_image.dart';
 import 'package:country_code_picker/country_code_picker.dart';
+// import 'package:nudge/main.dart';
+// import 'package:nudge/main.dart';
 import 'package:nudge/models/contact.dart';
 import 'package:nudge/models/social_group.dart';
 import 'package:nudge/screens/contacts/add_contact_screen.dart';
@@ -1945,7 +1947,9 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                                   setState(() {
                                     _selectedContacts.add(newContact);
                                   });
+                                  _showFlushbar();
                                 }
+                                _showFlushbar();
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xff3CB3E9),
@@ -2050,7 +2054,9 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                           setState(() {
                             _selectedContacts.addAll(newContacts);
                           });
+                          // _showFlushbar();
                         }
+                        // _showFlushbar();
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xff3CB3E9),
@@ -2092,6 +2098,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                                     setState(() {
                                       _selectedContacts.add(newContact);
                                     });
+                                    _showFlushbar();
                                   }
                                 },
                                 style: ElevatedButton.styleFrom(
@@ -2235,6 +2242,24 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
             ],
           ),
         );
+      }
+
+      _showFlushbar() {
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(
+        //     content: Text('Successfully Created Contact.'),
+        //     duration: const Duration(seconds: 2),
+        //   ),
+        // );
+         Flushbar(
+            padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+            flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+            forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+            backgroundColor: Colors.green,
+            messageText: Center(
+                child: Text('Successfully Created Contact', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+                    color: Colors.white, fontWeight: FontWeight.w400),)),
+          ).show(context);
       }
 
       // Widget _buildReviewStep() {

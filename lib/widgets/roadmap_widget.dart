@@ -267,23 +267,23 @@ class _RoadmapStepWidgetState extends State<RoadmapStepWidget> with SingleTicker
           ),
           
           // Phase Title
-          Container(
-            color: themeProvider.getBackgroundColor(context),
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                currentPhase['title'],
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: themeProvider.isDarkMode ? Colors.white : Colors.black,
-                ),
-              ),
-            ),
-          ),
+          // Container(
+          //   color: themeProvider.getBackgroundColor(context),
+          //   padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+          //   child: Align(
+          //     alignment: Alignment.centerLeft,
+          //     child: Text(
+          //       currentPhase['title'],
+          //       style: TextStyle(
+          //         fontSize: 22,
+          //         fontWeight: FontWeight.w700,
+          //         color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+          //       ),
+          //     ),
+          //   ),
+          // ),
           SizedBox(
-            height: 20,
+            height: 10,
           ),
           // Scrollable Features List
           Expanded(
