@@ -483,17 +483,17 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                     fontFamily: 'OpenSans',
                   ),
                 ),
-                if (contact.cdi > 0) ...[
-                  const SizedBox(width: 12),
-                  Text(
-                    'CDI: ${contact.cdi.toStringAsFixed(0)}',
-                    style: TextStyle(
-                      color: themeProvider.getTextSecondaryColor(context),
-                      fontSize: 12,
-                      fontFamily: 'OpenSans',
-                    ),
-                  ),
-                ],
+                // if (contact.cdi > 0) ...[
+                //   const SizedBox(width: 12),
+                //   Text(
+                //     'CDI: ${contact.cdi.toStringAsFixed(0)}',
+                //     style: TextStyle(
+                //       color: themeProvider.getTextSecondaryColor(context),
+                //       fontSize: 12,
+                //       fontFamily: 'OpenSans',
+                //     ),
+                //   ),
+                // ],
               ],
             ),
           ),

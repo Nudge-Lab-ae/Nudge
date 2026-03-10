@@ -201,7 +201,10 @@ class AuthService {
   Future<void> _storeFCMTokenForNewUser(User? user) async {
     if (user != null) {
       try {
-        // Get fresh token
+        // Delete any existing token first (clean slate)
+        await FirebaseMessaging.instance.deleteToken();
+        
+        // Get fresh token for new user
         String? token = await FirebaseMessaging.instance.getToken();
         if (token != null) {
           final apiService = ApiService();

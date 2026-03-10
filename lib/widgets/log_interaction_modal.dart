@@ -536,28 +536,19 @@ class LogInteractionModalState extends State<LogInteractionModal> {
       ),
     ),
     if (_showConfetti)
-          Positioned.fill(
-            child: Material(
-              color: Colors.transparent,
-              child: Container(
-                // color: Colors.black.withOpacity(0.5),
-                child: ConfettiWidget(
-                  confettiController: _confettiController,
-                  blastDirectionality: BlastDirectionality.explosive,
-                  shouldLoop: false,
-                  colors: const [
-                    Colors.green,
-                    Colors.blue,
-                    Colors.pink,
-                    Colors.orange,
-                    Colors.purple,
-                    Color(0xFF3CB3E9),
-                  ],
-                  // createParticlePath: _drawStar,
-                  numberOfParticles: 30,
-                  gravity: 0.1,
-                ),
-              ),
+          Align(
+            alignment: Alignment.topCenter,
+            child: ConfettiWidget(
+              confettiController: _confettiController,
+              blastDirectionality: BlastDirectionality.explosive,
+              shouldLoop: false,
+              colors: const [
+                Colors.green,
+                Colors.blue,
+                Colors.pink,
+                Colors.orange,
+                Colors.purple
+              ],
             ),
           ),
     // if (_showCelebration)
