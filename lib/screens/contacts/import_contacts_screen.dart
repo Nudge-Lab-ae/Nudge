@@ -188,18 +188,23 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
           });
 
           final importedContacts = await apiService.getAllContacts();
-          final recentlyImportedContacts = importedContacts
-              .where((contact) => contact.socialGroups.contains(selectedGroup!.name))
-              .toList();
+          final recentlyImportedContacts = result['theImportedContacts'];
           List<String> importedContactIds = [];
-          recentlyImportedContacts.map((contact){
-            importedContactIds.add(contact.id);
-          });
+          for (int i =0; i<recentlyImportedContacts.length; i++) {
+            Contact indexContact = recentlyImportedContacts[i];
+            Contact thisContact = importedContacts.where((contact) => contact.name == indexContact.name).first;
+            String contactId = thisContact.id;
+            importedContactIds.add(contactId);
+            print(contactId); print(recentlyImportedContacts[i].name); print(thisContact.toMap());
+            importedContacts.add(recentlyImportedContacts[i]);
+          }
+          print('Imported contact ids: $importedContactIds');
+          print('Imported contacts are: $importedContacts');
           
           // CONDITIONALLY SCHEDULE NUDGES
           if (!_isOnboarding && recentlyImportedContacts.isNotEmpty) {
-            await apiService.scheduleNudgesForContacts(contactIds: importedContactIds);
-            await apiService.scheduleEventNotifications(recentlyImportedContacts);
+            apiService.scheduleNudgesForContacts(contactIds: importedContactIds);
+            apiService.scheduleEventNotifications(recentlyImportedContacts);
           }
           
           // Different navigation based on source
@@ -222,6 +227,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
                 child: Text( 'Successfully imported ${result['importedCount']} contacts to ${selectedGroup.name}!', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
                     color: Colors.white, fontWeight: FontWeight.w400),)),
           ).show(context);
+
         }
       } else {
         setState(() {
@@ -511,17 +517,8 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
       });
 
       final importedContacts = await apiService.getAllContacts();
-
-      // final selectedContactNormalizedPhones = selectedContacts
-      //     .where((contact) => contact.phones.isNotEmpty)
-      //     .map((contact) => normalizePhoneNumber(contact.phones.first.normalizedNumber))
-      //     .where((phone) => phone.isNotEmpty)
-      //     .toSet();
-
-      // Filter imported contacts by matching normalized phone numbers
       final recentlyImportedContacts = result['theImportedContacts'];
 
-      // List<String> importedContactIds = recentlyImportedContacts.map((contact) => contact.id).toList();
       List<String> importedContactIds = [];
       
       for (int i =0; i<recentlyImportedContacts.length; i++) {

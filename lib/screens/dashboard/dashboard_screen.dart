@@ -307,7 +307,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
 
           if (_showConfetti)
-            Positioned.fill(
+            Align(
+              alignment: Alignment.topCenter,
               child: ConfettiWidget(
                 confettiController: _confettiController,
                 blastDirectionality: BlastDirectionality.explosive,
@@ -317,10 +318,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Colors.blue,
                   Colors.pink,
                   Colors.orange,
-                  Colors.purple,
-                  Color(0xFF3CB3E9), // Your app's primary color
+                  Colors.purple
                 ],
-                // createParticlePath: _drawStar, // Optional: for star-shaped confetti
               ),
             ),
           
@@ -562,7 +561,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _confettiController.play();
     
     // Close after animation
-    Future.delayed(const Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 4), () {
       if (mounted) {
         setState(() {
           _showConfetti = false;

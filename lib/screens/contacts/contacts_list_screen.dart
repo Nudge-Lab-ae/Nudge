@@ -315,22 +315,21 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                     ],
                   ),
                    if (_showConfetti)
-                    Positioned.fill(
-                      child: ConfettiWidget(
-                        confettiController: _confettiController,
-                        blastDirectionality: BlastDirectionality.explosive,
-                        shouldLoop: false,
-                        colors: const [
-                          Colors.green,
-                          Colors.blue,
-                          Colors.pink,
-                          Colors.orange,
-                          Colors.purple,
-                          Color(0xFF3CB3E9), // Your app's primary color
-                        ],
-                        // createParticlePath: _drawStar, // Optional: for star-shaped confetti
+                      Align(
+                        alignment: Alignment.topCenter,
+                        child: ConfettiWidget(
+                          confettiController: _confettiController,
+                          blastDirectionality: BlastDirectionality.explosive,
+                          shouldLoop: false,
+                          colors: const [
+                            Colors.green,
+                            Colors.blue,
+                            Colors.pink,
+                            Colors.orange,
+                            Colors.purple
+                          ],
+                        ),
                       ),
-                    ),
                   // Progress overlays
                   _buildDeletionProgressOverlay(themeProvider: themeProvider),
                   _buildAddingToGroupProgressOverlay(themeProvider: themeProvider),

@@ -190,6 +190,76 @@ class LogInteractionModalState extends State<LogInteractionModal> {
       // Don't close the modal on error - let the user try again
     }
   }
+
+  String _getRelativeDateDescription(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final selectedDate = DateTime(date.year, date.month, date.day);
+    final difference = selectedDate.difference(today).inDays;
+
+    if (difference == 0) {
+      return 'Today';
+    } else if (difference == -1) {
+      return 'Yesterday';
+    } else if (difference == 1) {
+      return 'Tomorrow';
+    } else if (difference < 0) {
+      // Past dates
+      final absDays = difference.abs();
+      if (absDays <= 7) {
+        return '$absDays day${absDays > 1 ? 's' : ''} ago';
+      } else if (absDays <= 30) {
+        final weeks = (absDays / 7).floor();
+        return '$weeks week${weeks > 1 ? 's' : ''} ago';
+      } else if (absDays <= 365) {
+        final months = (absDays / 30).floor();
+        return '$months month${months > 1 ? 's' : ''} ago';
+      } else {
+        final years = (absDays / 365).floor();
+        return '$years year${years > 1 ? 's' : ''} ago';
+      }
+    } else {
+      // Future dates
+      if (difference <= 7) {
+        return 'in $difference day${difference > 1 ? 's' : ''}';
+      } else if (difference <= 30) {
+        final weeks = (difference / 7).ceil();
+        return 'in $weeks week${weeks > 1 ? 's' : ''}';
+      } else if (difference <= 365) {
+        final months = (difference / 30).ceil();
+        return 'in $months month${months > 1 ? 's' : ''}';
+      } else {
+        final years = (difference / 365).ceil();
+        return 'in $years year${years > 1 ? 's' : ''}';
+      }
+    }
+  }
+
+  String _getRelativeTimeDescription(DateTime date, TimeOfDay time) {
+    final now = DateTime.now();
+    final selectedDateTime = DateTime(
+      date.year, date.month, date.day,
+      time.hour, time.minute,
+    );
+    
+    final difference = now.difference(selectedDateTime);
+    
+    if (selectedDateTime.year == now.year &&
+        selectedDateTime.month == now.month &&
+        selectedDateTime.day == now.day) {
+      // Same day
+      if (difference.inMinutes < 1) {
+        return 'Just now';
+      } else if (difference.inMinutes < 60) {
+        return '${difference.inMinutes} minute${difference.inMinutes > 1 ? 's' : ''} ago';
+      } else {
+        final hours = difference.inHours;
+        return '$hours hour${hours > 1 ? 's' : ''} ago';
+      }
+    }
+    
+    return ''; // Return empty for non-today dates
+  }
   
   @override
   Widget build(BuildContext context) {
@@ -371,7 +441,54 @@ class LogInteractionModalState extends State<LogInteractionModal> {
             ),
           ),
           const SizedBox(height: 8),
-          
+          Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF3CB3E9).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: const Color(0xFF3CB3E9).withOpacity(0.3),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  size: 16,
+                  color: const Color(0xFF3CB3E9),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _getRelativeDateDescription(_selectedDate),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF3CB3E9),
+                    ),
+                  ),
+                ),
+                if (_getRelativeTimeDescription(_selectedDate, _selectedTime).isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      _getRelativeTimeDescription(_selectedDate, _selectedTime),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.green,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
           Row(
             children: [
               Expanded(

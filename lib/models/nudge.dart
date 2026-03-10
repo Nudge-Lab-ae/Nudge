@@ -82,7 +82,7 @@ class Nudge {
       isCompleted: data['isCompleted'] ?? false,
       isSnoozed: data['isSnoozed'] ?? false,
       completedAt: data['completedAt'] != null 
-          ? DateTime.fromMillisecondsSinceEpoch(data['completedAt'])
+          ? DateTime.fromMillisecondsSinceEpoch(data['completedAt'].millisecondsSinceEpoch)
           : null,
       snoozedUntil: data['snoozedUntil'] != null 
           ? DateTime.fromMillisecondsSinceEpoch(data['snoozedUntil'])
