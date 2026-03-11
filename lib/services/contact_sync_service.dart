@@ -453,7 +453,12 @@ class ContactSyncService {
           print(deviceContact.phones.first.number);
         }
 
-        String contactId = generateRandomId(16) + displayName.substring(0, 4);
+        String subName = displayName;
+        if (subName.length>4) {
+          subName = displayName.substring(0, 4);
+        }
+
+        String contactId = generateRandomId(16) + subName;
 
         Contact nudgeContact = Contact(
           id: contactId,
@@ -625,7 +630,12 @@ class ContactSyncService {
 
         print('Importing contact: $displayName - Phone: $primaryPhoneNumber - Email: $primaryEmail');
 
-        String contactId = generateRandomId(16) + displayName.substring(0, 4);
+        String subName = displayName;
+        if (subName.length>4) {
+          subName = displayName.substring(0, 4);
+        }
+        
+        String contactId = generateRandomId(16) + subName;
 
 
         Contact nudgeContact = Contact(

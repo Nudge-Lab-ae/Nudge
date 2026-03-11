@@ -990,9 +990,9 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     if (!_isDeletingInProgress) return const SizedBox.shrink();
     
     return Positioned(
-      bottom: 16,
+      bottom: 216,
       left: 16,
-      right: 50,
+      right: 16,
       child: Material(
         elevation: 8,
         borderRadius: BorderRadius.circular(12),

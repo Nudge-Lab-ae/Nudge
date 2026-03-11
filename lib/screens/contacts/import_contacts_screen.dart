@@ -534,7 +534,8 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
       
       // CONDITIONALLY SCHEDULE NUDGES
       if (_isOnboarding == false && recentlyImportedContacts.isNotEmpty) {
-        await apiService.scheduleNudgesForContacts(contactIds: importedContactIds);
+        apiService.scheduleNudgesForContacts(contactIds: importedContactIds);
+        apiService.scheduleEventNotifications(recentlyImportedContacts);
       }
 
       // Different navigation based on source
@@ -1149,7 +1150,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
                   color: _statusMessage.contains('Successfully')
                           ?Colors.green[themeProvider.isDarkMode ? 900 : 50]
                           : _statusMessage.contains('failed') || _statusMessage.contains('Error')
-                          ? Colors.white
+                          ? Colors.white.withOpacity(themeProvider.isDarkMode?0.4:1.0)
                           : const Color.fromARGB(255, 195, 194, 194),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
