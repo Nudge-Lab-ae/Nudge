@@ -678,7 +678,7 @@ class LogInteractionModalState extends State<LogInteractionModal> {
             alignment: Alignment.topCenter,
             child: ConfettiWidget(
               confettiController: _confettiController,
-              numberOfParticles: 50,
+              numberOfParticles: 20,
               blastDirectionality: BlastDirectionality.explosive,
               shouldLoop: false,
               colors: const [

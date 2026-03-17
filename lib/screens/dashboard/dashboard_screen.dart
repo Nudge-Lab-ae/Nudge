@@ -118,7 +118,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _runDailyCDIUpdate(ApiService apiService) async {
     final prefs = await SharedPreferences.getInstance();
-    final lastUpdateKey = 'last_cdi_update_${DateTime.now().day}';
+    final lastUpdateKey = 'last_cdi_update_${DateTime.now().day}_${DateTime.now().hour}';
     final shouldUpdate = prefs.getBool(lastUpdateKey) != true;
     
     if (shouldUpdate) {
@@ -311,7 +311,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               alignment: Alignment.topCenter,
               child: ConfettiWidget(
                 confettiController: _confettiController,
-                numberOfParticles: 50,
+                numberOfParticles: 20,
                 blastDirectionality: BlastDirectionality.explosive,
                 shouldLoop: false,
                 colors: const [

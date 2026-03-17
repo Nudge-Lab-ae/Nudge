@@ -1442,7 +1442,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                     Positioned.fill(
                       child: ConfettiWidget(
                         confettiController: _confettiController,
-                        numberOfParticles: 50,
+                        numberOfParticles: 20,
                         blastDirectionality: BlastDirectionality.explosive,
                         shouldLoop: false,
                         colors: const [

@@ -331,7 +331,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                     child: Align(
             alignment: Alignment.topCenter,
             child: ConfettiWidget(
-              numberOfParticles: 50,
+              numberOfParticles: 20,
               blastDirection: pi*1.3,
               confettiController: _confettiController,
               blastDirectionality: BlastDirectionality.explosive,
