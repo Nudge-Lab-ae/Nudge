@@ -946,7 +946,46 @@ Future<void> updateGroup(SocialGroup group) async {
     } catch (e) {
       throw Exception('Failed to update group: $e');
     }
-}
+  }
+
+  Future<void> updateGroupForContacts (List<Contact> pendingContacts, SocialGroup newGroup) async{
+    String newName = newGroup.name;
+    String newPeriod = newGroup.period;
+    int newFrequency = newGroup.frequency;
+    try {
+      final currentUser = _auth.currentUser;
+      
+      for (int i=0; i<pendingContacts.length; i++) {
+        Contact currentContact = pendingContacts[i];
+        await _usersCollection.doc(currentUser!.uid).collection('contacts').doc(currentContact.id).update({
+            'connectionType': newName, 'period': newPeriod, 'frequency': newFrequency
+          });
+      }
+    } catch (e) {
+      throw Exception('Failed to update group: $e');
+    }
+  }
+
+  Future<void> rescheduleGroupContactNudges (SocialGroup group, List<Contact> allContacts, String previousName) async{
+    try{
+      List<Contact> groupContacts = allContacts.where((contact) => contact.connectionType == previousName).toList();
+      List<String> groupContactIds = [];
+      for (int i =0; i<groupContacts.length; i++) {
+        groupContactIds.add(groupContacts[i].id);
+      }
+      print(groupContactIds); print('are the group contacts');
+      if (previousName != group.name) {
+        await updateGroupForContacts(groupContacts, group);
+      }
+      await cancelNudgesForContacts(groupContactIds);
+      await scheduleNudgesForContacts(contactIds: groupContactIds);
+      return;
+    } catch (e){
+      print('The error is: $e');
+      throw Exception('Failed to reschedule Nudges for Group Contacts.');
+    }
+  }
+
   // Imported contacts methods
   Future<void> updateImportedContacts(List<Map<String, dynamic>> contacts) async {
     try {

@@ -1,11 +1,12 @@
 // lib/screens/contacts/contacts_list_screen.dart
-import 'package:another_flushbar/flushbar.dart';
+// import 'package:another_flushbar/flushbar.dart';
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:nudge/models/social_group.dart';
 import 'package:nudge/screens/contacts/import_contacts_screen.dart';
 import 'package:nudge/screens/dashboard/dashboard_screen.dart';
 import 'package:nudge/services/api_service.dart';
+import 'package:nudge/services/message_service.dart';
 // import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/theme/text_styles.dart';
 // import 'package:nudge/widgets/feedback_floating_button.dart';
@@ -319,6 +320,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                         alignment: Alignment.topCenter,
                         child: ConfettiWidget(
                           confettiController: _confettiController,
+                          numberOfParticles: 50,
                           blastDirectionality: BlastDirectionality.explosive,
                           shouldLoop: false,
                           colors: const [
@@ -1147,14 +1149,20 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     apiService.cancelNudgesForContacts(_selectedContacts.toList());
     
     
-    Flushbar(
-      padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
-      flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
-      forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
-      messageText: Center(
-          child: Text('Deleted $_deletionSuccessCount contacts${_deletionErrorCount > 0 ? '. $_deletionErrorCount failed' : ''}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-              color: Colors.white, fontWeight: FontWeight.w400),)),
-    ).show(context);
+    // Flushbar(
+    //   padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+    //   flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+    //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+    //   messageText: Center(
+    //       child: Text('Deleted $_deletionSuccessCount contacts${_deletionErrorCount > 0 ? '. $_deletionErrorCount failed' : ''}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+    //           color: Colors.white, fontWeight: FontWeight.w400),)),
+    // ).show(context);
+     TopMessageService().showMessage(
+        context: context,
+        message: 'Deleted $_deletionSuccessCount contacts${_deletionErrorCount > 0 ? '. $_deletionErrorCount failed' : ''}',
+        backgroundColor: Colors.green,
+        icon: Icons.check,
+      );
     
     setState(() {
       _isDeletingInProgress = false;
@@ -1171,9 +1179,15 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     
     if (contacts.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No contacts to delete')),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   const SnackBar(content: Text('No contacts to delete')),
+      // );
+       TopMessageService().showMessage(
+          context: context,
+          message: 'No contacts to delete.',
+          backgroundColor: Colors.blueGrey,
+          icon: Icons.info,
+        );
       return;
     }
     
@@ -1225,14 +1239,21 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
       }
     }
     
-    Flushbar(
-      padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
-      flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
-      forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
-      messageText: Center(
-          child: Text('Deleted $_deletionSuccessCount contacts${_deletionErrorCount > 0 ? '. $_deletionErrorCount failed' : ''}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-              color: Colors.white, fontWeight: FontWeight.w400),)),
-    ).show(context);
+    // Flushbar(
+    //   padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+    //   flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+    //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+    //   messageText: Center(
+    //       child: Text('Deleted $_deletionSuccessCount contacts${_deletionErrorCount > 0 ? '. $_deletionErrorCount failed' : ''}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+    //           color: Colors.white, fontWeight: FontWeight.w400),)),
+    // ).show(context);
+
+    TopMessageService().showMessage(
+        context: context,
+        message: 'Deleted $_deletionSuccessCount contacts${_deletionErrorCount > 0 ? '. $_deletionErrorCount failed' : ''}',
+        backgroundColor: Colors.green,
+        icon: Icons.check,
+      );
     
     setState(() {
       _isDeletingInProgress = false;
@@ -1271,9 +1292,15 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     final user = authService.currentUser;
     
     if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('User not authenticated')),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   const SnackBar(content: Text('User not authenticated')),
+      // );
+       TopMessageService().showMessage(
+          context: context,
+          message: 'User not authenticated.',
+          backgroundColor: Colors.deepOrange,
+          icon: Icons.error,
+        );
       return;
     }
     
@@ -1325,15 +1352,22 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
       
     }
     
-    Flushbar(
-      padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
-      flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
-      forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
-      backgroundColor: Colors.lightGreenAccent,
-      messageText: Center(
-          child: Text( 'Added $_addingSuccessCount contacts to $groupName${_addingErrorCount > 0 ? '. $_addingErrorCount failed' : ''}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-              color: Colors.black, fontWeight: FontWeight.w400),)),
-    ).show(context);
+    // Flushbar(
+    //   padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+    //   flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+    //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+    //   backgroundColor: Colors.lightGreenAccent,
+    //   messageText: Center(
+    //       child: Text( 'Added $_addingSuccessCount contacts to $groupName${_addingErrorCount > 0 ? '. $_addingErrorCount failed' : ''}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+    //           color: Colors.black, fontWeight: FontWeight.w400),)),
+    // ).show(context);
+
+    TopMessageService().showMessage(
+        context: context,
+        message: 'Added $_addingSuccessCount contacts to $groupName${_addingErrorCount > 0 ? '. $_addingErrorCount failed' : ''}',
+        backgroundColor: Colors.green,
+        icon: Icons.check,
+      );
 
     widget.hideButton();
     
@@ -1394,15 +1428,27 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
       await apiService.cancelNudgesForContacts([contact.id]);
       await apiService.scheduleNudgesForContacts(contactIds: [contact.id]);
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Added ${contact.name} to $groupName')),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(content: Text('Added ${contact.name} to $groupName')),
+      // );
+       TopMessageService().showMessage(
+          context: context,
+          message: 'Added ${contact.name} to $groupName',
+          backgroundColor: Colors.green,
+          icon: Icons.check,
+        );
       
       Navigator.pop(context);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to add contact: $e')),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(content: Text('Failed to add contact: $e')),
+      // );
+       TopMessageService().showMessage(
+          context: context,
+          message: 'Failed to add contact: $e',
+          backgroundColor: Colors.green,
+          icon: Icons.check,
+        );
     }
   }
 

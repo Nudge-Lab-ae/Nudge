@@ -1,5 +1,6 @@
 // lib/widgets/simple_contact_panel.dart - IMPROVED
 import 'package:flutter/material.dart';
+import 'package:nudge/services/message_service.dart';
 import '../models/contact.dart';
 import '../services/api_service.dart';
 
@@ -317,23 +318,35 @@ class _SimpleContactPanelState extends State<SimpleContactPanel> {
       );
       
       // Show success and close
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('✓ ${_selectedType} logged with ${widget.contact.name}'),
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Text('✓ ${_selectedType} logged with ${widget.contact.name}'),
+      //     backgroundColor: Colors.green,
+      //     duration: const Duration(seconds: 1),
+      //   ),
+      // );
+      TopMessageService().showMessage(
+          context: context,
+          message: '✓ ${_selectedType} logged with ${widget.contact.name}',
           backgroundColor: Colors.green,
-          duration: const Duration(seconds: 1),
-        ),
-      );
+          icon: Icons.check,
+        );
       
       Navigator.pop(context);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to log: $e'),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Text('Failed to log: $e'),
+      //     backgroundColor: Colors.red,
+      //     duration: const Duration(seconds: 3),
+      //   ),
+      // );
+      TopMessageService().showMessage(
+          context: context,
+          message: 'Failed to log: $e',
+          backgroundColor: Colors.deepOrange,
+          icon: Icons.error,
+        );
     } finally {
       if (mounted) {
         setState(() {

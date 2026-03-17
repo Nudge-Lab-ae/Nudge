@@ -1,9 +1,12 @@
 // lib/widgets/add_touchpoint_modal.dart
-import 'dart:math';
+// import 'dart:math';
 
-import 'package:another_flushbar/flushbar.dart';
+// import 'package:another_flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:confetti/confetti.dart';
+import 'package:nudge/services/message_service.dart';
+// import 'package:top_snackbar_flutter/custom_snack_bar.dart';
+// import 'package:top_snackbar_flutter/top_snack_bar.dart';
 import '../services/api_service.dart';
 import '../models/contact.dart';
 import 'package:provider/provider.dart';
@@ -70,12 +73,18 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
       });
     } catch (e) {
       print('Error loading contacts: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to load contacts: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Text('Failed to load contacts: $e'),
+      //     backgroundColor: Colors.red,
+      //   ),
+      // );
+      TopMessageService().showMessage(
+          context: context,
+          message: 'Failed to load contacts: $e',
+          backgroundColor: Colors.deepOrange,
+          icon: Icons.error,
+        );
     } finally {
       setState(() {
         _isLoading = false;
@@ -127,19 +136,117 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
     }
   }
 
+  // Future<void> _logTouchpoint() async {
+  //   if (_selectedContact == null || _selectedInteractionType == null) {
+  //     Flushbar(
+  //     padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero,
+  //     backgroundGradient: LinearGradient(
+  //       colors: [ Color.fromARGB(255, 215, 73, 63), Color.fromARGB(255, 215, 73, 63)],
+  //       stops: [0.6, 1],
+  //     ), duration: Duration(seconds: 2),
+  //     dismissDirection: FlushbarDismissDirection.HORIZONTAL, forwardAnimationCurve: Curves.fastLinearToSlowEaseIn,
+  //     flushbarPosition: FlushbarPosition.TOP,
+  //     messageText: Center(
+  //         child: Text( 'Please select a contact and interaction type', style: TextStyle(fontFamily: 'Inter',fontSize: 14,
+  //           color: Colors.white, fontWeight: FontWeight.w600), textAlign: TextAlign.center,)),).show(context);
+  //     return;
+  //   }
+
+  //   setState(() {
+  //     _isLoading = true;
+  //   });
+
+  //   try {
+  //     // Combine date and time
+  //     final interactionDateTime = DateTime(
+  //       _selectedDate.year,
+  //       _selectedDate.month,
+  //       _selectedDate.day,
+  //       _selectedTime.hour,
+  //       _selectedTime.minute,
+  //     );
+
+  //     // Log the interaction
+  //     await widget.apiService.logInteraction(
+  //       contactId: _selectedContact!.id,
+  //       interactionType: _selectedInteractionType!,
+  //       notes: _notesController.text.isNotEmpty ? _notesController.text : null,
+  //       interactionDate: interactionDateTime.toIso8601String(),
+  //     );
+
+  //     // Show confetti animation
+  //     setState(() {
+  //       _showConfetti = true;
+  //       _isLoading = false;
+  //     });
+      
+  //     _confettiController.play();
+
+  //     // Show success message
+  //     Flushbar(
+  //     padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero,
+  //     backgroundGradient: LinearGradient(
+  //       colors: [ Color.fromARGB(255, 11, 155, 47), Color.fromARGB(255, 26, 154, 56)],
+  //       stops: [0.6, 1],
+  //     ), duration: Duration(seconds: 2),
+  //     flushbarStyle: FlushbarStyle.GROUNDED,
+  //     flushbarPosition: FlushbarPosition.TOP, // or FlushbarPosition.BOTTOM
+  //     margin: EdgeInsets.zero,
+  //     // dismissDirection: FlushbarDismissDirection.HORIZONTAL, forwardAnimationCurve: Curves.fastLinearToSlowEaseIn,
+  //     messageText: Center(
+  //         child: Text( 'Touchpointz logged for ${_selectedContact!.name}! Next nudge has been rescheduled.', style: TextStyle(fontFamily: 'Inter',fontSize: 14,
+  //           color: Colors.white, fontWeight: FontWeight.w600), textAlign: TextAlign.center,)),).show(context);
+
+
+  //     // Close after animation
+  //     Future.delayed(const Duration(seconds: 3), () {
+  //       if (mounted) {
+  //         Navigator.pop(context);
+  //       }
+  //     });
+
+  //   } catch (e) {
+  //     print('Error logging touchpoint: $e');
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text('Failed to log touchpoint: $e'),
+  //         backgroundColor: Colors.red,
+  //       ),
+  //     );
+  //     setState(() {
+  //       _isLoading = false;
+  //     });
+  //   }
+  // }
+
+
   Future<void> _logTouchpoint() async {
     if (_selectedContact == null || _selectedInteractionType == null) {
-      Flushbar(
-      padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero,
-      backgroundGradient: LinearGradient(
-        colors: [ Color.fromARGB(255, 215, 73, 63), Color.fromARGB(255, 215, 73, 63)],
-        stops: [0.6, 1],
-      ), duration: Duration(seconds: 2),
-      dismissDirection: FlushbarDismissDirection.HORIZONTAL, forwardAnimationCurve: Curves.fastLinearToSlowEaseIn,
-      flushbarPosition: FlushbarPosition.TOP,
-      messageText: Center(
-          child: Text( 'Please select a contact and interaction type', style: TextStyle(fontFamily: 'Inter',fontSize: 14,
-            color: Colors.white, fontWeight: FontWeight.w600), textAlign: TextAlign.center,)),).show(context);
+      // Replace the Flushbar error message
+      // showTopSnackBar(
+      //   Overlay.of(context),
+      //   CustomSnackBar.info(
+      //     message: 'Please select a contact and interaction type',
+      //     textStyle: TextStyle(
+      //       fontFamily: 'Inter',
+      //       fontSize: 14,
+      //       color: Colors.white,
+      //       fontWeight: FontWeight.w600,
+      //     ),
+      //   ),
+      //   displayDuration: const Duration(seconds: 2),
+      //   padding: EdgeInsets.zero,
+      //   // showOutAnimationDuration: const Duration(milliseconds: 500),
+      //   reverseAnimationDuration: const Duration(milliseconds: 500),
+      //   snackBarPosition: SnackBarPosition.top, // This ensures it's at the top
+      // );
+
+       TopMessageService().showMessage(
+          context: context,
+          message: 'Please select a contact and interaction type.',
+          backgroundColor: Colors.deepOrange,
+          icon: Icons.error,
+        );
       return;
     }
 
@@ -173,18 +280,31 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
       
       _confettiController.play();
 
-      // Show success message
-      Flushbar(
-      padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero,
-      backgroundGradient: LinearGradient(
-        colors: [ Color.fromARGB(255, 11, 155, 47), Color.fromARGB(255, 26, 154, 56)],
-        stops: [0.6, 1],
-      ), duration: Duration(seconds: 2),
-      dismissDirection: FlushbarDismissDirection.HORIZONTAL, forwardAnimationCurve: Curves.fastLinearToSlowEaseIn,
-      flushbarPosition: FlushbarPosition.TOP,
-      messageText: Center(
-          child: Text( 'Touchpoint logged for ${_selectedContact!.name}! Next nudge has been rescheduled.', style: TextStyle(fontFamily: 'Inter',fontSize: 14,
-            color: Colors.white, fontWeight: FontWeight.w600), textAlign: TextAlign.center,)),).show(context);
+      // Replace the Flushbar success message
+      // showTopSnackBar(
+      //   Overlay.of(context),
+      //   CustomSnackBar.success(
+      //     message: 'Touchpointz logged for ${_selectedContact!.name}! Next nudge has been rescheduled.',
+      //     textStyle: TextStyle(
+      //       fontFamily: 'Inter',
+      //       fontSize: 14,
+      //       color: Colors.white,
+      //       fontWeight: FontWeight.w600,
+      //     ),
+      //   ),
+      //   displayDuration: const Duration(seconds: 2),
+      //   padding: EdgeInsets.zero,
+      //   // showOutAnimationDuration: const Duration(milliseconds: 500),
+      //   reverseAnimationDuration: const Duration(milliseconds: 500),
+      //   snackBarPosition: SnackBarPosition.top, // This ensures it's at the top
+      // );
+
+       TopMessageService().showMessage(
+          context: context,
+          message: 'Touchpoint logged for ${_selectedContact!.name}! Next nudge has been rescheduled.',
+          backgroundColor: Colors.green,
+          // icon: Icons.check,
+        );
 
       // Close after animation
       Future.delayed(const Duration(seconds: 3), () {
@@ -195,12 +315,19 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
 
     } catch (e) {
       print('Error logging touchpoint: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to log touchpoint: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      // Keep the ScaffoldMessenger for errors as it's fine for bottom messages
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Text('Failed to log touchpoint: $e'),
+      //     backgroundColor: Colors.red,
+      //   ),
+      // );
+       TopMessageService().showMessage(
+          context: context,
+          message: 'Failed to log touchpoint: $e',
+          backgroundColor: Colors.deepOrange,
+          icon: Icons.error,
+        );
       setState(() {
         _isLoading = false;
       });
@@ -211,32 +338,32 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
     FocusScope.of(context).unfocus();
   }
 
-  Path _drawStar(Size size) {
-    // Method to draw a 5-point star
-    double degToRad(double deg) => deg * (3.14159 / 180.0);
+  // Path _drawStar(Size size) {
+  //   // Method to draw a 5-point star
+  //   double degToRad(double deg) => deg * (3.14159 / 180.0);
     
-    const numberOfPoints = 5;
-    final halfWidth = size.width / 2;
-    final externalRadius = halfWidth;
-    final internalRadius = halfWidth / 2.5;
-    final degreesPerStep = 360 / (numberOfPoints * 2);
-    final path = Path();
+  //   const numberOfPoints = 5;
+  //   final halfWidth = size.width / 2;
+  //   final externalRadius = halfWidth;
+  //   final internalRadius = halfWidth / 2.5;
+  //   final degreesPerStep = 360 / (numberOfPoints * 2);
+  //   final path = Path();
     
-    for (int i = 0; i < numberOfPoints * 2; i++) {
-      final radius = i.isEven ? externalRadius : internalRadius;
-      final angle = degToRad(i * degreesPerStep - 90);
-      final x = halfWidth + radius * cos(angle);
-      final y = halfWidth + radius * sin(angle);
+  //   for (int i = 0; i < numberOfPoints * 2; i++) {
+  //     final radius = i.isEven ? externalRadius : internalRadius;
+  //     final angle = degToRad(i * degreesPerStep - 90);
+  //     final x = halfWidth + radius * cos(angle);
+  //     final y = halfWidth + radius * sin(angle);
       
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
-    }
-    path.close();
-    return path;
-  }
+  //     if (i == 0) {
+  //       path.moveTo(x, y);
+  //     } else {
+  //       path.lineTo(x, y);
+  //     }
+  //   }
+  //   path.close();
+  //   return path;
+  // }
 
       String _getRelativeDateDescription(DateTime date) {
     final now = DateTime.now();
@@ -800,29 +927,21 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
         ),
         
         // Confetti animation overlay
-        if (_showConfetti)
-          Positioned.fill(
-            child: Material(
-              color: Colors.transparent,
-              child: Container(
-                color: Colors.black.withOpacity(0.5),
-                child: ConfettiWidget(
-                  confettiController: _confettiController,
-                  blastDirectionality: BlastDirectionality.explosive,
-                  shouldLoop: false,
-                  colors: const [
-                    Colors.green,
-                    Colors.blue,
-                    Colors.pink,
-                    Colors.orange,
-                    Colors.purple,
-                    Color(0xFF3CB3E9),
-                  ],
-                  createParticlePath: _drawStar,
-                  numberOfParticles: 30,
-                  gravity: 0.1,
-                ),
-              ),
+       if (_showConfetti)
+          Align(
+            alignment: Alignment.topCenter,
+            child: ConfettiWidget(
+              confettiController: _confettiController,
+              numberOfParticles: 50,
+              blastDirectionality: BlastDirectionality.explosive,
+              shouldLoop: false,
+              colors: const [
+                Colors.green,
+                Colors.blue,
+                Colors.pink,
+                Colors.orange,
+                Colors.purple
+              ],
             ),
           ),
       ],

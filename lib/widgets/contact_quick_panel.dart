@@ -1,5 +1,6 @@
 // lib/widgets/contact_quick_panel.dart - SIMPLIFIED VERSION
 import 'package:flutter/material.dart';
+import 'package:nudge/services/message_service.dart';
 // import 'package:intl/intl.dart';
 import '../models/contact.dart';
 import '../services/api_service.dart';
@@ -445,13 +446,20 @@ class _ContactQuickPanelState extends State<ContactQuickPanel> {
       );
       
       // Show success
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('✓ Interaction logged for ${widget.contact.name}'),
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Text('✓ Interaction logged for ${widget.contact.name}'),
+      //     backgroundColor: Colors.green,
+      //     duration: const Duration(seconds: 2),
+      //   ),
+      // );
+
+       TopMessageService().showMessage(
+          context: context,
+          message: 'Interaction logged for ${widget.contact.name}',
           backgroundColor: Colors.green,
-          duration: const Duration(seconds: 2),
-        ),
-      );
+          icon: Icons.check,
+        );
       
       // Close after delay
       Future.delayed(const Duration(milliseconds: 500), () {
@@ -459,13 +467,19 @@ class _ContactQuickPanelState extends State<ContactQuickPanel> {
       });
       
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to log interaction: $e'),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Text('Failed to log interaction: $e'),
+      //     backgroundColor: Colors.red,
+      //     duration: const Duration(seconds: 3),
+      //   ),
+      // );
+      TopMessageService().showMessage(
+          context: context,
+          message: 'Failed to log interaction: $e',
+          backgroundColor: Colors.deepOrange,
+          icon: Icons.error,
+        );
     } finally {
       if (mounted) {
         setState(() {

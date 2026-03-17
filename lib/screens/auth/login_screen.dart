@@ -2,6 +2,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:nudge/services/api_service.dart';
+import 'package:nudge/services/message_service.dart';
 // import 'package:nudge/theme/text_styles.dart';
 import 'package:nudge/widgets/gradient_text.dart';
 import 'package:provider/provider.dart';
@@ -197,17 +198,29 @@ class _LoginScreenState extends State<LoginScreen> {
                                 completeProfile();
                               }
                             } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Login failed. Please try again.'),
-                                ),
+                              // ScaffoldMessenger.of(context).showSnackBar(
+                              //   const SnackBar(
+                              //     content: Text('Login failed. Please try again.'),
+                              //   ),
+                              // );
+                              TopMessageService().showMessage(
+                                context: context,
+                                message: 'Login failed. Please try again.',
+                                backgroundColor: Colors.deepOrange,
+                                icon: Icons.error,
                               );
                             }
                           } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Error: ${e.toString()}'),
-                              ),
+                            // ScaffoldMessenger.of(context).showSnackBar(
+                            //   SnackBar(
+                            //     content: Text('Error: ${e.toString()}'),
+                            //   ),
+                            // );
+                            TopMessageService().showMessage(
+                              context: context,
+                              message: 'Error: ${e.toString()}',
+                              backgroundColor: Colors.deepOrange,
+                              icon: Icons.error,
                             );
                           } finally {
                             setState(() => _isLoading = false);
@@ -278,10 +291,16 @@ class _LoginScreenState extends State<LoginScreen> {
                         }
                       }
                     } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Error: ${e.toString()}'),
-                        ),
+                      // ScaffoldMessenger.of(context).showSnackBar(
+                      //   SnackBar(
+                      //     content: Text('Error: ${e.toString()}'),
+                      //   ),
+                      // );
+                      TopMessageService().showMessage(
+                        context: context,
+                        message: 'Error: ${e.toString()}',
+                        backgroundColor: Colors.deepOrange,
+                        icon: Icons.error,
                       );
                     } finally {
                       setState(() => _isLoading = false);
@@ -340,10 +359,16 @@ class _LoginScreenState extends State<LoginScreen> {
                         }
                       }
                     } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Unable to Login. Please try again.'),
-                        ),
+                      // ScaffoldMessenger.of(context).showSnackBar(
+                      //   SnackBar(
+                      //     content: Text('Unable to Login. Please try again.'),
+                      //   ),
+                      // );
+                      TopMessageService().showMessage(
+                        context: context,
+                        message: 'Unable to Login. Please try again.',
+                        backgroundColor: Colors.deepOrange,
+                        icon: Icons.error,
                       );
                     } finally {
                       setState(() => _isLoading = false);
@@ -398,12 +423,18 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _resetPassword(String email) async {
     try {
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Password reset email sent to $email'),
-          duration: const Duration(seconds: 5),
-        ),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Text('Password reset email sent to $email'),
+      //     duration: const Duration(seconds: 5),
+      //   ),
+      // );
+      TopMessageService().showMessage(
+          context: context,
+          message: 'Password reset email sent to $email.',
+          backgroundColor: Colors.green,
+          icon: Icons.check,
+        );
     } on FirebaseAuthException catch (e) {
       String errorMessage;
       switch (e.code) {
@@ -419,13 +450,25 @@ class _LoginScreenState extends State<LoginScreen> {
         default:
           errorMessage = 'Error sending reset email: ${e.message}';
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMessage)),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(content: Text(errorMessage)),
+      // );
+      TopMessageService().showMessage(
+          context: context,
+          message: errorMessage,
+          backgroundColor: Colors.deepOrange,
+          icon: Icons.error,
+        );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(content: Text('Error: ${e.toString()}')),
+      // );
+      TopMessageService().showMessage(
+          context: context,
+          message: 'Error: ${e.toString()}',
+          backgroundColor: Colors.deepOrange,
+          icon: Icons.error,
+        );
     }
   }
 
@@ -474,8 +517,14 @@ class _LoginScreenState extends State<LoginScreen> {
           ElevatedButton(
             onPressed: () async {
               if (emailController.text.isEmpty || !emailController.text.contains('@')) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Please enter a valid email address')),
+                // ScaffoldMessenger.of(context).showSnackBar(
+                //   const SnackBar(content: Text('Please enter a valid email address')),
+                // );
+                TopMessageService().showMessage(
+                  context: context,
+                  message: 'Please enter a valid email address.',
+                  backgroundColor: Colors.deepOrange,
+                  icon: Icons.error,
                 );
                 return;
               }

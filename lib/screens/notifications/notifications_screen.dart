@@ -1,7 +1,7 @@
 // notifications_screen.dart with Dark Mode and Optimizations
 import 'dart:async';
 
-import 'package:another_flushbar/flushbar.dart';
+// import 'package:another_flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:nudge/main.dart';
 import 'package:nudge/models/contact.dart';
@@ -10,6 +10,7 @@ import 'package:nudge/models/social_group.dart';
 import 'package:nudge/screens/contacts/contact_detail_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/services/auth_service.dart';
+import 'package:nudge/services/message_service.dart';
 import 'package:nudge/services/nudge_service.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -956,14 +957,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
     
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Completed $_completionSuccessCount nudge${_completionSuccessCount == 1 ? '' : 's'}${_completionErrorCount > 0 ? '. $_completionErrorCount failed' : ''}',
-          ),
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Text(
+      //       'Completed $_completionSuccessCount nudge${_completionSuccessCount == 1 ? '' : 's'}${_completionErrorCount > 0 ? '. $_completionErrorCount failed' : ''}',
+      //     ),
+      //     duration: const Duration(seconds: 3),
+      //   ),
+      // );
+       TopMessageService().showMessage(
+          context: context,
+          message: 'Completed $_completionSuccessCount nudge${_completionSuccessCount == 1 ? '' : 's'}${_completionErrorCount > 0 ? '. $_completionErrorCount failed' : ''}',
+          backgroundColor: Colors.green,
+          icon: Icons.check,
+        );
     }
     
     setState(() {
@@ -999,13 +1006,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
     
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Cancelled $_cancellationSuccessCount nudge${_cancellationSuccessCount == 1 ? '' : 's'}${_cancellationErrorCount > 0 ? '. $_cancellationErrorCount failed' : ''}',
-          ),
-          duration: const Duration(seconds: 3),
-        ),
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Text(
+      //       'Cancelled $_cancellationSuccessCount nudge${_cancellationSuccessCount == 1 ? '' : 's'}${_cancellationErrorCount > 0 ? '. $_cancellationErrorCount failed' : ''}',
+      //     ),
+      //     duration: const Duration(seconds: 3),
+      //   ),
+      // );
+       TopMessageService().showMessage(
+        context: context,
+        message: 'Cancelled $_cancellationSuccessCount nudge${_cancellationSuccessCount == 1 ? '' : 's'}${_cancellationErrorCount > 0 ? '. $_cancellationErrorCount failed' : ''}',
+        backgroundColor: Colors.blueGrey,
+        icon: Icons.info,
       );
     }
     
@@ -1520,7 +1533,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         },
         child: Card(
           margin: const EdgeInsets.symmetric(vertical: 4),
-          elevation: 2,
+          elevation: 0.7,
           color: birthdayCardColor ?? themeProvider.getSurfaceColor(context),
           child: ListTile(
             leading: Stack(
@@ -1733,18 +1746,24 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       
     } catch (e) {
       print('Error showing log interaction modal: $e');
-      Flushbar(
-        padding: const EdgeInsets.all(10), 
-        borderRadius: BorderRadius.zero, 
-        duration: const Duration(seconds: 2),
-        flushbarPosition: FlushbarPosition.TOP, 
-        dismissDirection: FlushbarDismissDirection.HORIZONTAL,
-        forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
-        messageText: Center(
-          child: Text('Error: $e', style: const TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-              color: Colors.white, fontWeight: FontWeight.w400)),
-        ),
-      ).show(navigatorKey.currentContext!);
+      // Flushbar(
+      //   padding: const EdgeInsets.all(10), 
+      //   borderRadius: BorderRadius.zero, 
+      //   duration: const Duration(seconds: 2),
+      //   flushbarPosition: FlushbarPosition.TOP, 
+      //   dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+      //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+      //   messageText: Center(
+      //     child: Text('Error: $e', style: const TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+      //         color: Colors.white, fontWeight: FontWeight.w400)),
+      //   ),
+      // ).show(navigatorKey.currentContext!);
+       TopMessageService().showMessage(
+          context: context,
+          message: 'Error: $e',
+          backgroundColor: Colors.deepOrange,
+          icon: Icons.error,
+        );
       return null;
     }
   }
@@ -1875,11 +1894,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         ),
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Contact not found'),
-          backgroundColor: Colors.red,
-        ),
+     TopMessageService().showMessage(
+        context: context,
+        message: 'Contact not found.',
+        backgroundColor: Colors.deepOrange,
+        icon: Icons.error,
       );
     }
   }
@@ -1936,19 +1955,25 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   apiService.scheduleSingleNudge(contactId: contact.id, scheduledTime: newScheduledTime, rescheduled: true);
                   
                   if (mounted) {
-                    Flushbar(
-                      padding: const EdgeInsets.all(10), 
-                      borderRadius: BorderRadius.zero, 
-                      duration: const Duration(seconds: 2),
-                      flushbarPosition: FlushbarPosition.TOP, 
-                      dismissDirection: FlushbarDismissDirection.HORIZONTAL,
-                      forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
-                      messageText: Center(
-                        child: Text('Nudge snoozed for $selectedSnoozeHours hour${selectedSnoozeHours > 1 ? 's' : ''}', 
-                          style: const TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-                              color: Colors.white, fontWeight: FontWeight.w400)),
-                      ),
-                    ).show(context);
+                    // Flushbar(
+                    //   padding: const EdgeInsets.all(10), 
+                    //   borderRadius: BorderRadius.zero, 
+                    //   duration: const Duration(seconds: 2),
+                    //   flushbarPosition: FlushbarPosition.TOP, 
+                    //   dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+                    //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+                    //   messageText: Center(
+                    //     child: Text('Nudge snoozed for $selectedSnoozeHours hour${selectedSnoozeHours > 1 ? 's' : ''}', 
+                    //       style: const TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+                    //           color: Colors.white, fontWeight: FontWeight.w400)),
+                    //   ),
+                    // ).show(context);
+                     TopMessageService().showMessage(
+                        context: context,
+                        message: 'Nudge snoozed for $selectedSnoozeHours hour${selectedSnoozeHours > 1 ? 's' : ''}',
+                        backgroundColor: Colors.blueGrey,
+                        icon: Icons.info,
+                      );
                   }
                 },
                 child: Text('Snooze', style: TextStyle(color: theme.colorScheme.primary, fontFamily: 'OpenSans')),
@@ -2029,11 +2054,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               Navigator.pop(context);
               apiService.cancelSingleNudge(nudgeId: nudge.id);
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Nudge for ${nudge.contactName} cancelled'),
-                    backgroundColor: Colors.orange,
-                  ),
+                // ScaffoldMessenger.of(context).showSnackBar(
+                //   SnackBar(
+                //     content: Text('Nudge for ${nudge.contactName} cancelled'),
+                //     backgroundColor: Colors.orange,
+                //   ),
+                // );
+                TopMessageService().showMessage(
+                  context: context,
+                  message: 'Nudge for ${nudge.contactName} cancelled',
+                  backgroundColor: Colors.blueGrey,
+                  icon: Icons.info,
                 );
               }
             },
@@ -2598,72 +2629,90 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   _showMovingMessage(){
-    Flushbar(
-      padding: const EdgeInsets.all(10),
-      borderRadius: BorderRadius.zero,
-      duration: const Duration(seconds: 2),
-      flushbarPosition: FlushbarPosition.TOP,
-      backgroundColor: Colors.black,
-      dismissDirection: FlushbarDismissDirection.HORIZONTAL,
-      forwardAnimationCurve: Curves.fastLinearToSlowEaseIn,
-      messageText: Center(
-        child: Text(
-          'Reassigning contact to new group...',
-          style: const TextStyle(
-            fontFamily: 'OpenSans',
-            fontSize: 14,
-            color: Colors.white,
-            fontWeight: FontWeight.w400,
-          ),
-        ),
-      ),
-    ).show(navigatorKey.currentContext!);
+    // Flushbar(
+    //   padding: const EdgeInsets.all(10),
+    //   borderRadius: BorderRadius.zero,
+    //   duration: const Duration(seconds: 2),
+    //   flushbarPosition: FlushbarPosition.TOP,
+    //   backgroundColor: Colors.black,
+    //   dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+    //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn,
+    //   messageText: Center(
+    //     child: Text(
+    //       'Reassigning contact to new group...',
+    //       style: const TextStyle(
+    //         fontFamily: 'OpenSans',
+    //         fontSize: 14,
+    //         color: Colors.white,
+    //         fontWeight: FontWeight.w400,
+    //       ),
+    //     ),
+    //   ),
+    // ).show(navigatorKey.currentContext!);
+     TopMessageService().showMessage(
+        context: context,
+        message: 'Reassigning contact to new group...',
+        backgroundColor: Colors.blueGrey,
+        icon: Icons.info,
+      );
   }
 
   _showSuccessMessage(String message) {
-    Flushbar(
-      padding: const EdgeInsets.all(10),
-      borderRadius: BorderRadius.zero,
-      duration: const Duration(seconds: 2),
-      flushbarPosition: FlushbarPosition.TOP,
-      backgroundColor: Colors.green,
-      dismissDirection: FlushbarDismissDirection.HORIZONTAL,
-      forwardAnimationCurve: Curves.fastLinearToSlowEaseIn,
-      messageText: Center(
-        child: Text(
-          message,
-          style: const TextStyle(
-            fontFamily: 'OpenSans',
-            fontSize: 14,
-            color: Colors.white,
-            fontWeight: FontWeight.w400,
-          ),
-        ),
-      ),
-    ).show(navigatorKey.currentContext!);
+    // Flushbar(
+    //   padding: const EdgeInsets.all(10),
+    //   borderRadius: BorderRadius.zero,
+    //   duration: const Duration(seconds: 2),
+    //   flushbarPosition: FlushbarPosition.TOP,
+    //   backgroundColor: Colors.green,
+    //   dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+    //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn,
+    //   messageText: Center(
+    //     child: Text(
+    //       message,
+    //       style: const TextStyle(
+    //         fontFamily: 'OpenSans',
+    //         fontSize: 14,
+    //         color: Colors.white,
+    //         fontWeight: FontWeight.w400,
+    //       ),
+    //     ),
+    //   ),
+    // ).show(navigatorKey.currentContext!);
+     TopMessageService().showMessage(
+        context: context,
+        message: message,
+        backgroundColor: Colors.green,
+        icon: Icons.check,
+      );
   }
 
   _showFailureMessage(String message) {
-    Flushbar(
-        padding: const EdgeInsets.all(10),
-        borderRadius: BorderRadius.zero,
-        duration: const Duration(seconds: 2),
-        flushbarPosition: FlushbarPosition.TOP,
+    // Flushbar(
+    //     padding: const EdgeInsets.all(10),
+    //     borderRadius: BorderRadius.zero,
+    //     duration: const Duration(seconds: 2),
+    //     flushbarPosition: FlushbarPosition.TOP,
+    //     backgroundColor: Colors.deepOrange,
+    //     dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+    //     forwardAnimationCurve: Curves.fastLinearToSlowEaseIn,
+    //     messageText: Center(
+    //       child: Text(
+    //         message,
+    //         style: const TextStyle(
+    //           fontFamily: 'OpenSans',
+    //           fontSize: 14,
+    //           color: Colors.white,
+    //           fontWeight: FontWeight.w400,
+    //         ),
+    //       ),
+    //     ),
+    //   ).show(navigatorKey.currentContext!);
+     TopMessageService().showMessage(
+        context: context,
+        message: message,
         backgroundColor: Colors.deepOrange,
-        dismissDirection: FlushbarDismissDirection.HORIZONTAL,
-        forwardAnimationCurve: Curves.fastLinearToSlowEaseIn,
-        messageText: Center(
-          child: Text(
-            message,
-            style: const TextStyle(
-              fontFamily: 'OpenSans',
-              fontSize: 14,
-              color: Colors.white,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-        ),
-      ).show(navigatorKey.currentContext!);
+        icon: Icons.error,
+      );
   }
 
 }

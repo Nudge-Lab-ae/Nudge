@@ -1,6 +1,7 @@
 // contact_detail_screen.dart - Updated with StreamBuilder for real-time updates
 import 'dart:io';
-import 'package:another_flushbar/flushbar.dart';
+import 'dart:math';
+// import 'package:another_flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:nudge/providers/feedback_provider.dart';
@@ -8,6 +9,7 @@ import 'package:nudge/screens/contacts/edit_contact_screen.dart';
 // import 'package:nudge/screens/dashboard/dashboard_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/services/auth_service.dart';
+import 'package:nudge/services/message_service.dart';
 import 'package:nudge/theme/text_styles.dart';
 // import 'package:nudge/widgets/add_touchpoint_modal.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
@@ -38,7 +40,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
   @override
   void initState() {
     super.initState();
-     _confettiController = ConfettiController(duration: const Duration(seconds: 3));
+     _confettiController = ConfettiController(duration: const Duration(seconds: 8));
     
     // Check if we should show confetti (newly created contact)
     if (widget.showConfetti) {
@@ -49,15 +51,22 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
         });
         _confettiController.play();
 
-        Flushbar(
-          padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
-          flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
-          forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
-          backgroundColor: Colors.green,
-          messageText: Center(
-              child: Text('Successfully added contact', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-                  color: Colors.white, fontWeight: FontWeight.w400),)),
-        ).show(context);
+        // Flushbar(
+        //   padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+        //   flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+        //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+        //   backgroundColor: Colors.green,
+        //   messageText: Center(
+        //       child: Text('Successfully added contact', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+        //           color: Colors.white, fontWeight: FontWeight.w400),)),
+        // ).show(context);
+
+        TopMessageService().showMessage(
+                  context: context,
+                  message: 'Successfully added contact!',
+                  backgroundColor: Colors.green,
+                  icon: Icons.check_circle,
+                );
         
         // Auto-hide confetti after animation
         Future.delayed(const Duration(seconds: 4), () {
@@ -93,14 +102,26 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
         final updatedContact = contact.copyWith(isVIP: isVIP);
         await apiService.updateContact(updatedContact);
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(isVIP ? 'Added to Favourites' : 'Removed from Favourites')),
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(content: Text(isVIP ? 'Added to Favourites' : 'Removed from Favourites')),
+        // );
+        TopMessageService().showMessage(
+          context: context,
+          message: isVIP ? 'Added to Favourites' : 'Removed from Favourites',
+          backgroundColor: Colors.green,
+          icon: Icons.check,
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error updating Favourites status: $e')),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(content: Text('Error updating Favourites status: $e')),
+      // );
+       TopMessageService().showMessage(
+          context: context,
+          message: 'Error updating Favourites status: $e',
+          backgroundColor: Colors.deepOrange,
+          icon: Icons.error,
+        );
     } finally {
       setState(() {
         _isUpdatingVIP = false;
@@ -203,6 +224,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final apiService = Provider.of<ApiService>(context);
     final feedbackProvider = Provider.of<FeedbackProvider>(context);
+    var width = MediaQuery.of(context).size.width;
     
     return Scaffold(
       floatingActionButton: Padding(
@@ -303,9 +325,14 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                     ),
                   ),
 
-                   if (_showConfetti)
-          Positioned.fill(
+                  if (_showConfetti)
+                  SizedBox(
+                    width: width,
+                    child: Align(
+            alignment: Alignment.topCenter,
             child: ConfettiWidget(
+              numberOfParticles: 50,
+              blastDirection: pi*1.3,
               confettiController: _confettiController,
               blastDirectionality: BlastDirectionality.explosive,
               shouldLoop: false,
@@ -314,11 +341,11 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                 Colors.blue,
                 Colors.pink,
                 Colors.orange,
-                Colors.purple,
-                Color(0xFF3CB3E9), // Your app's primary color
+                Colors.purple
               ],
             ),
           ),
+                  )
     ]),
     );
   }

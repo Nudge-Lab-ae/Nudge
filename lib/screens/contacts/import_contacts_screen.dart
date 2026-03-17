@@ -4,13 +4,14 @@ import 'dart:io';
 // import 'dart:typed_data';
 // import 'dart:typed_data';
 
-import 'package:another_flushbar/flushbar.dart';
+// import 'package:another_flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:nudge/models/contact.dart';
 import 'package:nudge/models/social_group.dart';
 import 'package:nudge/models/user.dart';
 import 'package:nudge/providers/feedback_provider.dart';
 import 'package:nudge/screens/dashboard/dashboard_screen.dart';
+import 'package:nudge/services/message_service.dart';
 // import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
 // import 'package:nudge/theme/text_styles.dart';
@@ -166,8 +167,15 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
                 'No new contacts to import - all contacts already exist in Nudge';
           });
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('All contacts already imported')),
+          // ScaffoldMessenger.of(context).showSnackBar(
+          //   const SnackBar(content: Text('All contacts already imported')),
+          // );
+
+           TopMessageService().showMessage(
+            context: context,
+            message: 'All Contacts already imported.',
+            backgroundColor: Colors.blueGrey,
+            icon: Icons.info,
           );
           
           // Different navigation based on source
@@ -219,14 +227,21 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
             Navigator.pop(context, {'showConfetti': true, 'contacts': recentlyImportedContacts});
           }
 
-          Flushbar(
-            padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
-            flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
-            forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
-            messageText: Center(
-                child: Text( 'Successfully imported ${result['importedCount']} contacts to ${selectedGroup.name}!', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-                    color: Colors.white, fontWeight: FontWeight.w400),)),
-          ).show(context);
+          // Flushbar(
+          //   padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+          //   flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+          //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+          //   messageText: Center(
+          //       child: Text( 'Successfully imported ${result['importedCount']} contacts to ${selectedGroup.name}!', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+          //           color: Colors.white, fontWeight: FontWeight.w400),)),
+          // ).show(context);
+
+          TopMessageService().showMessage(
+            context: context,
+            message: 'Successfully imported ${result['importedCount']} contacts to ${selectedGroup.name}!',
+            backgroundColor: Colors.green,
+            icon: Icons.check,
+          );
 
         }
       } else {
@@ -234,9 +249,16 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
           _statusMessage = 'Import failed: ${result['message']}';
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to import contacts: ${result['message']}')),
-        );
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(content: Text('Failed to import contacts: ${result['message']}')),
+        // );
+
+         TopMessageService().showMessage(
+            context: context,
+            message: 'Failed to import contacts: ${result['message']})',
+            backgroundColor: Colors.deepOrange,
+            icon: Icons.error,
+          );
         
         Navigator.pop(context, []);
       }
@@ -246,9 +268,16 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
         _statusMessage = 'Error: $e';
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to import contacts: $e')),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(content: Text('Failed to import contacts: $e')),
+      // );
+
+       TopMessageService().showMessage(
+            context: context,
+            message: 'Failed to import contact: $e',
+            backgroundColor: Colors.deepOrange,
+            icon: Icons.error,
+          );
       
       Navigator.pop(context, []);
     }
@@ -344,9 +373,15 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
     }
     
     if (selectedGroup == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Group selection cancelled')),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   const SnackBar(content: Text('Group selection cancelled')),
+      // );
+       TopMessageService().showMessage(
+            context: context,
+            message: 'Group selection cacelled.',
+            backgroundColor: Colors.blueGrey,
+            icon: Icons.info,
+          );
       return;
     }
 
@@ -411,12 +446,18 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
       print('Error getting contacts: $e');
       print('Stack trace: $stack');
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to load contacts: ${e.toString()}'),
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Text('Failed to load contacts: ${e.toString()}'),
+      //     duration: const Duration(seconds: 3),
+      //   ),
+      // );
+      TopMessageService().showMessage(
+          context: context,
+          message: 'Failed to load contacts: ${e.toString()}',
+          backgroundColor: Colors.deepOrange,
+          icon: Icons.error,
+        );
       return;
     }
 
@@ -431,19 +472,31 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
             Platform.environment['SIMULATOR_RUNTIME_VERSION'] != null);
         
         if (isSimulator) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('iOS Simulator detected. Please ensure you have added contacts in the Simulator\'s Contacts app and granted permission.'),
-              duration: Duration(seconds: 5),
-            ),
-          );
+          // ScaffoldMessenger.of(context).showSnackBar(
+          //   const SnackBar(
+          //     content: Text('iOS Simulator detected. Please ensure you have added contacts in the Simulator\'s Contacts app and granted permission.'),
+          //     duration: Duration(seconds: 5),
+          //   ),
+          // );
+          TopMessageService().showMessage(
+                  context: context,
+                  message: 'iOS Simulator detected. Please ensure you have added contacts in the Simulator\'s Contacts app and granted permission.',
+                  backgroundColor: Colors.green,
+                  icon: Icons.check,
+                );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('No contacts found on device'),
-              duration: Duration(seconds: 3),
-            ),
-          );
+          // ScaffoldMessenger.of(context).showSnackBar(
+          //   const SnackBar(
+          //     content: Text('No contacts found on device'),
+          //     duration: Duration(seconds: 3),
+          //   ),
+          // );
+          TopMessageService().showMessage(
+                  context: context,
+                  message: 'No contacts found on device.',
+                  backgroundColor: Colors.green,
+                  icon: Icons.check,
+                );
         }
       }
       return;
@@ -477,8 +530,14 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
     );
 
     if (selectedContacts == null || selectedContacts.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No contacts selected')),
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   const SnackBar(content: Text('No contacts selected')),
+      // );
+      TopMessageService().showMessage(
+        context: context,
+        message: 'No contacts selected.',
+        backgroundColor: Colors.deepOrange,
+        icon: Icons.error,
       );
       return;
     }
@@ -550,21 +609,35 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
         Navigator.pop(context, {'showConfetti': true, 'contacts': recentlyImportedContacts});
       }
 
-      Flushbar(
-            padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
-            flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
-            forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
-            messageText: Center(
-                child: Text( 'Successfully imported ${result['importedCount']} contacts to ${selectedGroup.name}!', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-                    color: Colors.white, fontWeight: FontWeight.w400),)),
-          ).show(context);
+      // Flushbar(
+      //       padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+      //       flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+      //       forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+      //       messageText: Center(
+      //           child: Text( 'Successfully imported ${result['importedCount']} contacts to ${selectedGroup.name}!', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+      //               color: Colors.white, fontWeight: FontWeight.w400),)),
+      //     ).show(context);
+
+      TopMessageService().showMessage(
+            context: context,
+            message: 'Successfully imported ${result['importedCount']} contacts to ${selectedGroup.name}!',
+            backgroundColor: Colors.green,
+            icon: Icons.check,
+          );
     } else {
       setState(() {
         _statusMessage = 'Import failed: ${result['message']}';
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to import contacts: ${result['message']}')),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(content: Text('Failed to import contacts: ${result['message']}')),
+      // );
+
+      TopMessageService().showMessage(
+            context: context,
+            message: 'Failed to import contacts: ${result['message']}',
+            backgroundColor: Colors.deepOrange,
+            icon: Icons.error,
+          );
     }
   }
   

@@ -1,7 +1,7 @@
 // lib/screens/contacts/edit_contact_screen.dart
 import 'dart:typed_data';
 
-import 'package:another_flushbar/flushbar.dart';
+// import 'package:another_flushbar/flushbar.dart';
 import 'package:crop_your_image/crop_your_image.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +10,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:nudge/providers/feedback_provider.dart';
 import 'package:nudge/screens/dashboard/dashboard_screen.dart';
 import 'package:nudge/services/api_service.dart';
+import 'package:nudge/services/message_service.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
 // import 'package:nudge/widgets/gradient_text.dart';
 import 'package:provider/provider.dart';
@@ -1313,8 +1314,14 @@ class _EditContactScreenState extends State<EditContactScreen> {
           
           await apiService.convertImportedToRegularContact(contactData);
           
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Contact converted successfully')),
+          // ScaffoldMessenger.of(context).showSnackBar(
+          //   const SnackBar(content: Text('Contact converted successfully')),
+          // );
+           TopMessageService().showMessage(
+            context: context,
+            message: 'Contact converted successfully.',
+            backgroundColor: Colors.green,
+            icon: Icons.check,
           );
           print('phase 4');
         } else if (_originalContact != null) {
@@ -1336,9 +1343,15 @@ class _EditContactScreenState extends State<EditContactScreen> {
               print('updated image is'); print (updatedImageUrl);
             } catch (e) {
               print('subphase3');
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Failed to upload image: $e')),
-              );
+              // ScaffoldMessenger.of(context).showSnackBar(
+              //   SnackBar(content: Text('Failed to upload image: $e')),
+              // );
+               TopMessageService().showMessage(
+                  context: context,
+                  message: 'Failed to upload image: $e',
+                  backgroundColor: Colors.green,
+                  icon: Icons.check,
+                );
               return;
             }
           }
@@ -1384,14 +1397,21 @@ class _EditContactScreenState extends State<EditContactScreen> {
           }
           print('phase 6');
           
-          Flushbar(
-            padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
-            flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
-            forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
-            messageText: Center(
-                child: Text( 'Contact updated successfully', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-                    color: Colors.white, fontWeight: FontWeight.w400),)),
-          ).show(context);
+          // Flushbar(
+          //   padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+          //   flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+          //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+          //   messageText: Center(
+          //       child: Text( 'Contact updated successfully', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+          //           color: Colors.white, fontWeight: FontWeight.w400),)),
+          // ).show(context);
+
+          TopMessageService().showMessage(
+            context: context,
+            message: 'Contact updated successfully.',
+            backgroundColor: Colors.green,
+            icon: Icons.check,
+          );
 
         } else {
           print('here');
@@ -1442,8 +1462,14 @@ class _EditContactScreenState extends State<EditContactScreen> {
         
         Navigator.pop(context);
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Contact deleted successfully')),
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   const SnackBar(content: Text('Contact deleted successfully')),
+        // );
+        TopMessageService().showMessage(
+          context: context,
+          message: 'Contact deleted successfully.',
+          backgroundColor: Colors.green,
+          icon: Icons.check,
         );
       }
     }

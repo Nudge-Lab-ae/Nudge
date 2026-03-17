@@ -1,9 +1,12 @@
-import 'package:another_flushbar/flushbar.dart';
+import 'dart:async';
+
+// import 'package:another_flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:nudge/main.dart';
 import 'package:nudge/screens/contacts/contact_detail_screen.dart';
 import 'package:nudge/screens/contacts/import_contacts_screen.dart';
 import 'package:nudge/services/api_service.dart';
+import 'package:nudge/services/message_service.dart';
 import 'package:nudge/theme/text_styles.dart';
 import 'package:provider/provider.dart';
 import 'package:confetti/confetti.dart';
@@ -37,6 +40,11 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
   final ScrollController _scrollController = ScrollController();
   List<SocialGroup> allGroups = [];
   bool _isReordering = false;
+  bool showBottomModal = false;
+  GlobalKey<ScaffoldState> _modalScaffoldKey = GlobalKey<ScaffoldState>();
+  
+  // Add Completer for modal management
+  // Completer<void>? _modalCompleter;
 
   @override
   void initState() {
@@ -164,7 +172,6 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                   // Show reassignment modal
                   final result = await showModalBottomSheet<Map<String, String?>>(
                     context: navigatorKey.currentContext!,
-                    // context: context,
                     isScrollControlled: true,
                     backgroundColor: Colors.transparent,
                     builder: (modalContext) => _buildReassignmentModal(
@@ -184,12 +191,10 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                           groupContacts,
                           availableGroups,
                           apiService,
-                          // Remove the onSuccess callback that shows message here
                         );
                         
                         // Show success message after all navigation is complete
                         if (context.mounted) {
-                          // Use a microtask to ensure navigation is complete
                           Future.microtask(() {
                             if (context.mounted) {
                               _showSuccessMessage('Contacts reassigned successfully');
@@ -204,7 +209,6 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                             }
                           });
                         }
-                        // Re-throw to prevent group deletion if reassignment failed
                         rethrow;
                       }
                     } else if (result == null){
@@ -233,16 +237,17 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                   // Refresh the UI
                   setState(() {
                     _initializeStreams();
+                    showBottomModal = false;
                   });
                   
-                  // if (!doubleTap) {
-                  //   Navigator.pop(context);
-                  // }
                 }
                 
               } catch (e) {
                 if (context.mounted) {
                   _showFailureMessage('Error deleting group: $e');
+                  setState(() {
+                    showBottomModal = false;
+                  });
                 }
               }
             },
@@ -252,8 +257,6 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
       ),
     );
   }
-
-  // Add these helper methods to your _GroupsListScreenState class
 
   Widget _buildReassignmentModal({
     required BuildContext context,
@@ -420,14 +423,6 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                                         ),
                                       ),
                                       const SizedBox(height: 4),
-                                      /* Text(
-                                        'Previously: ${contactOriginalGroups[contact.id] ?? 'No group'}',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: themeProvider.getTextSecondaryColor(context),
-                                          fontStyle: FontStyle.italic,
-                                        ),
-                                      ), */
                                     ],
                                   ),
                                 ),
@@ -604,21 +599,35 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                               .toList();
                           
                           if (unassignedContacts.isNotEmpty) {
-                            // Show a snackbar instead of a dialog to avoid navigation conflicts
-                            Flushbar(
-                              padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
-                              backgroundColor: Colors.deepOrange,
-                              flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
-                              forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
-                              messageText: Center(
-                                  child: Text( 'Please assign all ${unassignedContacts.length} contact${unassignedContacts.length > 1 ? 's' : ''} to a group', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-                                      color: Colors.white, fontWeight: FontWeight.w400),)),
-                            ).show(context);
+                            // Flushbar(
+                            //   padding: EdgeInsets.all(10), 
+                            //   borderRadius: BorderRadius.zero, 
+                            //   duration: Duration(seconds: 2),
+                            //   backgroundColor: Colors.deepOrange,
+                            //   flushbarPosition: FlushbarPosition.TOP, 
+                            //   dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+                            //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+                            //   messageText: Center(
+                            //     child: Text( 
+                            //       'Please assign all ${unassignedContacts.length} contact${unassignedContacts.length > 1 ? 's' : ''} to a group', 
+                            //       style: TextStyle(
+                            //         fontFamily: 'OpenSans', 
+                            //         fontSize: 14,
+                            //         color: Colors.white, 
+                            //         fontWeight: FontWeight.w400
+                            //       ),
+                            //     ),
+                            //   ),
+                            // ).show(context);
 
+                            TopMessageService().showMessage(
+                              context: context,
+                              message: 'Please assign all ${unassignedContacts.length} contact${unassignedContacts.length > 1 ? 's' : ''} to a group',
+                              backgroundColor: Colors.blueGrey,
+                              icon: Icons.info,
+                            );
                           } else {
-                            // All contacts are assigned, proceed
                             Navigator.pop(navigatorKey.currentContext!, contactSelections);
-                            // Navigator.pop(context, contactSelections);
                           }
                         },
                         style: ElevatedButton.styleFrom(
@@ -653,8 +662,6 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
     List<Contact> affectedContacts,
     List<SocialGroup> availableGroups,
     ApiService apiService,
-    {Function(String)? onSuccess,
-    Function(String)? onError}
   ) async {
     try {
       // Update each contact with their new group
@@ -692,24 +699,8 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
           await apiService.updateContact(updatedContact);
         }
       }
-      
-      if (onSuccess != null) {
-        // onSuccess('${affectedContacts.length} contacts reassigned successfully');
-        
-        //  Flushbar(
-        //     padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
-        //     flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
-        //     forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
-        //     messageText: Center(
-        //         child: Text( '${affectedContacts.length} contacts reassigned successfully', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-        //             color: Colors.white, fontWeight: FontWeight.w400),)),
-        //   ).show(navigatorKey.currentContext!);
-
-      }
     } catch (e) {
-      if (onError != null) {
-        // onError(e.toString());
-      }
+      rethrow;
     }
   }
     
@@ -740,16 +731,21 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
       
       // Refresh the groups stream to show updated order
       setState(() {
-        // This will trigger a rebuild with the new data
         _initializeStreams();
       });
       
       print('Groups reordered successfully');
     } catch (e) {
       print('Error reordering groups: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error reordering groups: $e')),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(content: Text('Error reordering groups: $e')),
+      // );
+       TopMessageService().showMessage(
+          context: context,
+          message: 'Error reordering groups: $e',
+          backgroundColor: Colors.deepOrange,
+          icon: Icons.error,
+        );
     } finally {
       setState(() {
         _isReordering = false;
@@ -866,7 +862,6 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                         onTap: _dismissKeyboard,
                         child: Scaffold(
                           body: CustomScrollView(
-                            // physics: const BouncingScrollPhysics(),
                             slivers: [
                               // Sliver App Bar with disappearing effect
                               SliverAppBar(
@@ -934,7 +929,6 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                                   child: _isReordering 
                                       ? const Center(child: CircularProgressIndicator())
                                       : ReorderableListView.builder(
-                                          // Remove shrinkWrap and let it use natural scrolling
                                           itemCount: filteredGroups.length,
                                           itemBuilder: (context, index) {
                                             final group = filteredGroups[index];
@@ -1038,19 +1032,6 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                               ),
                               backgroundColor: theme.colorScheme.primary,
                             ),
-                           /*  floatingActionButton: Padding(
-                              padding: EdgeInsets.only(right: 10, bottom: 55),
-                              child: FeedbackFloatingButton(
-                                currentSection: 'groups',
-                                extraActions: [
-                                  FeedbackAction(
-                                    label: 'New Group',
-                                    icon: Icons.group_add,
-                                    onPressed: () => _showCreateGroupDialog(context, apiService, themeProvider: themeProvider),
-                                  ),
-                                ],
-                              ),
-                            ), */
                             body: CustomScrollView(
                               physics: const BouncingScrollPhysics(),
                               slivers: [
@@ -1126,6 +1107,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                     alignment: Alignment.topCenter,
                     child: ConfettiWidget(
                       confettiController: _confettiController,
+                      numberOfParticles: 50,
                       blastDirectionality: BlastDirectionality.explosive,
                       shouldLoop: false,
                       colors: const [
@@ -1139,23 +1121,6 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                   ),
                 ],
               ),
-              // Fixed FAB positioning for both modes
-              /* floatingActionButton: Padding(
-                padding: EdgeInsets.only(
-                  bottom: widget.showAppBar ? 55.0 : 55.0,
-                  right: 6.0,
-                ),
-                child: FeedbackFloatingButton(
-                  currentSection: 'groups',
-                  extraActions: [
-                    FeedbackAction(
-                      label: 'New Group',
-                      icon: Icons.group_add,
-                      onPressed: () => _showCreateGroupDialog(context, apiService, themeProvider: themeProvider),
-                    ),
-                  ],
-                ),
-              ), */
               floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
             );
           },
@@ -1197,7 +1162,12 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: () => _showGroupDetails(context, group, members, apiService, themeProvider: themeProvider),
+          onTap: () {
+            setState(() {
+              showBottomModal = true;
+              _showGroupDetails(context, group, members, apiService, themeProvider: themeProvider);
+            });
+          },
           onDoubleTap: () => _showDeleteConfirmation(context, group, apiService, themeProvider, true),
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -1592,8 +1562,14 @@ void _showCreateGroupDialog(BuildContext context, ApiService apiService, {requir
                       // _confettiController.play();
                       Navigator.of(context).pop();
                     } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Error creating group: $e')),
+                      // ScaffoldMessenger.of(context).showSnackBar(
+                      //   SnackBar(content: Text('Error creating group: $e')),
+                      // );
+                       TopMessageService().showMessage(
+                        context: context,
+                        message: 'Error creating group: $e',
+                        backgroundColor: Colors.deepOrange,
+                        icon: Icons.error,
                       );
                     }
                   }
@@ -1836,6 +1812,8 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
               ElevatedButton(
                 onPressed: () async {
                   if (nameController.text.isNotEmpty) {
+
+                    String previousName = group.name;
                     final updatedGroup = group.copyWith(
                       name: nameController.text,
                       description: descriptionController.text,
@@ -1845,7 +1823,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                       birthdayNudgesEnabled: birthdayNudgesEnabled,
                       anniversaryNudgesEnabled: anniversaryNudgesEnabled,
                     );
-
+                    
                     try {
                       final currentGroups = await apiService.getGroupsStream().first;
                       final updatedGroups = currentGroups.map((g) => 
@@ -1853,20 +1831,34 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                       ).toList();
                       
                       await apiService.updateGroups(updatedGroups);
+                      final contacts = await apiService.getContactsStream().first;
+                      apiService.rescheduleGroupContactNudges(updatedGroup, contacts, previousName);
                       onUpdate();
                       Navigator.of(context).pop();
                       
-                     Flushbar(
-                        padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
-                        flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
-                        forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
-                        messageText: Center(
-                            child: Text( 'Updated "${updatedGroup.name}" group!', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-                                color: Colors.white, fontWeight: FontWeight.w400),)),
-                      ).show(context);
+                    //  Flushbar(
+                    //     padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+                    //     flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+                    //     forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+                    //     messageText: Center(
+                    //         child: Text( 'Updated "${updatedGroup.name}" group!', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+                    //             color: Colors.white, fontWeight: FontWeight.w400),)),
+                    //   ).show(context);
+                     TopMessageService().showMessage(
+                        context: context,
+                        message: 'Updated "${updatedGroup.name}" group!',
+                        backgroundColor: Colors.green,
+                        icon: Icons.check,
+                      );
                     } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Error updating group: $e')),
+                      // ScaffoldMessenger.of(context).showSnackBar(
+                      //   SnackBar(content: Text('Error updating group: $e')),
+                      // );
+                       TopMessageService().showMessage(
+                        context: context,
+                        message: 'Error updating group: $e',
+                        backgroundColor: Colors.deepOrange,
+                        icon: Icons.error,
                       );
                     }
                   }
@@ -1885,24 +1877,29 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
 }
 
   _showSuccessMessage(String message) {
-    Flushbar(
-        padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
-        flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
-        forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+    // Flushbar(
+    //     padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+    //     flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+    //     forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+    //     backgroundColor: Colors.green,
+    //     messageText: Center(
+    //         child: Text( message, style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+    //             color: Colors.white, fontWeight: FontWeight.w400),)),
+    //   ).show(context);
+     TopMessageService().showMessage(
+        context: context,
+        message: message,
         backgroundColor: Colors.green,
-        messageText: Center(
-            child: Text( message, style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-                color: Colors.white, fontWeight: FontWeight.w400),)),
-      ).show(context);
+        icon: Icons.check,
+      );
   }
 
   _showFailureMessage (String error) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Error: $error'),
-        backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
-      ),
+    TopMessageService().showMessage(
+      context: context,
+      message: error,
+      backgroundColor: Colors.deepOrange,
+      icon: Icons.error,
     );
   }
 
@@ -1914,6 +1911,12 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
     {required ThemeProvider themeProvider}
   ) {
     final theme = Theme.of(context);
+    if (!showBottomModal){
+      return;
+    }
+    
+    // Reset completer
+    // _modalCompleter = Completer<void>();
     
     showModalBottomSheet(
       context: context,
@@ -1921,318 +1924,329 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
       backgroundColor: theme.scaffoldBackgroundColor,
       builder: (modalContext) {
         return Container(
-          padding: const EdgeInsets.all(16),
-          height: MediaQuery.of(context).size.height * 0.85,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(30),
-            color: theme.scaffoldBackgroundColor,
-          ),
-          child: Scaffold(
-            body: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 60,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(10),
+            key: _modalScaffoldKey,
+            padding: const EdgeInsets.all(16),
+            height: MediaQuery.of(context).size.height * 0.85,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(30),
+              color: theme.scaffoldBackgroundColor,
+            ),
+            child: Scaffold(
+              body: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 60,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    CircleAvatar(
-                      backgroundColor: Color(int.parse(group.colorCode.substring(1, 7), radix: 16) + 0xFF000000),
-                      child: Text(group.name[0], style: const TextStyle(color: Colors.white, fontFamily: 'OpenSans')),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text((group.name), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
-                          Text(group.description, style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
-                        ],
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: Color(int.parse(group.colorCode.substring(1, 7), radix: 16) + 0xFF000000),
+                        child: Text(group.name[0], style: const TextStyle(color: Colors.white, fontFamily: 'OpenSans')),
                       ),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.edit, color: themeProvider.getTextPrimaryColor(context)),
-                      onPressed: () => _showEditGroupDialog(context, group, apiService, () {
-                        setState(() {});
-                      }, themeProvider: themeProvider),
-                    ),
-                    const SizedBox(width: 10),
-                    IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => _showDeleteConfirmation(context, group, apiService, themeProvider, false),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildStatItem('Contacts', '${members.length}', themeProvider: themeProvider),
-                    _buildStatItem('Frequency', FrequencyPeriodMapper.getConversationalChoice(group.frequency, group.period), themeProvider: themeProvider),
-                    _buildStatItem('Last Engaged', _formatDate(group.lastInteraction), themeProvider: themeProvider),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('GROUP CONTACTS', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
-                    if (members.isNotEmpty)
-                    PopupMenuButton<String>(
-                      icon: Row(
-                        children: [
-                          Icon(Icons.add, size: 16, color: theme.colorScheme.primary),
-                          SizedBox(width: 4),
-                          Text('Add More', style: TextStyle(color: theme.colorScheme.primary, fontFamily: 'OpenSans', fontWeight: FontWeight.w600)),
-                        ],
-                      ),
-                      onSelected: (String value) async {
-                        Navigator.pop(modalContext); // Close the bottom sheet first
-                        
-                        if (value == 'import') {
-                          // Navigate to import contacts screen with the pre-selected group
-                          final result = await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ImportContactsScreen(
-                                groups: [group],
-                                preSelectedGroup: group,
-                              ),
-                            ),
-                          );
-                          
-                          if (result != null && result is List<Contact>) {
-                            // Play confetti when contacts are successfully imported
-                            _confettiController.play();
-                            
-                            // Refresh the group details if contacts were imported
-                            setState(() {});
-                          }
-                        } else if (value == 'existing') {
-                          Navigator.pushNamed(context, '/contacts', arguments: {
-                            'action': 'add_to_group',
-                            'contacts': allContacts, 
-                            'groupId': group.id,
-                            'groupName': group.name,
-                            'groupPeriod': group.period,
-                            'groupFrequency': group.frequency,
-                            'groupFrequencyDisplay': FrequencyPeriodMapper.getConversationalChoice(group.frequency, group.period),
-                          });
-                        }
-                      },
-                      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                        const PopupMenuItem<String>(
-                          value: 'import',
-                          child: Row(
-                            children: [
-                              Icon(Icons.import_contacts, size: 20),
-                              SizedBox(width: 8),
-                              Text('Import New Contacts'),
-                            ],
-                          ),
-                        ),
-                        const PopupMenuItem<String>(
-                          value: 'existing',
-                          child: Row(
-                            children: [
-                              Icon(Icons.group_add, size: 20),
-                              SizedBox(width: 8),
-                              Text('Add Existing Contacts'),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Expanded(
-                  child: members.isEmpty
-                    ? Center(
+                      const SizedBox(width: 16),
+                      Expanded(
                         child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.group_off, size: 48, color: themeProvider.getTextSecondaryColor(context)),
-                            const SizedBox(height: 16),
-                            Text('No members in this group', style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
-                            const SizedBox(height: 16),
-                            
-                            // Add Member Button with Popup Menu
-                            PopupMenuButton<String>(
-                              onSelected: (String value) async {
-                                Navigator.pop(modalContext); // Close the bottom sheet first
-                                
-                                if (value == 'import') {
-                                  final result = await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => ImportContactsScreen(
-                                        groups: [group],
-                                        preSelectedGroup: group,
-                                      ),
-                                    ),
-                                  );
-                                  
-                                  if (result != null && result is List<Contact>) {
-                                    setState(() {});
-                                  }
-                                } else if (value == 'existing') {
-                                  Navigator.pushNamed(context, '/contacts', arguments: {
-                                    'action': 'add_to_group',
-                                    'contacts': allContacts, 
-                                    'groupId': group.id,
-                                    'groupName': group.name,
-                                    'groupPeriod': group.period,
-                                    'groupFrequency': group.frequency,
-                                    'groupFrequencyDisplay': FrequencyPeriodMapper.getConversationalChoice(group.frequency, group.period),
-                                  });
-                                }
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                decoration: BoxDecoration(
-                                  color: theme.colorScheme.primary,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.add, size: 20, color: Colors.white),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'ADD MEMBERS',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontFamily: 'OpenSans',
-                                      ),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Icon(Icons.arrow_drop_down, color: Colors.white, size: 20),
-                                  ],
-                                ),
-                              ),
-                              itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                                const PopupMenuItem<String>(
-                                  value: 'import',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.import_contacts, size: 20, color: Color(0xff3CB3E9)),
-                                      SizedBox(width: 12),
-                                      Text(
-                                        'Import New Contacts',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const PopupMenuItem<String>(
-                                  value: 'existing',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.group_add, size: 20, color: Color(0xff3CB3E9)),
-                                      SizedBox(width: 12),
-                                      Text(
-                                        'Add Existing Contacts',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
+                            Text((group.name), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+                            Text(group.description, style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
                           ],
                         ),
-                      )
-                    : ListView.builder(
-                        itemCount: members.length,
-                        itemBuilder: (context, index) {
-                          final contact = members[index];
-                          return Container(
-                            color: Colors.transparent,
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                radius: 24,
-                                backgroundColor: themeProvider.isDarkMode ? AppTheme.darkSurfaceVariant : Colors.transparent,
-                                backgroundImage: contact.imageUrl.isNotEmpty
-                                    ? NetworkImage(contact.imageUrl)
-                                    : AssetImage('assets/contact-icons/${getRandomIndex(contact.id)}.png') as ImageProvider,
-                                child: contact.imageUrl.isEmpty
-                                    ? Text(
-                                        contact.name.isNotEmpty ? _getContactInitials(contact.name).toUpperCase() : '?',
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.edit, color: themeProvider.getTextPrimaryColor(context)),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _showEditGroupDialog(context, group, apiService, () {
+                          setState(() {});
+                        }, themeProvider: themeProvider);
+                        } 
+                      ),
+                      const SizedBox(width: 10),
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _showDeleteConfirmation(context, group, apiService, themeProvider, false);
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildStatItem('Contacts', '${members.length}', themeProvider: themeProvider),
+                      _buildStatItem('Frequency', FrequencyPeriodMapper.getConversationalChoice(group.frequency, group.period), themeProvider: themeProvider),
+                      _buildStatItem('Last Engaged', _formatDate(group.lastInteraction), themeProvider: themeProvider),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('GROUP CONTACTS', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
+                      if (members.isNotEmpty)
+                      PopupMenuButton<String>(
+                        icon: Row(
+                          children: [
+                            Icon(Icons.add, size: 16, color: theme.colorScheme.primary),
+                            SizedBox(width: 4),
+                            Text('Add More', style: TextStyle(color: theme.colorScheme.primary, fontFamily: 'OpenSans', fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                        onSelected: (String value) async {
+                          Navigator.pop(modalContext); // Close the bottom sheet first
+                          
+                          if (value == 'import') {
+                            // Navigate to import contacts screen with the pre-selected group
+                            final result = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ImportContactsScreen(
+                                  groups: [group],
+                                  preSelectedGroup: group,
+                                ),
+                              ),
+                            );
+                            
+                            if (result != null) {
+                              // Play confetti when contacts are successfully imported
+                              _confettiController.play();
+                              
+                              // Refresh the group details if contacts were imported
+                              setState(() {});
+                            }
+                          } else if (value == 'existing') {
+                            Navigator.pushNamed(context, '/contacts', arguments: {
+                              'action': 'add_to_group',
+                              'contacts': allContacts, 
+                              'groupId': group.id,
+                              'groupName': group.name,
+                              'groupPeriod': group.period,
+                              'groupFrequency': group.frequency,
+                              'groupFrequencyDisplay': FrequencyPeriodMapper.getConversationalChoice(group.frequency, group.period),
+                            });
+                          }
+                        },
+                        itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                          const PopupMenuItem<String>(
+                            value: 'import',
+                            child: Row(
+                              children: [
+                                Icon(Icons.import_contacts, size: 20),
+                                SizedBox(width: 8),
+                                Text('Import New Contacts'),
+                              ],
+                            ),
+                          ),
+                          const PopupMenuItem<String>(
+                            value: 'existing',
+                            child: Row(
+                              children: [
+                                Icon(Icons.group_add, size: 20),
+                                SizedBox(width: 8),
+                                Text('Add Existing Contacts'),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: members.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.group_off, size: 48, color: themeProvider.getTextSecondaryColor(context)),
+                              const SizedBox(height: 16),
+                              Text('No members in this group', style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
+                              const SizedBox(height: 16),
+                              
+                              // Add Member Button with Popup Menu
+                              PopupMenuButton<String>(
+                                onSelected: (String value) async {
+                                  Navigator.pop(modalContext); // Close the bottom sheet first
+                                  
+                                  if (value == 'import') {
+                                    final result = await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => ImportContactsScreen(
+                                          groups: [group],
+                                          preSelectedGroup: group,
+                                        ),
+                                      ),
+                                    );
+                                    
+                                    if (result != null && result is List<Contact>) {
+                                      setState(() {});
+                                    }
+                                  } else if (value == 'existing') {
+                                    Navigator.pushNamed(context, '/contacts', arguments: {
+                                      'action': 'add_to_group',
+                                      'contacts': allContacts, 
+                                      'groupId': group.id,
+                                      'groupName': group.name,
+                                      'groupPeriod': group.period,
+                                      'groupFrequency': group.frequency,
+                                      'groupFrequencyDisplay': FrequencyPeriodMapper.getConversationalChoice(group.frequency, group.period),
+                                    });
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.primary,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.add, size: 20, color: Colors.white),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'ADD MEMBERS',
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontWeight: FontWeight.bold,
                                           fontFamily: 'OpenSans',
-                                          fontSize: 16,
                                         ),
-                                      )
-                                    : null,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Icon(Icons.arrow_drop_down, color: Colors.white, size: 20),
+                                    ],
+                                  ),
+                                ),
+                                itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                                  const PopupMenuItem<String>(
+                                    value: 'import',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.import_contacts, size: 20, color: Color(0xff3CB3E9)),
+                                        SizedBox(width: 12),
+                                        Text(
+                                          'Import New Contacts',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const PopupMenuItem<String>(
+                                    value: 'existing',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.group_add, size: 20, color: Color(0xff3CB3E9)),
+                                        SizedBox(width: 12),
+                                        Text(
+                                          'Add Existing Contacts',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
-                              title: Text((contact.name), style: TextStyle(fontWeight: FontWeight.w600, color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
-                              subtitle: Text(contact.connectionType, style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
-                              trailing: IconButton(
-                                icon: const Icon(Icons.remove_circle, color: Colors.red),
-                                onPressed: () {
-                                  // Close the bottom sheet first
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: members.length,
+                          itemBuilder: (context, index) {
+                            final contact = members[index];
+                            return Container(
+                              color: Colors.transparent,
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  radius: 24,
+                                  backgroundColor: themeProvider.isDarkMode ? AppTheme.darkSurfaceVariant : Colors.transparent,
+                                  backgroundImage: contact.imageUrl.isNotEmpty
+                                      ? NetworkImage(contact.imageUrl)
+                                      : AssetImage('assets/contact-icons/${getRandomIndex(contact.id)}.png') as ImageProvider,
+                                  child: contact.imageUrl.isEmpty
+                                      ? Text(
+                                          contact.name.isNotEmpty ? _getContactInitials(contact.name).toUpperCase() : '?',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: 'OpenSans',
+                                            fontSize: 16,
+                                          ),
+                                        )
+                                      : null,
+                                ),
+                                title: Text((contact.name), style: TextStyle(fontWeight: FontWeight.w600, color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+                                subtitle: Text(contact.connectionType, style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
+                                trailing: IconButton(
+                                  icon: const Icon(Icons.remove_circle, color: Colors.red),
+                                  onPressed: () {
+                                    // Close the bottom sheet first
+                                    Navigator.pop(modalContext);
+                                    
+                                    // Use a small delay to ensure bottom sheet is closed
+                                    Future.delayed(const Duration(milliseconds: 100), () {
+                                      if (context.mounted) {
+                                        _showRemoveContactOptions(
+                                          context: context,
+                                          contact: contact,
+                                          currentGroup: group,
+                                          allGroups: allGroups,
+                                          apiService: apiService,
+                                          themeProvider: themeProvider,
+                                          onSuccess: (message) {
+                                            _showSuccessMessage(message);
+                                          },
+                                          onError: (error) {
+                                            // Show error message from parent context
+                                            _showFailureMessage(error);
+                                          },
+                                        );
+                                      }
+                                    });
+                                  },
+                                ),
+                                onTap: () {
                                   Navigator.pop(modalContext);
-                                  
-                                  // Use a small delay to ensure bottom sheet is closed
-                                  Future.delayed(const Duration(milliseconds: 100), () {
-                                    if (context.mounted) {
-                                      _showRemoveContactOptions(
-                                        context: context,
-                                        contact: contact,
-                                        currentGroup: group,
-                                        allGroups: allGroups,
-                                        apiService: apiService,
-                                        themeProvider: themeProvider,
-                                        onSuccess: (message) {
-                                          _showSuccessMessage(message);
-                                        },
-                                        onError: (error) {
-                                          // Show error message from parent context
-                                          _showFailureMessage(error);
-                                        },
-                                      );
-                                    }
-                                  });
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => ContactDetailScreen(contact: contact),
+                                    ),
+                                  );
                                 },
                               ),
-                              onTap: () {
-                                Navigator.pop(modalContext);
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ContactDetailScreen(contact: contact),
-                                  ),
-                                );
-                              },
-                            ),
-                          );
-                        },
-                      ),
-                ),
-              ],
+                            );
+                          },
+                        ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        );
-      },
-    );
+          );
+    }).then((_) {
+      setState(() {
+        showBottomModal = false;
+        // _modalCompleter = null;
+      });
+    });
   }
     
   void _showRemoveContactOptions({

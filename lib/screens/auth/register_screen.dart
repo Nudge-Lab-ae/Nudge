@@ -1,6 +1,7 @@
 // register_screen.dart
 import 'package:flutter/material.dart';
-import 'package:nudge/models/user.dart' as thisUser; 
+import 'package:nudge/models/user.dart' as thisUser;
+import 'package:nudge/services/message_service.dart'; 
 // import 'package:nudge/theme/text_styles.dart';
 import 'package:nudge/widgets/gradient_text.dart';
 import 'package:provider/provider.dart';
@@ -518,10 +519,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     MaterialPageRoute(builder: (context) => const CompleteProfileScreen()),
                                   );
                                 } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Registration failed. Please try again.'),
-                                    ),
+                                  // ScaffoldMessenger.of(context).showSnackBar(
+                                  //   const SnackBar(
+                                  //     content: Text('Registration failed. Please try again.'),
+                                  //   ),
+                                  // );
+                                  TopMessageService().showMessage(
+                                    context: context,
+                                    message: 'Registration failed. Please try again.',
+                                    backgroundColor: Colors.deepOrange,
+                                    icon: Icons.error,
                                   );
                                 }
                               } on FirebaseAuthException catch (e) {
@@ -544,19 +551,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   errorMessage = 'Email/password accounts are not enabled.';
                                 }
                                 
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(e.toString()),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
+                                // ScaffoldMessenger.of(context).showSnackBar(
+                                //   SnackBar(
+                                //     content: Text(e.toString()),
+                                //     backgroundColor: Colors.red,
+                                //   ),
+                                // );
+                                TopMessageService().showMessage(
+                                    context: context,
+                                    message: e.toString(),
+                                    backgroundColor: Colors.deepOrange,
+                                    icon: Icons.error,
+                                  );
                                 setState(() => _isLoading = false);
                               } catch (e) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Error: ${e.toString()}'),
-                                    backgroundColor: Colors.red,
-                                  ),
+                                // ScaffoldMessenger.of(context).showSnackBar(
+                                //   SnackBar(
+                                //     content: Text('Error: ${e.toString()}'),
+                                //     backgroundColor: Colors.red,
+                                //   ),
+                                // );
+                                TopMessageService().showMessage(
+                                  context: context,
+                                  message: 'Error: ${e.toString()}',
+                                  backgroundColor: Colors.deepOrange,
+                                  icon: Icons.error,
                                 );
                                 setState(() => _isLoading = false);
                               }
@@ -619,11 +638,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             if (emailExists && userReallyExists) {
                               // Show error and don't create duplicate
                                print('register 6');
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('The email ${user.email} is already registered. Please log in.'),
-                                  backgroundColor: Colors.red,
-                                ),
+                              // ScaffoldMessenger.of(context).showSnackBar(
+                              //   SnackBar(
+                              //     content: Text('The email ${user.email} is already registered. Please log in.'),
+                              //     backgroundColor: Colors.red,
+                              //   ),
+                              // );
+                              TopMessageService().showMessage(
+                                context: context,
+                                message: 'The email ${user.email} is already registered. Please log in.',
+                                backgroundColor: Colors.deepOrange,
+                                icon: Icons.error,
                               );
                               setState(() => _isLoading = false);
                               return;
@@ -668,18 +693,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           errorMessage = 'This email is already registered with a different method.';
                         }
                         
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(errorMessage),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
+                        // ScaffoldMessenger.of(context).showSnackBar(
+                        //   SnackBar(
+                        //     content: Text(errorMessage),
+                        //     backgroundColor: Colors.red,
+                        //   ),
+                        // );
+                        TopMessageService().showMessage(
+                            context: context,
+                            message: errorMessage,
+                            backgroundColor: Colors.deepOrange,
+                            icon: Icons.error,
+                          );
                       } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Error: ${e.toString()}'),
-                            backgroundColor: Colors.red,
-                          ),
+                        // ScaffoldMessenger.of(context).showSnackBar(
+                        //   SnackBar(
+                        //     content: Text('Error: ${e.toString()}'),
+                        //     backgroundColor: Colors.red,
+                        //   ),
+                        // );
+                        TopMessageService().showMessage(
+                          context: context,
+                          message: 'Error: ${e.toString()}',
+                          backgroundColor: Colors.deepOrange,
+                          icon: Icons.error,
                         );
                       } finally {
                         setState(() => _isLoading = false);
@@ -719,11 +756,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             
                             if (emailExists) {
                               // Show error and don't create duplicate
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('The email ${user.email} is already registered. Please log in.'),
-                                  backgroundColor: Colors.red,
-                                ),
+                              // ScaffoldMessenger.of(context).showSnackBar(
+                              //   SnackBar(
+                              //     content: Text('The email ${user.email} is already registered. Please log in.'),
+                              //     backgroundColor: Colors.red,
+                              //   ),
+                              // );
+                              TopMessageService().showMessage(
+                                context: context,
+                                message: 'The email ${user.email} is alrady registered. Please log in.',
+                                backgroundColor: Colors.deepOrange,
+                                icon: Icons.error,
                               );
                               setState(() => _isLoading = false);
                               return;
@@ -764,18 +807,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           errorMessage = 'This email is already registered with a different method.';
                         }
                         
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(errorMessage),
-                            backgroundColor: Colors.red,
-                          ),
+                        // ScaffoldMessenger.of(context).showSnackBar(
+                        //   SnackBar(
+                        //     content: Text(errorMessage),
+                        //     backgroundColor: Colors.red,
+                        //   ),
+                        // );
+                        TopMessageService().showMessage(
+                          context: context,
+                          message: errorMessage,
+                          backgroundColor: Colors.deepOrange,
+                          icon: Icons.error,
                         );
                       } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Error: ${e.toString()}'),
-                            backgroundColor: Colors.red,
-                          ),
+                        // ScaffoldMessenger.of(context).showSnackBar(
+                        //   SnackBar(
+                        //     content: Text('Error: ${e.toString()}'),
+                        //     backgroundColor: Colors.red,
+                        //   ),
+                        // );
+                        TopMessageService().showMessage(
+                          context: context,
+                          message: 'Error: ${e.toString()}',
+                          backgroundColor: Colors.deepOrange,
+                          icon: Icons.error,
                         );
                       } finally {
                         setState(() => _isLoading = false);

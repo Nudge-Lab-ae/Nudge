@@ -75,6 +75,7 @@ dependencies:
   path_provider:
   flutter_contacts_stack:
   another_flushbar: 
+  top_snackbar_flutter:
   # animations_plus:
   # firebase_app_check: 0.4.1
   # device_info_plus: ^8.0.0

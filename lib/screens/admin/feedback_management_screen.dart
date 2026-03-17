@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:nudge/services/api_service.dart';
+import 'package:nudge/services/message_service.dart';
 import 'package:nudge/widgets/gradient_text.dart';
 import 'package:provider/provider.dart';
 import 'package:nudge/providers/theme_provider.dart';
@@ -517,11 +518,17 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
                             feedbackId: feedback['id'],
                             adminTitle: _titleController.text.trim(),
                           );
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text('Title updated'),
-                              backgroundColor: themeProvider.isDarkMode ? Colors.grey.shade800 : null,
-                            ),
+                          // ScaffoldMessenger.of(context).showSnackBar(
+                          //   SnackBar(
+                          //     content: const Text('Title updated'),
+                          //     backgroundColor: themeProvider.isDarkMode ? Colors.grey.shade800 : null,
+                          //   ),
+                          // );
+                          TopMessageService().showMessage(
+                            context: context,
+                            message: 'Title updated',
+                            backgroundColor: Colors.green,
+                            icon: Icons.check,
                           );
                         }
                       },
@@ -713,11 +720,17 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
                       feedbackId: feedback['id'],
                       adminTitle: titleController.text.trim(),
                     );
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text('Title saved'),
-                        backgroundColor: themeProvider.isDarkMode ? Colors.grey.shade800 : null,
-                      ),
+                    // ScaffoldMessenger.of(context).showSnackBar(
+                    //   SnackBar(
+                    //     content: const Text('Title saved'),
+                    //     backgroundColor: themeProvider.isDarkMode ? Colors.grey.shade800 : null,
+                    //   ),
+                    // );
+                    TopMessageService().showMessage(
+                      context: context,
+                      message: 'Title saved.',
+                      backgroundColor: Colors.green,
+                      icon: Icons.check,
                     );
                   }
                 },
@@ -753,7 +766,7 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
   }
 
   Future<void> _addFeedbackResponse(String feedbackId, String response) async {
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    // final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     
     FirebaseFirestore _firestore = FirebaseFirestore.instance;
     FirebaseAuth _auth = FirebaseAuth.instance;
@@ -773,19 +786,31 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
         'updatedAt': DateTime.now(),
       });
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Response sent successfully'),
-          backgroundColor: themeProvider.isDarkMode ? Colors.grey.shade800 : null,
-        ),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: const Text('Response sent successfully'),
+      //     backgroundColor: themeProvider.isDarkMode ? Colors.grey.shade800 : null,
+      //   ),
+      // );
+      TopMessageService().showMessage(
+          context: context,
+          message: 'Response sent successfully.',
+          backgroundColor: Colors.green,
+          icon: Icons.check,
+        );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error sending response: $e'),
-          backgroundColor: themeProvider.isDarkMode ? Colors.grey.shade800 : null,
-        ),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Text('Error sending response: $e'),
+      //     backgroundColor: themeProvider.isDarkMode ? Colors.grey.shade800 : null,
+      //   ),
+      // );
+      TopMessageService().showMessage(
+          context: context,
+          message: 'Error sending response: $e',
+          backgroundColor: Colors.deepOrange,
+          icon: Icons.error,
+        );
     }
   }
 
@@ -860,23 +885,35 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
   }
 
   void _updateFeedbackStatus(String feedbackId, String newStatus) async {
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    // final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     
     try {
       await _apiService.updateFeedbackStatus(feedbackId, newStatus);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Status updated successfully'),
-          backgroundColor: themeProvider.isDarkMode ? Colors.grey.shade800 : null,
-        ),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: const Text('Status updated successfully'),
+      //     backgroundColor: themeProvider.isDarkMode ? Colors.grey.shade800 : null,
+      //   ),
+      // );
+      TopMessageService().showMessage(
+          context: context,
+          message: 'Status updated succesfully.',
+          backgroundColor: Colors.green,
+          icon: Icons.check,
+        );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error updating status: $e'),
-          backgroundColor: themeProvider.isDarkMode ? Colors.grey.shade800 : null,
-        ),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Text('Error updating status: $e'),
+      //     backgroundColor: themeProvider.isDarkMode ? Colors.grey.shade800 : null,
+      //   ),
+      // );
+      TopMessageService().showMessage(
+          context: context,
+          message: 'Error updating status: $e',
+          backgroundColor: Colors.deepOrange,
+          icon: Icons.error,
+        );
     }
   }
 
@@ -917,18 +954,30 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
     if (confirmed == true) {
       try {
         await _apiService.deleteFeedback(feedback['id']);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Feedback deleted successfully'),
-            backgroundColor: themeProvider.isDarkMode ? Colors.grey.shade800 : null,
-          ),
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(
+        //     content: const Text('Feedback deleted successfully'),
+        //     backgroundColor: themeProvider.isDarkMode ? Colors.grey.shade800 : null,
+        //   ),
+        // );
+        TopMessageService().showMessage(
+          context: context,
+          message: 'Feedback deleted successfully.',
+          backgroundColor: Colors.green,
+          icon: Icons.check,
         );
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error deleting feedback: $e'),
-            backgroundColor: themeProvider.isDarkMode ? Colors.grey.shade800 : null,
-          ),
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(
+        //     content: Text('Error deleting feedback: $e'),
+        //     backgroundColor: themeProvider.isDarkMode ? Colors.grey.shade800 : null,
+        //   ),
+        // );
+        TopMessageService().showMessage(
+          context: context,
+          message: 'Error deleting feedback: $e',
+          backgroundColor: Colors.deepOrange,
+          icon: Icons.error,
         );
       }
     }

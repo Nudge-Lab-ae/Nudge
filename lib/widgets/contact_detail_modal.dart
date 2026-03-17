@@ -1,7 +1,8 @@
 // lib/widgets/contact_details_modal.dart
-import 'package:another_flushbar/flushbar.dart';
+// import 'package:another_flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:nudge/services/message_service.dart';
 import '../models/contact.dart';
 import '../services/api_service.dart';
 import '../providers/theme_provider.dart'; // Add this import
@@ -694,17 +695,23 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
 
   Future<void> _logInteraction() async {
     if (_selectedInteractionType == null) {
-      Flushbar(
-        padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero,
-        backgroundGradient: LinearGradient(
-          colors: [Color.fromARGB(255, 207, 82, 73), Color.fromARGB(255, 207, 82, 73)],
-          stops: [0.6, 1],
-        ), duration: Duration(seconds: 2),
-        dismissDirection: FlushbarDismissDirection.HORIZONTAL, forwardAnimationCurve: Curves.fastLinearToSlowEaseIn,
-        flushbarPosition: FlushbarPosition.TOP,
-        messageText: Center(
-            child: Text( 'Please select an interaction type', style: TextStyle(fontFamily: 'Inter',fontSize: 14,
-              color: Colors.white, fontWeight: FontWeight.w600), textAlign: TextAlign.center,)),).show(context);
+      // Flushbar(
+      //   padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero,
+      //   backgroundGradient: LinearGradient(
+      //     colors: [Color.fromARGB(255, 207, 82, 73), Color.fromARGB(255, 207, 82, 73)],
+      //     stops: [0.6, 1],
+      //   ), duration: Duration(seconds: 2),
+      //   dismissDirection: FlushbarDismissDirection.HORIZONTAL, forwardAnimationCurve: Curves.fastLinearToSlowEaseIn,
+      //   flushbarPosition: FlushbarPosition.TOP,
+      //   messageText: Center(
+      //       child: Text( 'Please select an interaction type', style: TextStyle(fontFamily: 'Inter',fontSize: 14,
+      //         color: Colors.white, fontWeight: FontWeight.w600), textAlign: TextAlign.center,)),).show(context);
+      TopMessageService().showMessage(
+          context: context,
+          message: 'Please select an interaction type',
+          backgroundColor: Colors.blueGrey,
+          icon: Icons.info,
+        );
       return;
     }
 
@@ -739,17 +746,24 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
 
        _confettiController.play();
 
-      Flushbar(
-        padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero,
-        backgroundGradient: LinearGradient(
-          colors: [Colors.green, Colors.green],
-          stops: [0.6, 1],
-        ), duration: Duration(seconds: 2),
-        dismissDirection: FlushbarDismissDirection.HORIZONTAL, forwardAnimationCurve: Curves.fastLinearToSlowEaseIn,
-        flushbarPosition: FlushbarPosition.TOP,
-        messageText: Center(
-            child: Text( 'Touchpoint logged for ${widget.contact.name}! Next nudge has been rescheduled.', style: TextStyle(fontFamily: 'Inter',fontSize: 14,
-              color: Colors.white, fontWeight: FontWeight.w600), textAlign: TextAlign.center,)),).show(context);
+      // Flushbar(
+      //   padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero,
+      //   backgroundGradient: LinearGradient(
+      //     colors: [Colors.green, Colors.green],
+      //     stops: [0.6, 1],
+      //   ), duration: Duration(seconds: 2),
+      //   dismissDirection: FlushbarDismissDirection.HORIZONTAL, forwardAnimationCurve: Curves.fastLinearToSlowEaseIn,
+      //   flushbarPosition: FlushbarPosition.TOP,
+      //   messageText: Center(
+      //       child: Text( 'Touchpoint logged for ${widget.contact.name}! Next nudge has been rescheduled.', style: TextStyle(fontFamily: 'Inter',fontSize: 14,
+      //         color: Colors.white, fontWeight: FontWeight.w600), textAlign: TextAlign.center,)),).show(context);
+
+      TopMessageService().showMessage(
+          context: context,
+          message: 'Touchpoint logged for ${widget.contact.name}! Next nudge has been rescheduled.',
+          backgroundColor: Colors.green,
+          // icon: Icons.check,
+        );
 
       // Close both modals after a brief delay
       Future.delayed(const Duration(milliseconds: 2500), () {
@@ -759,12 +773,18 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
 
     } catch (e) {
       print('Error logging touchpoint: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to log touchpoint: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Text('Failed to log touchpoint: $e'),
+      //     backgroundColor: Colors.red,
+      //   ),
+      // );
+      TopMessageService().showMessage(
+          context: context,
+          message: 'Failed to log touchpoint: $e',
+          backgroundColor: Colors.deepOrange,
+          icon: Icons.error,
+        );
     } finally {
       setState(() {
         _isLoading = false;
@@ -1173,6 +1193,7 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
             alignment: Alignment.topCenter,
             child: ConfettiWidget(
               confettiController: _confettiController,
+              numberOfParticles: 50,
               blastDirectionality: BlastDirectionality.explosive,
               shouldLoop: false,
               colors: const [

@@ -11,6 +11,7 @@ import 'package:nudge/providers/theme_provider.dart';
 import 'package:nudge/screens/admin/feedback_management_screen.dart';
 import 'package:nudge/screens/feedback/feedback_forum_screen.dart';
 import 'package:nudge/services/auth_service.dart';
+import 'package:nudge/services/message_service.dart';
 import 'package:nudge/widgets/screen_tracker.dart';
 import 'package:provider/provider.dart';
 import '../../services/api_service.dart';
@@ -159,13 +160,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _imageBytes = null;
       });
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile picture updated successfully')),
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   const SnackBar(content: Text('Profile picture updated successfully')),
+      // );
+      TopMessageService().showMessage(
+        context: context,
+        message: 'Profile picture updated successfully.',
+        backgroundColor: Colors.green,
+        icon: Icons.check,
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error updating profile picture: $e')),
-      );
+      TopMessageService().showMessage(
+          context: context,
+          message: 'Failed to update profile picture.',
+          backgroundColor: Colors.deepOrange,
+          icon: Icons.error,
+        );
     } finally {
       setState(() => _isChangingPassword = false);
     }
@@ -197,8 +207,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           }
         }
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile updated successfully')),
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   const SnackBar(content: Text('Profile updated successfully')),
+        // );
+        TopMessageService().showMessage(
+          context: context,
+          message: 'Profile updated successfully.',
+          backgroundColor: Colors.green,
+          icon: Icons.check,
         );
         
         _oldPasswordController.clear();
@@ -215,12 +231,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
           default:
             errorMessage = 'Error updating profile: ${e.message}';
         }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage)),
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(content: Text(errorMessage)),
+        // );
+        TopMessageService().showMessage(
+          context: context,
+          message: errorMessage,
+          backgroundColor: Colors.deepOrange,
+          icon: Icons.error,
         );
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error updating profile: $e')),
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(content: Text('Error updating profile: $e')),
+        // );
+        TopMessageService().showMessage(
+          context: context,
+          message: 'Error updating profile: $e',
+          backgroundColor: Colors.deepOrange,
+          icon: Icons.error,
         );
       } finally {
         setState(() {
@@ -248,16 +276,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
           screenName: screenName,
         );
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Thank you for your feedback!')),
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   const SnackBar(content: Text('Thank you for your feedback!')),
+        // );
+
+        TopMessageService().showMessage(
+          context: context,
+          message: 'Thank you for your feedback!',
+          backgroundColor: Colors.green,
+          icon: Icons.check,
         );
 
         _feedbackMessageController.clear();
         _feedbackTypeController.text = 'Feedback';
 
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error submitting feedback: $e')),
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(content: Text('Error submitting feedback: $e')),
+        // );
+        TopMessageService().showMessage(
+          context: context,
+          message: 'Error submitting feedback: $e',
+          backgroundColor: Colors.deepOrange,
+          icon: Icons.error,
         );
       } finally {
         setState(() {
@@ -466,9 +507,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void showDeletedMessage() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
+    // ScaffoldMessenger.of(context).showSnackBar(
+    //   SnackBar(
+    //     content: Row(
+    //       children: [
+    //         Expanded(
+    //           child: Column(
+    //             crossAxisAlignment: CrossAxisAlignment.start,
+    //             mainAxisSize: MainAxisSize.min,
+    //             children: [
+    //               const Text(
+    //                 'Deleted Account!',
+    //                 style: TextStyle(
+    //                   fontWeight: FontWeight.bold,
+    //                   color: Colors.white,
+    //                 ),
+    //               ),
+    //               Text(
+    //                 'You have successfully deleted your account. Any data previously recorded has been removed.',
+    //                 style: const TextStyle(color: Colors.white70, fontSize: 12),
+    //               ),
+    //             ],
+    //           ),
+    //         ),
+    //       ],
+    //     ),
+    //     backgroundColor: Colors.green,
+    //     duration: const Duration(seconds: 4),
+    //   ),
+    // );
+
+    TopMessageService().showCustomContent(
+      context: context,
+      backgroundColor: Colors.green,
+      height: 150,
+      customContent: Row(
           children: [
             Expanded(
               child: Column(
@@ -480,21 +553,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
+                      fontSize: 18
                     ),
                   ),
                   Text(
                     'You have successfully deleted your account. Any data previously recorded has been removed.',
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    style: const TextStyle(color: Colors.white70, fontSize: 14),
                   ),
                 ],
               ),
             ),
           ],
         ),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 4),
-      ),
-    );
+      );
   }
 
   Future<void> _checkForRetryPrompt() async {
@@ -535,9 +606,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     User? currentUser = _auth.currentUser;
     
     if (currentUser == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No user logged in')),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   const SnackBar(content: Text('No user logged in')),
+      // );
+       TopMessageService().showMessage(
+          context: context,
+          message: 'No user logged in.',
+          backgroundColor: Colors.deepOrange,
+          icon: Icons.error,
+        );
       return false;
     }
     

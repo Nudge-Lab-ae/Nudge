@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:nudge/services/api_service.dart';
+import 'package:nudge/services/message_service.dart';
 import 'package:nudge/services/overdue_manager.dart';
 // import 'package:nudge/services/overdue_manager.dart';
 import 'package:provider/provider.dart';
@@ -1108,9 +1109,15 @@ class _NudgeScheduleDialogState extends State<NudgeScheduleDialog> {
     List<Contact> selectedContacts = _getSelectedContacts(contacts);
     
     if (selectedContacts.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select at least one contact')),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   const SnackBar(content: Text('Please select at least one contact')),
+      // );
+       TopMessageService().showMessage(
+          context: context,
+          message: 'Please select at least one contact.',
+          backgroundColor: Colors.deepOrange,
+          icon: Icons.error,
+        );
       return;
     }
 

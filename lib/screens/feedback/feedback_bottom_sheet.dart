@@ -1,6 +1,7 @@
-import 'package:another_flushbar/flushbar.dart';
+// import 'package:another_flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:nudge/services/api_service.dart';
+import 'package:nudge/services/message_service.dart';
 import 'package:nudge/widgets/feedback_forum_preview.dart';
 import 'package:nudge/widgets/screen_tracker.dart';
 import 'package:nudge/widgets/scrollable_roadmap.dart';
@@ -53,37 +54,50 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> with SingleTi
   Future<void> _submitFeedback() async {
     // Validate title for feature requests
     if (_selectedType == 'Feature Request' && _titleController.text.trim().isEmpty) {
-      Flushbar(
-        padding: const EdgeInsets.all(10), 
-        borderRadius: BorderRadius.zero, 
-        duration: const Duration(seconds: 2),
-        flushbarPosition: FlushbarPosition.TOP, 
-        backgroundColor: Colors.orange,
-        dismissDirection: FlushbarDismissDirection.HORIZONTAL,
-        forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
-        messageText: Center(
-          child: Text('Please enter a title for your feature request', style: const TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-              color: Colors.white, fontWeight: FontWeight.w400)),
-        ),
-      ).show(context);
+      // Flushbar(
+      //   padding: const EdgeInsets.all(10), 
+      //   borderRadius: BorderRadius.zero, 
+      //   duration: const Duration(seconds: 2),
+      //   flushbarPosition: FlushbarPosition.TOP, 
+      //   backgroundColor: Colors.orange,
+      //   dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+      //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+      //   messageText: Center(
+      //     child: Text('Please enter a title for your feature request', style: const TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+      //         color: Colors.white, fontWeight: FontWeight.w400)),
+      //   ),
+      // ).show(context);
+
+       TopMessageService().showMessage(
+            context: context,
+            message: 'Please enter a title for your feature request.',
+            backgroundColor: Colors.deepOrange,
+            icon: Icons.error,
+          );
       return;
     }
 
     if (_messageController.text.trim().isEmpty) {
-      Flushbar(
-        padding: const EdgeInsets.all(10), 
-        borderRadius: BorderRadius.zero, 
-        duration: const Duration(seconds: 2),
-        flushbarPosition: FlushbarPosition.TOP, 
-        backgroundColor: Colors.orange,
-        dismissDirection: FlushbarDismissDirection.HORIZONTAL,
-        forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
-        messageText: Center(
-          child: Text('Please enter your feedback', style: const TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-              color: Colors.white, fontWeight: FontWeight.w400)),
-        ),
-      ).show(context);
-      return;
+      // Flushbar(
+      //   padding: const EdgeInsets.all(10), 
+      //   borderRadius: BorderRadius.zero, 
+      //   duration: const Duration(seconds: 2),
+      //   flushbarPosition: FlushbarPosition.TOP, 
+      //   backgroundColor: Colors.orange,
+      //   dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+      //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+      //   messageText: Center(
+      //     child: Text('Please enter your feedback', style: const TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+      //         color: Colors.white, fontWeight: FontWeight.w400)),
+      //   ),
+      // ).show(context);
+      // return;
+       TopMessageService().showMessage(
+            context: context,
+            message: 'Please enter your feedback.',
+            backgroundColor: Colors.deepOrange,
+            icon: Icons.error,
+          );
     }
 
     setState(() => _isSubmitting = true);
@@ -101,33 +115,48 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> with SingleTi
         screenName: screenName,
       );
 
-      Flushbar(
-        padding: const EdgeInsets.all(10), 
-        borderRadius: BorderRadius.zero, 
-        duration: const Duration(seconds: 2),
-        flushbarPosition: FlushbarPosition.TOP, 
-        backgroundColor: Colors.green,
-        dismissDirection: FlushbarDismissDirection.HORIZONTAL,
-        forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
-        messageText: Center(
-          child: Text(_selectedType == 'Feature Request' 
+      // Flushbar(
+      //   padding: const EdgeInsets.all(10), 
+      //   borderRadius: BorderRadius.zero, 
+      //   duration: const Duration(seconds: 2),
+      //   flushbarPosition: FlushbarPosition.TOP, 
+      //   backgroundColor: Colors.green,
+      //   dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+      //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+      //   messageText: Center(
+      //     child: Text(_selectedType == 'Feature Request' 
+      //         ? 'Thank you for your feature request!' 
+      //         : 'Thank you for your feedback!', style: const TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+      //         color: Colors.white, fontWeight: FontWeight.w400)),
+      //   ),
+      // ).show(context);
+
+       TopMessageService().showMessage(
+            context: context,
+            message: _selectedType == 'Feature Request' 
               ? 'Thank you for your feature request!' 
-              : 'Thank you for your feedback!', style: const TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-              color: Colors.white, fontWeight: FontWeight.w400)),
-        ),
-      ).show(context);
+              : 'Thank you for your feedback!',
+            backgroundColor: Colors.green,
+            icon: Icons.check,
+          );
 
       _titleController.clear();
       _messageController.clear();
       // Switch to forum tab after submission
       _tabController.animateTo(1);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error submitting feedback: $e'),
-          backgroundColor: Colors.red.withOpacity(0.9),
-        ),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Text('Error submitting feedback: $e'),
+      //     backgroundColor: Colors.red.withOpacity(0.9),
+      //   ),
+      // );
+      TopMessageService().showMessage(
+            context: context,
+            message: 'Error submitting feedback: $e',
+            backgroundColor: Colors.deepOrange,
+            icon: Icons.error,
+          );
     } finally {
       setState(() => _isSubmitting = false);
     }

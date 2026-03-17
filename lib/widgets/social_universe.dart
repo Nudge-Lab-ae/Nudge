@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:nudge/models/social_group.dart';
 import 'package:nudge/services/api_service.dart';
+import 'package:nudge/services/message_service.dart';
 import 'package:nudge/test/mock_data_generator.dart';
 import 'package:nudge/widgets/social_universe_guide.dart';
 import 'package:nudge/providers/theme_provider.dart';
@@ -421,6 +422,60 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
     }
   }
 
+  // void showTouchpointMessage(){
+  //   TopMessageService().showMessage(
+  //         context: context,
+  //         message: 'Touchpoint logged for This Douchebag',
+  //         backgroundColor: Colors.green,
+  //         // icon: Icons.check,
+  //       );
+  // }
+
+  // void showTouchpointMessageLong(){
+  //   TopMessageService().showMessage(
+  //         context: context,
+  //         message: 'Touchpoint logged for This Douchebag! Next nudge has been rescheduled. Touchpoint logged for This Douchebag! Next nudge has been rescheduled.',
+  //         backgroundColor: Colors.green,
+  //         // icon: Icons.check,
+  //       );
+  // }
+
+  //   void _navigateToDashboardWithSuccess() {
+  //   TopMessageService().showCustomContent(
+  //     context: context,
+  //     backgroundColor: Colors.green,
+  //     height: 100,
+  //     customContent: Row(
+  //         children: [
+  //           const Icon(Icons.celebration, color: Colors.white),
+  //           const SizedBox(width: 8),
+  //           Expanded(
+  //             child: Column(
+  //               crossAxisAlignment: CrossAxisAlignment.start,
+  //               mainAxisSize: MainAxisSize.min,
+  //               children: [
+  //                 const Text(
+  //                   'Onboarding Complete!',
+  //                   style: TextStyle(
+  //                     fontWeight: FontWeight.bold,
+  //                     color: Colors.white,
+  //                     fontFamily: 'Orbitron',
+  //                     fontSize: 18,
+  //                   ),
+  //                 ),
+  //                 Text(
+  //                  'Your first nudges have been scheduled',
+  //                   style: const TextStyle(color: Colors.white70, fontSize: 14, fontFamily: 'Orbitron'),
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //         ],
+  //       ));
+
+  // }
+
+
   void _toggleMockData(ThemeProvider themeProvider) {
     setState(() {
       _useMockData = !_useMockData;
@@ -432,14 +487,22 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
       
       _startStarCaching(themeProvider.isDarkMode);
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_useMockData 
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Text(_useMockData 
+      //       ? 'Using mock data (${_displayContacts.length} contacts)' 
+      //       : 'Using real data (${_displayContacts.length} contacts)'),
+      //     duration: const Duration(seconds: 2),
+      //   ),
+      // );
+      TopMessageService().showMessage(
+          context: context,
+          message: _useMockData 
             ? 'Using mock data (${_displayContacts.length} contacts)' 
-            : 'Using real data (${_displayContacts.length} contacts)'),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+            : 'Using real data (${_displayContacts.length} contacts)',
+          backgroundColor: Colors.green,
+          icon: Icons.check,
+        );
     });
   }
 
@@ -962,7 +1025,10 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                                 _showSocialUniverseGuide(themeProvider);
                               },
                               // onLongPress: (){
-                              //    Navigator.pushNamed(context, '/settings');
+                              //    _navigateToDashboardWithSuccess();
+                              // },
+                              // onDoubleTap: (){
+                              //   showTouchpointMessage();
                               // },
                               child: Container(
                                 padding: const EdgeInsets.symmetric(

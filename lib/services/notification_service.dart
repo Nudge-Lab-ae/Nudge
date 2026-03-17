@@ -1,9 +1,10 @@
 import 'dart:io';
-import 'package:another_flushbar/flushbar.dart';
+// import 'package:another_flushbar/flushbar.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:nudge/main.dart';
+import 'package:nudge/services/message_service.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -255,15 +256,21 @@ class NotificationService {
   }
 
   void _showSnackBar(String message, Color messageColor) {
-     Flushbar(
-        padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
-        flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
-        forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
-        backgroundColor: messageColor,
-        messageText: Center(
-            child: Text(message, style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-                color: Colors.white, fontWeight: FontWeight.w400),)),
-      ).show(navigatorKey.currentContext!);
+    //  Flushbar(
+    //     padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+    //     flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+    //     forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+    //     backgroundColor: messageColor,
+    //     messageText: Center(
+    //         child: Text(message, style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+    //             color: Colors.white, fontWeight: FontWeight.w400),)),
+    //   ).show(navigatorKey.currentContext!);
+     TopMessageService().showMessage(
+          context: navigatorKey.currentContext!,
+          message: message,
+          backgroundColor: Colors.green,
+          icon: Icons.check,
+        );
   }
 
 

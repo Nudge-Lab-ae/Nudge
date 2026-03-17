@@ -311,6 +311,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               alignment: Alignment.topCenter,
               child: ConfettiWidget(
                 confettiController: _confettiController,
+                numberOfParticles: 50,
                 blastDirectionality: BlastDirectionality.explosive,
                 shouldLoop: false,
                 colors: const [

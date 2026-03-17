@@ -2,7 +2,7 @@
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:another_flushbar/flushbar.dart';
+// import 'package:another_flushbar/flushbar.dart';
 import 'package:confetti/confetti.dart';
 import 'package:crop_your_image/crop_your_image.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -14,6 +14,7 @@ import 'package:nudge/providers/feedback_provider.dart';
 import 'package:nudge/screens/contacts/contact_detail_screen.dart';
 import 'package:nudge/screens/dashboard/dashboard_screen.dart';
 import 'package:nudge/services/api_service.dart';
+import 'package:nudge/services/message_service.dart';
 // import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/theme/text_styles.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
@@ -1266,14 +1267,21 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                   try {
                                     _imageUrl = await uploadImageToFirebase(_imageBytes!, 'new_contact_${DateTime.now().millisecondsSinceEpoch}');
                                   } catch (e) {
-                                    Flushbar(
-                                      padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
-                                      flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
-                                      forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
-                                      messageText: Center(
-                                          child: Text('Failed to upload image: $e', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-                                              color: Colors.white, fontWeight: FontWeight.w400),)),
-                                    ).show(context);
+                                    // Flushbar(
+                                    //   padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+                                    //   flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+                                    //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+                                    //   messageText: Center(
+                                    //       child: Text('Failed to upload image: $e', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+                                    //           color: Colors.white, fontWeight: FontWeight.w400),)),
+                                    // ).show(context);
+
+                                     TopMessageService().showMessage(
+                                        context: context,
+                                        message: 'Failed to upload image: $e!}',
+                                        backgroundColor: Colors.deepOrange,
+                                        icon: Icons.error,
+                                      );
                                     return;
                                   }
                                 }
@@ -1344,14 +1352,20 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                 }
                                
                                 if (!widget.isOnboarding){
-                                  Flushbar(
-                                  padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
-                                  flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
-                                  forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
-                                  messageText: Center(
-                                      child: Text('Successfully Created Contact', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-                                          color: Colors.white, fontWeight: FontWeight.w400),)),
-                                ).show(context);
+                                //   Flushbar(
+                                //   padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+                                //   flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+                                //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+                                //   messageText: Center(
+                                //       child: Text('Successfully Created Contact', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+                                //           color: Colors.white, fontWeight: FontWeight.w400),)),
+                                // ).show(context);
+                                 TopMessageService().showMessage(
+                                    context: context,
+                                    message: 'Successfully Created Contact}',
+                                    backgroundColor: Colors.green,
+                                    icon: Icons.check,
+                                  );
                                 }
                                 // Show success animation
                                 setState(() {
@@ -1428,6 +1442,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                     Positioned.fill(
                       child: ConfettiWidget(
                         confettiController: _confettiController,
+                        numberOfParticles: 50,
                         blastDirectionality: BlastDirectionality.explosive,
                         shouldLoop: false,
                         colors: const [

@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:another_flushbar/flushbar.dart';
+// import 'package:another_flushbar/flushbar.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -18,6 +18,7 @@ import 'package:nudge/screens/contacts/edit_contact_screen.dart';
 import 'package:nudge/screens/feedback/feedback_forum_screen.dart';
 import 'package:nudge/screens/splash_screen.dart';
 import 'package:nudge/services/api_service.dart';
+import 'package:nudge/services/message_service.dart';
 import 'package:nudge/services/notification_service.dart';
 import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/theme/app_theme.dart';
@@ -382,13 +383,13 @@ Future<void> _handleRemindMeThenAction(Map<String, dynamic> data, BuildContext c
         .call({'notificationId': notificationId});
     
     if (result.data['success'] == true) {
-      _showFlushbar('Reminder scheduled!', context);
+      _showFlushbar('Reminder scheduled!', Colors.green, Icons.check, context);
     } else {
-      _showFlushbar('Could not schedule reminder', context);
+      _showFlushbar('Could not schedule reminder', Colors.deepOrange, Icons.error, context);
     }
   } catch (e) {
     print('Error scheduling reminder: $e');
-    _showFlushbar('Error scheduling reminder', context);
+    _showFlushbar('Error scheduling reminder', Colors.deepOrange, Icons.error, context);
   }
 }
 
@@ -406,13 +407,13 @@ Future<void> _handleDismissAction(Map<String, dynamic> data, BuildContext contex
         .call({'notificationId': notificationId});
     
     if (result.data['success'] == true) {
-      _showFlushbar('Notification dismissed', context);
+      _showFlushbar('Notification dismissed', Colors.green, Icons.check, context);
     } else {
-      _showFlushbar('Could not dismiss notification', context);
+      _showFlushbar('Could not dismiss notification',  Colors.deepOrange, Icons.error, context);
     }
   } catch (e) {
     print('Error dismissing notification: $e');
-    _showFlushbar('Error dismissing notification', context);
+    _showFlushbar('Error dismissing notification',  Colors.deepOrange, Icons.error, context);
   }
 }
 
@@ -430,25 +431,14 @@ Future<void> _handleDismissAction(Map<String, dynamic> data, BuildContext contex
 //   });
 // }
 
-void _showFlushbar (String message, BuildContext context) {
+void _showFlushbar (String message, Color color, IconData icon, BuildContext context) {
   
-  Flushbar(
-      padding: EdgeInsets.all(10),
-      borderRadius: BorderRadius.zero,
-      duration: Duration(seconds: 2),
-      flushbarPosition: FlushbarPosition.TOP,
-      dismissDirection: FlushbarDismissDirection.HORIZONTAL,
-      forwardAnimationCurve: Curves.fastLinearToSlowEaseIn,
-      messageText: Center(
-          child: Text(
-        message,
-        style: TextStyle(
-            fontFamily: 'OpenSans',
-            fontSize: 14,
-            color: Colors.white,
-            fontWeight: FontWeight.w400),
-      )),
-    ).show(context);
+   TopMessageService().showMessage(
+      context: context,
+      message: message,
+      backgroundColor: color,
+      icon: icon,
+    );
 }
 
 // Add a function to schedule event notifications for contacts:

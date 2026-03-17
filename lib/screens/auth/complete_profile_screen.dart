@@ -1,7 +1,7 @@
 // complete_profile_screen.dart - Enhanced with Social Universe Preview
 import 'dart:typed_data';
 
-import 'package:another_flushbar/flushbar.dart';
+// import 'package:another_flushbar/flushbar.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +14,7 @@ import 'package:country_code_picker/country_code_picker.dart';
 import 'package:nudge/models/contact.dart';
 import 'package:nudge/models/social_group.dart';
 import 'package:nudge/screens/contacts/add_contact_screen.dart';
+import 'package:nudge/services/message_service.dart';
 // import 'package:nudge/screens/dashboard/dashboard_screen.dart';
 import 'package:nudge/widgets/gradient_text.dart';
 import 'package:nudge/helpers/restart_helper.dart';
@@ -482,14 +483,20 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
       }
     } catch (e) {
      
-      Flushbar(
-      padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
-      flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
-      forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
-      messageText: Center(
-          child: Text('Error: ${e.toString()}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-              color: Colors.white, fontWeight: FontWeight.w400),)),
-    ).show(context);
+    //   Flushbar(
+    //   padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+    //   flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+    //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+    //   messageText: Center(
+    //       child: Text('Error: ${e.toString()}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+    //           color: Colors.white, fontWeight: FontWeight.w400),)),
+    // ).show(context);
+    TopMessageService().showMessage(
+        context: context,
+        message: 'Error: ${e.toString()}',
+        backgroundColor: Colors.deepOrange,
+        icon: Icons.error,
+      );
       setState(() => _isLoading = false);
     }
   }
@@ -524,12 +531,12 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
     );
   }
 
-
-
   void _navigateToDashboardWithSuccess() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
+    TopMessageService().showCustomContent(
+      context: context,
+      backgroundColor: Colors.green,
+      height: 100,
+      customContent: Row(
           children: [
             const Icon(Icons.celebration, color: Colors.white),
             const SizedBox(width: 8),
@@ -543,23 +550,21 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
+                      fontFamily: 'Orbitron',
+                      fontSize: 18,
                     ),
                   ),
                   Text(
                     _selectedContacts.isNotEmpty 
                         ? 'Your first nudges have been scheduled'
                         : 'You can add contacts and schedule nudges anytime',
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    style: const TextStyle(color: Colors.white70, fontSize: 14, fontFamily: 'Orbitron'),
                   ),
                 ],
               ),
             ),
           ],
-        ),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 4),
-      ),
-    );
+        ));
 
     Future.delayed(const Duration(milliseconds: 1500), () {
       AppRestartHelper.setSkipSplashFlag();
@@ -943,34 +948,53 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
           _selectedContacts = updatedContacts;
         });
 
-        Flushbar(
-      padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
-      flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
-      forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
-      messageText: Center(
-          child: Text('Successfully imported contacts to ${group.name}!}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-              color: Colors.white, fontWeight: FontWeight.w400),)),
-    ).show(context);
+    //     Flushbar(
+    //   padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+    //   flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+    //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+    //   messageText: Center(
+    //       child: Text('Successfully imported contacts to ${group.name}!}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+    //           color: Colors.white, fontWeight: FontWeight.w400),)),
+    // ).show(context);
+
+      TopMessageService().showMessage(
+        context: context,
+        message: 'Successfully imported contacts to ${group.name}!',
+        backgroundColor: Colors.green,
+        icon: Icons.check,
+      );
       } else {
-        Flushbar(
-      padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
-      flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
-      forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
-      messageText: Center(
-          child: Text('Failed to import contacts: ${result['message']}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-              color: Colors.white, fontWeight: FontWeight.w400),)),
-    ).show(context);
+    //     Flushbar(
+    //   padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+    //   flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+    //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+    //   messageText: Center(
+    //       child: Text('Failed to import contacts: ${result['message']}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+    //           color: Colors.white, fontWeight: FontWeight.w400),)),
+    // ).show(context);
+      TopMessageService().showMessage(
+        context: context,
+        message: 'Failed to import contacts: ${result['message']}',
+        backgroundColor: Colors.deepOrange,
+        icon: Icons.error,
+      );
       }
     } catch (e) {
       setState(() => _isLoading = false);
-      Flushbar(
-      padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
-      flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
-      forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
-      messageText: Center(
-          child: Text('Error importing contacts: $e}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-              color: Colors.white, fontWeight: FontWeight.w400),)),
-    ).show(context);
+    //   Flushbar(
+    //   padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+    //   flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+    //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+    //   messageText: Center(
+    //       child: Text('Error importing contacts: $e}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+    //           color: Colors.white, fontWeight: FontWeight.w400),)),
+    // ).show(context);
+     TopMessageService().showMessage(
+        context: context,
+        message: 'Error importing contacts: $e}',
+        backgroundColor: Colors.deepOrange,
+        icon: Icons.error,
+      );
     }
   }
 
@@ -1829,14 +1853,20 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
         orderIndex: 0 // Set to 0 to appear at the top
       ));
     });
-    Flushbar(
-      padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
-      flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
-      forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
-      messageText: Center(
-          child: Text('Added a new group at the top!}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-              color: Colors.white, fontWeight: FontWeight.w400),)),
-    ).show(context);
+    // Flushbar(
+    //   padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+    //   flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+    //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+    //   messageText: Center(
+    //       child: Text('Added a new group at the top!}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+    //           color: Colors.white, fontWeight: FontWeight.w400),)),
+    // ).show(context);
+     TopMessageService().showMessage(
+        context: context,
+        message: 'Added a new group at the top!',
+        backgroundColor: Colors.blueGrey,
+        icon: Icons.info,
+      );
   }
 
   void _deleteGroup(int index) {
@@ -2245,21 +2275,21 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
       }
 
       _showFlushbar() {
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   SnackBar(
-        //     content: Text('Successfully Created Contact.'),
-        //     duration: const Duration(seconds: 2),
-        //   ),
-        // );
-         Flushbar(
-            padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
-            flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
-            forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
-            backgroundColor: Colors.green,
-            messageText: Center(
-                child: Text('Successfully Created Contact', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-                    color: Colors.white, fontWeight: FontWeight.w400),)),
-          ).show(context);
+        //  Flushbar(
+        //     padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+        //     flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+        //     forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+        //     backgroundColor: Colors.green,
+        //     messageText: Center(
+        //         child: Text('Successfully Created Contact', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+        //             color: Colors.white, fontWeight: FontWeight.w400),)),
+        //   ).show(context);
+         TopMessageService().showMessage(
+          context: context,
+          message: 'Successfully Created Contact.',
+          backgroundColor: Colors.green,
+          icon: Icons.check,
+        );
       }
 
       // Widget _buildReviewStep() {
@@ -2443,14 +2473,20 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                         if (_userGroups.isNotEmpty) {
                           _nextStep();
                         } else {
-                          Flushbar(
-                            padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
-                            flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
-                            forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
-                            messageText: Center(
-                                child: Text('Please add at least one group!}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-                                    color: Colors.white, fontWeight: FontWeight.w400),)),
-                          ).show(context);
+                          // Flushbar(
+                          //   padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
+                          //   flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
+                          //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
+                          //   messageText: Center(
+                          //       child: Text('Please add at least one group!}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
+                          //           color: Colors.white, fontWeight: FontWeight.w400),)),
+                          // ).show(context);
+                           TopMessageService().showMessage(
+                              context: context,
+                              message: 'Please add at least one group!',
+                              backgroundColor: Colors.blueGrey,
+                              icon: Icons.info,
+                            );
                         }
                       } else {
                         // All other steps (preview, contacts, close circle, review) - just continue
