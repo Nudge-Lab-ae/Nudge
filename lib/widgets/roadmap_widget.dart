@@ -230,7 +230,7 @@ class _RoadmapStepWidgetState extends State<RoadmapStepWidget> with SingleTicker
                             padding: const EdgeInsets.symmetric(horizontal: 12),
                             decoration: BoxDecoration(
                               color: isSelected 
-                                  ? phase['color'].withOpacity(0.15)
+                                  ? phase['color'].withOpacity(0.55)
                                   : Colors.transparent,
                               borderRadius: BorderRadius.circular(30),
                             ),
@@ -248,7 +248,7 @@ class _RoadmapStepWidgetState extends State<RoadmapStepWidget> with SingleTicker
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
                                     color: isSelected
-                                        ? phase['color']
+                                        ? Colors.white
                                         : (themeProvider.isDarkMode 
                                             ? Colors.grey.shade500 
                                             : Colors.grey.shade600),

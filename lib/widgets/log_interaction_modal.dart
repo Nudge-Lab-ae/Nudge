@@ -110,12 +110,6 @@ class LogInteractionModalState extends State<LogInteractionModal> {
 
   Future<void> _logInteraction() async {
     if (_selectedInteractionType == null) {
-      // ScaffoldMessenger.of(context).showSnackBar(
-      //   const SnackBar(
-      //     content: Text('Please select an interaction type'),
-      //     backgroundColor: Colors.orange,
-      //   ),
-      // );
       showSelectFlushbar(context);
       return;
     }
@@ -126,9 +120,25 @@ class LogInteractionModalState extends State<LogInteractionModal> {
       });
       
 
-    try {
-      // Combine date and time
-      final interactionDateTime = DateTime(
+    // try {
+     
+
+    // } catch (e) {
+    //   print('Error logging touchpoint: $e');
+      
+    //  TopMessageService().showMessage(
+    //       context: context,
+    //       message: 'Failed to log touchpoint:" $e',
+    //       backgroundColor: Colors.deepOrange,
+    //       icon: Icons.error,
+    //     );
+    //   setState(() {
+    //     _isLoading = false;
+    //   });
+    //   // Don't close the modal on error - let the user try again
+    // }
+
+     final interactionDateTime = DateTime(
         _selectedDate.year,
         _selectedDate.month,
         _selectedDate.day,
@@ -145,22 +155,9 @@ class LogInteractionModalState extends State<LogInteractionModal> {
       );
       _confettiController.play();
 
-     
-      //  Flushbar(
-      // padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero,
-      // backgroundGradient: LinearGradient(
-      //   colors: [Color.fromRGBO(38, 184, 19, 1), Color.fromRGBO(38, 184, 19, 1)],
-      //   stops: [0.6, 1],
-      // ), duration: Duration(seconds: 2),
-      // dismissDirection: FlushbarDismissDirection.HORIZONTAL, forwardAnimationCurve: Curves.fastLinearToSlowEaseIn,
-      // flushbarPosition: FlushbarPosition.TOP,
-      // messageText: Center(
-      //     child: Text( 'Touchpoint logged for ${widget.contact.name}! Next nudge has been rescheduled.', style: TextStyle(fontFamily: 'Inter',fontSize: 14,
-      //       color: Colors.white, fontWeight: FontWeight.w600), textAlign: TextAlign.center,)),).show(context);
-
       TopMessageService().showMessage(
           context: context,
-          message: 'Touchpoint logged for ${widget.contact.name}! Next nduge has been rescheduled.',
+          message: 'Touchpoint logged for ${widget.contact.name}! Next nudge has been rescheduled.',
           backgroundColor: Colors.green,
           // icon: Icons.check,
         );
@@ -183,33 +180,6 @@ class LogInteractionModalState extends State<LogInteractionModal> {
           });
         }
       });
-
-    } catch (e) {
-      print('Error logging touchpoint: $e');
-      
-      // Flushbar(
-      // padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero,
-      // backgroundGradient: LinearGradient(
-      //   colors: [Colors.red, Colors.red],
-      //   stops: [0.6, 1],
-      // ), duration: Duration(seconds: 2),
-      // dismissDirection: FlushbarDismissDirection.HORIZONTAL, forwardAnimationCurve: Curves.fastLinearToSlowEaseIn,
-      // flushbarPosition: FlushbarPosition.TOP,
-      // messageText: Center(
-      //     child: Text( 'Failed to log touchpoint: $e', style: TextStyle(fontFamily: 'Inter',fontSize: 14,
-      //       color: Colors.white, fontWeight: FontWeight.w600), textAlign: TextAlign.center,)),).show(context);
-
-      TopMessageService().showMessage(
-          context: context,
-          message: 'Failed to log touchpoint:" $e',
-          backgroundColor: Colors.deepOrange,
-          icon: Icons.error,
-        );
-      setState(() {
-        _isLoading = false;
-      });
-      // Don't close the modal on error - let the user try again
-    }
   }
 
   String _getRelativeDateDescription(DateTime date) {

@@ -254,9 +254,24 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
       _isLoading = true;
     });
 
-    try {
-      // Combine date and time
-      final interactionDateTime = DateTime(
+    // try {
+    //   // Combine date and time
+     
+
+    // } catch (e) {
+    //   print('Error logging touchpoint: $e');
+    //   TopMessageService().showMessage(
+    //       context: context,
+    //       message: 'Failed to log touchpoint: $e',
+    //       backgroundColor: Colors.deepOrange,
+    //       icon: Icons.error,
+    //     );
+    //   setState(() {
+    //     _isLoading = false;
+    //   });
+    // }
+
+     final interactionDateTime = DateTime(
         _selectedDate.year,
         _selectedDate.month,
         _selectedDate.day,
@@ -280,25 +295,6 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
       
       _confettiController.play();
 
-      // Replace the Flushbar success message
-      // showTopSnackBar(
-      //   Overlay.of(context),
-      //   CustomSnackBar.success(
-      //     message: 'Touchpointz logged for ${_selectedContact!.name}! Next nudge has been rescheduled.',
-      //     textStyle: TextStyle(
-      //       fontFamily: 'Inter',
-      //       fontSize: 14,
-      //       color: Colors.white,
-      //       fontWeight: FontWeight.w600,
-      //     ),
-      //   ),
-      //   displayDuration: const Duration(seconds: 2),
-      //   padding: EdgeInsets.zero,
-      //   // showOutAnimationDuration: const Duration(milliseconds: 500),
-      //   reverseAnimationDuration: const Duration(milliseconds: 500),
-      //   snackBarPosition: SnackBarPosition.top, // This ensures it's at the top
-      // );
-
        TopMessageService().showMessage(
           context: context,
           message: 'Touchpoint logged for ${_selectedContact!.name}! Next nudge has been rescheduled.',
@@ -312,26 +308,6 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
           Navigator.pop(context);
         }
       });
-
-    } catch (e) {
-      print('Error logging touchpoint: $e');
-      // Keep the ScaffoldMessenger for errors as it's fine for bottom messages
-      // ScaffoldMessenger.of(context).showSnackBar(
-      //   SnackBar(
-      //     content: Text('Failed to log touchpoint: $e'),
-      //     backgroundColor: Colors.red,
-      //   ),
-      // );
-       TopMessageService().showMessage(
-          context: context,
-          message: 'Failed to log touchpoint: $e',
-          backgroundColor: Colors.deepOrange,
-          icon: Icons.error,
-        );
-      setState(() {
-        _isLoading = false;
-      });
-    }
   }
 
   void _dismissKeyboard() {

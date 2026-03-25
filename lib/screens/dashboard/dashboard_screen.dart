@@ -40,8 +40,9 @@ import 'package:confetti/confetti.dart';
 
 class DashboardScreen extends StatefulWidget {
   final int initialTab;
+  final bool onboarding;
   
-  const DashboardScreen({super.key, this.initialTab = 1});
+  const DashboardScreen({super.key, this.initialTab = 1, this.onboarding = false});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -121,7 +122,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final lastUpdateKey = 'last_cdi_update_${DateTime.now().day}_${DateTime.now().hour}';
     final shouldUpdate = prefs.getBool(lastUpdateKey) != true;
     
-    if (shouldUpdate) {
+    if (shouldUpdate || widget.onboarding) {
       try {
         await apiService.batchUpdateCDI();
         await prefs.setBool(lastUpdateKey, true);

@@ -579,7 +579,7 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
   @override 
   void initState(){
     super.initState();
-    _confettiController = ConfettiController(duration: const Duration(seconds: 3));
+    _confettiController = ConfettiController(duration: const Duration(seconds: 5));
   }
 
   @override
@@ -719,11 +719,31 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
       _isLoading = true;
       
     });
-      
+    
+    // try {
      
 
-    try {
-      // Combine date and time
+    // } catch (e) {
+    //   print('Error logging touchpoint: $e');
+    //   // ScaffoldMessenger.of(context).showSnackBar(
+    //   //   SnackBar(
+    //   //     content: Text('Failed to log touchpoint: $e'),
+    //   //     backgroundColor: Colors.red,
+    //   //   ),
+    //   // );
+    //   TopMessageService().showMessage(
+    //       context: context,
+    //       message: 'Failed to log touchpoint: $e',
+    //       backgroundColor: Colors.deepOrange,
+    //       icon: Icons.error,
+    //     );
+    // } finally {
+    //   setState(() {
+    //     _isLoading = false;
+    //   });
+    // }
+
+     // Combine date and time
       final interactionDateTime = DateTime(
         _selectedDate.year,
         _selectedDate.month,
@@ -733,7 +753,7 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
       );
 
       // Log the interaction
-      await widget.apiService.logInteraction(
+      widget.apiService.logInteraction(
         contactId: widget.contact.id,
         interactionType: _selectedInteractionType!,
         notes: _notesController.text.isNotEmpty ? _notesController.text : null,
@@ -745,18 +765,6 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
       });
 
        _confettiController.play();
-
-      // Flushbar(
-      //   padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero,
-      //   backgroundGradient: LinearGradient(
-      //     colors: [Colors.green, Colors.green],
-      //     stops: [0.6, 1],
-      //   ), duration: Duration(seconds: 2),
-      //   dismissDirection: FlushbarDismissDirection.HORIZONTAL, forwardAnimationCurve: Curves.fastLinearToSlowEaseIn,
-      //   flushbarPosition: FlushbarPosition.TOP,
-      //   messageText: Center(
-      //       child: Text( 'Touchpoint logged for ${widget.contact.name}! Next nudge has been rescheduled.', style: TextStyle(fontFamily: 'Inter',fontSize: 14,
-      //         color: Colors.white, fontWeight: FontWeight.w600), textAlign: TextAlign.center,)),).show(context);
 
       TopMessageService().showMessage(
           context: context,
@@ -771,25 +779,9 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
         Navigator.pop(context); // Close the contact detail modal
       });
 
-    } catch (e) {
-      print('Error logging touchpoint: $e');
-      // ScaffoldMessenger.of(context).showSnackBar(
-      //   SnackBar(
-      //     content: Text('Failed to log touchpoint: $e'),
-      //     backgroundColor: Colors.red,
-      //   ),
-      // );
-      TopMessageService().showMessage(
-          context: context,
-          message: 'Failed to log touchpoint: $e',
-          backgroundColor: Colors.deepOrange,
-          icon: Icons.error,
-        );
-    } finally {
       setState(() {
         _isLoading = false;
       });
-    }
   }
 
   void _dismissKeyboard() {

@@ -152,12 +152,40 @@ Future<void> initializeLocalNotifications() async {
   const AndroidInitializationSettings initializationSettingsAndroid =
       AndroidInitializationSettings('@mipmap/ic_launcher');
 
+  // DarwinInitializationSettings initializationSettingsIOS =
+  //     DarwinInitializationSettings(
+  //   requestAlertPermission: true,
+  //   requestBadgePermission: true,
+  //   requestSoundPermission: true,
+  //   // 👇 Register iOS categories and actions
+  //   notificationCategories: [
+  //     DarwinNotificationCategory(
+  //       'EVENT_NOTIFICATION_ACTIONS',
+  //       actions: [
+  //         DarwinNotificationAction.plain(
+  //           'remind_me_then',
+  //           'Remind Me Then',
+  //           options: {DarwinNotificationActionOption.foreground},
+  //         ),
+  //         DarwinNotificationAction.plain(
+  //           'dismiss',
+  //           'Dismiss',
+  //           options: {
+  //             DarwinNotificationActionOption.destructive,
+  //             DarwinNotificationActionOption.foreground,
+  //           },
+            
+  //         ),
+  //       ],
+  //     ),
+  //   ],
+  // );
+
   DarwinInitializationSettings initializationSettingsIOS =
       DarwinInitializationSettings(
     requestAlertPermission: true,
     requestBadgePermission: true,
     requestSoundPermission: true,
-    // 👇 Register iOS categories and actions
     notificationCategories: [
       DarwinNotificationCategory(
         'EVENT_NOTIFICATION_ACTIONS',
@@ -174,9 +202,13 @@ Future<void> initializeLocalNotifications() async {
               DarwinNotificationActionOption.destructive,
               DarwinNotificationActionOption.foreground,
             },
-            
           ),
         ],
+        // ✅ Add this - allows notifications with actions
+        options: {
+          DarwinNotificationCategoryOption.customDismissAction,
+          DarwinNotificationCategoryOption.allowAnnouncement,
+        },
       ),
     ],
   );
@@ -247,94 +279,108 @@ Future<void> initializeLocalNotifications() async {
       ?.createNotificationChannel(eventChannel);
 }
 
-Future<void> initializeFCM() async {
-  final FirebaseMessaging messaging = FirebaseMessaging.instance;
+  Future<void> initializeFCM() async {
+    final FirebaseMessaging messaging = FirebaseMessaging.instance;
 
-  // Request permission
-  NotificationSettings settings = await messaging.requestPermission(
-    alert: true,
-    badge: true,
-    sound: true,
-    provisional: false,
-  );
+    // Request permission
+    NotificationSettings settings = await messaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+      provisional: false,
+    );
 
-  print('Notification permission: ${settings.authorizationStatus}');
+    print('Notification permission: ${settings.authorizationStatus}');
 
-  if (Platform.isIOS) {
-    _setupIOSFCM();
+    // ✅ FIX: Get APNS token specifically for iOS
+    if (Platform.isIOS) {
+      String? apnsToken = await messaging.getAPNSToken();
+      print('APNS Token: $apnsToken');
+      
+      if (apnsToken == null) {
+        print('⚠️ APNS Token is null - push notifications may not work on iOS');
+      }
+      
+      // Request token again after APNS registration
+      messaging.getToken().then((token) {
+        print('FCM Token after APNS: $token');
+        _storeFCMToken(token);
+      });
+    } else {
+      // For Android, just get FCM token
+      String? token = await messaging.getToken();
+      print('FCM Token: $token');
+      _storeFCMToken(token);
+    }
+
+    // ✅ FIX: Handle token refresh properly
+    messaging.onTokenRefresh.listen((newToken) async {
+      print('FCM token refreshed: $newToken');
+      _storeFCMToken(newToken);
+    });
+
+    // Set up foreground message handler
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      print('Foreground message received: ${message.notification?.title}');
+      _showLocalNotification(message);
+    });
+
+    // Set up background message handler
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      print('App opened from background via notification');
+      navigateToNotificationsScreen();
+    });
   }
 
-  // Get FCM token - we'll store it when we have a user logged in
-  String? token = await messaging.getToken();
-  if (token != null) {
-    print('FCM Token: $token');
-    // Token will be stored in user document when user is logged in
-  }
-
-  // Handle token refresh
-  messaging.onTokenRefresh.listen((newToken) async {
-    print('FCM token refreshed: $newToken');
-    // Update token in user document when user is logged in
+  // ✅ Helper function to store token
+  void _storeFCMToken(String? token) async {
+    if (token == null) return;
+    
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      final apiService = ApiService();
-      await apiService.updateUser({'fcmToken': newToken});
+      try {
+        final apiService = ApiService();
+        await apiService.updateUser({'fcmToken': token});
+        print('✅ FCM token stored successfully');
+      } catch (e) {
+        print('❌ Failed to store FCM token: $e');
+      }
     }
-  });
-
-  // Set up foreground message handler
-  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-    print('Foreground message received: ${message.notification?.title}');
-    _showLocalNotification(message);
-  });
-
-  // Set up background message handler
- FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-    print('App opened from background via notification');
-    navigateToNotificationsScreen();
-  });
-
-  // Handle notification when app is terminated
-  RemoteMessage? initialMessage = await messaging.getInitialMessage();
-  if (initialMessage != null) {
-    print('App opened from terminated state via notification');
-    navigateToNotificationsScreen();
   }
-}
 
-void _setupIOSFCM() {
-  // Request APNS token for iOS
-  FirebaseMessaging.instance.getAPNSToken().then((token) {
-    print('APNS Token: $token');
-  });
+// void _setupIOSFCM() {
+//   // Request APNS token for iOS
+//   FirebaseMessaging.instance.getAPNSToken().then((token) {
+//     print('APNS Token: $token');
+//   });
   
-  // Handle token refresh for iOS
-  FirebaseMessaging.instance.onTokenRefresh.listen((token) async{
-    print('FCM Token refreshed: $token');
-    final apiService = ApiService();
-    await apiService.updateUser({'fcmToken': token});
-  });
+//   // Handle token refresh for iOS
+//   FirebaseMessaging.instance.onTokenRefresh.listen((token) async{
+//     print('FCM Token refreshed: $token');
+//     final apiService = ApiService();
+//     await apiService.updateUser({'fcmToken': token});
+//   });
   
-  // Handle initial message when app is opened from terminated state
-  FirebaseMessaging.instance.getInitialMessage().then((message) {
-    if (message != null) {
-      print('App opened from terminated state with message: ${message.data}');
-      _handleTerminatedMessage(message);
-    }
-  });
+//   // Handle initial message when app is opened from terminated state
+//   FirebaseMessaging.instance.getInitialMessage().then((message) {
+//     if (message != null) {
+//       print('App opened from terminated state with message: ${message.data}');
+//       _handleTerminatedMessage(message);
+//     }
+//   });
   
-  // Handle messages when app is in foreground
-  FirebaseMessaging.onMessage.listen((message) {
-    print('Foreground message: ${message.data}');
-    _showLocalNotification(message);
-  });
+//   // Handle messages when app is in foreground
+//   FirebaseMessaging.onMessage.listen((message) {
+//     print('Foreground message: ${message.data}');
+//     _showLocalNotification(message);
+//   });
   
-  // Handle when app is in background but not terminated
-  FirebaseMessaging.onMessageOpenedApp.listen((message) {
-    print('App opened from background with message: ${message.data}');
-    _handleBackgroundMessage(message);
-  });
-}
+//   // Handle when app is in background but not terminated
+//   FirebaseMessaging.onMessageOpenedApp.listen((message) {
+//     print('App opened from background with message: ${message.data}');
+//     _handleBackgroundMessage(message);
+//   });
+// }
 
 void showEventNotificationDialog(Map<String, dynamic> data) {
   // This is called when the notification body is tapped (not an action button)

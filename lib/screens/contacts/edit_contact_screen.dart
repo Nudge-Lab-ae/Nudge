@@ -1384,27 +1384,18 @@ class _EditContactScreenState extends State<EditContactScreen> {
           // Save to database
           await apiService.updateContact(updatedContact);
           if (_originalContact!.connectionType != updatedContact.connectionType) {
-            await apiService.cancelNudgesForContacts([updatedContact.id]);
-            await apiService.scheduleNudgesForContacts(contactIds: [updatedContact.id]);
+             apiService.cancelNudgesForContacts([updatedContact.id]);
+             apiService.scheduleNudgesForContacts(contactIds: [updatedContact.id]);
           }
           if (_originalContact!.birthday != updatedContact.birthday
           || _originalContact!.anniversary != updatedContact.anniversary
           || _originalContact!.workAnniversary != updatedContact.workAnniversary
           ) {
             print('updating birthday');
-            await apiService.cancelEventNotifications([updatedContact]);
-            await apiService.scheduleEventNotifications([updatedContact]);
+             apiService.cancelEventNotifications([updatedContact]);
+             apiService.scheduleEventNotifications([updatedContact]);
           }
           print('phase 6');
-          
-          // Flushbar(
-          //   padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
-          //   flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
-          //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
-          //   messageText: Center(
-          //       child: Text( 'Contact updated successfully', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-          //           color: Colors.white, fontWeight: FontWeight.w400),)),
-          // ).show(context);
 
           TopMessageService().showMessage(
             context: context,

@@ -26,7 +26,7 @@ import 'package:provider/provider.dart';
 import 'dart:io';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
-import '../contacts/import_contacts_screen.dart';
+// import '../contacts/import_contacts_screen.dart';
 
 // Add these imports for contact picking functionality
 import 'package:permission_handler/permission_handler.dart';
@@ -393,11 +393,11 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
     return Directory.systemTemp;
   }
 
-  void _nextStep() {
+  void _nextStep(bool isDarkMode) {
     if (_currentStep < _steps.length - 1) {
       setState(() => _currentStep++);
     } else {
-      _completeOnboarding();
+      _completeOnboarding(isDarkMode);
     }
   }
 
@@ -425,7 +425,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
     }
   }
 
-  Future<void> _completeOnboarding() async {
+  Future<void> _completeOnboarding(bool isDarkMode) async {
     setState(() => _isLoading = true);
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
@@ -479,7 +479,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
         
         // Navigate to dashboard using restart approach
         // _navigateToDashboardWithSuccess();
-         _showSocialUniverseGuide(context);
+         _showSocialUniverseGuide(context, isDarkMode);
       }
     } catch (e) {
      
@@ -502,7 +502,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
   }
 
   // In the _CompleteProfileScreenState class, add this method:
-    void _showSocialUniverseGuide(BuildContext context) {
+    void _showSocialUniverseGuide(BuildContext context, bool isDarkMode) {
     
     showModalBottomSheet(
       context: context,
@@ -524,7 +524,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
               Navigator.of(context).pop();
               _navigateToDashboardWithSuccess();
             },
-            isDarkMode: false,
+            isDarkMode: isDarkMode,
           ),
         );
       },
@@ -532,6 +532,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
   }
 
   void _navigateToDashboardWithSuccess() {
+    final apiService = ApiService();
     TopMessageService().showCustomContent(
       context: context,
       backgroundColor: Colors.green,
@@ -569,6 +570,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
     Future.delayed(const Duration(milliseconds: 1500), () {
       AppRestartHelper.setSkipSplashFlag();
       AppRestartHelper.forceAppRestart(context);
+      apiService.batchUpdateCDI();
     });
   }
 
@@ -2041,64 +2043,64 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
         return Column(
           children: [
             // Quick Import Card
-            Card(
-              color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'QUICK IMPORT',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: themeProvider.isDarkMode ? Colors.white : Colors.black,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Import your existing contacts from device',
-                      style: TextStyle(
-                        color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: () async {
-                        _dismissKeyboard();
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ImportContactsScreen(
-                              groups: _getOrderedGroupsForSelection(),
-                              isOnboarding: true,
-                            ),
-                          ),
-                        );
+            // Card(
+            //   color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+            //   child: Padding(
+            //     padding: const EdgeInsets.all(20),
+            //     child: Column(
+            //       crossAxisAlignment: CrossAxisAlignment.start,
+            //       children: [
+            //         Text(
+            //           'QUICK IMPORT',
+            //           style: TextStyle(
+            //             fontSize: 18,
+            //             fontWeight: FontWeight.bold,
+            //             color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+            //           ),
+            //         ),
+            //         const SizedBox(height: 8),
+            //         Text(
+            //           'Import your existing contacts from device',
+            //           style: TextStyle(
+            //             color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey,
+            //           ),
+            //         ),
+            //         const SizedBox(height: 20),
+            //         ElevatedButton(
+            //           onPressed: () async {
+            //             _dismissKeyboard();
+            //             final result = await Navigator.push(
+            //               context,
+            //               MaterialPageRoute(
+            //                 builder: (context) => ImportContactsScreen(
+            //                   groups: _getOrderedGroupsForSelection(),
+            //                   isOnboarding: true,
+            //                 ),
+            //               ),
+            //             );
                         
-                        if (result != null && result is List<Contact>) {
-                          final Set<String> existingIds = _selectedContacts.map((c) => c.id).toSet();
-                          final List<Contact> newContacts = result.where((c) => !existingIds.contains(c.id)).toList();
+            //             if (result != null && result is List<Contact>) {
+            //               final Set<String> existingIds = _selectedContacts.map((c) => c.id).toSet();
+            //               final List<Contact> newContacts = result.where((c) => !existingIds.contains(c.id)).toList();
                           
-                          setState(() {
-                            _selectedContacts.addAll(newContacts);
-                          });
-                          // _showFlushbar();
-                        }
-                        // _showFlushbar();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xff3CB3E9),
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      ),
-                      child: const Text('Import Contacts', style: TextStyle(color: Colors.white, fontSize: 14)),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
+            //               setState(() {
+            //                 _selectedContacts.addAll(newContacts);
+            //               });
+            //               // _showFlushbar();
+            //             }
+            //             // _showFlushbar();
+            //           },
+            //           style: ElevatedButton.styleFrom(
+            //             backgroundColor: const Color(0xff3CB3E9),
+            //             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            //           ),
+            //           child: const Text('Import Contacts', style: TextStyle(color: Colors.white, fontSize: 14)),
+            //         ),
+            //       ],
+            //     ),
+            //   ),
+            // ),
+            // const SizedBox(height: 20),
             // Add Contacts Card (same as iOS but for Android)
             Card(
               color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
@@ -2190,9 +2192,9 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
       }
     }
 
-      List<SocialGroup> _getOrderedGroupsForSelection() {
-        return List.from(_userGroups);
-      }
+      // List<SocialGroup> _getOrderedGroupsForSelection() {
+      //   return List.from(_userGroups);
+      // }
 
       Widget _buildCloseCircleStep() {
         final themeProvider = Provider.of<ThemeProvider>(context);
@@ -2466,12 +2468,12 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                       if (_currentStep == 0) {
                         // Profile step - validate form
                         if (_formKey.currentState!.validate()) {
-                          _nextStep();
+                          _nextStep(themeProvider.isDarkMode);
                         }
                       } else if (_currentStep == 1) {
                         // Groups step - just check if groups exist
                         if (_userGroups.isNotEmpty) {
-                          _nextStep();
+                          _nextStep(themeProvider.isDarkMode);
                         } else {
                           // Flushbar(
                           //   padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
@@ -2490,7 +2492,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                         }
                       } else {
                         // All other steps (preview, contacts, close circle, review) - just continue
-                        _nextStep();
+                        _nextStep(themeProvider.isDarkMode);
                       }
                     },
                     style: ElevatedButton.styleFrom(

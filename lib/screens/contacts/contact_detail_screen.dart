@@ -269,8 +269,9 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                       );
                     },
                     onLongPress: () {
-                      apiService.sendTestBirthdayNotification(widget.contact);
+                      // apiService.sendTestBirthdayNotification(widget.contact);
                       // apiService.sendTestEventNotification();
+                      apiService.scheduleTestNudges([widget.contact.id]);
                     },
                   ),
                 ],
