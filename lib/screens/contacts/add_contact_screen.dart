@@ -1024,65 +1024,65 @@ class _AddContactScreenState extends State<AddContactScreen> {
                           const SizedBox(height: 10),
                         ],
                         
-                        // Add new tag
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextFormField(
-                                controller: _tagsController,
-                                style: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
-                                decoration: InputDecoration(
-                                  hintText: 'Add new Social Group',
-                                  hintStyle: TextStyle(color: themeProvider.getTextHintColor(context)),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: themeProvider.getTextHintColor(context), width: 1),
-                                    borderRadius: BorderRadius.circular(10)
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
-                                    borderRadius: BorderRadius.circular(10)
-                                  ),
-                                  errorBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: Colors.red, width: 1),
-                                    borderRadius: BorderRadius.circular(10)
-                                  ),
-                                  focusedErrorBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: Colors.red, width: 2),
-                                    borderRadius: BorderRadius.circular(10)
-                                  ),
-                                  filled: true,
-                                  fillColor: themeProvider.getCardColor(context),
-                                ),
-                              ),
-                            ),
-                            IconButton(
-                              icon: Icon(Icons.add, color: AppTheme.primaryColor),
-                              onPressed: () {
-                                if (_tagsController.text.isNotEmpty) {
-                                  setState(() {
-                                    _tags.add(_tagsController.text);
-                                    _tagsController.clear();
-                                  });
-                                }
-                              },
-                            ),
-                          ],
-                        ),
+                        // // Add new tag
+                        // Row(
+                        //   children: [
+                        //     Expanded(
+                        //       child: TextFormField(
+                        //         controller: _tagsController,
+                        //         style: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
+                        //         decoration: InputDecoration(
+                        //           hintText: 'Add new Social Group',
+                        //           hintStyle: TextStyle(color: themeProvider.getTextHintColor(context)),
+                        //           enabledBorder: OutlineInputBorder(
+                        //             borderSide: BorderSide(color: themeProvider.getTextHintColor(context), width: 1),
+                        //             borderRadius: BorderRadius.circular(10)
+                        //           ),
+                        //           focusedBorder: OutlineInputBorder(
+                        //             borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+                        //             borderRadius: BorderRadius.circular(10)
+                        //           ),
+                        //           errorBorder: OutlineInputBorder(
+                        //             borderSide: BorderSide(color: Colors.red, width: 1),
+                        //             borderRadius: BorderRadius.circular(10)
+                        //           ),
+                        //           focusedErrorBorder: OutlineInputBorder(
+                        //             borderSide: BorderSide(color: Colors.red, width: 2),
+                        //             borderRadius: BorderRadius.circular(10)
+                        //           ),
+                        //           filled: true,
+                        //           fillColor: themeProvider.getCardColor(context),
+                        //         ),
+                        //       ),
+                        //     ),
+                        //     IconButton(
+                        //       icon: Icon(Icons.add, color: AppTheme.primaryColor),
+                        //       onPressed: () {
+                        //         if (_tagsController.text.isNotEmpty) {
+                        //           setState(() {
+                        //             _tags.add(_tagsController.text);
+                        //             _tagsController.clear();
+                        //           });
+                        //         }
+                        //       },
+                        //     ),
+                        //   ],
+                        // ),
                         
-                        // Display selected tags
-                        Wrap(
-                          spacing: 8,
-                          children: _tags.map((tag) {
-                            return Chip(
-                              label: Text(tag, style: TextStyle(color: themeProvider.getTextPrimaryColor(context))),
-                              backgroundColor: themeProvider.getCardColor(context),
-                              deleteIconColor: Colors.red,
-                              onDeleted: () {
-                                setState(() => _tags.remove(tag));
-                              },
-                            );
-                          }).toList(),
-                        ),
+                        // // Display selected tags
+                        // Wrap(
+                        //   spacing: 8,
+                        //   children: _tags.map((tag) {
+                        //     return Chip(
+                        //       label: Text(tag, style: TextStyle(color: themeProvider.getTextPrimaryColor(context))),
+                        //       backgroundColor: themeProvider.getCardColor(context),
+                        //       deleteIconColor: Colors.red,
+                        //       onDeleted: () {
+                        //         setState(() => _tags.remove(tag));
+                        //       },
+                        //     );
+                        //   }).toList(),
+                        // ),
                         
                         const SizedBox(height: 20),
                         

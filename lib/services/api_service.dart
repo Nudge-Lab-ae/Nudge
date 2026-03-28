@@ -5,7 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart' as auth;
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:nudge/services/nudge_service.dart';
+// import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/services/social_universe_service.dart';
 import '../models/contact.dart';
 import '../models/nudge.dart';
@@ -1423,6 +1423,57 @@ Future<void> updateFeedbackAdminData({
     }
   }
 
+    DateTime _calculateNextNudgeTime(Contact contact, DateTime interactionDateTime) {
+    DateTime nextTime;
+    
+    switch (contact.period.toLowerCase()) {
+      case 'daily':
+        nextTime = interactionDateTime.add(const Duration(days: 1));
+        break;
+      case 'weekly':
+        nextTime = interactionDateTime.add(const Duration(days: 7));
+        break;
+      case 'monthly':
+        nextTime = interactionDateTime.add(const Duration(days: 30));
+        break;
+      case 'quarterly':
+        nextTime = interactionDateTime.add(const Duration(days: 91));
+        break;
+      case 'annually':
+      case 'yearly':
+        nextTime = interactionDateTime.add(const Duration(days: 365));
+        break;
+      default:
+        nextTime = interactionDateTime.add(const Duration(days: 30));
+    }
+    
+    if (contact.frequency > 1) {
+      final totalDays = nextTime.difference(interactionDateTime).inDays;
+      final intervalDays = totalDays ~/ contact.frequency;
+      nextTime = interactionDateTime.add(Duration(days: intervalDays));
+    }
+    
+    final randomHour = 9 + (interactionDateTime.millisecond % 8);
+    final randomMinute = interactionDateTime.millisecond % 60;
+    
+    nextTime = DateTime(
+      nextTime.year,
+      nextTime.month,
+      nextTime.day,
+      randomHour,
+      randomMinute,
+    );
+    
+    final now = DateTime.now();
+    if (nextTime.isBefore(now)) {
+      final daysDiff = now.difference(nextTime).inDays + 1;
+      nextTime = nextTime.add(Duration(days: daysDiff));
+    }
+    
+    return nextTime;
+  }
+
+
   Future<void> logInteraction({
     required String contactId,
     required String interactionType,
@@ -1431,7 +1482,7 @@ Future<void> updateFeedbackAdminData({
   }) async {
     try {
       final currentUser = _auth.currentUser;
-      final nudgeService = NudgeService();
+      // final nudgeService = NudgeService();
       if (currentUser == null) throw Exception('No user logged in');
       
       // Get contact
@@ -1510,16 +1561,22 @@ Future<void> updateFeedbackAdminData({
         socialGroups: socialGroups,
         groupsList: groupsList,
       );
+
+      contactWithCDI.interactionHistory = interactionHistory;
       
       // Save to Firestore
       await updateContact(contactWithCDI);
+      await cancelNudgesForContacts([updatedContact.id]);
       
-      // Reschedule nudge based on this interaction
-      await nudgeService.rescheduleNudgeAfterInteraction(
-        contactWithCDI, 
-        currentUser.uid,
+
+      DateTime nextScheduledTime = _calculateNextNudgeTime(
+        contact, 
         interactionTimestamp,
       );
+
+      await scheduleSingleNudge(contactId: contact.id, scheduledTime: nextScheduledTime);
+      
+      
       
       print('Interaction logged for ${contact.name} at $interactionTimestamp, new CDI: ${contactWithCDI.cdi}, ring: ${contactWithCDI.computedRing}');
       

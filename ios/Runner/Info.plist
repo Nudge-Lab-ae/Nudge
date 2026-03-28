@@ -52,12 +52,20 @@
 	<string>This app needs access to your contacts to help you manage your relationships</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-	<key>io.flutter.embedded_views_preview</key>
-	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<string>NO</string>
+	<key>FirebaseScreenReportingEnabled</key>
+	<string>NO</string>
+
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
@@ -71,5 +79,7 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>io.flutter.embedded_views_preview</key>
+	<true/>
 </dict>
 </plist>
