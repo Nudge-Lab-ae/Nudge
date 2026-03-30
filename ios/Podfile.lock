@@ -1233,7 +1233,7 @@ PODS:
   - Firebase/Storage (12.6.0):
     - Firebase/CoreOnly
     - FirebaseStorage (~> 12.6.0)
-  - firebase_auth (6.1.3):
+  - firebase_auth (6.1.0):
     - Firebase/Auth (= 12.6.0)
     - firebase_core
     - Flutter
@@ -1244,7 +1244,7 @@ PODS:
     - Firebase/Messaging (= 12.6.0)
     - firebase_core
     - Flutter
-  - firebase_storage (13.0.5):
+  - firebase_storage (13.0.2):
     - Firebase/Storage (= 12.6.0)
     - firebase_core
     - Flutter
@@ -1484,7 +1484,7 @@ PODS:
   - PhoneNumberKit/PhoneNumberKitCore (3.6.6)
   - PromisesObjC (2.4.0)
   - RecaptchaInterop (101.0.0)
-  - restart_app (0.0.1):
+  - restart_app (1.7.3):
     - Flutter
   - shared_preferences_foundation (0.0.1):
     - Flutter
@@ -1621,10 +1621,10 @@ SPEC CHECKSUMS:
   contacts_service: 7c2ed10147f55891576c6a582f431e385d8de92d
   device_calendar: b55b2c5406cfba45c95a59f9059156daee1f74ed
   Firebase: a451a7b61536298fd5cbfe3a746fd40443a50679
-  firebase_auth: f547a06ed4933a1da2b9ac8d8c64ae09d113c8e1
+  firebase_auth: 11c455fcc001d251871a64155920f165868d9b33
   firebase_core: ba00a168e719694f38960502ceb560285603d073
   firebase_messaging: bf0e29321927edc02a563c984dbfa5b063864b15
-  firebase_storage: 90cdab308fdc9e9aedcbe90d62b949cb66d91ce1
+  firebase_storage: 310148a20b3df19b3456e661a50297f0b0dec721
   FirebaseAppCheckInterop: e2178171b4145013c7c1a3cc464d1d446d3a1896
   FirebaseAuth: 613c463cb43545a7fd2cd99ade09b78ac472c544
   FirebaseAuthInterop: db06756ef028006d034b6004dc0c37c24f7828d4
@@ -1661,7 +1661,7 @@ SPEC CHECKSUMS:
   PhoneNumberKit: 5b1be7ee4955dfeeb855f51eecdd829ab24b3484
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
-  restart_app: 9cda5378aacc5000e3f66ee76a9201534e7d3ecf
+  restart_app: 0714144901e260eae68f7afc2fc4aacc1a323ad2
   shared_preferences_foundation: 9e1978ff2562383bd5676f64ec4e9aa8fa06a6f7
   sign_in_with_apple: c5dcc141574c8c54d5ac99dd2163c0c72ad22418
   sqflite_darwin: 20b2a3a3b70e43edae938624ce550a3cbf66a3d0
