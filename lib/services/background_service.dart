@@ -40,10 +40,10 @@ class BackgroundService {
     try {
       // Note: This would need to run in a background isolate
       // For now, we'll handle daily updates on app startup
-      print('Daily CDI update triggered');
+      //print('Daily CDI update triggered');
       // In production, this would fetch all contacts and update their CDI
     } catch (e) {
-      print('Error in daily CDI update: $e');
+      //print('Error in daily CDI update: $e');
     }
   }
 }

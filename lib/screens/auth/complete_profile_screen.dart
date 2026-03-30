@@ -595,7 +595,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
 
     final contacts = await fContacts.FlutterContacts.getContacts(withProperties: true);
 
-    // print('existing contacts are'); print(_selectedContacts[0].name);
+    // //print('existing contacts are'); //print(_selectedContacts[0].name);
     final selectedContacts = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -938,9 +938,9 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
         onProgress: (processed, total) {},
       );
 
-      print('imported contact length is'); print(deviceContacts.length);
-      print(deviceContacts[0].name);
-      print('result is'); print(result);
+      //print('imported contact length is'); //print(deviceContacts.length);
+      //print(deviceContacts[0].name);
+      //print('result is'); //print(result);
 
       setState(() => _isLoading = false);
 
@@ -2461,7 +2461,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                   child: ElevatedButton(
                     autofocus: true,
                     onPressed: () {
-                      print('trying to continue');
+                      //print('trying to continue');
                       _dismissKeyboard();
                       
                       // Handle each step's validation

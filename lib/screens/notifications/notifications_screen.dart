@@ -227,7 +227,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       final userId = Provider.of<AuthService>(context, listen: false).currentUser!.uid;
       await _nudgeService.processOverdueNudges(userId);
     } catch (e) {
-      print('Error processing overdue nudges in UI: $e');
+      //print('Error processing overdue nudges in UI: $e');
     }
   }
 
@@ -334,7 +334,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             }
             
             if (snapshot.hasError) {
-              print('Error in nudges stream: ${snapshot.error}');
+              //print('Error in nudges stream: ${snapshot.error}');
               return _buildErrorRetry(themeProvider);
             }
             
@@ -342,7 +342,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             final filteredNudges = _getMemoizedFilteredNudges(allNudges, _selectedFilter);
             
             return Scaffold(
-              floatingActionButton: _selectedNudgeIds.isNotEmpty
+              floatingActionButton: _selectedNudgeIds.isNotEmpty && !_isCompletionInProgress && !_isCancellingInProgress
                 ? Padding(
                   padding: EdgeInsets.only(top: size.height*0.75),
                   child: Column(
@@ -751,7 +751,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (!_isCompletionInProgress) return const SizedBox.shrink();
     
     return Positioned(
-      bottom: 16,
+      bottom: 256,
       left: 16,
       right: 50,
       child: Material(
@@ -802,7 +802,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (!_isCancellingInProgress) return const SizedBox.shrink();
     
     return Positioned(
-      bottom: 16,
+      bottom: 256,
       left: 16,
       right: 50,
       child: Material(
@@ -951,7 +951,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         setState(() {
           _completionErrorCount++;
         });
-        print('Error completing nudge $nudgeId: $e');
+        //print('Error completing nudge $nudgeId: $e');
         return;
       }
     }
@@ -1001,7 +1001,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         setState(() {
           _cancellationErrorCount++;
         });
-        print('Error cancelling nudge $nudgeId: $e');
+        //print('Error cancelling nudge $nudgeId: $e');
       }
     }
     
@@ -1519,7 +1519,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         }
       },
       onDismissed: (direction) {
-        print('Nudge dismissed: ${nudge.id}');
+        //print('Nudge dismissed: ${nudge.id}');
       },
       child: GestureDetector(
         onTap: () => _showNudgeActions(context, themeProvider, nudge),
@@ -1745,7 +1745,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       return result;
       
     } catch (e) {
-      print('Error showing log interaction modal: $e');
+      //print('Error showing log interaction modal: $e');
       // Flushbar(
       //   padding: const EdgeInsets.all(10), 
       //   borderRadius: BorderRadius.zero, 

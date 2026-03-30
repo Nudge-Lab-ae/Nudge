@@ -62,7 +62,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
         }
       });
     } catch (e) {
-      print('Error loading user groups: $e');
+      //print('Error loading user groups: $e');
       // Fallback to default groups for new users
       _userGroups = [
         SocialGroup(

@@ -7,7 +7,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:nudge/models/social_group.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/services/message_service.dart';
-import 'package:nudge/test/mock_data_generator.dart';
+import 'package:nudge/mock/mock_data_generator.dart';
 import 'package:nudge/widgets/social_universe_guide.dart';
 import 'package:nudge/providers/theme_provider.dart';
 import 'package:nudge/theme/app_theme.dart';
@@ -96,7 +96,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
         });
       }
     } catch (e) {
-      print('Error loading social groups: $e');
+      //print('Error loading social groups: $e');
     }
   }
 
@@ -110,10 +110,10 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
           _immersionLevel = userData.immersionLevel;
           _sliderValue = userData.immersionLevel;
         });
-        print('Loaded immersion level: ${userData.immersionLevel}');
+        //print('Loaded immersion level: ${userData.immersionLevel}');
       }
     } catch (e) {
-      print('Error loading immersion level: $e');
+      //print('Error loading immersion level: $e');
       // Keep default value if loading fails
       if (mounted) {
         setState(() {
@@ -128,9 +128,9 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
     try {
       final apiService = ApiService();
       await apiService.updateUser({'immersionLevel': newLevel});
-      print('Saved immersion level: $newLevel');
+      //print('Saved immersion level: $newLevel');
     } catch (e) {
-      print('Error saving immersion level: $e');
+      //print('Error saving immersion level: $e');
     }
   }
 
@@ -150,7 +150,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
     // _universeSize = Size(widget.height - 150, widget.height - 150);
     
     _mockContacts = MockContactsGenerator.generateMockContacts(count: 50);
-    MockContactsGenerator.printDistribution(_mockContacts);
+    // MockContactsGenerator.printDistribution(_mockContacts);
     
     _displayContacts = widget.contacts;
     
@@ -249,7 +249,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
           _isCachingComplete = true;
         });
       } catch (e) {
-        print('Error caching star shapes: $e');
+        //print('Error caching star shapes: $e');
       }
     });
   }
@@ -289,7 +289,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
       _isBackgroundCachingComplete = true;
     });
   } catch (e) {
-    print('Error caching background images: $e');
+    //print('Error caching background images: $e');
     // Fallback to gradient background
   }
 }
@@ -1159,7 +1159,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                                     _immersionLevel -= 0.1;
                                   });
                                   _debounceSaveImmersionLevel(_sliderValue);
-                                  print('decreased ${_sliderValue}');
+                                  //print('decreased ${_sliderValue}');
                                 }
                               },
                               child: Icon(
@@ -1195,7 +1195,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                                       _immersionLevel += 0.1;
                                   });
                                   _debounceSaveImmersionLevel(_sliderValue);
-                                  print('added');
+                                  //print('added');
                                 }
                               },
                               child: Icon(
@@ -1972,7 +1972,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
     // final ringColor = _getRingColor(contact.computedRing);
 
     final ringToUse =contact.computedRing;
-    print(ringToUse); print(' is the ring to use');
+    //print(ringToUse); //print(' is the ring to use');
     final ringColor = _getRingColor(ringToUse);
     
     return Container(

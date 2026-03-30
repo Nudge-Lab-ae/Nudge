@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:nudge/helpers/deletion_retry_helper.dart';
+import 'package:nudge/providers/admin_provider.dart';
 import 'package:nudge/providers/theme_provider.dart';
 import 'package:nudge/screens/admin/feedback_management_screen.dart';
 import 'package:nudge/screens/feedback/feedback_forum_screen.dart';
@@ -15,7 +16,7 @@ import 'package:nudge/services/message_service.dart';
 import 'package:nudge/widgets/screen_tracker.dart';
 import 'package:provider/provider.dart';
 import '../../services/api_service.dart';
-import 'package:nudge/models/user.dart' as user; 
+// import 'package:nudge/models/user.dart' as user; 
 
 
 class SettingsScreen extends StatefulWidget {
@@ -40,7 +41,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _isEmailPasswordUser = false;
   bool _isChangingPassword = false;
   bool _isSubmittingFeedback = false;
-  user.User? _currentUser;
+  // user.User? _currentUser;
   bool deleting = false;
 
   bool _isCropping = false;
@@ -87,13 +88,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() {
          _usernameController.text = userData.username;
         _emailController.text = userData.email;
-        _currentUser = userData;
+        // _currentUser = userData;
         _currentProfileImageUrl = userData.photoUrl;
         // _weeklyDigestEnabled = userData.weeklyDigestEnabled;
         _isLoading = false;
       });
     } catch (e) {
-      print('Error loading user data: $e');
+      //print('Error loading user data: $e');
       setState(() {
         _isLoading = false;
       });
@@ -471,7 +472,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   //       'updatedAt': DateTime.now(),
   //     });
   //   } catch (e) {
-  //     print('Error updating weekly digest setting: $e');
+  //     //print('Error updating weekly digest setting: $e');
   //   }
   // }
 
@@ -644,14 +645,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       
       return true;
     } catch (error) {
-      print('Error deleting user: $error');
+      //print('Error deleting user: $error');
       
       try {
         await authService.signOut();
         await _auth.signOut();
         showDeletedMessage();
       } catch (e) {
-        print('Error during signout: $e');
+        //print('Error during signout: $e');
       }
       
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1057,9 +1058,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context, listen: false);
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final adminProvider = Provider.of<AdminProvider>(context);
     final theme = Theme.of(context);
     
-    if (_isLoading) {
+    if (_isLoading || adminProvider.isLoading) {
       return Scaffold(
         backgroundColor: themeProvider.getBackgroundColor(context),
         body: Center(child: CircularProgressIndicator(color: theme.colorScheme.primary)),
@@ -1099,8 +1101,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       // Theme Toggle Section
                       _buildThemeToggleSection(),
                       const SizedBox(height: 30),
-                      
-                      // Feature Requests Forum Section
                       
                       Form(
                         key: _formKey,
@@ -1292,49 +1292,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 },
                               ),
                             ],
-
-                            // // Weekly Digest Section
-                            // const SizedBox(height: 30),
-                            // Text(
-                            //   'NOTIFICATIONS',
-                            //   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.grey.shade400 : const Color(0xff6e6e6e)),
-                            // ),
-                            // const SizedBox(height: 15),
-                            // Row(
-                            //   crossAxisAlignment: CrossAxisAlignment.start,
-                            //   children: [
-                            //     Expanded(
-                            //       child: Column(
-                            //         crossAxisAlignment: CrossAxisAlignment.start,
-                            //         children: [
-                            //           Text(
-                            //             'Weekly Digest',
-                            //             style: TextStyle(fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555)),
-                            //           ),
-                            //           Text(
-                            //             'Receive weekly summary of relationships needing attention',
-                            //             style: TextStyle(fontSize: 14, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
-                            //           ),
-                            //         ],
-                            //       ),
-                            //     ),
-                            //     Container(
-                            //       width: 100,
-                            //       child: Switch(
-                            //         value: _weeklyDigestEnabled,
-                            //         inactiveThumbColor: themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.white,
-                            //         inactiveTrackColor: themeProvider.isDarkMode ? Colors.grey.shade700 : const Color(0xffdddddd),
-                            //         onChanged: (value) {
-                            //           setState(() {
-                            //             _weeklyDigestEnabled = value;
-                            //           });
-                            //           _updateWeeklyDigestSetting(value);
-                            //         },
-                            //         activeColor: theme.colorScheme.primary,
-                            //       ),
-                            //     )
-                            //   ],
-                            // ),
                             
                             const SizedBox(height: 30),
                             SizedBox(
@@ -1410,8 +1367,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       
                       const SizedBox(height: 30),
                       
-                      // Feedback Section
-                        _buildFeedbackForumSection(themeProvider),
+                      // Feedback Forum Section
+                      _buildFeedbackForumSection(themeProvider),
                       
                       const SizedBox(height: 30),
 
@@ -1420,7 +1377,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const SizedBox(height: 30),
                       
                       // Feedback Management Section (for admins)
-                      _currentUser!.admin
+                      adminProvider.isAdmin
                       ? Container(
                           width: double.infinity,
                           padding: const EdgeInsets.only(top: 16, bottom: 16, left: 16, right: 16),
@@ -1485,7 +1442,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
   }
-  
+
   @override
   void dispose() {
     _feedbackMessageFocusNode.dispose();

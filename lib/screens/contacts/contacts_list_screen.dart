@@ -127,7 +127,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
               child: Scaffold(
               floatingActionButton: Padding(
                 padding: EdgeInsets.only(right: 10, bottom: 55,),
-                child: _selectedContacts.isNotEmpty
+                child: _selectedContacts.isNotEmpty && !_isDeletingInProgress && !_isAddingToGroupInProgress
                 ? FloatingActionButton.extended(
                     onPressed: () => _selectionMode == 'add_to_group'
                         ? _addMultipleContactsToGroup(context, groupName!, groupPeriod!, groupFrequency!, totalContacts, themeProvider)
@@ -455,7 +455,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
       ),
       floatingActionButton: Padding(
         padding: EdgeInsets.only(right: 16,bottom: 55,),
-        child: _selectedContacts.isNotEmpty
+        child: _selectedContacts.isNotEmpty && !_isDeletingInProgress && !_isAddingToGroupInProgress
           ? FloatingActionButton.extended(
               onPressed: () => _selectionMode == 'add_to_group'
                   ? _addMultipleContactsToGroup(context, groupName!, groupPeriod!, groupFrequency!, totalContacts, themeProvider)
@@ -1142,7 +1142,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
         setState(() {
           _deletionErrorCount++;
         });
-        print('Error deleting contact $contactId: $e');
+        //print('Error deleting contact $contactId: $e');
       }
     }
 
@@ -1235,7 +1235,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
         setState(() {
           _deletionErrorCount++;
         });
-        print('Error deleting contact ${contact.id}: $e');
+        //print('Error deleting contact ${contact.id}: $e');
       }
     }
     
@@ -1334,7 +1334,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
         setState(() {
           _addingErrorCount++;
         });
-        print('Error adding contact $contactId to group: $e');
+        //print('Error adding contact $contactId to group: $e');
       }
     }
     
@@ -1343,8 +1343,8 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
       contactIds.add(successfullyAddedContacts[i].id);
     }
 
-    print(' the contacts that are reassigned are'); print(contacts);
-    print(contactIds);
+    //print(' the contacts that are reassigned are'); //print(contacts);
+    //print(contactIds);
     
     if (successfullyAddedContacts.isNotEmpty) {
       apiService.cancelNudgesForContacts(contactIds);

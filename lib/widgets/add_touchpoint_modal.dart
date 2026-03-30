@@ -36,6 +36,9 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
   TimeOfDay _selectedTime = TimeOfDay.now();
   bool _showConfetti = false;
   late ConfettiController _confettiController;
+  int _moodScore = 3; // default: neutral
+  final List<String> _moodEmojis = ['😔', '😐', '🙂', '😄', '💞'];
+  final List<String> _moodLabels = ['Draining', 'Okay', 'Good', 'Great', 'Amazing'];
 
   final List<String> _interactionTypes = [
     'call',
@@ -72,7 +75,7 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
         _filteredContacts = contacts;
       });
     } catch (e) {
-      print('Error loading contacts: $e');
+      //print('Error loading contacts: $e');
       // ScaffoldMessenger.of(context).showSnackBar(
       //   SnackBar(
       //     content: Text('Failed to load contacts: $e'),
@@ -206,7 +209,7 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
   //     });
 
   //   } catch (e) {
-  //     print('Error logging touchpoint: $e');
+  //     //print('Error logging touchpoint: $e');
   //     ScaffoldMessenger.of(context).showSnackBar(
   //       SnackBar(
   //         content: Text('Failed to log touchpoint: $e'),
@@ -259,7 +262,7 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
      
 
     // } catch (e) {
-    //   print('Error logging touchpoint: $e');
+    //   //print('Error logging touchpoint: $e');
     //   TopMessageService().showMessage(
     //       context: context,
     //       message: 'Failed to log touchpoint: $e',
@@ -280,11 +283,12 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
       );
 
       // Log the interaction
-      await widget.apiService.logInteraction(
+      widget.apiService.logInteraction(
         contactId: _selectedContact!.id,
         interactionType: _selectedInteractionType!,
         notes: _notesController.text.isNotEmpty ? _notesController.text : null,
         interactionDate: interactionDateTime.toIso8601String(),
+        mood: _moodScore
       );
 
       // Show confetti animation
@@ -410,6 +414,115 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
     
     return ''; // Return empty for non-today dates
   }
+
+    Widget _buildMoodPicker(bool isDarkMode) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'How did this interaction feel?',
+          style: const TextStyle(
+            fontWeight: FontWeight.w600, 
+            fontSize: 14
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: List.generate(5, (i) {
+            final selected = _moodScore == i + 1;
+            final moodEmoji = _moodEmojis[i];
+            final moodLabel = _moodLabels[i];
+            
+            return GestureDetector(
+              onTap: () => setState(() => _moodScore = i + 1),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: selected
+                            ? LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Theme.of(context).colorScheme.primary,
+                                  Theme.of(context).colorScheme.primary.withOpacity(0.7),
+                                ],
+                              )
+                            : null,
+                        color: selected
+                            ? Colors.black
+                            : isDarkMode
+                                ? const Color(0xFF2A2A2A)
+                                : Colors.grey.shade50,
+                        border: Border.all(
+                          color: selected
+                              ? Theme.of(context).colorScheme.primary
+                              : Colors.transparent
+                              /* widget.isDarkMode
+                                  ? const Color(0xFF444444)
+                                  : Colors.grey.shade300 */,
+                          width: selected ? 2 : 1,
+                        ),
+                        boxShadow: selected
+                            ? [
+                                BoxShadow(
+                                  color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                                  blurRadius: 12,
+                                  spreadRadius: 2,
+                                )
+                              ]
+                            : null,
+                      ),
+                      child: AnimatedScale(
+                        scale: selected ? 1.0 : 0.8,
+                        duration: const Duration(milliseconds: 200),
+                        child: Text(
+                          moodEmoji,
+                          style: TextStyle(
+                            fontSize: selected ? 32 : 28,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        color: selected
+                            ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                            : Colors.transparent,
+                      ),
+                      child: Text(
+                        moodLabel,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                          color: selected
+                              ? Theme.of(context).colorScheme.primary
+                              : isDarkMode
+                                  ? Colors.grey.shade400
+                                  : Colors.grey.shade600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -659,8 +772,14 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
                 ],
                 
                 // Interaction Type Selection
-                if (_selectedContact != null) ...[
-                  Text(
+                if (_selectedContact != null) 
+                Container(
+                 constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.5,
+                  ),
+                  child:  ListView(
+                    children: [
+                      Text(
                     'INTERACTION TYPE',
                     style: TextStyle(
                       fontSize: 12,
@@ -824,6 +943,8 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
                   ),
                   
                   const SizedBox(height: 16),
+                  _buildMoodPicker(themeProvider.isDarkMode),
+                  const SizedBox(height: 16),
                   
                   // Notes Field
                   TextField(
@@ -894,7 +1015,8 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
                             ),
                     ),
                   ),
-                ],
+                ]),
+                ),
                 
                 const SizedBox(height: 8),
               ],

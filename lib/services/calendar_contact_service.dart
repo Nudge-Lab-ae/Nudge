@@ -53,7 +53,7 @@ class CalendarContactService {
       return allEvents;
     } catch (e) {
       if (kDebugMode) {
-        print('Error getting calendar events: $e');
+        //print('Error getting calendar events: $e');
       }
       return [];
     }
@@ -128,7 +128,7 @@ class CalendarContactService {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error analyzing calendar frequency: $e');
+        //print('Error analyzing calendar frequency: $e');
       }
     }
     
@@ -177,7 +177,7 @@ class CalendarContactService {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error getting birthday contacts: $e');
+        //print('Error getting birthday contacts: $e');
       }
     }
     

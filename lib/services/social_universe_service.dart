@@ -1,5 +1,7 @@
 // lib/services/social_universe_service.dart
 import 'dart:math';
+import 'package:flutter/material.dart';
+
 import '../models/contact.dart';
 import '../models/social_group.dart';
 
@@ -28,6 +30,52 @@ class SocialUniverseService {
     4: 1.0,
     5: 0.9, // Lowest priority
   };
+  
+  // Mood score weights
+  static const double MOOD_WEIGHT = 0.15; // 15% weight for mood in final CDI
+  static const double MOOD_MIN_FACTOR = 0.85; // Bad mood reduces CDI by up to 15%
+  static const double MOOD_MAX_FACTOR = 1.15; // Amazing mood increases CDI by up to 15%
+
+  // Calculate average mood score from interaction history
+  double _calculateMoodScore(Contact contact) {
+    if (contact.interactionHistory.isEmpty) {
+      return 3.0; // Default neutral mood
+    }
+    
+    double totalMood = 0;
+    int validInteractions = 0;
+    
+    // Iterate through the values of the map (each interaction is a Map<String, dynamic>)
+    for (var interaction in contact.interactionHistory.values) {
+      // Check if the interaction has a mood field
+      if (interaction.containsKey('mood') && interaction['mood'] != null) {
+        int mood = interaction['mood'];
+        // Ensure mood is within valid range (1-5)
+        mood = mood.clamp(1, 5);
+        totalMood += mood;
+        validInteractions++;
+      } else {
+        // No mood field, assign default 3
+        totalMood += 3;
+        validInteractions++;
+      }
+    }
+    
+    if (validInteractions == 0) {
+      return 3.0; // Fallback to neutral
+    }
+    
+    return totalMood / validInteractions;
+  }
+  
+  // Calculate mood impact factor (0.85 to 1.15 range)
+  double _calculateMoodImpactFactor(double averageMood) {
+    // Map average mood (1-5) to factor (MOOD_MIN_FACTOR to MOOD_MAX_FACTOR)
+    // Mood 1 -> 0.85, Mood 3 -> 1.0, Mood 5 -> 1.15
+    final normalizedMood = (averageMood - 1) / 4; // 0 to 1 range
+    final factor = MOOD_MIN_FACTOR + (normalizedMood * (MOOD_MAX_FACTOR - MOOD_MIN_FACTOR));
+    return factor;
+  }
 
   // Calculate CDI for a contact with dynamic weighting based on data confidence
   double calculateCDI(
@@ -54,6 +102,10 @@ class SocialUniverseService {
       groupsList: groupsList,
     );
     
+    // Calculate mood reflection score
+    final double averageMood = _calculateMoodScore(contact);
+    final double moodImpactFactor = _calculateMoodImpactFactor(averageMood);
+    
     // VIP bonus
     final double vipBonus = contact.isVIP ? 20.0 : 0.0;
     
@@ -78,6 +130,17 @@ class SocialUniverseService {
       dataConfidence *= 0.6; // Reduce confidence by 40%
     }
     
+    // Adjust confidence based on number of mood data points
+    // More mood data points = higher confidence in mood impact
+    if (contact.interactionHistory.isNotEmpty) {
+      final int moodDataPoints = contact.interactionHistory.length;
+      if (moodDataPoints > 10) {
+        dataConfidence = (dataConfidence + 0.1).clamp(0.0, 1.0);
+      } else if (moodDataPoints < 3) {
+        dataConfidence = (dataConfidence - 0.1).clamp(0.0, 1.0);
+      }
+    }
+    
     // Calculate weights
     final double interactionWeight = dataConfidence; // Recency+Consistency weight
     final double groupWeight = 1.0 - dataConfidence; // Group priority weight
@@ -85,12 +148,20 @@ class SocialUniverseService {
     // Combine recency and consistency (75% recency, 25% consistency as before)
     final double interactionScore = (0.75 * recencyScore) + (0.25 * consistencyScore);
     
-    // Calculate final CDI with weighted combination
-    double rawCDI = (interactionWeight * interactionScore) + 
-                    (groupWeight * groupPriorityScore) + 
-                    vipBonus;
+    // Calculate base CDI before mood adjustment
+    double baseCDI = (interactionWeight * interactionScore) + 
+                     (groupWeight * groupPriorityScore) + 
+                     vipBonus;
+    
+    // Apply mood impact factor to the base CDI
+    // The mood impact is applied with weighting based on data confidence
+    // More confident we are in the data, the more mood affects the score
+    final double moodWeight = dataConfidence * MOOD_WEIGHT;
+    final double finalCDI = baseCDI * (1 - moodWeight) + 
+                            (baseCDI * moodImpactFactor) * moodWeight;
     
     // Ensure VIP status always gives at least a minimum CDI
+    double rawCDI = finalCDI;
     if (contact.isVIP && rawCDI < 70) {
       rawCDI = 70.0; // VIP floor
     }
@@ -98,7 +169,78 @@ class SocialUniverseService {
     // Clamp to 15-100 range
     return max(CDI_FLOOR, min(CDI_CEILING, rawCDI));
   }
-  
+
+  double calculateCSS(Contact contact, {
+    required int completedNudgesForContact,
+    required int totalNudgesForContact,
+  }) {
+    // Component 1: Reciprocity Ratio (0.6 weight)
+    // Uses nudge completion as proxy for "did they respond to your reach-out"
+    final double reciprocityRatio = totalNudgesForContact > 0
+        ? (completedNudgesForContact / totalNudgesForContact).clamp(0.0, 1.0)
+        : 0.5; // no data = assume balanced
+
+    // Component 2: Interaction Frequency consistency (0.25 weight)
+    // How close are they to their target contact frequency?
+    final double targetDays = contact.targetIntervalDays;
+    final double actualDays = DateTime.now()
+        .difference(contact.lastContacted).inDays.toDouble();
+    final double frequencyScore = actualDays <= targetDays
+        ? 1.0
+        : (targetDays / actualDays).clamp(0.0, 1.0);
+
+    // Component 3: Social Harmony — CDI alignment (0.15 weight)
+    // Higher CDI = more harmonious. Normalize 0-100 to 0-1
+    final double harmonyScore = (contact.cdi / 100.0).clamp(0.0, 1.0);
+
+    // Relationship Duration bonus (0-10 bonus points for long relationships)
+    final double durationBonus = _calculateDurationBonus(contact);
+
+    // CSS Formula from spec
+    final double rawCSS = (
+      (0.6 * reciprocityRatio) +
+      (0.25 * frequencyScore) +
+      (0.15 * harmonyScore)
+    ) * 100.0;
+
+    return (rawCSS + durationBonus).clamp(0.0, 100.0);
+  }
+
+  double _calculateDurationBonus(Contact contact) {
+    // Contacts known > 2 years get up to 10 bonus stability points
+    final years = DateTime.now()
+      .difference(contact.rawBandSince).inDays / 365.0;
+    return (years * 5).clamp(0.0, 10.0);
+  }
+
+  // Consumer-friendly CSS label
+  String getCSSLabel(double css) {
+    if (css >= 76) return 'Strong';
+    if (css >= 41) return 'Growing';
+    return 'Needs care';
+  }
+
+  Color getCSSColor(double css, BuildContext context) {
+    if (css >= 76) return const Color(0xFF1D9E75); // teal - strong
+    if (css >= 41) return const Color(0xFFEF9F27); // amber - developing
+    return const Color(0xFFE24B4A); // red - fragile
+  }
+
+  // Update contact with CSS calculation
+  Contact updateContactCSS(
+    Contact contact, {
+    required int completedNudgesForContact,
+    required int totalNudgesForContact,
+  }) {
+    final newCSS = calculateCSS(
+      contact,
+      completedNudgesForContact: completedNudgesForContact,
+      totalNudgesForContact: totalNudgesForContact,
+    );
+    
+    return contact.copyWith(css: newCSS);
+  }
+    
   // Calculate group priority score based on actual group data
   double _calculateGroupPriorityScore(
     Contact contact, {
@@ -220,12 +362,12 @@ class SocialUniverseService {
       } else {
         groupBasedRing = 'outer';
       }
-      print('group found successfully');
-      print(contactGroup.orderIndex); 
-      print(groupLength);
+      //print('group found successfully');
+      //print(contactGroup.orderIndex); 
+      //print(groupLength);
     } else {
       // Fallback if group not found - use frequency as proxy
-      print('group not found unfortunately');
+      //print('group not found unfortunately');
       if (contact.frequency >= 4) {
         groupBasedRing = 'inner';
       } else if (contact.frequency >= 2) {
@@ -251,9 +393,9 @@ class SocialUniverseService {
     // STEP 6: Calculate final ring with weighting
     if (!hasMeaningfulInteractions) {
       // No meaningful data yet - use group priority
-      // print('No meaningful data');
-      // print(contact.name); print(contact.cdi); print(contact.computedRing);
-      // print(groupBasedRing);
+      // //print('No meaningful data');
+      // //print(contact.name); //print(contact.cdi); //print(contact.computedRing);
+      // //print(groupBasedRing);
       return groupBasedRing;
     } else {
       // Have some data - weight based on interaction count (max 70% interaction)
@@ -266,9 +408,9 @@ class SocialUniverseService {
       
       double weightedAvg = (groupVal * groupWeight) + (interactionVal * interactionWeight);
       int roundedVal = weightedAvg.round().clamp(1, 3);
-       print('Yes meaningful data');
-      print(contact.name); print(contact.interactionCountInWindow);
-      print(roundedVal);
+       //print('Yes meaningful data');
+      //print(contact.name); //print(contact.interactionCountInWindow);
+      //print(roundedVal);
       return roundedVal == 3 ? 'inner' : roundedVal == 2 ? 'middle' : 'outer';
     }
   }
@@ -328,11 +470,13 @@ class SocialUniverseService {
     return (hash.abs() % 360).toDouble();
   }
   
-  // Update contact with fresh CDI calculation
+  // Update the existing updateContactCDI method to also handle CSS
   Contact updateContactCDI(
     Contact contact, {
     required Map<String, SocialGroup> socialGroups,
     required List<SocialGroup> groupsList,
+    int completedNudgesForContact = 0,
+    int totalNudgesForContact = 0,
   }) {
     // Calculate CDI with groups
     final newCDI = calculateCDI(
@@ -354,13 +498,23 @@ class SocialUniverseService {
       groupsList: groupsList,
     );
     
-    return contact.copyWith(
+    // Create updated contact with CDI changes
+    final updatedContact = contact.copyWith(
       cdi: newCDI,
       rawBand: newRawBand,
       rawBandSince: rawBandChanged ? now : contact.rawBandSince,
       computedRing: newComputedRing,
-      // Generate angle if not already set
       angleDeg: contact.angleDeg == 0 ? generateStableAngle(contact.id) : contact.angleDeg,
     );
+    
+    // Calculate and update CSS
+    final newCSS = calculateCSS(
+      updatedContact,
+      completedNudgesForContact: completedNudgesForContact,
+      totalNudgesForContact: totalNudgesForContact,
+    );
+    
+    return updatedContact.copyWith(css: newCSS);
   }
+
 }

@@ -54,7 +54,7 @@ Future<void> _loadSuggestions() async {
       _isLoading = false;
     });
   } catch (e) {
-    print('Error loading suggestions: $e');
+    //print('Error loading suggestions: $e');
     setState(() {
       _isLoading = false;
     });

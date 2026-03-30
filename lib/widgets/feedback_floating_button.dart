@@ -399,7 +399,7 @@ void _closeMenu() {
                 // behavior: HitTestBehavior.opaque,
                 // padding: EdgeInsets.zero,
                 onTap: () {
-                  print('Tapped on: $text'); 
+                  //print('Tapped on: $text'); 
                   onTap();
                   _closeMenu();
                 },
@@ -435,7 +435,7 @@ void _closeMenu() {
                 // behavior: HitTestBehavior.opaque,
                 padding: EdgeInsets.zero,
                 onPressed: () {
-                  print('Tapped on: $text'); 
+                  //print('Tapped on: $text'); 
                   onTap();
                   _closeMenu();
                 },

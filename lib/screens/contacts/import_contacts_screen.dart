@@ -114,7 +114,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   //       if (_availableGroups.isNotEmpty) {
   //         groupsForSelection = _availableGroups;
   //       } else {
-  //         print('No groups from arguments, fetching from API');
+  //         //print('No groups from arguments, fetching from API');
   //         User thisUser = await apiService.getUser();
   //         var userGroups = thisUser.groups;
   //         groupsForSelection = [];
@@ -203,11 +203,11 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   //           Contact thisContact = importedContacts.where((contact) => contact.name == indexContact.name).first;
   //           String contactId = thisContact.id;
   //           importedContactIds.add(contactId);
-  //           print(contactId); print(recentlyImportedContacts[i].name); print(thisContact.toMap());
+  //           //print(contactId); //print(recentlyImportedContacts[i].name); //print(thisContact.toMap());
   //           importedContacts.add(recentlyImportedContacts[i]);
   //         }
-  //         print('Imported contact ids: $importedContactIds');
-  //         print('Imported contacts are: $importedContacts');
+  //         //print('Imported contact ids: $importedContactIds');
+  //         //print('Imported contacts are: $importedContacts');
           
   //         // CONDITIONALLY SCHEDULE NUDGES
   //         if (!_isOnboarding && recentlyImportedContacts.isNotEmpty) {
@@ -340,7 +340,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
     // First, get the group selection
     final apiService = Provider.of<ApiService>(context, listen: false);
     final authService = Provider.of<AuthService>(context, listen: false);
-    print('stage 1');
+    //print('stage 1');
     
     SocialGroup? selectedGroup;
     
@@ -391,14 +391,14 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
     });
 
     // Check and request permission
-    print('Checking contacts permission...');
+    //print('Checking contacts permission...');
     bool permissionOk = await fContacts.FlutterContacts.requestPermission();
     
     if (!permissionOk) {
       // For iOS, check detailed status
       if (Platform.isIOS) {
         final status = await Permission.contacts.status;
-        print('iOS contacts permission status: $status');
+        //print('iOS contacts permission status: $status');
         
         if (status.isPermanentlyDenied) {
           _showSettingsDialog('Contacts access is disabled. Please enable it in Settings to import your contacts.', themeProvider);
@@ -416,7 +416,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
     }
 
     // Get contacts with ALL properties (including events for birthdays)
-    print('Fetching contacts with full properties...');
+    //print('Fetching contacts with full properties...');
     List<fContacts.Contact> contacts = [];
     
     try {
@@ -425,26 +425,13 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
         withPhoto: true,       // Get high-res photos
         withThumbnail: true,   // Get thumbnails too
       );
-      print('Successfully retrieved ${contacts.length} contacts');
+      //print('Successfully retrieved ${contacts.length} contacts');
       
       // Debug: Check if birthdays are present
-      if (contacts.isNotEmpty) {
-        int contactsWithBirthdays = 0;
-        for (var contact in contacts) {
-          if (contact.events.isNotEmpty) {
-            contactsWithBirthdays++;
-            print('Contact ${contact.displayName} has ${contact.events.length} events');
-            for (var event in contact.events) {
-              print('  Event: ${event.label}, Date: ${event.year}-${event.month}-${event.day}');
-            }
-          }
-        }
-        print('Found $contactsWithBirthdays contacts with events');
-      }
       
-    } catch (e, stack) {
-      print('Error getting contacts: $e');
-      print('Stack trace: $stack');
+    } catch (e) {
+      //print('Error getting contacts: $e');
+      //print('Stack trace: $stack');
       
       // ScaffoldMessenger.of(context).showSnackBar(
       //   SnackBar(
@@ -513,10 +500,10 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
       return hasName || hasPhone || hasEmail;
     }).toList();
     
-    print('Valid contacts after filtering: ${validContacts.length}');
+    //print('Valid contacts after filtering: ${validContacts.length}');
 
     final existingContacts = await apiService.getAllContacts();
-    print('Existing contacts retrieved: ${existingContacts.length}');
+    //print('Existing contacts retrieved: ${existingContacts.length}');
 
     final selectedContacts = await Navigator.of(context).push<List<fContacts.Contact>>(
       MaterialPageRoute(
@@ -567,7 +554,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
     );
 
     setState(() => _isImporting = false);
-    print('The result is: $result');
+    //print('The result is: $result');
     
     if (result['success'] == true) {
       setState(() {
@@ -585,11 +572,11 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
         Contact thisContact = importedContacts.where((contact) => contact.name == indexContact.name).first;
         String contactId = thisContact.id;
         importedContactIds.add(contactId);
-        print(contactId); print(recentlyImportedContacts[i].name); print(thisContact.toMap());
+        //print(contactId); //print(recentlyImportedContacts[i].name); //print(thisContact.toMap());
         importedContacts.add(recentlyImportedContacts[i]);
       }
-      print('Imported contact ids: $importedContactIds');
-      print('Imported contacts are: $importedContacts');
+      //print('Imported contact ids: $importedContactIds');
+      //print('Imported contacts are: $importedContacts');
       
       // CONDITIONALLY SCHEDULE NUDGES
       if (_isOnboarding == false && recentlyImportedContacts.isNotEmpty) {
@@ -1418,10 +1405,10 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
     if (deviceLastName.isNotEmpty) deviceNameVariations.add(deviceLastName);
     
     // Debug print
-    print('Checking contact: ${contact.displayName}');
-    print('Device phones: $allDevicePhones');
-    print('Device emails: $deviceEmails');
-    print('Device name variations: $deviceNameVariations');
+    //print('Checking contact: ${contact.displayName}');
+    //print('Device phones: $allDevicePhones');
+    //print('Device emails: $deviceEmails');
+    //print('Device name variations: $deviceNameVariations');
     
     for (final existingContact in widget.existingContacts) {
       // Check 1: Phone number match (primary identifier)
@@ -1430,7 +1417,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
         
         // Direct match
         if (allDevicePhones.contains(existingPhone)) {
-          print('MATCH: Phone number match for ${contact.displayName}');
+          //print('MATCH: Phone number match for ${contact.displayName}');
           return true;
         }
         
@@ -1441,7 +1428,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
             if (devicePhone.length >= 10) {
               final deviceLast10 = devicePhone.substring(devicePhone.length - 10);
               if (existingLast10 == deviceLast10) {
-                print('MATCH: Last 10 digits match for ${contact.displayName}');
+                //print('MATCH: Last 10 digits match for ${contact.displayName}');
                 return true;
               }
             }
@@ -1453,7 +1440,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
       if (existingContact.email.isNotEmpty && deviceEmails.isNotEmpty) {
         final existingEmail = existingContact.email.toLowerCase().trim();
         if (deviceEmails.contains(existingEmail)) {
-          print('MATCH: Email match for ${contact.displayName}');
+          //print('MATCH: Email match for ${contact.displayName}');
           return true;
         }
       }
@@ -1465,7 +1452,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
         
         // Direct name match
         if (deviceNameVariations.contains(existingName)) {
-          print('MATCH: Direct name match for ${contact.displayName}');
+          //print('MATCH: Direct name match for ${contact.displayName}');
           return true;
         }
         
@@ -1480,7 +1467,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
               final similarity = commonChars / existingName.length;
               
               if (similarity > 0.8) { // 80% similarity threshold
-                print('MATCH: High similarity name match for ${contact.displayName}');
+                //print('MATCH: High similarity name match for ${contact.displayName}');
                 return true;
               }
             }
@@ -1544,12 +1531,12 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
       
       // If we have strong combined evidence, consider it a match
       if (evidenceScore >= 4) {
-        print('MATCH: Combined evidence (score $evidenceScore) for ${contact.displayName}');
+        //print('MATCH: Combined evidence (score $evidenceScore) for ${contact.displayName}');
         return true;
       }
     }
     
-    print('NO MATCH found for ${contact.displayName}');
+    //print('NO MATCH found for ${contact.displayName}');
     return false;
   }
 

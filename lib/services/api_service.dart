@@ -39,53 +39,60 @@ class ApiService {
         if (token != null) {
           // Store token in user document
           await updateUser({'fcmToken': token});
-          print('FCM Token stored: $token');
+          //print('FCM Token stored: $token');
           return token;
         }
       }
       
       return null;
     } catch (e) {
-      print('Error initializing FCM: $e');
+      //print('Error initializing FCM: $e');
       return null;
     }
   }
 
+  String get _currentUserId {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) throw Exception('User not authenticated');
+    return uid;
+  }
+
     // Call Cloud Function to trigger scheduled notifications
   Future<Map<String, dynamic>> scheduleRegularNotifications(List<Contact> contactIds) async {
-    String contactId = _auth.currentUser!.uid;
-    print('sending scheduled nudges');
+    final userId = _currentUserId;
+    String contactId = userId;
+    //print('sending scheduled nudges');
     try {
-      print('phase 1');
+      //print('phase 1');
       final currentUser = _auth.currentUser;
       if (currentUser == null) throw Exception('No user logged in');
       
       final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('rescheduleUserNudges');
-      print('phase 2');
+      //print('phase 2');
       
       final result = await callable.call({
         'contactId': contactId,
       });
-      print (result.data); print(' is the result');
+      print (result.data); //print(' is the result');
 
       scheduleEventNotifications(contactIds);
       
       return result.data;
     } catch (e) {
-      print('Error scheduling nudges: $e');
+      //print('Error scheduling nudges: $e');
       throw Exception('Failed to trigger nudge: $e');
     }
   }
 
   Future<Map<String, dynamic>> scheduleEventNotifications (List<Contact> contacts) async {
-    print('sending scheduled nudges');
+    //print('sending scheduled nudges');
     try {
-      print('phase 1');
+      //print('phase 1');
       final currentUser = _auth.currentUser;
       if (currentUser == null) throw Exception('No user logged in');
       
       final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('scheduleEventNotificationsForContacts');
-      print('phase 2');
+      //print('phase 2');
       
       List<String> contactIds = [];
       for (int i =0; i<contacts.length; i++) {
@@ -94,24 +101,24 @@ class ApiService {
       final result = await callable.call({
         'contactIds': contactIds,
       });
-      print (result.data); print(' is the result');
+      print (result.data); //print(' is the result');
 
       return result.data;
     } catch (e) {
-      print('Error scheduling nudges: $e');
+      //print('Error scheduling nudges: $e');
       throw Exception('Failed to trigger nudge: $e');
     }
   }
 
     Future<Map<String, dynamic>> cancelEventNotifications (List<Contact> contacts) async {
-    print('sending scheduled nudges');
+    //print('sending scheduled nudges');
     try {
-      print('phase 1');
+      //print('phase 1');
       final currentUser = _auth.currentUser;
       if (currentUser == null) throw Exception('No user logged in');
       
       final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('cancelEventNotificationsForContacts');
-      print('phase 2');
+      //print('phase 2');
       
       List<String> contactIds = [];
       for (int i =0; i<contacts.length; i++) {
@@ -120,11 +127,11 @@ class ApiService {
       final result = await callable.call({
         'contactIds': contactIds,
       });
-      print (result.data); print(' is the result');
+      print (result.data); //print(' is the result');
 
       return result.data;
     } catch (e) {
-      print('Error cancelling event notifications: $e');
+      //print('Error cancelling event notifications: $e');
       throw Exception('Failed to cancel event notifications: $e');
     }
   }
@@ -133,8 +140,8 @@ class ApiService {
    try {
       final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('rescheduleUserNudgesHourlyTest');
       final result = await callable.call();
-      print('called hourly notification function');
-      print(result.data);
+      //print('called hourly notification function');
+      //print(result.data);
       return result.data;
     } catch (e) {
       throw Exception('Failed to trigger nudge: $e');
@@ -158,13 +165,13 @@ class ApiService {
         'rescheduled': rescheduled
       });
       
-      print('✅ Called scheduleSingleNudge function for contact: $contactId');
-      print('📅 Scheduled for: $scheduledTimeIso');
-      print('📊 Result: ${result.data}');
+      //print('✅ Called scheduleSingleNudge function for contact: $contactId');
+      //print('📅 Scheduled for: $scheduledTimeIso');
+      //print('📊 Result: ${result.data}');
       
       return result.data;
     } catch (e) {
-      print('❌ Error scheduling single nudge: $e');
+      //print('❌ Error scheduling single nudge: $e');
       throw Exception('Failed to schedule nudge: $e');
     }
   }
@@ -180,13 +187,13 @@ class ApiService {
         'contactIds': contactIds,
       });
       
-      print('✅ Called scheduleSpacedNudgesForContacts function');
-      print('👥 Contacts to schedule: ${contactIds.length}');
-      print('📊 Result: ${result.data}');
+      //print('✅ Called scheduleSpacedNudgesForContacts function');
+      //print('👥 Contacts to schedule: ${contactIds.length}');
+      //print('📊 Result: ${result.data}');
       
       return result.data;
     } catch (e) {
-      print('❌ Error scheduling nudges for contacts: $e');
+      //print('❌ Error scheduling nudges for contacts: $e');
       throw Exception('Failed to schedule nudges for contacts: $e');
     }
   }
@@ -202,11 +209,11 @@ class ApiService {
         'nudgeId': nudgeId,
       });
       
-      print('📊 Result: ${result.data}');
+      //print('📊 Result: ${result.data}');
       
       return result.data;
     } catch (e) {
-      print('❌ Error cancelling single nudge: $e');
+      //print('❌ Error cancelling single nudge: $e');
       throw Exception('Failed to cancel the nudge: $e');
     }
   }
@@ -222,11 +229,11 @@ class ApiService {
         'nudgeIds': nudgeIds,
       });
       
-      print('📊 Result: ${result.data}');
+      //print('📊 Result: ${result.data}');
       
       return result.data;
     } catch (e) {
-      print('❌ Error cancelling nudges: $e');
+      //print('❌ Error cancelling nudges: $e');
       throw Exception('Failed to cancel nudges: $e');
     }
   }
@@ -244,24 +251,25 @@ class ApiService {
 
 
    Future<Map<String, dynamic>> cancelUserNotifications() async {
-    String contactId = _auth.currentUser!.uid;
-    print('sending scheduled nudges');
+    final userId = _currentUserId;
+    String contactId = userId;
+    //print('sending scheduled nudges');
     try {
-      print('phase 1');
+      //print('phase 1');
       final currentUser = _auth.currentUser;
       if (currentUser == null) throw Exception('No user logged in');
       
       final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('cancelUserNudges');
-      print('phase 2');
+      //print('phase 2');
       
       final result = await callable.call({
         'contactId': contactId,
       });
-      print (result.data); print(' is the result');
+      print (result.data); //print(' is the result');
       
       return result.data;
     } catch (e) {
-      print('Error scheduling nudges: $e');
+      //print('Error scheduling nudges: $e');
       throw Exception('Failed to trigger nudge: $e');
     }
   }
@@ -278,30 +286,30 @@ class ApiService {
       
       return result.data;
     } catch (e) {
-      print('Error cancelling nudges for contacts: $e');
+      //print('Error cancelling nudges for contacts: $e');
       throw Exception('Failed to cancel nudges for contacts: $e');
     }
   }
 
   // Call Cloud Function to trigger manual nudge
   Future<Map<String, dynamic>> triggerManualNudge(String contactId) async {
-    print('sending test nudge'); print(contactId);
+    //print('sending test nudge'); //print(contactId);
     try {
-      print('phase 1');
+      //print('phase 1');
       final currentUser = _auth.currentUser;
       if (currentUser == null) throw Exception('No user logged in');
       
       final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('triggerManualNudge');
-      print('phase 2');
+      //print('phase 2');
       
       final result = await callable.call({
         'contactId': contactId,
       });
-      print (result.data); print(' is the result');
+      print (result.data); //print(' is the result');
       
       return result.data;
     } catch (e) {
-      print('Error triggering manual nudge: $e');
+      //print('Error triggering manual nudge: $e');
       throw Exception('Failed to trigger nudge: $e');
     }
   }
@@ -320,7 +328,7 @@ class ApiService {
       
       return result.data;
     } catch (e) {
-      print('Error scheduling test nudges: $e');
+      //print('Error scheduling test nudges: $e');
       throw Exception('Failed to schedule test nudges: $e');
     }
   }
@@ -336,7 +344,7 @@ class ApiService {
       
       return result.data;
     } catch (e) {
-      print('Error cleaning up test nudges: $e');
+      //print('Error cleaning up test nudges: $e');
       throw Exception('Failed to clean up test nudges: $e');
     }
   }
@@ -380,9 +388,9 @@ class ApiService {
             'updatedAt': FieldValue.serverTimestamp(),
           });
           
-          print('✅ User $userId upvoted feedback $feedbackId');
+          //print('✅ User $userId upvoted feedback $feedbackId');
         } else {
-          print('⚠️ User already upvoted this feedback');
+          //print('⚠️ User already upvoted this feedback');
         }
       } else {
         // Remove upvote if user has upvoted
@@ -395,13 +403,13 @@ class ApiService {
             'updatedAt': FieldValue.serverTimestamp(),
           });
           
-          print('✅ User $userId removed upvote from feedback $feedbackId');
+          //print('✅ User $userId removed upvote from feedback $feedbackId');
         } else {
-          print('⚠️ User hasn\'t upvoted this feedback');
+          //print('⚠️ User hasn\'t upvoted this feedback');
         }
       }
     } catch (e) {
-      print('❌ Error upvoting feedback: $e');
+      //print('❌ Error upvoting feedback: $e');
       throw Exception('Failed to upvote feedback: $e');
     }
   }
@@ -421,7 +429,7 @@ class ApiService {
       
       return upvotes.any((upvote) => upvote['userId'] == currentUser.uid);
     } catch (e) {
-      print('Error checking if user upvoted: $e');
+      //print('Error checking if user upvoted: $e');
       return false;
     }
   }
@@ -438,7 +446,7 @@ class ApiService {
       
       return upvotes?.length ?? 0;
     } catch (e) {
-      print('Error getting upvote count: $e');
+      //print('Error getting upvote count: $e');
       return 0;
     }
   }
@@ -476,7 +484,7 @@ class ApiService {
       final exists = result.data['exists'] as bool;
       return exists;
     } catch (e) {
-      print('Error checking email: $e');
+      //print('Error checking email: $e');
       return false; // fallback
     }
   }
@@ -500,7 +508,7 @@ class ApiService {
           if (!userData.containsKey(key) || userData[key] == null) {
             updates[key] = defaultValue;
             needsUpdate = true;
-            print('Adding missing field: $key with value: $defaultValue');
+            //print('Adding missing field: $key with value: $defaultValue');
           }
         });
         
@@ -509,31 +517,31 @@ class ApiService {
             (userData['groups'] is List && (userData['groups'] as List).isEmpty)) {
           updates['groups'] = defaultValues['groups'];
           needsUpdate = true;
-          print('Adding default groups');
+          //print('Adding default groups');
         }
         
         if (userData['goals'] == null) {
           updates['goals'] = defaultValues['goals'];
           needsUpdate = true;
-          print('Adding default goals');
+          //print('Adding default goals');
         }
         
         if (userData['nudges'] == null) {
           updates['nudges'] = defaultValues['nudges'];
           needsUpdate = true;
-          print('Adding default nudges');
+          //print('Adding default nudges');
         }
         
         // Update the document if any fields are missing
         if (needsUpdate) {
           await _usersCollection.doc(userId).update(updates);
-          print('User document updated with missing fields for user: $userId');
+          //print('User document updated with missing fields for user: $userId');
         } else {
-          print('User document is complete for user: $userId');
+          //print('User document is complete for user: $userId');
         }
       }
     } catch (e) {
-      print('Error ensuring user document completeness: $e');
+      //print('Error ensuring user document completeness: $e');
       // Don't throw here, as we don't want to block the app if this fails
     }
   }
@@ -650,7 +658,7 @@ class ApiService {
 
   // Contact methods
   Stream<List<Contact>> getContactsStream() {
-    String userId = _auth.currentUser!.uid;
+    final userId = _currentUserId;
     return _getUserContactsCollection(userId)
         .orderBy('name')
         .snapshots()
@@ -660,15 +668,15 @@ class ApiService {
   }
 
   Future<List<Contact>> getAllContacts() async{
-    String userId = _auth.currentUser!.uid;
+    final userId = _currentUserId;
     QuerySnapshot snap = await _getUserContactsCollection(userId).orderBy('name').get();
-    print(snap.docs.length); print(' is the contact length');
+    //print(snap.docs.length); //print(' is the contact length');
     return snap.docs.map((doc) => Contact.fromMap(doc.data() as Map<String, dynamic>)).toList();
   }
 
 
   Future<void> addContact(Contact contact) async {
-    String userId = _auth.currentUser!.uid;
+    final userId = _currentUserId;
     try {
       final contactData = contact.toMap();
       String contactId = contact.id;
@@ -682,7 +690,7 @@ class ApiService {
   }
 
  Future<void> updateContact(Contact contact) async {
-  String userId = _auth.currentUser!.uid;
+  final userId = _currentUserId;
     try {
       await _getUserContactsCollection(userId)
           .doc(contact.id)
@@ -734,16 +742,16 @@ Future<void> deleteNudgeFromFirestore({
     // Delete the document
     await nudgeRef.delete();
     
-    print('✅ Successfully deleted nudge: $nudgeId from Firestore');
+    //print('✅ Successfully deleted nudge: $nudgeId from Firestore');
     
   } catch (e) {
-    print('❌ Error deleting nudge from Firestore: $e');
+    //print('❌ Error deleting nudge from Firestore: $e');
     throw Exception('Failed to delete nudge: $e');
   }
 }
 
   Future<void> deleteContact(String contactId) async {
-    String userId = _auth.currentUser!.uid;
+    final userId = _currentUserId;
     try {
       await _getUserContactsCollection(userId).doc(contactId).delete();
     } catch (e) {
@@ -761,8 +769,8 @@ Future<void> deleteNudgeFromFirestore({
 
   Future<void> updateUser(Map<String, dynamic> updates) async {
     try {
-      String userId = _auth.currentUser!.uid;
-      print(userId); print(' is the id');
+      final userId = _currentUserId;
+      //print(userId); //print(' is the id');
       await _usersCollection.doc(userId).update(updates);
     } catch (e) {
       throw Exception('Failed to update user: $e');
@@ -780,7 +788,7 @@ Future<void> deleteNudgeFromFirestore({
     var currentUser = _auth.currentUser;
     QuerySnapshot snap = await _firestore.collection('users').doc(currentUser!.uid).collection('nudges').get();
     if (snap.docs.isEmpty) {
-      print('dude nudges are empty');
+      //print('dude nudges are empty');
     }
     List<Nudge> allNudges = [];
     for (int i=0; i<snap.docs.length; i++) {
@@ -819,7 +827,7 @@ Future<void> deleteNudgeFromFirestore({
   // Stream<List<SocialGroup>> getGroupsStream() {
   //   return userStream.map((user) {  
   //    var list =  user.groups!.map((groupData) => SocialGroup.fromMap(groupData)).toList();
-  //    print(list); print(' is the list');
+  //    //print(list); //print(' is the list');
   //     return list;
   //   });
   // }
@@ -839,7 +847,7 @@ Future<void> deleteNudgeFromFirestore({
         try {
           return SocialGroup.fromMap(groupData);
         } catch (e) {
-          print('Error parsing group data: $e');
+          //print('Error parsing group data: $e');
           // Return a default group or handle error as needed
           return SocialGroup(
             id: 'error',
@@ -859,7 +867,7 @@ Future<void> deleteNudgeFromFirestore({
       }).toList();
     });
   } catch (e) {
-    print('Error in getGroupsStream: $e');
+    //print('Error in getGroupsStream: $e');
     // Return an empty stream on error
     return Stream.value(<SocialGroup>[]);
   }
@@ -897,7 +905,7 @@ Future<void> addGroup(SocialGroup group) async {
         'updatedAt': DateTime.now(),
       });
       
-      print('✅ Added new group "${group.name}" at top position');
+      //print('✅ Added new group "${group.name}" at top position');
     }
   } catch (e) {
     throw Exception('Failed to create group: $e');
@@ -934,7 +942,7 @@ Future<void> updateGroup(SocialGroup group) async {
   Future<void> updateGroups(List<SocialGroup> groups) async {
     try {
       final currentUser = _auth.currentUser;
-      print(groups); print(' is the groups');
+      //print(groups); //print(' is the groups');
       List<Map<String, dynamic>> groupMaps = [];
       for (int i =0; i < groups.length; i++) {
         groupMaps.add(groups[i].toMap());
@@ -973,7 +981,7 @@ Future<void> updateGroup(SocialGroup group) async {
       for (int i =0; i<groupContacts.length; i++) {
         groupContactIds.add(groupContacts[i].id);
       }
-      print(groupContactIds); print('are the group contacts');
+      //print(groupContactIds); //print('are the group contacts');
       if (previousName != group.name) {
         await updateGroupForContacts(groupContacts, group);
       }
@@ -981,7 +989,7 @@ Future<void> updateGroup(SocialGroup group) async {
       await scheduleNudgesForContacts(contactIds: groupContactIds);
       return;
     } catch (e){
-      print('The error is: $e');
+      //print('The error is: $e');
       throw Exception('Failed to reschedule Nudges for Group Contacts.');
     }
   }
@@ -1164,9 +1172,9 @@ Future<Map<String, dynamic>> register(String email, String password) async {
   Future<bool> deleteUser() async{
      try {
       final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('deleteUserAccount');
-      final result = await callable.call();
-      print('called hourly notification function');
-      print(result.data);
+      await callable.call();
+      //print('called hourly notification function');
+      //print(result.data);
       return true;
     } catch (e) {
       // throw Exception('Failed to trigger nudge: $e');
@@ -1177,9 +1185,9 @@ Future<Map<String, dynamic>> register(String email, String password) async {
   Future<bool> sendTestEventNotification() async{
      try {
       final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('sendTestEventNotification');
-      final result = await callable.call();
-      print('called hourly notification function');
-      print(result.data);
+      await callable.call();
+      //print('called hourly notification function');
+      //print(result.data);
       return true;
     } catch (e) {
       // throw Exception('Failed to trigger nudge: $e');
@@ -1189,13 +1197,13 @@ Future<Map<String, dynamic>> register(String email, String password) async {
 
   Future<bool> sendTestBirthdayNotification(Contact contact) async{
      try {
-      print('attempting test birthday');
+      //print('attempting test birthday');
       final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('sendTestBirthdayNotification');
-      final result = await callable.call({
+      await callable.call({
         'contact': contact.toMap()
       });
-      print('called test birthday function');
-      print(result.data);
+      //print('called test birthday function');
+      //print(result.data);
       return true;
     } catch (e) {
       // throw Exception('Failed to trigger nudge: $e');
@@ -1241,9 +1249,9 @@ Future<Map<String, dynamic>> register(String email, String password) async {
       // Add to feedbacks collection
       await _firestore.collection('feedbacks').add(feedbackData);
       
-      print('Feedback submitted from screen: $screenName');
+      //print('Feedback submitted from screen: $screenName');
     } catch (e) {
-      print('Error submitting feedback: $e');
+      //print('Error submitting feedback: $e');
       throw Exception('Failed to submit feedback: $e');
     }
   }
@@ -1277,7 +1285,7 @@ Future<Map<String, dynamic>> register(String email, String password) async {
           })
           .toList());
     } catch (e) {
-      print('Error getting feedbacks stream: $e');
+      //print('Error getting feedbacks stream: $e');
       return Stream.value([]);
     }
   }
@@ -1408,22 +1416,27 @@ Future<void> updateFeedbackAdminData({
         key: (group) => (group as SocialGroup).name,
         value: (group) => group as SocialGroup,
       );
-
+      
+      // Get nudge stats for this contact
+      final nudgeStats = await getNudgeStatsForContact(contact.id);
+      
       final socialUniverseService = SocialUniverseService();
       final updatedContact = socialUniverseService.updateContactCDI(
         contact,
         socialGroups: socialGroups,
-        groupsList: groupsList
+        groupsList: groupsList,
+        completedNudgesForContact: nudgeStats['completed'] ?? 0,
+        totalNudgesForContact: nudgeStats['total'] ?? 0,
       );
       
       await updateContact(updatedContact);
     } catch (e) {
-      print('Error updating CDI: $e');
-      throw Exception('Failed to update CDI: $e');
+      //print('Error updating CDI/CSS: $e');
+      throw Exception('Failed to update CDI/CSS: $e');
     }
   }
-
-    DateTime _calculateNextNudgeTime(Contact contact, DateTime interactionDateTime) {
+    
+  DateTime _calculateNextNudgeTime(Contact contact, DateTime interactionDateTime) {
     DateTime nextTime;
     
     switch (contact.period.toLowerCase()) {
@@ -1473,16 +1486,44 @@ Future<void> updateFeedbackAdminData({
     return nextTime;
   }
 
+  // Add this method to ApiService class
+  Future<Map<String, int>> getNudgeStatsForContact(String contactId) async {
+    try {
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) throw Exception('No user logged in');
+      
+      // Query nudges for this specific contact
+      final nudgesSnapshot = await _firestore
+          .collection('users')
+          .doc(currentUser.uid)
+          .collection('nudges')
+          .where('contactId', isEqualTo: contactId)
+          .get();
+      
+      int totalNudges = nudgesSnapshot.docs.length;
+      int completedNudges = nudgesSnapshot.docs
+          .where((doc) => doc.data()['status'] == 'completed')
+          .length;
+      
+      return {
+        'total': totalNudges,
+        'completed': completedNudges,
+      };
+    } catch (e) {
+      //print('Error getting nudge stats for contact: $e');
+      return {'total': 0, 'completed': 0};
+    }
+  }
 
   Future<void> logInteraction({
     required String contactId,
     required String interactionType,
     String? notes,
     String? interactionDate,
+    int? mood,
   }) async {
     try {
       final currentUser = _auth.currentUser;
-      // final nudgeService = NudgeService();
       if (currentUser == null) throw Exception('No user logged in');
       
       // Get contact
@@ -1518,7 +1559,6 @@ Future<void> updateFeedbackAdminData({
         try {
           interactionTimestamp = DateTime.parse(interactionDate);
         } catch (e) {
-          print('Error parsing provided interaction date: $interactionDate, using current time');
           interactionTimestamp = DateTime.now();
         }
       } else {
@@ -1533,6 +1573,7 @@ Future<void> updateFeedbackAdminData({
         'type': interactionType,
         'timestamp': interactionTimestamp.millisecondsSinceEpoch,
         'notes': notes,
+        'mood': mood,
       };
       
       // Count interactions in last 90 days
@@ -1554,21 +1595,25 @@ Future<void> updateFeedbackAdminData({
         interactionCountInWindow: recentInteractions,
       );
       
-      // Calculate new CDI and ring using groups
+      // Get nudge stats for this contact
+      final nudgeStats = await getNudgeStatsForContact(contactId);
+      
+      // Calculate new CDI, CSS, and ring using groups
       final socialUniverseService = SocialUniverseService();
-      final contactWithCDI = socialUniverseService.updateContactCDI(
+      final contactWithMetrics = socialUniverseService.updateContactCDI(
         updatedContact,
         socialGroups: socialGroups,
         groupsList: groupsList,
+        completedNudgesForContact: nudgeStats['completed'] ?? 0,
+        totalNudgesForContact: nudgeStats['total'] ?? 0,
       );
 
-      contactWithCDI.interactionHistory = interactionHistory;
+      contactWithMetrics.interactionHistory = interactionHistory;
       
       // Save to Firestore
-      await updateContact(contactWithCDI);
+      await updateContact(contactWithMetrics);
       await cancelNudgesForContacts([updatedContact.id]);
       
-
       DateTime nextScheduledTime = _calculateNextNudgeTime(
         contact, 
         interactionTimestamp,
@@ -1576,56 +1621,274 @@ Future<void> updateFeedbackAdminData({
 
       await scheduleSingleNudge(contactId: contact.id, scheduledTime: nextScheduledTime);
       
-      
-      
-      print('Interaction logged for ${contact.name} at $interactionTimestamp, new CDI: ${contactWithCDI.cdi}, ring: ${contactWithCDI.computedRing}');
+      //print('Interaction logged for ${contact.name} at $interactionTimestamp, new CDI: ${contactWithMetrics.cdi}, CSS: ${contactWithMetrics.css}, ring: ${contactWithMetrics.computedRing}');
       
     } catch (e) {
-      print('Error logging interaction: $e');
+      //print('Error logging interaction: $e');
       throw Exception('Failed to log interaction: $e');
     }
-  }
+  } 
     
-  // Batch update CDI for all contacts (call from daily job)
+  // Batch update CDI and CSS for all contacts (call from daily job)
   Future<void> batchUpdateCDI() async {
+  try {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) throw Exception('No user logged in');
+    
+    // Get contacts and groups in parallel
+    final contacts = await getAllContacts();
+    app_user.User userDoc = await getUser();
+    
+    // Convert groups
+    final groupsList = (userDoc.groups as List? ?? [])
+        .map((g) => SocialGroup.fromMap(g))
+        .toList();
+    
+    final socialGroups = Map.fromIterable(
+      groupsList,
+      key: (group) => (group as SocialGroup).name,
+      value: (group) => group as SocialGroup,
+    );
+    
+    final socialUniverseService = SocialUniverseService();
+    
+    for (var contact in contacts) {
+      // Get nudge stats for this contact
+      final nudgeStats = await getNudgeStatsForContact(contact.id);
+      
+      final updatedContact = socialUniverseService.updateContactCDI(
+        contact,
+        socialGroups: socialGroups,
+        groupsList: groupsList,
+        completedNudgesForContact: nudgeStats['completed'] ?? 0,
+        totalNudgesForContact: nudgeStats['total'] ?? 0,
+      );
+      await updateContact(updatedContact);
+    }
+    
+    //print('Batch CDI/CSS update completed for ${contacts.length} contacts');
+  } catch (e) {
+    //print('Error in batch CDI/CSS update: $e');
+    throw Exception('Failed to batch update CDI and CSS: $e');
+  }
+}
+
+  Future<void> saveDigestReflection({
+      required int connectedScore,
+      required int intentionalScore,
+      required List<String> needsAttentionContactIds,
+    }) async {
+      try {
+        final currentUser = _auth.currentUser;
+        if (currentUser == null) throw Exception('No user logged in');
+  
+        final userId = currentUser.uid;
+        final now = DateTime.now();
+        final timestampKey = now.millisecondsSinceEpoch.toString();
+  
+        // ── 1. Store the reflection record ──────────────────────────────────────
+        await _usersCollection
+            .doc(userId)
+            .collection('digestReflections')
+            .doc(timestampKey)
+            .set({
+          'connectedScore': connectedScore,
+          'intentionalScore': intentionalScore,
+          'needsAttentionContactIds': needsAttentionContactIds,
+          'submittedAt': now.millisecondsSinceEpoch,
+          'periodType': 'biweekly',
+        });
+  
+        // ── 2. Flag each selected contact as Needs Attention ────────────────────
+        if (needsAttentionContactIds.isNotEmpty) {
+          final batch = _firestore.batch();
+          final contactsRef = _getUserContactsCollection(userId);
+  
+          for (final contactId in needsAttentionContactIds) {
+            batch.update(contactsRef.doc(contactId), {
+              'needsAttention': true,
+              'attentionSource': 'digest',
+              'attentionSince': now.millisecondsSinceEpoch,
+            });
+          }
+  
+          await batch.commit();
+        }
+  
+        // ── 3. Update user-level digest analytics on the user document ──────────
+        await _usersCollection.doc(userId).update({
+          'lastDigestAt': now.millisecondsSinceEpoch,
+          'lastDigestConnectedScore': connectedScore,
+          'lastDigestIntentionalScore': intentionalScore,
+        });
+  
+        // ── 4. Reschedule nudges for flagged contacts across the next 7 days ────
+        // Only runs when the user actually selected contacts in Q3.
+        if (needsAttentionContactIds.isNotEmpty) {
+          await rescheduleNudgesForDigestContacts(
+            contactIds: needsAttentionContactIds,
+          );
+        }
+  
+        print('Digest reflection saved. '
+            'Connected: $connectedScore, Intentional: $intentionalScore, '
+            'Flagged contacts: ${needsAttentionContactIds.length}');
+      } catch (e) {
+        print('Error saving digest reflection: $e');
+        throw Exception('Failed to save reflection: $e');
+      }
+  }
+
+  Future<void> rescheduleNudgesForDigestContacts({
+    required List<String> contactIds,
+  }) async {
+    if (contactIds.isEmpty) return;
+ 
     try {
       final currentUser = _auth.currentUser;
       if (currentUser == null) throw Exception('No user logged in');
-      
-      // Get contacts and groups in parallel
-      final contacts = await getAllContacts();
-      app_user.User userDoc = await getUser();
-      
-      
-      // Convert groups
-      final groupsList = (userDoc.groups as List? ?? [])
-          .map((g) => SocialGroup.fromMap(g))
-          .toList();
-      
-      final socialGroups = Map.fromIterable(
-        groupsList,
-        key: (group) => (group as SocialGroup).name,
-        value: (group) => group as SocialGroup,
-      );
-      
-      final socialUniverseService = SocialUniverseService();
-      
-      for (var contact in contacts) {
-        final updatedContact = socialUniverseService.updateContactCDI(
-          contact,
-          socialGroups: socialGroups,
-          groupsList: groupsList,
-        );
-        await updateContact(updatedContact);
+ 
+      final userId = currentUser.uid;
+ 
+      // ── Step 1: Cancel all pending nudges for these contacts ────────────────
+      // Uses the targeted cancelNudgesForContacts Cloud Function, which
+      // operates only on the supplied contactIds — not the whole user list.
+      print('Cancelling existing nudges for ${contactIds.length} digest contacts...');
+      await cancelNudgesForContacts(contactIds);
+ 
+      // ── Step 2: Fetch contact objects so we can respect their settings ───────
+      final contactsRef = _getUserContactsCollection(userId);
+      final List<Contact> contacts = [];
+ 
+      for (final id in contactIds) {
+        try {
+          final doc = await contactsRef.doc(id).get();
+          if (doc.exists) {
+            final data = doc.data() as Map<String, dynamic>;
+            data['id'] = doc.id;
+            contacts.add(Contact.fromMap(data));
+          }
+        } catch (e) {
+          // Skip contacts that can't be fetched; don't fail the whole batch
+          print('Warning: could not fetch contact $id — skipping: $e');
+        }
       }
-      
-      print('Batch CDI update completed for ${contacts.length} contacts');
+ 
+      if (contacts.isEmpty) {
+        print('No valid contacts found to reschedule.');
+        return;
+      }
+ 
+      // ── Step 3: Build the 7-day distribution ────────────────────────────────
+      final now = DateTime.now();
+      const windowDays = 7;
+ 
+      // Preferred hours cycling list — varies so same-day contacts don't
+      // fire at the same minute.
+      const List<int> preferredHours = [9, 11, 14, 16, 10, 15, 17];
+ 
+      print('Scheduling ${contacts.length} digest nudges across $windowDays days...');
+ 
+      for (int i = 0; i < contacts.length; i++) {
+        final contact = contacts[i];
+ 
+        // Calculate day offset: spread evenly, never on day 0 (today)
+        // e.g. 3 contacts → days 3, 5, 7 |  7 contacts → days 1–7
+        final rawOffset = ((i + 1) * windowDays / contacts.length).ceil();
+        int dayOffset = rawOffset.clamp(1, windowDays);
+ 
+        // Pick hour from cycling list
+        int hour = preferredHours[i % preferredHours.length];
+ 
+        // ── Professional contacts: skip weekends ─────────────────────────────
+        final isProfessional = ['Client', 'Colleague', 'Mentor']
+            .contains(contact.connectionType);
+ 
+        DateTime scheduledDate = DateTime(
+          now.year,
+          now.month,
+          now.day + dayOffset,
+          hour,
+          0,
+        );
+ 
+        if (isProfessional) {
+          scheduledDate = _skipToWeekday(scheduledDate);
+        }
+ 
+        // ── Schedule the nudge via Cloud Function ────────────────────────────
+        try {
+          await scheduleSingleNudge(
+            contactId: contact.id,
+            scheduledTime: scheduledDate,
+            rescheduled: true,
+          );
+          print('Scheduled digest nudge for ${contact.name} → '
+              '${scheduledDate.toLocal()} (day +$dayOffset)');
+        } catch (e) {
+          // Log but continue — one failed scheduling shouldn't block the rest
+          print('Warning: failed to schedule nudge for ${contact.name}: $e');
+        }
+ 
+        // Small pause between Cloud Function calls to avoid rate-limit spikes
+        await Future.delayed(const Duration(milliseconds: 300));
+      }
+ 
+      print('Digest nudge rescheduling complete for ${contacts.length} contacts.');
     } catch (e) {
-      print('Error in batch CDI update: $e');
-      throw Exception('Failed to batch update CDI: $e');
+      print('Error in rescheduleNudgesForDigestContacts: $e');
+      // Non-fatal: the reflection was already saved successfully.
+      // We throw so the caller can decide whether to surface this to the user.
+      throw Exception('Nudge rescheduling failed: $e');
     }
   }
+ 
+  /// Returns [date] unchanged if it falls on a weekday (Mon–Fri).
+  /// If it falls on Saturday, advances to Monday.
+  /// If it falls on Sunday, advances to Monday.
+  DateTime _skipToWeekday(DateTime date) {
+    if (date.weekday == DateTime.saturday) {
+      return date.add(const Duration(days: 2));
+    }
+    if (date.weekday == DateTime.sunday) {
+      return date.add(const Duration(days: 1));
+    }
+    return date;
+  }
+    
+  Future<void> markNeedsAttention({
+    required String contactId,
+    required String source,     // 'manual' | 'digest'
+    bool mark = true,
+  }) async {
+    try {
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) throw Exception('No user logged in');
 
+      final contactRef = _getUserContactsCollection(currentUser.uid)
+          .doc(contactId);
+
+      if (mark) {
+        await contactRef.update({
+          'needsAttention': true,
+          'attentionSource': source,
+          'attentionSince': DateTime.now().millisecondsSinceEpoch,
+        });
+        print('Contact $contactId marked as Needs Attention (source: $source)');
+      } else {
+        // Clearing the flag — also null out the meta fields for clean reads
+        await contactRef.update({
+          'needsAttention': false,
+          'attentionSource': null,
+          'attentionSince': null,
+        });
+        print('Contact $contactId cleared from Needs Attention');
+      }
+    } catch (e) {
+      print('Error updating Needs Attention for $contactId: $e');
+      throw Exception('Failed to update Needs Attention: $e');
+    }
+  }
 }
 
 class FrequencyPeriodMapper {

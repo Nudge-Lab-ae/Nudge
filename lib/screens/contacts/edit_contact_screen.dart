@@ -103,7 +103,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
         });
       }
     } catch (e) {
-      print('Error loading user groups: $e');
+      //print('Error loading user groups: $e');
     }
   }
 
@@ -288,7 +288,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
       try {
         await _storageService.deleteImage(_imageUrl);
       } catch (e) {
-        print('Error deleting image: $e');
+        //print('Error deleting image: $e');
         // Continue with resetting the UI even if storage deletion fails
       }
     }
@@ -1276,12 +1276,12 @@ class _EditContactScreenState extends State<EditContactScreen> {
       _showValidationAlert();
       return;
     }
-    print('phase 1');
+    //print('phase 1');
     if (_formKey.currentState!.validate()) {
       final authService = Provider.of<AuthService>(context, listen: false);
       final user = authService.currentUser;
       Map<String, dynamic> schedule = await matchSchedule(_connectionType, groups);
-      print('phase 2');
+      //print('phase 2');
 
       if (user != null) {
         setState(() {
@@ -1310,7 +1310,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
             'priority': _priority,
             'tags': _tags,
           };
-          print('phase 3');
+          //print('phase 3');
           
           await apiService.convertImportedToRegularContact(contactData);
           
@@ -1323,9 +1323,9 @@ class _EditContactScreenState extends State<EditContactScreen> {
             backgroundColor: Colors.green,
             icon: Icons.check,
           );
-          print('phase 4');
+          //print('phase 4');
         } else if (_originalContact != null) {
-          print('subphase1');
+          //print('subphase1');
           // Upload new image if selected
           String updatedImageUrl = _imageUrl;
           if (_imageBytes != null) {
@@ -1334,15 +1334,15 @@ class _EditContactScreenState extends State<EditContactScreen> {
               if (_imageUrl.isNotEmpty) {
                 await _storageService.deleteImage(_imageUrl);
               }
-              print('subphase2');
+              //print('subphase2');
               // Upload new image
               updatedImageUrl = await uploadImageToFirebase(
                 _imageBytes!,
                 _originalContact!.id
               );
-              print('updated image is'); print (updatedImageUrl);
+              //print('updated image is'); print (updatedImageUrl);
             } catch (e) {
-              print('subphase3');
+              //print('subphase3');
               // ScaffoldMessenger.of(context).showSnackBar(
               //   SnackBar(content: Text('Failed to upload image: $e')),
               // );
@@ -1355,7 +1355,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
               return;
             }
           }
-          print('phase 5');
+          //print('phase 5');
           
           // Create updated contact
           final updatedContact = _originalContact!.copyWith(
@@ -1391,11 +1391,11 @@ class _EditContactScreenState extends State<EditContactScreen> {
           || _originalContact!.anniversary != updatedContact.anniversary
           || _originalContact!.workAnniversary != updatedContact.workAnniversary
           ) {
-            print('updating birthday');
+            //print('updating birthday');
              apiService.cancelEventNotifications([updatedContact]);
              apiService.scheduleEventNotifications([updatedContact]);
           }
-          print('phase 6');
+          //print('phase 6');
 
           TopMessageService().showMessage(
             context: context,
@@ -1405,7 +1405,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
           );
 
         } else {
-          print('here');
+          //print('here');
         }
         setState(() {
           saving = false;
@@ -1416,7 +1416,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
           Navigator.pop(context);
         });
       } else {
-        print('user is null');
+        //print('user is null');
       }
     }
   }

@@ -55,12 +55,12 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
   void _initializeStreams() {
     final apiService = Provider.of<ApiService>(context, listen: false);
     _groupsStream = apiService.getGroupsStream().handleError((error) {
-      print('Error in groups stream: $error');
+      //print('Error in groups stream: $error');
       return <SocialGroup>[];
     });
     
     _nudgesStream = apiService.getNudgesStream().handleError((error) {
-      print('Error in nudges stream: $error');
+      //print('Error in nudges stream: $error');
       return <Nudge>[];
     });
   }
@@ -734,9 +734,9 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
         _initializeStreams();
       });
       
-      print('Groups reordered successfully');
+      //print('Groups reordered successfully');
     } catch (e) {
-      print('Error reordering groups: $e');
+      //print('Error reordering groups: $e');
       // ScaffoldMessenger.of(context).showSnackBar(
       //   SnackBar(content: Text('Error reordering groups: $e')),
       // );
@@ -770,7 +770,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
 
     return StreamProvider<List<Contact>>.value(
       value: apiService.getContactsStream().handleError((error) {
-        print('Error in contacts stream: $error');
+        //print('Error in contacts stream: $error');
         return <Contact>[];
       }),
       initialData: const [],

@@ -1,6 +1,7 @@
 // lib/screens/auth/login_screen.dart
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:nudge/providers/admin_provider.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/services/message_service.dart';
 // import 'package:nudge/theme/text_styles.dart';
@@ -261,11 +262,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: () async {
                     _dismissKeyboard();
                     setState(() => _isLoading = true);
-                    print('logging in with google');
+                    //print('logging in with google');
                     try {
                       final user = await authService.signInWithGoogle();
                       if (user != null) {
                         thisUser.User theUser = await apiService.getUser();
+
+                        final adminProvider = Provider.of<AdminProvider>(context, listen: false);
+                        await adminProvider.checkAndCacheAdminStatus();
 
                         if (theUser.phoneNumber != '' /* && user.phoneNumber!=null && user.phoneNumber!='' */) {
                           completeNavigation();

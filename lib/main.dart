@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:nudge/firebase_options.dart';
 import 'package:nudge/helpers/auth_refresh_helper.dart';
 import 'package:nudge/helpers/deletion_retry_helper.dart';
+import 'package:nudge/providers/admin_provider.dart';
 import 'package:nudge/providers/feedback_provider.dart';
 import 'package:nudge/providers/theme_provider.dart';
 import 'package:nudge/screens/analytics/analytics_screen.dart';
@@ -51,11 +52,11 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 
 // Global function to handle notification navigation
 void handleNotificationNavigation(Map<String, dynamic> payload) {
-  print('handleNotificationNavigation called with payload: $payload');
+  //print('handleNotificationNavigation called with payload: $payload');
   
   // Force navigation to dashboard with notifications tab
   _pendingNotificationRoute = '/dashboard?tab=notifications';
-  print('Pending notification route set to: $_pendingNotificationRoute');
+  //print('Pending notification route set to: $_pendingNotificationRoute');
   
   // If navigator is ready, navigate immediately
   if (navigatorKey.currentState != null) {
@@ -66,7 +67,7 @@ void handleNotificationNavigation(Map<String, dynamic> payload) {
 // Process pending notification
 void _processPendingNotification() {
   if (_pendingNotificationRoute != null && navigatorKey.currentState != null) {
-    print('Processing pending notification route: $_pendingNotificationRoute');
+    //print('Processing pending notification route: $_pendingNotificationRoute');
     
     // Navigate to dashboard with notifications tab
     if (_pendingNotificationRoute == '/dashboard?tab=notifications') {
@@ -83,24 +84,24 @@ void _processPendingNotification() {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  print('stage 1 - Widgets binding initialized');
+  //print('stage 1 - Widgets binding initialized');
   
   try {
     await SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
     ]);
-    print('stage 2 - Orientation set');
+    //print('stage 2 - Orientation set');
 
     // Debug platform detection
     if (kIsWeb) {
-      print('Running on Web');
+      //print('Running on Web');
     } else if (Platform.isAndroid) {
-      print('Running on Android');
+      //print('Running on Android');
     } else if (Platform.isIOS) {
-      print('Running on iOS');
+      //print('Running on iOS');
     }
 
-    print('Attempting Firebase initialization...');
+    //print('Attempting Firebase initialization...');
     
     if (Platform.isIOS) {
       await Firebase.initializeApp();
@@ -111,19 +112,19 @@ Future<void> main() async {
       );
     }
    
-    print('stage 3 - Firebase initialized successfully');
+    //print('stage 3 - Firebase initialized successfully');
     
-  } catch (e, stack) {
-    print('Error during initialization: $e');
-    print('Stack trace: $stack');
+  } catch (e) {
+    //print('Error during initialization: $e');
+    //print('Stack trace: $stack');
     
     // Try fallback initialization without options
     try {
-      print('Attempting fallback Firebase initialization...');
+      //print('Attempting fallback Firebase initialization...');
       await Firebase.initializeApp();
-      print('Fallback Firebase initialization successful');
+      //print('Fallback Firebase initialization successful');
     } catch (e2) {
-      print('Fallback also failed: $e2');
+      //print('Fallback also failed: $e2');
     }
   }
   
@@ -142,9 +143,9 @@ Future<void> _initializeInBackground() async {
     final nudgeService = NudgeService();
     await nudgeService.initialize();
     
-    print('Background initialization completed');
+    //print('Background initialization completed');
   } catch (e) {
-    print('Background initialization error: $e');
+    //print('Background initialization error: $e');
   }
 }
 
@@ -189,7 +190,7 @@ Future<void> initializeLocalNotifications() async {
   await flutterLocalNotificationsPlugin.initialize(
     initializationSettings,
     onDidReceiveNotificationResponse: (NotificationResponse response) {
-      print('Notification tapped: ${response.payload}');
+      //print('Notification tapped: ${response.payload}');
 
       if (response.payload != null) {
         try {
@@ -198,10 +199,10 @@ Future<void> initializeLocalNotifications() async {
           if (data['type'] == 'event_notification') {
             if (response.actionId == 'remind_me_then') {
               // _handleRemindMeThenAction(data);
-              print('remind me then pressed');
+              //print('remind me then pressed');
             } else if (response.actionId == 'dismiss') {
               // _handleDismissAction(data);
-              print('dismiss pressed');
+              //print('dismiss pressed');
             } else {
               showEventNotificationDialog(data);
             }
@@ -209,7 +210,7 @@ Future<void> initializeLocalNotifications() async {
             navigateToNotificationsScreen();
           }
         } catch (e) {
-          print('Error parsing notification payload: $e');
+          //print('Error parsing notification payload: $e');
           navigateToNotificationsScreen();
         }
       } else {
@@ -251,14 +252,14 @@ Future<void> initializeFCM() async {
   final FirebaseMessaging messaging = FirebaseMessaging.instance;
 
   // Request permission
-  NotificationSettings settings = await messaging.requestPermission(
-    alert: true,
-    badge: true,
-    sound: true,
-    provisional: false,
-  );
+  // NotificationSettings settings = await messaging.requestPermission(
+  //   alert: true,
+  //   badge: true,
+  //   sound: true,
+  //   provisional: false,
+  // );
 
-  print('Notification permission: ${settings.authorizationStatus}');
+  //print('Notification permission: ${settings.authorizationStatus}');
 
   if (Platform.isIOS) {
     _setupIOSFCM();
@@ -267,13 +268,13 @@ Future<void> initializeFCM() async {
   // Get FCM token - we'll store it when we have a user logged in
   String? token = await messaging.getToken();
   if (token != null) {
-    print('FCM Token: $token');
+    //print('FCM Token: $token');
     // Token will be stored in user document when user is logged in
   }
 
   // Handle token refresh
   messaging.onTokenRefresh.listen((newToken) async {
-    print('FCM token refreshed: $newToken');
+    //print('FCM token refreshed: $newToken');
     // Update token in user document when user is logged in
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
@@ -284,20 +285,20 @@ Future<void> initializeFCM() async {
 
   // Set up foreground message handler
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-    print('Foreground message received: ${message.notification?.title}');
+    //print('Foreground message received: ${message.notification?.title}');
     _showLocalNotification(message);
   });
 
   // Set up background message handler
  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-    print('App opened from background via notification');
+    //print('App opened from background via notification');
     navigateToNotificationsScreen();
   });
 
   // Handle notification when app is terminated
   RemoteMessage? initialMessage = await messaging.getInitialMessage();
   if (initialMessage != null) {
-    print('App opened from terminated state via notification');
+    //print('App opened from terminated state via notification');
     navigateToNotificationsScreen();
   }
 }
@@ -305,12 +306,12 @@ Future<void> initializeFCM() async {
 void _setupIOSFCM() {
   // Request APNS token for iOS
   FirebaseMessaging.instance.getAPNSToken().then((token) {
-    print('APNS Token: $token');
+    //print('APNS Token: $token');
   });
   
   // Handle token refresh for iOS
   FirebaseMessaging.instance.onTokenRefresh.listen((token) async{
-    print('FCM Token refreshed: $token');
+    //print('FCM Token refreshed: $token');
     final apiService = ApiService();
     await apiService.updateUser({'fcmToken': token});
   });
@@ -318,20 +319,20 @@ void _setupIOSFCM() {
   // Handle initial message when app is opened from terminated state
   FirebaseMessaging.instance.getInitialMessage().then((message) {
     if (message != null) {
-      print('App opened from terminated state with message: ${message.data}');
+      //print('App opened from terminated state with message: ${message.data}');
       _handleTerminatedMessage(message);
     }
   });
   
   // Handle messages when app is in foreground
   FirebaseMessaging.onMessage.listen((message) {
-    print('Foreground message: ${message.data}');
+    //print('Foreground message: ${message.data}');
     _showLocalNotification(message);
   });
   
   // Handle when app is in background but not terminated
   FirebaseMessaging.onMessageOpenedApp.listen((message) {
-    print('App opened from background with message: ${message.data}');
+    //print('App opened from background with message: ${message.data}');
     _handleBackgroundMessage(message);
   });
 }
@@ -373,7 +374,7 @@ Future<void> _handleRemindMeThenAction(Map<String, dynamic> data, BuildContext c
   final notificationId = data['notificationId'];
   
   if (notificationId == null) {
-    print('No notificationId found in data');
+    //print('No notificationId found in data');
     return;
   }
   
@@ -388,7 +389,7 @@ Future<void> _handleRemindMeThenAction(Map<String, dynamic> data, BuildContext c
       _showFlushbar('Could not schedule reminder', Colors.deepOrange, Icons.error, context);
     }
   } catch (e) {
-    print('Error scheduling reminder: $e');
+    //print('Error scheduling reminder: $e');
     _showFlushbar('Error scheduling reminder', Colors.deepOrange, Icons.error, context);
   }
 }
@@ -397,7 +398,7 @@ Future<void> _handleDismissAction(Map<String, dynamic> data, BuildContext contex
   final notificationId = data['notificationId'];
   
   if (notificationId == null) {
-    print('No notificationId found in data');
+    //print('No notificationId found in data');
     return;
   }
   
@@ -412,7 +413,7 @@ Future<void> _handleDismissAction(Map<String, dynamic> data, BuildContext contex
       _showFlushbar('Could not dismiss notification',  Colors.deepOrange, Icons.error, context);
     }
   } catch (e) {
-    print('Error dismissing notification: $e');
+    //print('Error dismissing notification: $e');
     _showFlushbar('Error dismissing notification',  Colors.deepOrange, Icons.error, context);
   }
 }
@@ -449,12 +450,12 @@ Future<void> scheduleEventNotifications(List<String> contactIds) async {
         .call({'contactIds': contactIds});
     
     if (result.data['success'] == true) {
-      print('Event notifications scheduled: ${result.data}');
+      //print('Event notifications scheduled: ${result.data}');
     } else {
-      print('Failed to schedule event notifications');
+      //print('Failed to schedule event notifications');
     }
   } catch (e) {
-    print('Error scheduling event notifications: $e');
+    //print('Error scheduling event notifications: $e');
   }
 }
 
@@ -518,7 +519,7 @@ void _showLocalNotification(RemoteMessage message) {
     );
   } else {
 
-    print(data); print(' is the data');
+    //print(data); //print(' is the data');
     // Regular notification without action buttons
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
@@ -552,7 +553,7 @@ void _showLocalNotification(RemoteMessage message) {
 
 
 void navigateToNotificationsScreen() {
-  print('Direct navigation to notifications screen');
+  //print('Direct navigation to notifications screen');
   
   if (navigatorKey.currentState != null) {
     // Get the pending nudge ID if any
@@ -568,7 +569,7 @@ void navigateToNotificationsScreen() {
       },
     );
   } else {
-    print('Navigator not ready, storing for later');
+    //print('Navigator not ready, storing for later');
     _pendingNotificationRoute = '/dashboard?tab=notifications';
   }
 }
@@ -602,7 +603,7 @@ String _buildNotificationPayload(Map<String, dynamic> messageData) {
 // }
 
 // void _handleNotificationTap(String? payload) {
-//   print('Notification tapped - forcing to notifications screen');
+//   //print('Notification tapped - forcing to notifications screen');
   
 //   // Always navigate to notifications screen
 //   WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -617,7 +618,7 @@ String _buildNotificationPayload(Map<String, dynamic> messageData) {
 // }
 
   void _handleBackgroundMessage(RemoteMessage message) {
-    print('Background message - forcing to notifications screen');
+    //print('Background message - forcing to notifications screen');
     
     final nudgeId = message.data['nudgeId'];
     
@@ -636,7 +637,7 @@ String _buildNotificationPayload(Map<String, dynamic> messageData) {
   }
 
   void _handleTerminatedMessage(RemoteMessage message) {
-    print('Terminated message - forcing to notifications screen');
+    //print('Terminated message - forcing to notifications screen');
     
     final nudgeId = message.data['nudgeId'];
     
@@ -676,6 +677,7 @@ class NudgeApp extends StatelessWidget {
                 initialData: null,
               ),
               ChangeNotifierProvider(create: (_) => FeedbackProvider()),
+              ChangeNotifierProvider(create: (_) => AdminProvider()),
             ],
             child: MaterialApp(
               title: 'NUDGE',
@@ -746,7 +748,7 @@ class NudgeApp extends StatelessWidget {
               builder: (context, child) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (_pendingNotificationRoute != null && navigatorKey.currentState != null) {
-                    print('Processing pending notification route on app build');
+                    //print('Processing pending notification route on app build');
                     navigateToNotificationsScreen();
                     _pendingNotificationRoute = null;
                   }
@@ -800,8 +802,12 @@ class _AuthWrapperState extends State<AuthWrapper> {
       await _storeFCMTokenIfNeeded();
       await _checkDeletionRetry();
       await _checkUserData();
+
+      final adminProvider = Provider.of<AdminProvider>(context, listen: false);
+      await adminProvider.checkAndCacheAdminStatus();
+
     } catch (e) {
-      print('Error initializing AuthWrapper: $e');
+      //print('Error initializing AuthWrapper: $e');
     } finally {
       setState(() {
         _initialized = true;
@@ -816,7 +822,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
       String? token = await FirebaseMessaging.instance.getToken();
       if (token != null) {
         await apiService.updateUser({'fcmToken': token});
-        print('FCM token stored for user: ${user.uid}');
+        //print('FCM token stored for user: ${user.uid}');
       }
     }
   }
@@ -831,9 +837,9 @@ class _AuthWrapperState extends State<AuthWrapper> {
       try {
         final apiService = ApiService();
         await apiService.ensureUserDocumentCompleteness(user.uid);
-        print('User data check completed');
+        //print('User data check completed');
       } catch (e) {
-        print('Error checking user data: $e');
+        //print('Error checking user data: $e');
       } finally {
         setState(() {
           _checkingStatus = '';
@@ -878,6 +884,11 @@ class _AuthWrapperState extends State<AuthWrapper> {
     // Always refresh auth state when building authenticated screen
     Future.microtask(() async {
       await AuthRefreshHelper.refreshAuthState();
+
+      final adminProvider = Provider.of<AdminProvider>(context, listen: false);
+      if (adminProvider.isLoading) {
+        await adminProvider.checkAndCacheAdminStatus();
+      }
     });
     
     return FutureBuilder<user.User>(

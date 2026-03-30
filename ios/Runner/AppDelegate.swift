@@ -21,12 +21,12 @@ import UserNotifications
         options: [.alert, .badge, .sound, .provisional]
       ) { granted, error in
         if granted {
-          print("✅ Notification permission granted")
+          //print("✅ Notification permission granted")
           DispatchQueue.main.async {
             application.registerForRemoteNotifications()
           }
         } else {
-          print("❌ Notification permission denied: \(error?.localizedDescription ?? "unknown error")")
+          //print("❌ Notification permission denied: \(error?.localizedDescription ?? "unknown error")")
         }
       }
     } else {
@@ -50,7 +50,7 @@ import UserNotifications
     
     // Print token for debugging
     let tokenString = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
-    print("✅ APNS Token: \(tokenString)")
+    //print("✅ APNS Token: \(tokenString)")
     
     super.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)
   }
@@ -60,13 +60,13 @@ import UserNotifications
     _ application: UIApplication,
     didFailToRegisterForRemoteNotificationsWithError error: Error
   ) {
-    print("❌ Failed to register for remote notifications: \(error.localizedDescription)")
+    //print("❌ Failed to register for remote notifications: \(error.localizedDescription)")
     
     // Log detailed error for debugging
     let nsError = error as NSError
-    print("Error domain: \(nsError.domain)")
-    print("Error code: \(nsError.code)")
-    print("Error userInfo: \(nsError.userInfo)")
+    //print("Error domain: \(nsError.domain)")
+    //print("Error code: \(nsError.code)")
+    //print("Error userInfo: \(nsError.userInfo)")
   }
   
   // Handle notification actions for iOS 10+
@@ -104,7 +104,7 @@ import UserNotifications
     withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
   ) {
     let userInfo = notification.request.content.userInfo
-    print("📱 Foreground notification received: \(userInfo)")
+    //print("📱 Foreground notification received: \(userInfo)")
     
     // Show banner even when app is in foreground
     completionHandler([.alert, .badge, .sound])

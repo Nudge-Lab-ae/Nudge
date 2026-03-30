@@ -56,34 +56,34 @@ class NotificationService {
     await notificationsPlugin.initialize(
       initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
-        print('Notification tapped: ${response.payload}');
+        //print('Notification tapped: ${response.payload}');
         if (response.payload != null) {
           // Parse payload into a Map1
-          print('attempting to decode');
+          //print('attempting to decode');
 
           // final String jsonString = '{"key1": 1, "key2": "hello", "key3": true}';
           final payloadMap = parsePayload(response.payload!);
-          print('finished decoding');
-          print(response.actionId); print (' is the response');
+          //print('finished decoding');
+          //print(response.actionId); print (' is the response');
           if (payloadMap['type'] == 'event_notification') {
-            print('it is event notification');
+            //print('it is event notification');
             if (response.actionId == 'remind_me_then') {
               _handleRemindMeThenAction(payloadMap);
-              // print('handling remind then');
+              // //print('handling remind then');
             } else if (response.actionId == 'dismiss') {
               _handleDismissAction(payloadMap);
-              // print('handling dismiss');
+              // //print('handling dismiss');
             } else {
-              print('forcing 1');
+              //print('forcing 1');
               _handleNotificationTap(response.payload);
             }
           } else {
-            print('forcing 2');
+            //print('forcing 2');
             print (payloadMap);
             _handleNotificationTap(response.payload);
           }
         } else {
-          print('forcing 3');
+          //print('forcing 3');
           _handleNotificationTap(null);
         }
       },
@@ -113,7 +113,7 @@ class NotificationService {
           .collection('users')
           .doc(user.uid)
           .update({'fcmToken': fcmToken});
-      print('FCM Token saved for user: $fcmToken');
+      //print('FCM Token saved for user: $fcmToken');
     }
     
     // Listen for token refresh
@@ -124,7 +124,7 @@ class NotificationService {
             .collection('users')
             .doc(user.uid)
             .update({'fcmToken': newToken});
-        print('FCM Token refreshed: $newToken');
+        //print('FCM Token refreshed: $newToken');
       }
     });
 
@@ -155,20 +155,20 @@ class NotificationService {
   void _setupFirebaseMessaging() {
     // Handle foreground messages
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      print('Foreground FCM message: ${message.notification?.title}');
+      //print('Foreground FCM message: ${message.notification?.title}');
       _showLocalNotificationFromFCM(message);
     });
 
     // Handle when app is opened from background via notification
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      print('App opened from background via FCM notification');
+      //print('App opened from background via FCM notification');
       _handleFCMNotificationTap(message);
     });
 
     // Handle initial message when app is opened from terminated state
     FirebaseMessaging.instance.getInitialMessage().then((RemoteMessage? message) {
       if (message != null) {
-        print('App opened from terminated state via FCM notification');
+        //print('App opened from terminated state via FCM notification');
         // Delay to ensure app is fully initialized
         Future.delayed(const Duration(seconds: 1), () {
           _handleFCMNotificationTap(message);
@@ -194,7 +194,7 @@ class NotificationService {
   // }
 
   void _handleNotificationTap(String? payload) {
-    print('Local notification tapped - forcing to notifications screen');
+    //print('Local notification tapped - forcing to notifications screen');
     
     // Always navigate to notifications screen regardless of payload
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -212,7 +212,7 @@ class NotificationService {
     final notificationId = data['notificationId'];
     
     if (notificationId == null) {
-      print('No notificationId found in data');
+      //print('No notificationId found in data');
       return;
     }
     _showSnackBar('Reminder rescheduled!', Color.fromARGB(255, 18, 132, 27));
@@ -227,7 +227,7 @@ class NotificationService {
       //   _showSnackBar('Could not schedule reminder', Color.fromARGB(255, 149, 19, 30));
       // }
     } catch (e) {
-      print('Error scheduling reminder: $e');
+      //print('Error scheduling reminder: $e');
       // _showSnackBar('Error scheduling reminder', Color.fromARGB(255, 136, 17, 27));
     }
   }
@@ -236,7 +236,7 @@ class NotificationService {
     final notificationId = data['notificationId'];
     
     if (notificationId == null) {
-      print('No notificationId found in data');
+      //print('No notificationId found in data');
       return;
     }
     _showSnackBar('Dismissed Reminder', Color(0xff999999));
@@ -251,7 +251,7 @@ class NotificationService {
       //   _showSnackBar('Could not dismiss notification', Color.fromARGB(255, 152, 21, 32));
       // }
     } catch (e) {
-      print('Error dismissing notification: $e');
+      //print('Error dismissing notification: $e');
       _showSnackBar('Error dismissing notification',  Color.fromARGB(255, 134, 17, 27));
     }
   }
@@ -276,11 +276,11 @@ class NotificationService {
 
 
   void _handleFCMNotificationTap(RemoteMessage message) {
-    print('FCM notification tapped - forcing to notifications screen');
+    //print('FCM notification tapped - forcing to notifications screen');
     
     // Extract nudgeId from message data
     final nudgeId = message.data['nudgeId'];
-    print('NudgeId from notification: $nudgeId');
+    //print('NudgeId from notification: $nudgeId');
     
     // Store nudgeId in a global variable or pass through navigation
     if (nudgeId != null) {
@@ -363,7 +363,7 @@ class NotificationService {
         payload: message.data.isNotEmpty ? message.data.toString() : null,
       );
 
-      print('Event notification with actions shown');
+      //print('Event notification with actions shown');
     } else {
       // Regular notification without action buttons
       const AndroidNotificationDetails androidNotificationDetails =
@@ -394,7 +394,7 @@ class NotificationService {
         payload: _buildNotificationPayload(message.data),
       );
 
-      print('Regular notification shown');
+      //print('Regular notification shown');
     }
   }
 
@@ -437,9 +437,9 @@ class NotificationService {
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       );
       
-      print('Notification scheduled: $title at $scheduledTime');
+      //print('Notification scheduled: $title at $scheduledTime');
     } catch (e) {
-      print('Error scheduling notification: $e');
+      //print('Error scheduling notification: $e');
     }
   }
 
@@ -473,9 +473,9 @@ class NotificationService {
         notificationDetails,
       );
       
-      print('Instant notification shown: $title');
+      //print('Instant notification shown: $title');
     } catch (e) {
-      print('Error showing instant notification: $e');
+      //print('Error showing instant notification: $e');
     }
   }
 

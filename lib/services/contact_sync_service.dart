@@ -87,15 +87,15 @@ class ContactSyncService {
   }) async {
     try {
       // Check and request permission using flutter_contacts
-      print('stage1 - Checking contacts permission');
+      //print('stage1 - Checking contacts permission');
       
       final permissionStatus = await fContacts.FlutterContacts.requestPermission();
-      print('Contacts permission status: $permissionStatus');
+      //print('Contacts permission status: $permissionStatus');
       
       if (!permissionStatus) {
         // If permission was denied, check if we need to guide to settings
         final status = await Permission.contacts.status;
-        print('Detailed permission status: $status');
+        //print('Detailed permission status: $status');
         
         if (status.isPermanentlyDenied) {
           return {
@@ -113,7 +113,7 @@ class ContactSyncService {
         }
       }
 
-      print('stage2 - Permission granted, getting contacts');
+      //print('stage2 - Permission granted, getting contacts');
       
       // Get device contacts using flutter_contacts
       final deviceContacts = await fContacts.FlutterContacts.getContacts(
@@ -122,7 +122,7 @@ class ContactSyncService {
         withThumbnail: true,
       );
       
-      print('Found ${deviceContacts.length} contacts on device');
+      //print('Found ${deviceContacts.length} contacts on device');
       
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) {
@@ -133,7 +133,7 @@ class ContactSyncService {
         };
       }
 
-      print('stage3 - Getting existing contacts from Firestore');
+      //print('stage3 - Getting existing contacts from Firestore');
       
       // Get existing contacts to avoid duplicates
       final existingContacts = await _getExistingContacts(currentUser.uid);
@@ -143,7 +143,7 @@ class ContactSyncService {
       // Apply smart filtering if enabled
       List<fContacts.Contact> contactsToImport = deviceContacts;
       if (useSmartFilter) {
-        print('Applying smart filtering...');
+        //print('Applying smart filtering...');
         contactsToImport = await _applySmartFiltering(contactsToImport, limit);
       }
       
@@ -171,7 +171,7 @@ class ContactSyncService {
       int processedCount = 0;
       int totalContacts = contactsToImport.length;
       
-      print('After filtering: $totalContacts contacts to import');
+      //print('After filtering: $totalContacts contacts to import');
       
       // Get reference to user's contacts subcollection
       final contactsRef = FirebaseFirestore.instance
@@ -217,9 +217,9 @@ class ContactSyncService {
               userId: currentUser.uid,
               contactName: displayName,
             );
-            print('Uploaded photo for contact: $displayName');
+            //print('Uploaded photo for contact: $displayName');
           } catch (e) {
-            print('Failed to upload photo for contact $displayName: $e');
+            //print('Failed to upload photo for contact $displayName: $e');
             // Continue without photo if upload fails
           }
         }
@@ -284,9 +284,9 @@ class ContactSyncService {
         'importedCount': importedCount,
         'theImportedContacts': theImportedContacts
       };
-    } catch (e, stack) {
-      print('Error importing contacts: $e');
-      print('Stack trace: $stack');
+    } catch (e) {
+      //print('Error importing contacts: $e');
+      //print('Stack trace: $stack');
       return {
         'success': false,
         'message': 'Failed to import contacts: $e',
@@ -333,7 +333,7 @@ class ContactSyncService {
       
       return downloadUrl;
     } catch (e) {
-      print('Error uploading contact photo: $e');
+      //print('Error uploading contact photo: $e');
       return null;
     }
   }
@@ -397,12 +397,12 @@ class ContactSyncService {
         return !hasMatchingPhone && !hasMatchingEmail;
       }).toList();
 
-      print('picked contacts length is'); print(pickedContacts.length);
+      //print('picked contacts length is'); //print(pickedContacts.length);
       if (pickedContacts.isNotEmpty) {
-        print(pickedContacts[0].name);
+        //print(pickedContacts[0].name);
       }
-      print('existing phone numbers are'); print(existingPhoneNumbers);
-      print('existing emails are '); print(existingEmails);
+      //print('existing phone numbers are'); //print(existingPhoneNumbers);
+      //print('existing emails are '); //print(existingEmails);
 
       if (contactsToImport.isEmpty) {
         return {
@@ -444,13 +444,13 @@ class ContactSyncService {
               contactName: displayName,
             );
           } catch (e) {
-            print('Failed to upload photo for contact $displayName: $e');
+            //print('Failed to upload photo for contact $displayName: $e');
           }
         }
 
-        print('phone number is'); print(deviceContact.phones);
+        //print('phone number is'); //print(deviceContact.phones);
         if (deviceContact.phones.isNotEmpty){
-          print(deviceContact.phones.first.number);
+          //print(deviceContact.phones.first.number);
         }
 
         String subName = displayName;
@@ -495,9 +495,9 @@ class ContactSyncService {
         'importedCount': importedCount,
         'theImportedContacts': theImportedContacts,
       };
-    } catch (e, stack) {
-      print('Error in contact import with group: $e');
-      print('Stack trace: $stack');
+    } catch (e) {
+      //print('Error in contact import with group: $e');
+      //print('Stack trace: $stack');
       return {
         'success': false,
         'message': 'Failed to import contacts: $e',
@@ -618,7 +618,7 @@ class ContactSyncService {
               contactName: displayName,
             );
           } catch (e) {
-            print('Failed to upload photo for contact $displayName: $e');
+            //print('Failed to upload photo for contact $displayName: $e');
           }
         }
 
@@ -628,7 +628,7 @@ class ContactSyncService {
         // Get the best email
         String primaryEmail = _getBestEmail(deviceContact);
 
-        print('Importing contact: $displayName - Phone: $primaryPhoneNumber - Email: $primaryEmail');
+        //print('Importing contact: $displayName - Phone: $primaryPhoneNumber - Email: $primaryEmail');
 
         String subName = displayName;
         if (subName.length>4) {
@@ -669,9 +669,9 @@ class ContactSyncService {
         'importedCount': importedCount,
         'theImportedContacts': theImportedContacts
       };
-    } catch (e, stack) {
-      print('Error in contact picker: $e');
-      print('Stack trace: $stack');
+    } catch (e) {
+      //print('Error in contact picker: $e');
+      //print('Stack trace: $stack');
       return {
         'success': false,
         'message': 'Failed to import contacts from picker: $e',
@@ -824,7 +824,7 @@ class ContactSyncService {
         return Contact.fromMap(doc.data() ..['id'] = doc.id);
       }).toList();
     } catch (e) {
-      print('Error fetching existing contacts: $e');
+      //print('Error fetching existing contacts: $e');
       return [];
     }
   }
@@ -836,14 +836,14 @@ class ContactSyncService {
   ) async {
     try {
       if (Platform.isIOS) {
-        print('Using iOS calendar-based smart filtering');
+        //print('Using iOS calendar-based smart filtering');
         return await _getSmartFilteredContactsIOS(contacts, limit);
       } else {
-        print('Using Android call log-based smart filtering');
+        //print('Using Android call log-based smart filtering');
         return await _getSmartFilteredContactsAndroid(contacts, limit);
       }
     } catch (e) {
-      print('Error applying smart filter: $e');
+      //print('Error applying smart filter: $e');
       return _getFallbackSmartContacts(contacts, limit);
     }
   }
@@ -859,15 +859,15 @@ class ContactSyncService {
           final granted = await _calendarService.requestCalendarPermission();
           if (!granted) {
             // Fallback to simple filtering if no calendar permission
-            print('Calendar permission not granted, using fallback');
+            //print('Calendar permission not granted, using fallback');
             return _getFallbackSmartContacts(deviceContacts, limit);
           }
         }
         
-        print('Getting contact priority from calendar...');
+        //print('Getting contact priority from calendar...');
         // Get contact priority scores from calendar
         final priorityScores = await getContactPriorityFromCalendar(deviceContacts);
-        print('Found priority scores for ${priorityScores.length} contacts');
+        //print('Found priority scores for ${priorityScores.length} contacts');
         
         // Sort contacts by priority score (highest first)
         deviceContacts.sort((a, b) {
@@ -898,11 +898,11 @@ class ContactSyncService {
           selectedContacts.addAll(remainingContacts);
         }
         
-        print('Calendar-based filtering selected ${selectedContacts.length} contacts');
+        //print('Calendar-based filtering selected ${selectedContacts.length} contacts');
         return selectedContacts;
         
       } catch (e) {
-        print('Error in iOS smart filtering: $e');
+        //print('Error in iOS smart filtering: $e');
         return _getFallbackSmartContacts(deviceContacts, limit);
       }
     }
@@ -912,22 +912,22 @@ class ContactSyncService {
     int limit,
   ) async {
     try {
-      print('Starting Android call log-based filtering');
+      //print('Starting Android call log-based filtering');
       
       // Request call log permission
       var callLogStatus = await Permission.phone.status;
       if (!callLogStatus.isGranted) {
         callLogStatus = await Permission.phone.request();
         if (!callLogStatus.isGranted) {
-          print('Call log permission denied, falling back to calendar filtering');
+          //print('Call log permission denied, falling back to calendar filtering');
           return await _getSmartFilteredContactsIOS(deviceContacts, limit);
         }
       }
 
       // Get call log entries
-      print('Getting call log entries...');
+      //print('Getting call log entries...');
       final Iterable<CallLogEntry> entries = await CallLog.get();
-      print('Found ${entries.length} call log entries');
+      //print('Found ${entries.length} call log entries');
       
       // Create a map of phone numbers to call count and last call timestamp
       final Map<String, int> callCountMap = {};
@@ -948,7 +948,7 @@ class ContactSyncService {
         }
       }
       
-      print('Call log analysis complete. Unique numbers: ${callCountMap.length}');
+      //print('Call log analysis complete. Unique numbers: ${callCountMap.length}');
       
       // Score contacts based on call frequency and recency
       final scoredContacts = deviceContacts.map((contact) {
@@ -1024,24 +1024,18 @@ class ContactSyncService {
         return callCountB.compareTo(callCountA);
       });
       
-      print('Android smart filtering completed. Top contact scores:');
-      for (int i = 0; i < (scoredContacts.length > 5 ? 5 : scoredContacts.length); i++) {
-        final item = scoredContacts[i];
-        print('${(item['contact'] as fContacts.Contact).displayName}: Score ${item['score']}, Calls: ${item['callCount']}');
-      }
-      
       // Take top contacts
       final selectedContacts = scoredContacts
           .take(limit)
           .map((item) => item['contact'] as fContacts.Contact)
           .toList();
       
-      print('Selected ${selectedContacts.length} contacts for import');
+      //print('Selected ${selectedContacts.length} contacts for import');
       return selectedContacts;
       
-    } catch (e, stack) {
-      print('Error in Android call log filtering: $e');
-      print('Stack trace: $stack');
+    } catch (e) {
+      //print('Error in Android call log filtering: $e');
+      //print('Stack trace: $stack');
       return await _getSmartFilteredContactsIOS(deviceContacts, limit); // Fallback to calendar
     }
   }
@@ -1051,7 +1045,7 @@ class ContactSyncService {
     List<fContacts.Contact> deviceContacts,
     int limit,
   ) {
-    print('Using fallback smart filtering');
+    //print('Using fallback smart filtering');
     
     // Simple fallback: prioritize contacts with photos, emails, and organization
     final scoredContacts = deviceContacts.map((contact) {

@@ -32,7 +32,7 @@ class _ImportedContactsScreenState extends State<ImportedContactsScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      print('Error loading imported contacts: $e');
+      //print('Error loading imported contacts: $e');
       setState(() => _isLoading = false);
     }
   }

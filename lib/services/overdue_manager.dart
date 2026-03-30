@@ -41,7 +41,7 @@ class OverdueManager {
       await _rescheduleCanceledNudges(userId);
       
     } catch (e) {
-      print('Error processing overdue nudges: $e');
+      //print('Error processing overdue nudges: $e');
     }
   }
   
@@ -61,7 +61,7 @@ class OverdueManager {
           .map((doc) => Nudge.fromMap(doc.data()))
           .toList();
     } catch (e) {
-      print('Error getting overdue nudges: $e');
+      //print('Error getting overdue nudges: $e');
       return [];
     }
   }
@@ -88,10 +88,10 @@ class OverdueManager {
       // 3. Cancel any other active nudges for this contact
       await _cancelOtherActiveNudgesForContact(nudge.contactId, userId, nudge.id);
       
-      print('Canceled overdue nudge for ${nudge.contactName}');
+      //print('Canceled overdue nudge for ${nudge.contactName}');
       
     } catch (e) {
-      print('Error handling overdue nudge: $e');
+      //print('Error handling overdue nudge: $e');
     }
   }
   
@@ -125,7 +125,7 @@ class OverdueManager {
         }
       }
     } catch (e) {
-      print('Error canceling other nudges for contact: $e');
+      //print('Error canceling other nudges for contact: $e');
     }
   }
   
@@ -155,10 +155,10 @@ class OverdueManager {
         );
       }
       
-      print('Rescheduled ${contactsWithCanceledNudges.length} canceled nudges');
+      //print('Rescheduled ${contactsWithCanceledNudges.length} canceled nudges');
       
     } catch (e) {
-      print('Error rescheduling canceled nudges: $e');
+      //print('Error rescheduling canceled nudges: $e');
     }
   }
   
@@ -199,13 +199,13 @@ class OverdueManager {
             contacts.add(Contact.fromMap(contactDoc.data() as Map<String, dynamic>));
           }
         } catch (e) {
-          print('Error fetching contact $contactId: $e');
+          //print('Error fetching contact $contactId: $e');
         }
       }
       
       return contacts;
     } catch (e) {
-      print('Error getting contacts with canceled nudges: $e');
+      //print('Error getting contacts with canceled nudges: $e');
       return [];
     }
   }
@@ -247,7 +247,7 @@ class OverdueManager {
       
       return snapshot.docs.isNotEmpty;
     } catch (e) {
-      print('Error checking active nudge: $e');
+      //print('Error checking active nudge: $e');
       return false;
     }
   }
@@ -311,7 +311,7 @@ class OverdueManager {
       );
       
     } catch (e) {
-      print('Error getting next available time slot: $e');
+      //print('Error getting next available time slot: $e');
       return DateTime.now().add(RESCHEDULE_DELAY);
     }
   }

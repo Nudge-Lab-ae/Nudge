@@ -36,6 +36,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
   bool _isUpdatingVIP = false;
   late ConfettiController _confettiController; // Add this
   bool _showConfetti = false; 
+  bool _isUpdatingAttention = false;
 
   @override
   void initState() {
@@ -125,6 +126,55 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     } finally {
       setState(() {
         _isUpdatingVIP = false;
+      });
+    }
+  }
+
+  Future<void> _toggleNeedsAttention(bool mark, Contact contact) async {
+    if (_isUpdatingAttention) return;
+
+    setState(() {
+      _isUpdatingAttention = true;
+    });
+
+    try {
+      final apiService = Provider.of<ApiService>(context, listen: false);
+
+      // Build the updated contact locally so the StreamBuilder re-renders
+      // immediately without waiting for Firestore to echo back.
+      final updatedContact = mark
+          ? contact.copyWith(
+              needsAttention: true,
+              attentionSource: 'manual',
+              attentionSince: DateTime.now(),
+            )
+          : contact.copyWith(
+              needsAttention: false,
+              // Sentinel pattern clears the nullable fields entirely.
+              attentionSource: null,
+              attentionSince: null,
+            );
+
+      await apiService.updateContact(updatedContact);
+
+      TopMessageService().showMessage(
+        context: context,
+        message: mark
+            ? '${contact.name} added to Needs Attention'
+            : 'Removed from Needs Attention',
+        backgroundColor: mark ? const Color(0xFF1D9E75) : Colors.grey.shade600,
+        icon: mark ? Icons.flag_rounded : Icons.flag_outlined,
+      );
+    } catch (e) {
+      TopMessageService().showMessage(
+        context: context,
+        message: 'Could not update Needs Attention: $e',
+        backgroundColor: AppTheme.errorColor,
+        icon: Icons.error,
+      );
+    } finally {
+      setState(() {
+        _isUpdatingAttention = false;
       });
     }
   }
@@ -440,6 +490,48 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                     ),
                   ),
                 const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Circle Health',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontFamily: 'OpenSans',
+                              fontWeight: FontWeight.w600,
+                              color: themeProvider.getTextSecondaryColor(context),
+                            ),
+                          ),
+                          Text(
+                            _getCSSLabel(contact.css),
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontFamily: 'OpenSans',
+                              fontWeight: FontWeight.bold,
+                              color: _getCSSColor(contact.css, context),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      LinearProgressIndicator(
+                        value: contact.css / 100,
+                        backgroundColor: Colors.grey.withOpacity(0.15),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          _getCSSColor(contact.css, context)
+                        ),
+                        minHeight: 3,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
               ],
             ),
           ),
@@ -481,6 +573,58 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
             ),
           ),
           
+          const SizedBox(height: 20),
+
+          Card(
+            color: themeProvider.getCardColor(context),
+            child: ListTile(
+              leading: Icon(
+                contact.needsAttention
+                    ? Icons.flag_rounded
+                    : Icons.flag_outlined,
+                // Teal for auto-flagged (from Digest), orange for manual,
+                // grey when not flagged — matching the spec's colour cues.
+                color: contact.needsAttention
+                    ? (contact.attentionSource == 'digest'
+                        ? const Color(0xFF1D9E75)   // teal — digest-sourced
+                        : AppTheme.warningColor)     // orange — manually flagged
+                    : themeProvider.getTextSecondaryColor(context),
+              ),
+              title: Text(
+                'Needs Attention',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: themeProvider.getTextPrimaryColor(context),
+                  fontFamily: 'OpenSans',
+                ),
+              ),
+              subtitle: Text(
+                _attentionSubtitle(contact),
+                style: TextStyle(
+                  color: themeProvider.getTextSecondaryColor(context),
+                  fontFamily: 'OpenSans',
+                ),
+              ),
+              trailing: _isUpdatingAttention
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppTheme.primaryColor,
+                      ),
+                    )
+                  : Switch(
+                      value: contact.needsAttention,
+                      onChanged: (value) =>
+                          _toggleNeedsAttention(value, contact),
+                      activeColor: AppTheme.primaryColor,
+                      inactiveThumbColor:
+                          themeProvider.getButtonColor(context),
+                    ),
+            ),
+          ),
+
           const SizedBox(height: 20),
           
           // CDI Ring Display
@@ -821,6 +965,39 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
         ],
       ),
     );
+  }
+
+    // Add these methods to _ContactDetailScreenState
+  String _getCSSLabel(double css) {
+    if (css >= 76) return 'Strong';
+    if (css >= 41) return 'Growing';
+    return 'Needs care';
+  }
+
+  Color _getCSSColor(double css, BuildContext context) {
+    if (css >= 76) return const Color(0xFF1D9E75); // teal - strong
+    if (css >= 41) return const Color(0xFFEF9F27); // amber - developing
+    return const Color(0xFFE24B4A); // red - fragile
+  }
+
+  String _attentionSubtitle(Contact contact) {
+    if (!contact.needsAttention) {
+      return 'Flag this contact for priority follow-up';
+    }
+
+    final since = contact.attentionSince;
+    final daysAgo = since != null
+        ? DateTime.now().difference(since).inDays
+        : null;
+
+    final sourceLabel = contact.attentionSource == 'digest'
+        ? 'Added via your Reflection Digest'
+        : 'Manually flagged by you';
+
+    if (daysAgo == null) return sourceLabel;
+    if (daysAgo == 0) return '$sourceLabel · today';
+    if (daysAgo == 1) return '$sourceLabel · yesterday';
+    return '$sourceLabel · $daysAgo days ago';
   }
 }
 

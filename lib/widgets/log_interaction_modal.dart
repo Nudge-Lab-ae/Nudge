@@ -30,6 +30,9 @@ class LogInteractionModalState extends State<LogInteractionModal> {
   TimeOfDay _selectedTime = TimeOfDay.now();
   bool _showConfetti = false;
   late ConfettiController _confettiController;
+  int _moodScore = 3; // default: neutral
+  final List<String> _moodEmojis = ['😔', '😐', '🙂', '😄', '💞'];
+  final List<String> _moodLabels = ['Draining', 'Okay', 'Good', 'Great', 'Amazing'];
   // bool _showCelebration = false;
 
   final List<String> _interactionTypes = [
@@ -124,7 +127,7 @@ class LogInteractionModalState extends State<LogInteractionModal> {
      
 
     // } catch (e) {
-    //   print('Error logging touchpoint: $e');
+    //   //print('Error logging touchpoint: $e');
       
     //  TopMessageService().showMessage(
     //       context: context,
@@ -147,11 +150,12 @@ class LogInteractionModalState extends State<LogInteractionModal> {
       );
 
       // Log the interaction
-      await widget.apiService.logInteraction(
+      widget.apiService.logInteraction(
         contactId: widget.contact.id,
         interactionType: _selectedInteractionType!,
         notes: _notesController.text.isNotEmpty ? _notesController.text : null,
         interactionDate: interactionDateTime.toIso8601String(),
+        mood: _moodScore,
       );
       _confettiController.play();
 
@@ -251,7 +255,115 @@ class LogInteractionModalState extends State<LogInteractionModal> {
     
     return ''; // Return empty for non-today dates
   }
-  
+
+  Widget _buildMoodPicker() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'How did this interaction feel?',
+          style: const TextStyle(
+            fontWeight: FontWeight.w600, 
+            fontSize: 14
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: List.generate(5, (i) {
+            final selected = _moodScore == i + 1;
+            final moodEmoji = _moodEmojis[i];
+            final moodLabel = _moodLabels[i];
+            
+            return GestureDetector(
+              onTap: () => setState(() => _moodScore = i + 1),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: selected
+                            ? LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Theme.of(context).colorScheme.primary,
+                                  Theme.of(context).colorScheme.primary.withOpacity(0.7),
+                                ],
+                              )
+                            : null,
+                        color: selected
+                            ? Colors.black
+                            : widget.isDarkMode
+                                ? const Color(0xFF2A2A2A)
+                                : Colors.grey.shade50,
+                        border: Border.all(
+                          color: selected
+                              ? Theme.of(context).colorScheme.primary
+                              : Colors.transparent
+                              /* widget.isDarkMode
+                                  ? const Color(0xFF444444)
+                                  : Colors.grey.shade300 */,
+                          width: selected ? 2 : 1,
+                        ),
+                        boxShadow: selected
+                            ? [
+                                BoxShadow(
+                                  color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                                  blurRadius: 12,
+                                  spreadRadius: 2,
+                                )
+                              ]
+                            : null,
+                      ),
+                      child: AnimatedScale(
+                        scale: selected ? 1.0 : 0.8,
+                        duration: const Duration(milliseconds: 200),
+                        child: Text(
+                          moodEmoji,
+                          style: TextStyle(
+                            fontSize: selected ? 32 : 28,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        color: selected
+                            ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                            : Colors.transparent,
+                      ),
+                      child: Text(
+                        moodLabel,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                          color: selected
+                              ? Theme.of(context).colorScheme.primary
+                              : widget.isDarkMode
+                                  ? Colors.grey.shade400
+                                  : Colors.grey.shade600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Format date and time for display
@@ -265,9 +377,9 @@ class LogInteractionModalState extends State<LogInteractionModal> {
         maxHeight: MediaQuery.of(context).size.height * 0.85,
       ),
       padding: const EdgeInsets.all(20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: ListView(
+        // mainAxisSize: MainAxisSize.min,
+        // crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
           Row(
@@ -558,6 +670,8 @@ class LogInteractionModalState extends State<LogInteractionModal> {
             ],
           ),
           
+          const SizedBox(height: 16),
+          _buildMoodPicker(),
           const SizedBox(height: 16),
           
           // Notes Field

@@ -27,6 +27,13 @@ class Contact {
   DateTime rawBandSince; // When CDI entered current band
   double angleDeg; // Fixed angle for layout (0-359)
   int interactionCountInWindow; // Interactions in last 90 days
+  
+  double css; 
+  int totalNudgesSent; 
+  int completedNudges; 
+  bool needsAttention; // Whether this contact is flagged for follow-up
+  String? attentionSource; // 'manual' (user-flagged) | 'digest' (from Reflection Digest)
+  DateTime? attentionSince; // When the flag was set
 
   Contact({
     required this.id,
@@ -55,6 +62,14 @@ class Contact {
     DateTime? rawBandSince,
     this.angleDeg = 0.0,
     this.interactionCountInWindow = 0,
+
+    this.css = 50.0, // New field
+    this.totalNudgesSent = 0, // New field
+    this.completedNudges = 0, // New field
+
+    this.needsAttention = false,
+    this.attentionSource,
+    this.attentionSince,
   }) : rawBandSince = rawBandSince ?? DateTime.now();
 
   Map<String, dynamic> toMap() {
@@ -85,7 +100,13 @@ class Contact {
       'rawBandSince': rawBandSince.millisecondsSinceEpoch,
       'angleDeg': angleDeg,
       'interactionCountInWindow': interactionCountInWindow,
-    };
+      'css': css, 
+      'totalNudgesSent': totalNudgesSent, 
+      'completedNudges': completedNudges, 
+      'needsAttention': needsAttention,
+      'attentionSource': attentionSource,
+      'attentionSince': attentionSince?.millisecondsSinceEpoch,
+      };
   }
 
   factory Contact.empty() {
@@ -116,6 +137,12 @@ class Contact {
       rawBandSince: DateTime.now(),
       angleDeg: 0,
       interactionCountInWindow: 0,
+      css: 50,
+      totalNudgesSent: 0, 
+      completedNudges: 0,
+      needsAttention: false,
+      attentionSource: null,
+      attentionSince: null,
     );
   }
 
@@ -149,6 +176,15 @@ class Contact {
           : DateTime.now(),
       angleDeg: (map['angleDeg'] ?? 0.0).toDouble(),
       interactionCountInWindow: map['interactionCountInWindow'] ?? 0,
+
+      css: (map['css'] ?? 50.0).toDouble(), 
+      totalNudgesSent: map['totalNudgesSent'] ?? 0, 
+      completedNudges: map['completedNudges'] ?? 0, 
+      needsAttention: map['needsAttention'] ?? false,
+      attentionSource: map['attentionSource'],
+      attentionSince: map['attentionSince'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(map['attentionSince'])
+          : null,
     );
   }
 
@@ -179,6 +215,13 @@ class Contact {
     DateTime? rawBandSince,
     double? angleDeg,
     int? interactionCountInWindow,
+    double? css, 
+    int? totalNudgesSent, 
+    int? completedNudges, 
+    bool? needsAttention,
+    // Use Object? sentinel so callers can explicitly pass null to clear these
+    Object? attentionSource = _sentinel,
+    Object? attentionSince = _sentinel,
   }) {
     return Contact(
       id: id ?? this.id,
@@ -206,6 +249,17 @@ class Contact {
       rawBandSince: rawBandSince ?? this.rawBandSince,
       angleDeg: angleDeg ?? this.angleDeg,
       interactionCountInWindow: interactionCountInWindow ?? this.interactionCountInWindow,
+      css: css ?? this.css, 
+      totalNudgesSent: totalNudgesSent ?? this.totalNudgesSent, 
+      completedNudges: completedNudges ?? this.completedNudges,
+       needsAttention: needsAttention ?? this.needsAttention,
+      // Sentinel pattern lets callers pass null explicitly to clear the field
+      attentionSource: identical(attentionSource, _sentinel)
+          ? this.attentionSource
+          : attentionSource as String?,
+      attentionSince: identical(attentionSince, _sentinel)
+          ? this.attentionSince
+          : attentionSince as DateTime?,
     );
   }
 
@@ -227,3 +281,4 @@ class Contact {
     }
   }
 }
+const Object _sentinel = Object();

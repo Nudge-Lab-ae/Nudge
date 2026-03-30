@@ -98,19 +98,4 @@ class MockContactsGenerator {
     return contacts;
   }
   
-  // Helper method to print debug info
-  static void printDistribution(List<Contact> contacts) {
-    final inner = contacts.where((c) => c.computedRing == 'inner').length;
-    final middle = contacts.where((c) => c.computedRing == 'middle').length;
-    final outer = contacts.where((c) => c.computedRing == 'outer').length;
-    final vip = contacts.where((c) => c.isVIP).length;
-    
-    print('=== MOCK CONTACTS DISTRIBUTION ===');
-    print('Total contacts: ${contacts.length}');
-    print('Inner circle: $inner (${(inner/contacts.length*100).toStringAsFixed(1)}%)');
-    print('Middle circle: $middle (${(middle/contacts.length*100).toStringAsFixed(1)}%)');
-    print('Outer circle: $outer (${(outer/contacts.length*100).toStringAsFixed(1)}%)');
-    print('VIP contacts: $vip (${(vip/contacts.length*100).toStringAsFixed(1)}%)');
-    print('==================================');
-  }
 }

@@ -128,7 +128,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
         });
       }
     } catch (e) {
-      print('Error loading user groups: $e');
+      //print('Error loading user groups: $e');
     }
   }
 
@@ -261,7 +261,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
 }
 
   Future<Map<String, dynamic>> matchSchedule(String groupName, List<SocialGroup> groups) async {
-    print('Matching schedule for group: $groupName');
+    //print('Matching schedule for group: $groupName');
     
     // If we have groups passed from onboarding, use them
     final List<SocialGroup> targetGroups = widget.isOnboarding && widget.groups != null 
@@ -271,10 +271,10 @@ class _AddContactScreenState extends State<AddContactScreen> {
     try {
       SocialGroup myGroup = targetGroups.firstWhere((group) => group.name == groupName);
       Map<String, dynamic> schedule = {'period': myGroup.period, 'frequency': myGroup.frequency};
-      print('Found schedule: $schedule');
+      //print('Found schedule: $schedule');
       return schedule;
     } catch (e) {
-      print('Group not found, using default schedule: $e');
+      //print('Group not found, using default schedule: $e');
       // Return a default schedule if group not found
       return {'period': 'Monthly', 'frequency': 2};
     }
@@ -1249,7 +1249,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                           height: 55,
                           child: ElevatedButton(
                             onPressed: () async {
-                              print('stage0');
+                              //print('stage0');
                               // First, dismiss keyboard
                               _dismissKeyboard();
                               
@@ -1289,7 +1289,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                 // Use group settings if provided, otherwise use default matching
                                 String period;
                                 int frequency;
-                                print('stage1');
+                                //print('stage1');
                                 
                                 if (widget.groupPeriod != null && widget.groupFrequency != null) {
                                   period = widget.groupPeriod!;
@@ -1302,7 +1302,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                   period = schedule['period'];
                                   frequency = schedule['frequency'];
                                 }
-                                print('stage2');
+                                //print('stage2');
                                 
                                 final newContact = Contact(
                                   id: generateRandomId(16) + _nameController.text.substring(0, 4),
@@ -1332,7 +1332,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                 
                                 // Save to Firestore
                                 await apiService.addContact(newContact);
-                                print('stage3');
+                                //print('stage3');
                                 
                                 // Automatically schedule nudge based on connection category
                                 try {
@@ -1345,9 +1345,9 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                   // );
                                   await apiService.scheduleNudgesForContacts(contactIds: [newContact.id]);
                                   await apiService.scheduleEventNotifications([newContact]);
-                                  print('Automatic nudge scheduled for ${newContact.name}');
+                                  //print('Automatic nudge scheduled for ${newContact.name}');
                                 } catch (e) {
-                                  print('Error scheduling automatic nudge: $e');
+                                  //print('Error scheduling automatic nudge: $e');
                                   // Don't show error to user - nudge scheduling is secondary
                                 }
                                

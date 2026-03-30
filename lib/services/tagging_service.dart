@@ -188,7 +188,7 @@ class TaggingService {
       
       return entries.toList();
     } catch (e) {
-      print('Error getting call logs: $e');
+      //print('Error getting call logs: $e');
       return [];
     }
   }

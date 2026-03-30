@@ -15,11 +15,11 @@ class AuthRefreshHelper {
         // Get fresh user instance
         final freshUser = FirebaseAuth.instance.currentUser;
         if (freshUser != null) {
-          print('Auth state refreshed successfully for user: ${freshUser.uid}');
+          //print('Auth state refreshed successfully for user: ${freshUser.uid}');
         }
       }
     } catch (e) {
-      print('Error refreshing auth state: $e');
+      //print('Error refreshing auth state: $e');
     }
   }
 }

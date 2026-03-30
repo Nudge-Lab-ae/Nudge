@@ -70,10 +70,9 @@ class Nudge {
   }
 
   factory Nudge.fromMap(Map<String, dynamic> data) {
-    
     return Nudge(
-      id: data['id'],
-      nudgeId: data['nudgeId'],
+      id: data['id'] ?? '',
+      nudgeId: data['nudgeId'] ?? data['id'] ?? '',
       contactId: data['contactId'] ?? '',
       contactName: data['contactName'] ?? '',
       nudgeType: data['nudgeType'] ?? '',
@@ -81,15 +80,17 @@ class Nudge {
       scheduledTime: DateTime.fromMillisecondsSinceEpoch(data['scheduledTime'] ?? 0),
       isCompleted: data['isCompleted'] ?? false,
       isSnoozed: data['isSnoozed'] ?? false,
-      completedAt: data['completedAt'] != null 
-          ? DateTime.fromMillisecondsSinceEpoch(data['completedAt'].millisecondsSinceEpoch)
+      completedAt: data['completedAt'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(data['completedAt'] is int
+              ? data['completedAt']
+              : (data['completedAt'] as Timestamp).millisecondsSinceEpoch)
           : null,
-      snoozedUntil: data['snoozedUntil'] != null 
+      snoozedUntil: data['snoozedUntil'] != null
           ? DateTime.fromMillisecondsSinceEpoch(data['snoozedUntil'])
           : null,
       userId: data['userId'] ?? '',
-      period: 'Monthly',
-      frequency: 2,
+      period: data['period'] ?? 'Monthly',      // FIX: read from map
+      frequency: data['frequency'] ?? 2,        // FIX: read from map
       priority: data['priority'] ?? 3,
       isVIP: data['isVIP'] ?? false,
       isPushNotification: data['isPushNotification'] ?? false,
@@ -97,7 +98,7 @@ class Nudge {
       groupName: data['groupName'] ?? '',
     );
   }
-
+    
   // Create from Firestore Document
   factory Nudge.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;

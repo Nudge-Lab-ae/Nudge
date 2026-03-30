@@ -11,6 +11,7 @@ import 'package:nudge/providers/theme_provider.dart';
 import 'package:nudge/screens/contacts/contact_detail_screen.dart';
 import 'package:nudge/screens/contacts/contacts_list_screen.dart';
 import 'package:nudge/screens/contacts/import_contacts_screen.dart';
+import 'package:nudge/screens/digest/reflection_digest_modal.dart';
 import 'package:nudge/screens/groups/groups_list_screen.dart';
 import 'package:nudge/screens/notifications/notifications_screen.dart';
 import 'package:nudge/screens/social_universe/social_universe_immersive.dart';
@@ -69,6 +70,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     duration: const Duration(seconds: 3)
   );
   bool _showConfetti = false;
+  late final ApiService apiService;
+  late final ThemeProvider themeProvider;
 
   // final Random _random = Random();
 
@@ -84,6 +87,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _handleScroll();
     });
 
+    apiService = Provider.of<ApiService>(context, listen: false);
+    themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final contacts = await apiService.getAllContacts();
+      final innerRing = contacts.where((c) => c.computedRing == 'inner').toList();
+      if (!mounted) return;
+      await DigestScheduler.showIfDue(
+        context: context,
+        closeCircleContacts: innerRing,
+        apiService: apiService,
+        isDarkMode: themeProvider.isDarkMode,
+      );
+    });
   }
 
     @override
@@ -91,6 +108,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _confettiController.dispose(); // Add this
     super.dispose();
   }
+  
+
+  // Future<void> _checkDigestDue() async {
+  //   final apiService = ApiService();
+  //   final prefs = await SharedPreferences.getInstance();
+  //   final lastDigest = prefs.getInt('last_digest_timestamp') ?? 0;
+  //   final daysSince = DateTime.now()
+  //     .difference(DateTime.fromMillisecondsSinceEpoch(lastDigest)).inDays;
+
+  //   if (daysSince >= 14) { // bi-weekly default
+  //     await Future.delayed(const Duration(seconds: 2)); // let dashboard load first
+  //     if (mounted) {
+  //       showModalBottomSheet(
+  //         context: context,
+  //         isScrollControlled: true,
+  //         backgroundColor: Colors.transparent,
+  //         builder: (_) => ReflectionDigestModal(
+  //           apiService: apiService,
+  //           isDarkMode: ,
+  //           closeCircleContacts: totalContacts
+  //               .where((c) => c.computedRing == 'inner').toList(),
+  //           onComplete: () async {
+  //             await prefs.setInt('last_digest_timestamp',
+  //               DateTime.now().millisecondsSinceEpoch);
+  //           },
+  //         ),
+  //       );
+  //     }
+  //   }
+  // }
 
   Future<void> _initializeSocialUniverse() async {
     try {
@@ -113,7 +160,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       await _runDailyCDIUpdate(apiService);
       
     } catch (e) {
-      print('Error initializing Social Universe: $e');
+      //print('Error initializing Social Universe: $e');
     }
   }
 
@@ -126,9 +173,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       try {
         await apiService.batchUpdateCDI();
         await prefs.setBool(lastUpdateKey, true);
-        print('Daily CDI update completed');
+        //print('Daily CDI update completed');
       } catch (e) {
-        print('Error in daily CDI update: $e');
+        //print('Error in daily CDI update: $e');
       }
     }
   }
@@ -163,7 +210,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> getNudges () async {
     ApiService apiService = ApiService();
     var allOfNudges =  await apiService.getAllNudges();
-    print('all nudges are'); print(allOfNudges);
+    //print('all nudges are'); //print(allOfNudges);
     setState(() {
       allNudges = allOfNudges;
     });
@@ -188,7 +235,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     // final theme = Theme.of(context);
     
-    print('DashboardScreen building with _currentIndex: $_currentIndex, initialTab: ${widget.initialTab}');
+    //print('DashboardScreen building with _currentIndex: $_currentIndex, initialTab: ${widget.initialTab}');
     
     if (user == null) {
       return Scaffold(

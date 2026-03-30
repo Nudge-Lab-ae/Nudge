@@ -56,7 +56,7 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen> with SingleTi
       setState(() {
         _upvotedFeedbacks[feedbackId] = currentlyUpvoted;
       });
-      print('Error upvoting: $e');
+      //print('Error upvoting: $e');
     }
   }
   

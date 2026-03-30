@@ -26,8 +26,8 @@ class AuthService {
         password: password,
       );
       return result.user;
-    } on FirebaseException catch (e) {
-      print(e); print(' is the error');
+    } catch (e) {
+      //print(e); //print(' is the error');
       return null;
     }
   }
@@ -41,7 +41,7 @@ class AuthService {
       );
       return result.user;
     } catch (e) {
-      print(e.toString());
+      //print(e.toString());
       return null;
     }
   }
@@ -72,32 +72,32 @@ class AuthService {
    Future<User?> signInWithGoogle() async {
     final FirebaseAuth _auth = FirebaseAuth.instance;
     final GoogleSignIn googleSignIn = GoogleSignIn.instance;
-    print('stagea');
+    //print('stagea');
     if (Platform.isAndroid || Platform.isIOS) {
       await googleSignIn.initialize(
         serverClientId: '40187814474-5n0oil6qublvnso4km97sl0q6sh5im24.apps.googleusercontent.com',
       );
     }
-    print('stageb');
+    //print('stageb');
 
    try {
     // Initiate the Google Sign-In process. A pop-up will appear for the user.
     final GoogleSignInAccount googleUser = await googleSignIn.authenticate();
 
-    print('stage1');
+    //print('stage1');
 
     // If the user cancelled the sign-in flow, googleUser will be null.
     
      final GoogleSignInAuthentication auth =  googleUser.authentication;
 
-     print('stage2');
+     //print('stage2');
 
     // Create Firebase credential
     final OAuthCredential credential = GoogleAuthProvider.credential(
       idToken: auth.idToken,
     );
 
-    print('stage3');
+    //print('stage3');
 
     // Sign in to Firebase
     final UserCredential userCredential = await _auth.signInWithCredential(credential);
@@ -105,7 +105,7 @@ class AuthService {
 
   } catch (error) {
     // Handle any exceptions that occur during the sign-in process.
-    print('error signing in with google');
+    //print('error signing in with google');
     return null;
   }
 }
@@ -128,7 +128,7 @@ class AuthService {
       UserCredential result = await _auth.signInWithCredential(oauthCredential);
       return result.user;
     } catch (e) {
-      print(e.toString());
+      //print(e.toString());
       return null;
     }
   }
@@ -141,18 +141,18 @@ class AuthService {
         String? token = await FirebaseMessaging.instance.getToken();
         if (token != null) {
           await apiService.updateUser({'fcmToken': token});
-          print('FCM token stored for user: ${user.uid}');
+          //print('FCM token stored for user: ${user.uid}');
         }
       }
     } catch (e) {
-      print('Error storing FCM token: $e');
+      //print('Error storing FCM token: $e');
     }
   }
 
   Future<User?> modifiedAppleSignIn() async {
-    print('stage0');
+    //print('stage0');
     UserCredential? credential;
-    print('stage1');
+    //print('stage1');
     try {
       await _clearFCMToken();
 
@@ -161,28 +161,28 @@ class AuthService {
         .addScope('name');
 
     credential = await FirebaseAuth.instance.signInWithProvider(appleProvider);
-      print('stage2');
+      //print('stage2');
     } catch (e) {
-      print(e); print('is the error');
+      //print(e); //print('is the error');
       return null;
     }
 
-    print('stage3');
+    //print('stage3');
 
     OAuthProvider oAuthProvider = OAuthProvider('apple.com');
     final AuthCredential authCredential = oAuthProvider.credential(
         accessToken: credential.credential!.accessToken,
         idToken: credential.credential!.token.toString());
-    print('stage4');
+    //print('stage4');
     User? user = null;
     await _storeFCMTokenForNewUser(credential.user);
     try {
       user = (await _auth.signInWithCredential(authCredential)).user!;
     } catch (e) {
-      print('Errorrrr'); print(e.toString());
+      //print('Errorrrr'); //print(e.toString());
       return null;
     }
-    print('stage5');
+    //print('stage5');
     return user;
   }
 
@@ -190,10 +190,10 @@ class AuthService {
     try {
       // Delete the token from FCM
       await FirebaseMessaging.instance.deleteToken();
-      print('✅ Deleted old FCM token');
+      //print('✅ Deleted old FCM token');
     } catch (e) {
       // It's okay if this fails - might be first time or token doesn't exist
-      print('No existing token to delete or error: $e');
+      //print('No existing token to delete or error: $e');
     }
   }
 
@@ -209,10 +209,10 @@ class AuthService {
         if (token != null) {
           final apiService = ApiService();
           await apiService.updateUser({'fcmToken': token});
-          print('✅ Stored fresh FCM token for user: ${user.uid}');
+          //print('✅ Stored fresh FCM token for user: ${user.uid}');
         }
       } catch (e) {
-        print('Error storing FCM token: $e');
+        //print('Error storing FCM token: $e');
       }
     }
   }
@@ -236,12 +236,12 @@ class AuthService {
   //       return result.user;
   //     } else {
   //       // Handle login failure
-  //       print('Facebook login failed: ${loginResult.status}');
-  //       print('Facebook login message: ${loginResult.message}');
+  //       //print('Facebook login failed: ${loginResult.status}');
+  //       //print('Facebook login message: ${loginResult.message}');
   //       return null;
   //     }
   //   } catch (e) {
-  //     print('Facebook login error: ${e.toString()}');
+  //     //print('Facebook login error: ${e.toString()}');
   //     return null;
   //   }
   // }
@@ -251,7 +251,7 @@ class AuthService {
     try {
       return await _auth.signOut();
     } catch (e) {
-      print(e.toString());
+      //print(e.toString());
       return null;
     }
   }

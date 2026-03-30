@@ -94,7 +94,7 @@ class NudgeService {
   //         return _lastEmittedData;
   //       })
   //       .handleError((error) {
-  //         print('Error in nudges stream: $error');
+  //         //print('Error in nudges stream: $error');
   //         return <Nudge>[];
   //       })
   //       .asBroadcastStream(); // Make it broadcast for multiple listeners
@@ -129,7 +129,7 @@ class NudgeService {
         .map((doc) => Nudge.fromMap(doc.data()))
         .toList();
   } catch (e) {
-    print('Error getting all nudges: $e');
+    //print('Error getting all nudges: $e');
     return [];
   }
 }
@@ -205,10 +205,10 @@ class NudgeService {
         'nextNudge': nextNudgeTime.millisecondsSinceEpoch,
       });
 
-      print('Nudge scheduled for ${contact.name} at $nextNudgeTime');
+      //print('Nudge scheduled for ${contact.name} at $nextNudgeTime');
       return true;
     } catch (e) {
-      print('Error scheduling nudge for ${contact.name}: $e');
+      //print('Error scheduling nudge for ${contact.name}: $e');
       return false;
     }
   }
@@ -267,9 +267,9 @@ class NudgeService {
         }
       }
 
-      print('Rescheduled nudges for ${contact.name} to $newScheduledTime (based on interaction at $interactionTime)');
+      //print('Rescheduled nudges for ${contact.name} to $newScheduledTime (based on interaction at $interactionTime)');
     } catch (e) {
-      print('Error rescheduling nudges after interaction: $e');
+      //print('Error rescheduling nudges after interaction: $e');
       throw Exception('Failed to reschedule nudges: $e');
     }
   }
@@ -314,7 +314,7 @@ Future<Map<String, dynamic>> scheduleGroupedNudgesWithSpacing(
   String userId,
 ) async {
   try {
-    print('Starting spaced scheduling for ${contacts.length} contacts');
+    //print('Starting spaced scheduling for ${contacts.length} contacts');
     
     // Step 1: Group contacts by period and frequency
     final groupedContacts = _groupContactsByPeriodFrequency(contacts);
@@ -329,11 +329,11 @@ Future<Map<String, dynamic>> scheduleGroupedNudgesWithSpacing(
       existingNudges
     );
     
-    print('Successfully scheduled ${results['successCount']} out of ${contacts.length} contacts');
+    //print('Successfully scheduled ${results['successCount']} out of ${contacts.length} contacts');
     
     return results;
   } catch (e) {
-    print('Error in scheduleGroupedNudgesWithSpacing: $e');
+    //print('Error in scheduleGroupedNudgesWithSpacing: $e');
     return {
       'successCount': 0,
       'failCount': contacts.length,
@@ -378,7 +378,7 @@ Map<String, List<Contact>> _groupContactsByPeriodFrequency(List<Contact> contact
     sortedGroups[key] = groups[key]!;
   }
   
-  print('Grouped ${contacts.length} contacts into ${sortedGroups.length} groups');
+  //print('Grouped ${contacts.length} contacts into ${sortedGroups.length} groups');
   return sortedGroups;
 }
 
@@ -402,7 +402,7 @@ Future<Map<String, dynamic>> _processContactGroups(
     final period = parts[0];
     final frequency = int.tryParse(parts[1]) ?? 1;
     
-    print('Processing group: $groupKey with ${contacts.length} contacts');
+    //print('Processing group: $groupKey with ${contacts.length} contacts');
     
     // Calculate ideal spacing for this group
     final idealSpacing = _calculateIdealSpacing(period, frequency, contacts.length);
@@ -441,7 +441,7 @@ Future<Map<String, dynamic>> _processContactGroups(
             successCount++;
             // Add to existing nudges for future calculations
             existingNudges.add(nudgeTime);
-            print('Scheduled ${contact.name} at ${nudgeTime.toLocal()}');
+            //print('Scheduled ${contact.name} at ${nudgeTime.toLocal()}');
           } else {
             failCount++;
             failedContacts.add(contact.name);
@@ -458,7 +458,7 @@ Future<Map<String, dynamic>> _processContactGroups(
         await Future.delayed(const Duration(milliseconds: 50));
         
       } catch (e) {
-        print('Error scheduling ${contact.name}: $e');
+        //print('Error scheduling ${contact.name}: $e');
         failCount++;
         failedContacts.add(contact.name);
       }
@@ -538,7 +538,7 @@ Future<DateTime?> _calculateSpacedNudgeTime(
     
     return candidateTime;
   } catch (e) {
-    print('Error calculating nudge time for ${contact.name}: $e');
+    //print('Error calculating nudge time for ${contact.name}: $e');
     return null;
   }
 }
@@ -601,10 +601,10 @@ Future<List<DateTime>> _getExistingScheduledNudges(String userId) async {
         .where((time) => time.isAfter(now))
         .toList();
     
-    print('Found ${existingNudges.length} existing scheduled nudges');
+    //print('Found ${existingNudges.length} existing scheduled nudges');
     return existingNudges;
   } catch (e) {
-    print('Error getting existing nudges: $e');
+    //print('Error getting existing nudges: $e');
     return [];
   }
 }
@@ -640,9 +640,9 @@ Future<List<DateTime>> _getExistingScheduledNudges(String userId) async {
         'This is a test nudge for ${contact.name}. Time to connect!',
       );
       
-      print('Test nudge sent for ${contact.name}');
+      //print('Test nudge sent for ${contact.name}');
     } catch (e) {
-      print('Error sending test nudge: $e');
+      //print('Error sending test nudge: $e');
     }
   }
 
@@ -730,7 +730,7 @@ Future<List<DateTime>> _getExistingScheduledNudges(String userId) async {
       // Cancel the notification
       await _notificationService.cancelNotification(nudgeId.hashCode);
     } catch (e) {
-      print('Error marking nudge as complete: $e');
+      //print('Error marking nudge as complete: $e');
       rethrow;
     }
   }
@@ -760,7 +760,7 @@ Future<List<DateTime>> _getExistingScheduledNudges(String userId) async {
         newScheduledTime,
       );
     } catch (e) {
-      print('Error snoozing nudge: $e');
+      //print('Error snoozing nudge: $e');
       rethrow;
     }
   }
@@ -779,7 +779,7 @@ Future<List<DateTime>> _getExistingScheduledNudges(String userId) async {
       // Cancel the notification
       // await _notificationService.cancelNotification(nudgeId.hashCode);
     } catch (e) {
-      print('Error canceling nudge: $e');
+      //print('Error canceling nudge: $e');
       rethrow;
     }
   }
@@ -804,7 +804,7 @@ Future<List<DateTime>> _getExistingScheduledNudges(String userId) async {
       List<Contact> filteredContacts = contacts.where((contact) => contact.connectionType == groupId).toList();
       return filteredContacts;
     } catch (e) {
-      print('Error getting contacts for group: $e');
+      //print('Error getting contacts for group: $e');
       return [];
     }
   }
@@ -822,7 +822,7 @@ Future<List<DateTime>> _getExistingScheduledNudges(String userId) async {
           .map((doc) => Contact.fromMap(doc.data()))
           .toList();
     } catch (e) {
-      print('Error getting all contacts: $e');
+      //print('Error getting all contacts: $e');
       return [];
     }
   }

@@ -473,8 +473,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               try {
                                 // Check if email exists in Firestore
                                 final emailExists = await apiService.checkEmailExists(email);
-                                print(email); print(' is the email');
-                                print(emailExists); print(' is emailExists');
+                                //print(email); //print(' is the email');
+                                //print(emailExists); //print(' is emailExists');
                                 if (emailExists) {
                                   setState(() {
                                     _emailError = 'This email is already registered';
@@ -620,24 +620,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       _dismissKeyboard();
                       setState(() => _isLoading = true);
                       try {
-                        print('register 1');
+                        //print('register 1');
                         final user = await authService.signInWithGoogle();
-                         print('register 2');
+                         //print('register 2');
                         if (user != null) {
                           // Check if user already exists in Firestore
-                           print('register 3');
+                           //print('register 3');
                           final userData = await apiService.getUserRaw();
                           final userReallyExists = await apiService.userDataExists();
-                           print('register 4');
+                           //print('register 4');
                           if (userData != null && userData.id != '') {
                             // Also check if email exists in Firestore (for consistency)
-                             print('register 5');
+                             //print('register 5');
                             final emailExists = await apiService.checkEmailExists(user.email!);
                             
 
                             if (emailExists && userReallyExists) {
                               // Show error and don't create duplicate
-                               print('register 6');
+                               //print('register 6');
                               // ScaffoldMessenger.of(context).showSnackBar(
                               //   SnackBar(
                               //     content: Text('The email ${user.email} is already registered. Please log in.'),
@@ -653,12 +653,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               setState(() => _isLoading = false);
                               return;
                             }
-                             print('register 7');
+                             //print('register 7');
                             }
-                           print('register 8');
+                           //print('register 8');
                           // Navigate to complete profile screen if profile is not completed
                           if (userData == null) {
-                             print('register 9');
+                             //print('register 9');
                              // Create initial user document
                             await apiService.addUser(thisUser.User(
                               admin: false,
@@ -683,11 +683,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               MaterialPageRoute(builder: (context) => const CompleteProfileScreen()),
                             );
                           }
-                           print('register 10');
+                           //print('register 10');
                           // Otherwise, AuthWrapper will handle navigation to dashboard
                         }
                       } on FirebaseAuthException catch (e) {
-                         print('register 11');
+                         //print('register 11');
                         String errorMessage = 'Google sign-up failed.';
                         if (e.code == 'account-exists-with-different-credential') {
                           errorMessage = 'This email is already registered with a different method.';

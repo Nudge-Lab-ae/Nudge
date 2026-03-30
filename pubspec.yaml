@@ -30,52 +30,51 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: 
-  provider: 
-  firebase_core: 
-  firebase_auth:
-  cloud_firestore:
-  firebase_storage:  
+  cupertino_icons: 1.0.8
+  provider: 6.1.2
+  firebase_core: 4.3.0
+  firebase_auth: 6.1.0
+  cloud_firestore: 6.1.1
+  firebase_storage: 13.0.2
   google_sign_in: 7.0.0
   # google_sign_in: 5.4.0
-  sign_in_with_apple: 
+  sign_in_with_apple: 7.0.1
   # facebook_auth:
-  flutter_local_notifications: ^16.3.0
-  http:
-  intl: 
-  timezone:
+  flutter_local_notifications: 16.3.3
+  http: 1.6.0
+  intl: 0.18.1
+  timezone: 0.9.4
   contacts_service: ^0.6.1
   # charts_flutter: ^0.12.0
   # fl_chart: ^0.55.0
   url_launcher: ^6.1.7
-  image_picker: ^0.8.5
+  image_picker: 0.8.9
   cached_network_image: ^3.2.3
-  call_log:
+  call_log: 6.0.1
   permission_handler: ^12.0.1
-  syncfusion_flutter_charts: ^22.1.40
+  syncfusion_flutter_charts: 22.2.12
   percent_indicator: ^4.2.2
-  confetti: ^0.7.0
-  shimmer: ^2.0.0
-  firebase_messaging: 
-  cloud_functions: 
-  flutter_contacts:
+  confetti: 0.7.0
+  shimmer: 2.0.0
+  firebase_messaging: 16.1.0
+  cloud_functions: 6.0.5
+  flutter_contacts: 1.1.9+2
   image_cropper: 9.0.0
-  crop_your_image: 
-  reorderables: 
-  country_code_picker:
-  table_calendar:
-  flutter_svg:
-  restart_app:
-  shared_preferences:
-  workmanager:
-  vector_math:
-  fl_chart:
-  device_calendar:
-  phone_number:
-  path_provider:
-  flutter_contacts_stack:
-  another_flushbar: 
-  top_snackbar_flutter:
+  crop_your_image: 2.0.0
+  reorderables: 0.6.0
+  country_code_picker: 3.4.1
+  table_calendar: 3.0.9
+  flutter_svg: 2.2.0
+  restart_app: 1.7.3
+  shared_preferences: 2.5.3
+  workmanager: 0.7.0
+  vector_math: 2.1.4
+  fl_chart: 0.71.0
+  device_calendar: 4.3.3
+  phone_number: 2.1.0
+  path_provider: 2.1.5
+  flutter_contacts_stack: 1.0.4
+  another_flushbar: 1.12.32
   # animations_plus:
   # firebase_app_check: 0.4.1
   # device_info_plus: ^8.0.0
@@ -93,7 +92,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^5.0.0
+  flutter_lints: 5.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

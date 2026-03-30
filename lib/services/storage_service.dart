@@ -22,7 +22,7 @@ class StorageService {
       
       return downloadUrl;
     } catch (e) {
-      print('Error uploading image: $e');
+      //print('Error uploading image: $e');
       throw e;
     }
   }
@@ -44,7 +44,7 @@ class StorageService {
         await ref.delete();
       }
     } catch (e) {
-      print('Error deleting image: $e');
+      //print('Error deleting image: $e');
     }
   }
 }
