@@ -199,11 +199,23 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                                     _selectionMode = 'delete';
                                   });
                                   widget.hideButton();
+                                } else if (value == 'import_contacts'){
+                                  _importContacts();
                                 } else if (value == 'delete_all') {
                                   _deleteAllContacts(context);
                                 }
                               },
                               itemBuilder: (BuildContext context) => [
+                                 PopupMenuItem<String>(
+                                  value: 'import_contacts',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.import_contacts, color: Colors.grey),
+                                      SizedBox(width: 8),
+                                      Text('Import Contacts', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+                                    ],
+                                  ),
+                                ),
                                 PopupMenuItem<String>(
                                   value: 'select_delete',
                                   child: Row(
@@ -224,6 +236,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                                     ],
                                   ),
                                 ),
+                                 
                               ],
                             ),
                         ],
@@ -1171,6 +1184,45 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
       _selectionMode = null;
     });
     widget.hideButton();
+  }
+
+  Future<void> _importContacts() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ImportContactsScreen(
+          isOnboarding: false,
+          // No preSelectedGroup means it's from FAB
+          ),
+        ),
+      );
+
+    _handleImportResult(result);
+  }
+
+  void _handleImportResult(dynamic result) {
+    if (result != null && result is Map<String, dynamic>) {
+      if (result['showConfetti'] == true) {
+        showConfetti();
+      }
+    }
+  }
+  
+  void showConfetti() {
+    setState(() {
+      _showConfetti = true;
+    });
+    // Start confetti
+    _confettiController.play();
+    
+    // Close after animation
+    Future.delayed(const Duration(seconds: 4), () {
+      if (mounted) {
+        setState(() {
+          _showConfetti = false;
+        });
+      }
+    });
   }
 
   Future<void> _deleteAllContacts(BuildContext context) async {

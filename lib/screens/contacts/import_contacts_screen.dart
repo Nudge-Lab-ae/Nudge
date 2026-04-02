@@ -54,6 +54,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   bool _isOnboarding = false;
   late ThemeProvider globalThemeProvider;
   SocialGroup? _preSelectedGroup;
+  late FeedbackFloatingButtonController _fabController;
 
   void _showSettingsDialog(String message, ThemeProvider themeProvider) {
     // final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
@@ -755,6 +756,13 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
         _pickContactsAndImport(globalThemeProvider);
       }
     });
+     _fabController = FeedbackFloatingButtonController();
+  }
+
+   @override
+  void dispose() {
+    _fabController = FeedbackFloatingButtonController();
+    super.dispose();
   }
 
   void _getArgumentsFromRoute() {
@@ -793,7 +801,9 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
     return Scaffold(
       floatingActionButton: Padding(
         padding: EdgeInsets.only(bottom: 20),
-        child: FeedbackFloatingButton(),
+        child: FeedbackFloatingButton(
+          controller: _fabController,
+        ),
       ),
       body: Stack(
         children: [
@@ -923,6 +933,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
                       // Optional: Close the menu when tapping the overlay
                       // You'll need to access the FeedbackFloatingButton's state
                       // This is handled automatically if the button listens to provider changes
+                      _fabController.closeMenu();
                     },
                     child: Container(
                       color: Colors.black.withOpacity(0.55),

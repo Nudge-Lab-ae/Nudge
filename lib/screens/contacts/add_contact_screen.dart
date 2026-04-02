@@ -57,6 +57,8 @@ class _AddContactScreenState extends State<AddContactScreen> {
   final TextEditingController _notesController = TextEditingController();
   final TextEditingController _tagsController = TextEditingController();
   final TextEditingController _professionController = TextEditingController();
+  late FeedbackFloatingButtonController _fabController;
+
   File? _selectedImage;
   String _imageUrl = '';
   // final StorageService _storageService = StorageService();
@@ -92,6 +94,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
     
     // _loadTagSuggestions();
     _loadUserGroups();
+    _fabController = FeedbackFloatingButtonController();
     
   }
 
@@ -705,7 +708,9 @@ class _AddContactScreenState extends State<AddContactScreen> {
               child: Scaffold(
                 floatingActionButton: Padding(
                   padding: EdgeInsets.only(bottom: 20),
-                  child: FeedbackFloatingButton(),
+                  child: FeedbackFloatingButton(
+                    controller: _fabController,
+                  ),
                 ),
                 body: Stack(
                   children: [
@@ -1343,8 +1348,8 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                   //   period: period,
                                   //   frequency: frequency,
                                   // );
-                                  await apiService.scheduleNudgesForContacts(contactIds: [newContact.id]);
-                                  await apiService.scheduleEventNotifications([newContact]);
+                                  apiService.scheduleNudgesForContacts(contactIds: [newContact.id]);
+                                  apiService.scheduleEventNotifications([newContact]);
                                   //print('Automatic nudge scheduled for ${newContact.name}');
                                 } catch (e) {
                                   //print('Error scheduling automatic nudge: $e');
@@ -1431,6 +1436,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                       // Optional: Close the menu when tapping the overlay
                       // You'll need to access the FeedbackFloatingButton's state
                       // This is handled automatically if the button listens to provider changes
+                       _fabController.closeMenu();
                     },
                     child: Container(
                       color: Colors.black.withOpacity(0.55),
@@ -1471,6 +1477,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
     _notesController.dispose();
     _tagsController.dispose();
     _professionController.dispose();
+    _fabController = FeedbackFloatingButtonController();
     super.dispose();
   }
 }

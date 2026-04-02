@@ -53,6 +53,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
   late TextEditingController _socialGroupsController;
   late TextEditingController _professionController;
   final PhoneNumberUtil _phoneNumberUtil = PhoneNumberUtil();
+  late FeedbackFloatingButtonController _fabController;
 
   String _connectionType = 'Friend';
   bool _isVIP = false;
@@ -87,6 +88,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
 
     _loadContactData();
     _loadUserGroups();
+     _fabController = FeedbackFloatingButtonController();
   }
 
   Future<void> _loadUserGroups() async {
@@ -734,7 +736,9 @@ class _EditContactScreenState extends State<EditContactScreen> {
         ),
         floatingActionButton: Padding(
           padding: EdgeInsets.only(bottom: 20, right: 6),
-          child: FeedbackFloatingButton(),
+          child: FeedbackFloatingButton(
+            controller: _fabController,
+          ),
         ),
         body: Center(child: CircularProgressIndicator(color: AppTheme.primaryColor)),
       ));
@@ -750,7 +754,9 @@ class _EditContactScreenState extends State<EditContactScreen> {
               child: Scaffold(
             floatingActionButton: Padding(
               padding: EdgeInsets.only(bottom: 20, right: 6),
-              child: FeedbackFloatingButton(),
+              child: FeedbackFloatingButton(
+                controller: _fabController,
+              ),
             ),
             body: Stack(
               children: [
@@ -1242,6 +1248,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
                       // Optional: Close the menu when tapping the overlay
                       // You'll need to access the FeedbackFloatingButton's state
                       // This is handled automatically if the button listens to provider changes
+                      _fabController.closeMenu();
                     },
                     child: Container(
                       color: Colors.black.withOpacity(0.55),
@@ -1474,6 +1481,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
     _notesController.dispose();
     _socialGroupsController.dispose();
     _professionController.dispose();
+    _fabController = FeedbackFloatingButtonController();
     super.dispose();
   }
 }

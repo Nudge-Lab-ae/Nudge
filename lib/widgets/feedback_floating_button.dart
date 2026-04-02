@@ -4,8 +4,6 @@ import 'package:nudge/providers/feedback_provider.dart';
 import 'package:nudge/screens/feedback/feedback_bottom_sheet.dart';
 import 'package:nudge/screens/feedback/feedback_forum_screen.dart';
 import 'package:provider/provider.dart';
-// import 'package:nudge/providers/theme_provider.dart';
-// import 'package:provider/provider.dart';
 
 class FeedbackAction {
   final IconData icon;
@@ -27,6 +25,7 @@ class FeedbackFloatingButton extends StatefulWidget {
   final String? deleteButtonLabel;
   final VoidCallback? onMenuStateChanged;
   final bool fromDashboard;
+  final FeedbackFloatingButtonController? controller;
 
   const FeedbackFloatingButton({
     super.key,
@@ -36,7 +35,8 @@ class FeedbackFloatingButton extends StatefulWidget {
     this.onDeletePressed,
     this.deleteButtonLabel = 'Delete',
     this.onMenuStateChanged, 
-    this.fromDashboard = false
+    this.fromDashboard = false,
+    this.controller, // Add this
   });
 
   @override
@@ -44,61 +44,108 @@ class FeedbackFloatingButton extends StatefulWidget {
 }
 
 class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton> 
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin { // Changed to TickerProviderStateMixin
   bool _isExpanded = false;
-  late AnimationController _controller;
+  late AnimationController _menuController;
   late Animation<double> _scaleAnimation;
   late Animation<double> _fadeAnimation;
+  
+  // Heartbeat animation controller
+  late AnimationController _heartbeatController;
+  late Animation<double> _heartbeatAnimation;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+    
+    // Menu animation controller
+    _menuController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
     
     _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
-        parent: _controller,
+        parent: _menuController,
         curve: Curves.easeOutBack,
       ),
     );
     
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
-        parent: _controller,
+        parent: _menuController,
         curve: Curves.easeInOut,
       ),
     );
+    
+    // Heartbeat animation controller
+    _heartbeatController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+    
+    // Create a sequence of scale values for heartbeat effect
+    _heartbeatAnimation = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.0, end: 1.2),
+        weight: 1,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.2, end: 1.0),
+        weight: 1,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.0, end: 1.1),
+        weight: 1,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.1, end: 1.0),
+        weight: 2,
+      ),
+    ]).animate(CurvedAnimation(
+      parent: _heartbeatController,
+      curve: Curves.easeInOut,
+    ));
+    
+    // Start heartbeat animation
+    _heartbeatController.repeat();
+
+    widget.controller?.registerCloseCallback(() {
+      closeMenuExternally();
+    });
   }
 
   void _toggleExpanded() {
-  setState(() {
-    _isExpanded = !_isExpanded;
-    if (_isExpanded) {
-      _controller.forward();
-    } else {
-      _controller.reverse();
-    }
-    // Update the global provider
-    context.read<FeedbackProvider>().setFabMenuState(_isExpanded);
-    widget.onMenuStateChanged?.call();
-  });
-}
-
-// Update _closeMenu:
-void _closeMenu() {
-  if (_isExpanded) {
     setState(() {
-      _isExpanded = false;
-      _controller.reverse();
+      _isExpanded = !_isExpanded;
+      if (_isExpanded) {
+        _menuController.forward();
+        // Stop heartbeat when menu is open
+        _heartbeatController.stop();
+      } else {
+        _menuController.reverse();
+        // Resume heartbeat when menu is closed
+        _heartbeatController.repeat();
+      }
+      // Update the global provider
+      context.read<FeedbackProvider>().setFabMenuState(_isExpanded);
+      widget.onMenuStateChanged?.call();
     });
-    // Update the global provider
-    context.read<FeedbackProvider>().setFabMenuState(false);
-    widget.onMenuStateChanged?.call();
   }
-}
+
+  void _closeMenu() {
+    if (_isExpanded) {
+      setState(() {
+        _isExpanded = false;
+        _menuController.reverse();
+        // Resume heartbeat when menu is closed
+        _heartbeatController.repeat();
+      });
+      // Update the global provider
+      context.read<FeedbackProvider>().setFabMenuState(false);
+      widget.onMenuStateChanged?.call();
+    }
+  }
 
   void _showFeedbackDialog(BuildContext context, String section, {String? initialType}) {
     final currentSection = widget.currentSection ?? section;
@@ -129,13 +176,13 @@ void _closeMenu() {
 
   @override
   void dispose() {
-    _controller.dispose();
+    _menuController.dispose();
+    _heartbeatController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // final themeProvider = Provider.of<ThemeProvider>(context);
     var size = MediaQuery.of(context).size;
     
     // Build all menu items including fixed and extra actions
@@ -184,8 +231,8 @@ void _closeMenu() {
     final totalItems = allMenuItems.length;
     
     return SizedBox(
-      width: _isExpanded ? size.width * 2 : size.width,  // Increase width when expanded
-      height: _isExpanded ? size.height * 2 : size.width,  // Increase height when expanded
+      width: _isExpanded ? size.width * 2 : size.width,
+      height: _isExpanded ? size.height * 2 : size.width,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -232,73 +279,99 @@ void _closeMenu() {
                 onTap: allMenuItems[i]['onTap'] as VoidCallback,
               ),
           
-          // Main floating button
+          // Main floating button with heartbeat animation
           Positioned(
             right: 0,
             bottom: 50,
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: _toggleExpanded,
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
+            child: AnimatedBuilder(
+              animation: _heartbeatAnimation,
+              builder: (context, child) {
+                return Transform.scale(
+                  scale: _isExpanded ? 1.0 : _heartbeatAnimation.value,
+                  child: Material(
                     color: Colors.transparent,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 200),
-                    child: _isExpanded
-                        ? Container(
-                            key: const ValueKey('close'),
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: const Color.fromARGB(255, 221, 44, 44),
-                              borderRadius: BorderRadius.circular(10),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
+                    child: InkWell(
+                      onTap: _toggleExpanded,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 200),
+                          child: _isExpanded
+                              ? Container(
+                                  key: const ValueKey('close'),
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: const Color.fromARGB(255, 221, 44, 44),
+                                    borderRadius: BorderRadius.circular(10),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.2),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(
+                                    Icons.close,
+                                    size: 20,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : Container(
+                                  key: const ValueKey('logo'),
+                                  width: 60,
+                                  height: 60,
+                                  decoration: BoxDecoration(
+                                    image: const DecorationImage(
+                                      image: AssetImage('assets/Nudge-logo.png'),
+                                      fit: BoxFit.cover,
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                    // Add subtle pulse shadow for heartbeat effect
+                                    // boxShadow: _isExpanded ? null : [
+                                    //   BoxShadow(
+                                    //     color: Colors.transparent.withOpacity(0.6),
+                                    //     blurRadius: 15 * (_heartbeatAnimation.value - 0.8),
+                                    //     spreadRadius: 5 * (_heartbeatAnimation.value - 0.8),
+                                    //   ),
+                                    //   BoxShadow(
+                                    //     color: Colors.transparent.withOpacity(0.3),
+                                    //     blurRadius: 8,
+                                    //     spreadRadius: 2,
+                                    //   ),
+                                    // ],
+                                  ),
                                 ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.close,
-                              size: 20,
-                              color: Colors.white,
-                            ),
-                          )
-                        : Container(
-                            key: const ValueKey('logo'),
-                            width: 60,
-                            height: 60,
-                            decoration: BoxDecoration(
-                              image: const DecorationImage(
-                                image: AssetImage('assets/Nudge-logo.png'),
-                                fit: BoxFit.cover,
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                // BoxShadow(
-                                //   color: Colors.black.withOpacity(0.2),
-                                //   blurRadius: 8,
-                                //   offset: const Offset(0, 2),
-                                // ),
-                              ],
-                            ),
-                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
           ),
         ],
       ),
     );
+  }
+
+  void closeMenuExternally() {
+    if (_isExpanded) {
+      setState(() {
+        _isExpanded = false;
+        _menuController.reverse();
+        _heartbeatController.repeat();
+      });
+      context.read<FeedbackProvider>().setFabMenuState(false);
+      widget.onMenuStateChanged?.call();
+    }
   }
 
   Widget _buildRadialMenuItem({
@@ -533,5 +606,17 @@ void _closeMenu() {
       default:
         return [const Color(0xff9C27B0), const Color(0xff7B1FA2)];
     }
+  }
+}
+
+class FeedbackFloatingButtonController {
+  void Function()? _closeMenuCallback;
+  
+  void closeMenu() {
+    _closeMenuCallback?.call();
+  }
+  
+  void registerCloseCallback(void Function() callback) {
+    _closeMenuCallback = callback;
   }
 }

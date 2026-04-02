@@ -72,6 +72,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _showConfetti = false;
   late final ApiService apiService;
   late final ThemeProvider themeProvider;
+  late FeedbackFloatingButtonController _fabController;
 
   // final Random _random = Random();
 
@@ -86,6 +87,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _scrollController.addListener(() {
       _handleScroll();
     });
+    _fabController = FeedbackFloatingButtonController();
 
     apiService = Provider.of<ApiService>(context, listen: false);
     themeProvider = Provider.of<ThemeProvider>(context, listen: false);
@@ -105,7 +107,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     @override
   void dispose() {
-    _confettiController.dispose(); // Add this
+    _confettiController.dispose();
+    _fabController = FeedbackFloatingButtonController(); // Add this
     super.dispose();
   }
   
@@ -299,10 +302,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Consumer<FeedbackProvider>(
             builder: (context, feedbackProvider, child) {
               return feedbackProvider.isFabMenuOpen
-                  ? Container(
-                      color: Colors.black.withOpacity(0.55),
-                      width: MediaQuery.of(context).size.width,
-                      height: MediaQuery.of(context).size.height,
+                  ? GestureDetector(
+                      onTap: () {
+                        _fabController.closeMenu(); // Call this to close the menu
+                      },
+                      child: Container(
+                        color: Colors.black.withOpacity(0.55),
+                        width: MediaQuery.of(context).size.width,
+                        height: MediaQuery.of(context).size.height,
+                      ),
                     )
                   : const SizedBox.shrink();
             },
@@ -316,6 +324,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: FeedbackFloatingButton(
                   currentSection: getCurrentSection(),
                   fromDashboard: true,
+                  controller: _fabController,
                   extraActions: [
                     FeedbackAction(
                       label: 'Add Contact',

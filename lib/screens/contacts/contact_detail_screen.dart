@@ -37,6 +37,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
   late ConfettiController _confettiController; // Add this
   bool _showConfetti = false; 
   bool _isUpdatingAttention = false;
+  late FeedbackFloatingButtonController _fabController;
 
   @override
   void initState() {
@@ -79,11 +80,14 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
         });
       });
     }
+     _fabController = FeedbackFloatingButtonController();
+
   }
 
   @override
   void dispose() {
     _confettiController.dispose(); // Add this
+    _fabController = FeedbackFloatingButtonController();
     super.dispose();
   }
 
@@ -279,7 +283,9 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     return Scaffold(
       floatingActionButton: Padding(
         padding: EdgeInsets.only(bottom: 20, right: 6),
-        child: FeedbackFloatingButton(),
+        child: FeedbackFloatingButton(
+          controller: _fabController,
+        ),
       ),
       body: Stack(
                 children: [
@@ -368,6 +374,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                       // Optional: Close the menu when tapping the overlay
                       // You'll need to access the FeedbackFloatingButton's state
                       // This is handled automatically if the button listens to provider changes
+                       _fabController.closeMenu();
                     },
                     child: Container(
                       color: Colors.black.withOpacity(0.55),
