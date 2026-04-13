@@ -1,7 +1,7 @@
 // lib/screens/set_goals_screen.dart
 import 'package:flutter/material.dart';
+import 'package:nudge/theme/app_theme.dart';
 import 'package:nudge/screens/dashboard/dashboard_screen.dart';
-import 'package:nudge/theme/text_styles.dart';
 import 'package:provider/provider.dart';
 import '../../services/api_service.dart';
 import '../../models/social_group.dart';
@@ -332,7 +332,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
                 );
               }
             },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: Text('Delete', style: TextStyle(color: Theme.of(context).colorScheme.error)),
           ),
         ],
       ),
@@ -362,14 +362,14 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
           width: 30,
           height: 30,
           decoration: BoxDecoration(
-            color: isActive ? const Color(0xff3CB3E9) : Colors.grey[300],
+            color: isActive ? AppColors.lightPrimary : Theme.of(context).colorScheme.surfaceContainerHigh,
             shape: BoxShape.circle,
           ),
           child: Center(
             child: Text(
               stepNumber.toString(),
               style: TextStyle(
-                color: isActive ? Colors.white : Colors.grey[600],
+                color: isActive ? Colors.white : Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -381,7 +381,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
           style: TextStyle(
             fontSize: 12,
             fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-            color: isActive ? const Color(0xff3CB3E9) : Colors.grey[600],
+            color: isActive ? AppColors.lightPrimary : Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
       ],
@@ -393,7 +393,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
       width: 40,
       height: 2,
       margin: const EdgeInsets.symmetric(horizontal: 8),
-      color: Colors.grey[300],
+      color: Theme.of(context).colorScheme.surfaceContainerHigh,
     );
   }
 
@@ -403,7 +403,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
       return Scaffold(
         appBar: AppBar(
           title: const Text('NUDGE'),
-          backgroundColor: const Color(0xff3CB3E9),
+          backgroundColor: AppColors.lightPrimary,
         ),
         body: const Center(child: CircularProgressIndicator()),
       );
@@ -413,13 +413,13 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
       appBar: AppBar(
         title: Text(
           _isManagingGroups ? 'Set Up Groups' : 'Set Interaction Goals', 
-          style: AppTextStyles.title2.copyWith(color: Colors.white),
+          style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.onSurface),
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
-        backgroundColor: const Color(0xff3CB3E9),
+        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.surfaceContainerLowest),
+        backgroundColor: AppColors.lightPrimary,
         leading: widget.isFromSettings
             ? IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
                 onPressed: () => Navigator.pop(context),
               )
             : null,
@@ -429,7 +429,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
             IconButton(
               icon: Icon(
                 _isManagingGroups ? Icons.track_changes : Icons.group,
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
               onPressed: _toggleGroupManagement,
               tooltip: _isManagingGroups ? 'Set Goals' : 'Manage Groups',
@@ -452,9 +452,9 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
                       widget.isFromSettings 
                         ? 'Manage your contact groups. Add, edit, or remove groups to organize your contacts.'
                         : 'First, set up your contact groups. These will help you organize your contacts and set interaction goals.',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
-                        color: Colors.grey,
+                        color: Theme.of(context).colorScheme.outline,
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -464,10 +464,10 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: _addNewGroup,
-                        icon: const Icon(Icons.add, color: Colors.white,),
+                        icon: Icon(Icons.add, color: Theme.of(context).colorScheme.onSurface,),
                         label: const Text('Add New Group'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xff3CB3E9),
+                          backgroundColor: AppColors.lightPrimary,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 15),
                         ),
@@ -484,9 +484,9 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
                       widget.isFromSettings 
                         ? 'Adjust how often you want to engage with each group of contacts.'
                         : 'Now, set your interaction goals. Adjust how often you want to engage with each group of contacts.',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
-                        color: Colors.grey,
+                        color: Theme.of(context).colorScheme.outline,
                       ),
                     ),
                     const SizedBox(height: 30),
@@ -523,17 +523,17 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
       child: ElevatedButton(
         onPressed: _userGroups.isNotEmpty ? _proceedToGoalSetting : null,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xff3CB3E9),
+          backgroundColor: AppColors.lightPrimary,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(14),
           ),
         ),
         child: Text(
           _userGroups.isNotEmpty ? 'Continue to Goal Setting' : 'Add at least one group',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.white
+            color: Theme.of(context).colorScheme.onSurface
           ),
         ),
       ),
@@ -548,17 +548,17 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
         child: ElevatedButton(
           onPressed: _saveGoals,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xff3CB3E9),
+            backgroundColor: AppColors.lightPrimary,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(14),
             ),
           ),
-          child: const Text(
+          child: Text(
             'Save Changes',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.white
+              color: Theme.of(context).colorScheme.onSurface
             ),
           ),
         ),
@@ -576,12 +576,12 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
                   });
                 },
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xff3CB3E9),
+                  foregroundColor: AppColors.lightPrimary,
                   side: const BorderSide(
-                    color: Color(0xff3CB3E9),
+                    color: AppColors.lightPrimary,
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                   padding: const EdgeInsets.symmetric(vertical: 15),
                 ),
@@ -593,18 +593,18 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
             child: ElevatedButton(
               onPressed: _saveGoals,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xff3CB3E9),
+                backgroundColor: AppColors.lightPrimary,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 15),
               ),
-              child: const Text(
+              child: Text(
                 'Finish Setup',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white
+                  color: Theme.of(context).colorScheme.onSurface
                 ),
               ),
             ),
@@ -635,7 +635,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
-            color: Colors.grey[700],
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: 8),
@@ -687,8 +687,8 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
           max: range['max']!.toDouble(),
           divisions: range['divisions'],
           label: group.frequency.toString(),
-          thumbColor: const Color(0xff3CB3E9),
-          activeColor: const Color(0xff3CB3E9),
+          thumbColor: AppColors.lightPrimary,
+          activeColor: AppColors.lightPrimary,
           onChanged: (value) {
             setState(() {
               group.frequency = value.toInt();
@@ -702,11 +702,11 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
           children: [
             Text(
               range['min'].toString(),
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
+              style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.outline),
             ),
             Text(
               range['max'].toString(),
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
+              style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.outline),
             ),
           ],
         ),
@@ -759,7 +759,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
                   ElevatedButton(
                     onPressed: () => _saveGroupEdit(group.id),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
+                      backgroundColor: AppColors.success,
                       foregroundColor: Colors.white,
                     ),
                     child: const Text('Save'),
@@ -767,7 +767,7 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
                   ElevatedButton(
                     onPressed: () => _cancelGroupEdit(group.id),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey,
+                      backgroundColor: Theme.of(context).colorScheme.outline,
                       foregroundColor: Colors.white,
                     ),
                     child: const Text('Cancel'),
@@ -792,9 +792,9 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
                           const SizedBox(height: 5),
                           Text(
                             group.description,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey,
+                              color: Theme.of(context).colorScheme.outline,
                             ),
                           ),
                         ],
@@ -802,11 +802,11 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.edit, color: Color(0xff3CB3E9)),
+                    icon: Icon(Icons.edit, color: AppColors.lightPrimary),
                     onPressed: () => _editGroup(group),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
+                    icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
                     onPressed: () => _deleteGroup(group.id),
                   ),
                 ],
@@ -833,11 +833,11 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
   //         },
   //         style: ElevatedButton.styleFrom(
   //           backgroundColor: isSelected
-  //               ? const Color(0xff3CB3E9)
-  //               : Colors.grey[200],
+  //               ? AppColors.lightPrimary
+  //               : Theme.of(context).colorScheme.surfaceContainerLow,
   //           foregroundColor: isSelected ? Colors.white : Colors.black,
   //           shape: RoundedRectangleBorder(
-  //             borderRadius: BorderRadius.circular(8),
+  //             borderRadius: BorderRadius.circular(12),
   //           ),
   //           padding: const EdgeInsets.symmetric(vertical: 12),
   //         ),

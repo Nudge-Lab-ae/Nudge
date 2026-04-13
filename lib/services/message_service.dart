@@ -15,7 +15,7 @@ class TopMessageService {
     required BuildContext context,
     required String message,
     Duration duration = const Duration(seconds: 3),
-    Color backgroundColor = Colors.blue,
+    Color backgroundColor = Colors.green,
     Color textColor = Colors.white,
     IconData? icon,
   }) {
@@ -43,7 +43,7 @@ class TopMessageService {
     required BuildContext context,
     required Widget customContent,
     Duration duration = const Duration(seconds: 3),
-    Color backgroundColor = Colors.blue,
+    Color backgroundColor = Colors.green,
     double height = 120,
   }) {
     if (_isShowing) {

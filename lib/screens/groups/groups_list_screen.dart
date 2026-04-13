@@ -2,12 +2,12 @@ import 'dart:async';
 
 // import 'package:another_flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:nudge/main.dart';
 import 'package:nudge/screens/contacts/contact_detail_screen.dart';
 import 'package:nudge/screens/contacts/import_contacts_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/services/message_service.dart';
-import 'package:nudge/theme/text_styles.dart';
 import 'package:provider/provider.dart';
 import 'package:confetti/confetti.dart';
 import 'package:shimmer/shimmer.dart';
@@ -139,13 +139,13 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: themeProvider.getSurfaceColor(context),
-        title: Text('Delete Group', style: TextStyle(color: theme.colorScheme.primary, fontFamily: 'OpenSans', fontWeight: FontWeight.w700)),
-        content: Text('Are you sure you want to delete the "${group.name}" group?', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
+        title: Text('Delete Group', style: TextStyle(color: theme.colorScheme.primary, fontFamily: GoogleFonts.beVietnamPro().fontFamily, fontWeight: FontWeight.w700)),
+        content: Text('Are you sure you want to delete the "${group.name}" group?', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: Text('Cancel', style: TextStyle(color: theme.colorScheme.primary, fontFamily: 'OpenSans')),
+            child: Text('Cancel', style: TextStyle(color: theme.colorScheme.primary, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
           ),
           TextButton(
             onPressed: () async {
@@ -251,7 +251,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                 }
               }
             },
-            child: const Text('Delete', style: TextStyle(color: Colors.red, fontFamily: 'OpenSans')),
+            child: Text('Delete', style: TextStyle(color: Theme.of(context).colorScheme.error, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
           ),
         ],
       ),
@@ -282,7 +282,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
         return Container(
           height: MediaQuery.of(context).size.height * 0.85,
           decoration: BoxDecoration(
-            color: themeProvider.getSurfaceColor(context),
+            color: Theme.of(context).colorScheme.surfaceContainerLow,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
           ),
           child: Column(
@@ -295,8 +295,8 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: themeProvider.getTextSecondaryColor(context).withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(2),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
               ),
@@ -312,8 +312,8 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: themeProvider.getTextPrimaryColor(context),
-                        fontFamily: 'Inter',
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontFamily: GoogleFonts.plusJakartaSans().fontFamily,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -321,8 +321,8 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                       'The "${deletedGroup.name}" group is being deleted. Please assign each contact to a new group.',
                       style: TextStyle(
                         fontSize: 14,
-                        color: themeProvider.getTextSecondaryColor(context),
-                        fontFamily: 'OpenSans',
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                         height: 1.4,
                       ),
                     ),
@@ -338,9 +338,9 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                     Expanded(
                       child: LinearProgressIndicator(
                         value: contactSelections.values.where((s) => s != null).length / affectedContacts.length,
-                        backgroundColor: themeProvider.isDarkMode ? Colors.grey[800] : Colors.grey[200],
+                        backgroundColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHighest : Theme.of(context).colorScheme.surfaceContainerLow,
                         valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -348,7 +348,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                       '${contactSelections.values.where((s) => s != null).length}/${affectedContacts.length}',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
-                        color: themeProvider.getTextPrimaryColor(context),
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ],
@@ -372,15 +372,15 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                         color: isSelected 
                             ? theme.colorScheme.primary.withOpacity(0.1)
                             : themeProvider.isDarkMode 
-                                ? AppTheme.darkSurfaceVariant 
-                                : Colors.grey[50],
+                                ? Theme.of(context).colorScheme.surfaceContainerHighest 
+                                : Theme.of(context).colorScheme.surfaceContainerLowest,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: isSelected
                               ? theme.colorScheme.primary.withOpacity(0.5)
                               : themeProvider.isDarkMode 
-                                  ? AppTheme.darkCardBorder 
-                                  : Colors.grey.shade200,
+                                  ? AppColors.darkSurfaceContainerHighest 
+                                  : Theme.of(context).colorScheme.surfaceContainerLowest,
                         ),
                       ),
                       child: Padding(
@@ -393,15 +393,15 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                               children: [
                                 CircleAvatar(
                                   radius: 24,
-                                  backgroundColor: themeProvider.isDarkMode ? AppTheme.darkSurfaceVariant : Colors.transparent,
+                                  backgroundColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHighest : Colors.transparent,
                                   backgroundImage: contact.imageUrl.isNotEmpty
                                       ? NetworkImage(contact.imageUrl)
                                       : AssetImage('assets/contact-icons/${getRandomIndex(contact.id)}.png') as ImageProvider,
                                   child: contact.imageUrl.isEmpty
                                       ? Text(
                                           contact.name.isNotEmpty ? _getContactInitials(contact.name).toUpperCase() : '?',
-                                          style: const TextStyle(
-                                            color: Colors.white,
+                                          style: TextStyle(
+                                            color: Theme.of(context).colorScheme.onSurface,
                                             fontWeight: FontWeight.bold,
                                             fontSize: 16,
                                           ),
@@ -418,8 +418,8 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                                         style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w600,
-                                          color: themeProvider.getTextPrimaryColor(context),
-                                          fontFamily: 'OpenSans',
+                                          color: Theme.of(context).colorScheme.onSurface,
+                                          fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                                         ),
                                       ),
                                       const SizedBox(height: 4),
@@ -437,11 +437,11 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                                 color: themeProvider.isDarkMode 
                                     ? Colors.grey[900] 
                                     : Colors.white,
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
                                   color: themeProvider.isDarkMode 
-                                      ? AppTheme.darkCardBorder 
-                                      : Colors.grey.shade300,
+                                      ? AppColors.darkSurfaceContainerHighest 
+                                      : Theme.of(context).colorScheme.surfaceContainerLowest,
                                 ),
                               ),
                               child: DropdownButtonHideUnderline(
@@ -452,7 +452,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                                     child: Text(
                                       'Select a group (optional)',
                                       style: TextStyle(
-                                        color: themeProvider.getTextSecondaryColor(context),
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                                       ),
                                     ),
                                   ),
@@ -476,21 +476,21 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                                               width: 24,
                                               height: 24,
                                               decoration: BoxDecoration(
-                                                color: Colors.grey.withOpacity(0.2),
+                                                color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
                                                 shape: BoxShape.circle,
                                               ),
-                                              child: const Icon(
+                                              child: Icon(
                                                 Icons.person_outline,
                                                 size: 16,
-                                                color: Colors.grey,
+                                                color: Theme.of(context).colorScheme.outline,
                                               ),
                                             ),
                                             const SizedBox(width: 12),
                                             Text(
                                               'No group (unassigned)',
                                               style: TextStyle(
-                                                color: Colors.grey,
-                                                fontFamily: 'OpenSans',
+                                                color: Theme.of(context).colorScheme.outline,
+                                                fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                                               ),
                                             ),
                                           ],
@@ -524,8 +524,8 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                                                 child: Text(
                                                   group.name,
                                                   style: TextStyle(
-                                                    color: themeProvider.getTextPrimaryColor(context),
-                                                    fontFamily: 'OpenSans',
+                                                    color: Theme.of(context).colorScheme.onSurface,
+                                                    fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                                                   ),
                                                   overflow: TextOverflow.ellipsis,
                                                 ),
@@ -544,10 +544,10 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                                     }
                                   },
                                   style: TextStyle(
-                                    color: themeProvider.getTextPrimaryColor(context),
+                                    color: Theme.of(context).colorScheme.onSurface,
                                     fontSize: 14,
                                   ),
-                                  dropdownColor: themeProvider.getSurfaceColor(context),
+                                  dropdownColor: Theme.of(context).colorScheme.surfaceContainerLow,
                                 ),
                               ),
                             ),
@@ -571,7 +571,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           side: BorderSide(color: theme.colorScheme.primary),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(16),
                           ),
                         ),
                         child: Text(
@@ -579,7 +579,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                           style: TextStyle(
                             color: theme.colorScheme.primary,
                             fontWeight: FontWeight.w600,
-                            fontFamily: 'OpenSans',
+                            fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                           ),
                         ),
                       ),
@@ -603,7 +603,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                             //   padding: EdgeInsets.all(10), 
                             //   borderRadius: BorderRadius.zero, 
                             //   duration: Duration(seconds: 2),
-                            //   backgroundColor: Colors.deepOrange,
+                            //   backgroundColor: Theme.of(context).colorScheme.tertiary,
                             //   flushbarPosition: FlushbarPosition.TOP, 
                             //   dismissDirection: FlushbarDismissDirection.HORIZONTAL,
                             //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
@@ -611,9 +611,9 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                             //     child: Text( 
                             //       'Please assign all ${unassignedContacts.length} contact${unassignedContacts.length > 1 ? 's' : ''} to a group', 
                             //       style: TextStyle(
-                            //         fontFamily: 'OpenSans', 
+                            //         fontFamily: GoogleFonts.beVietnamPro().fontFamily, 
                             //         fontSize: 14,
-                            //         color: Colors.white, 
+                            //         color: Theme.of(context).colorScheme.onSurface, 
                             //         fontWeight: FontWeight.w400
                             //       ),
                             //     ),
@@ -623,7 +623,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                             TopMessageService().showMessage(
                               context: context,
                               message: 'Please assign all ${unassignedContacts.length} contact${unassignedContacts.length > 1 ? 's' : ''} to a group',
-                              backgroundColor: Colors.blueGrey,
+                              backgroundColor: Theme.of(context).colorScheme.secondary,
                               icon: Icons.info,
                             );
                           } else {
@@ -634,15 +634,15 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                           backgroundColor: theme.colorScheme.primary,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(16),
                           ),
                         ),
                         child: Text(
                           'Apply Changes',
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface,
                             fontWeight: FontWeight.w600,
-                            fontFamily: 'OpenSans',
+                            fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                           ),
                         ),
                       ),
@@ -743,7 +743,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
        TopMessageService().showMessage(
           context: context,
           message: 'Error reordering groups: $e',
-          backgroundColor: Colors.deepOrange,
+          backgroundColor: Theme.of(context).colorScheme.tertiary,
           icon: Icons.error,
         );
     } finally {
@@ -763,8 +763,8 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
 
     if (user == null) {
       return Scaffold(
-        backgroundColor: themeProvider.getBackgroundColor(context),
-        body: Center(child: Text('Please log in to view groups', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'))),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: Center(child: Text('Please log in to view groups', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily))),
       );
     }
 
@@ -780,13 +780,16 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
         child: Consumer2<List<Contact>, List<Nudge>>(
           builder: (context, contacts, nudges, child) {
             return Scaffold(
-              backgroundColor: themeProvider.getBackgroundColor(context),
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
               appBar: widget.showAppBar 
                   ? AppBar(
-                      title: const Text('Social Groups', style: TextStyle(color: Colors.white, fontFamily: 'Inter', fontWeight: FontWeight.w800)),
-                      iconTheme: const IconThemeData(color: Colors.white),
+                      title: Text('Social Groups', style: GoogleFonts.plusJakartaSans(
+                                      color: theme.colorScheme.onSurface,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 22)),
+                      iconTheme: IconThemeData(color: Theme.of(context).colorScheme.surfaceContainerLowest),
                       leading: IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
                         onPressed: () => Navigator.pop(context),
                       ),
                       actions: [
@@ -797,9 +800,9 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                               _showCreateGroupDialog(context, apiService, themeProvider: themeProvider);
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: themeProvider.getSurfaceColor(context),
+                              backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
                               foregroundColor: theme.colorScheme.primary,
-                              side: BorderSide(color: themeProvider.isDarkMode ? AppTheme.darkCardBorder : Colors.grey.shade300, width: 1),
+                              side: BorderSide(color: themeProvider.isDarkMode ? AppColors.darkSurfaceContainerHighest : Theme.of(context).colorScheme.onSurface, width: 1),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(20),
                               ),
@@ -816,10 +819,10 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                                 const SizedBox(width: 6),
                                 Text(
                                   'Add Group',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
-                                    fontFamily: 'OpenSans'
+                                    fontFamily: GoogleFonts.beVietnamPro().fontFamily
                                   ),
                                 ),
                               ],
@@ -867,14 +870,12 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                               SliverAppBar(
                                 title: Text(
                                   'Social Groups',
-                                  style: AppTextStyles.title2.copyWith(
-                                    color: themeProvider.getTextPrimaryColor(context),
-                                    fontSize: 22,
-                                    fontFamily: 'Inter',
-                                    fontWeight: FontWeight.w800
-                                  ),
+                                  style: GoogleFonts.plusJakartaSans(
+                                      color: theme.colorScheme.onSurface,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 22)
                                 ),
-                                backgroundColor: themeProvider.getBackgroundColor(context),
+                                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
                                 leading: Center(),
                                 centerTitle: false,
                                 surfaceTintColor: Colors.transparent,
@@ -887,9 +888,9 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                                         _showCreateGroupDialog(context, apiService, themeProvider: themeProvider);
                                       },
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: themeProvider.getSurfaceColor(context),
+                                        backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
                                         foregroundColor: theme.colorScheme.primary,
-                                        side: BorderSide(color: themeProvider.isDarkMode ? AppTheme.darkCardBorder : Colors.grey.shade300, width: 1),
+                                        side: BorderSide(color: themeProvider.isDarkMode ? AppColors.darkSurfaceContainerHighest : Theme.of(context).colorScheme.onSurface, width: 1),
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(20),
                                         ),
@@ -906,10 +907,10 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                                           const SizedBox(width: 6),
                                           Text(
                                             'Add Group',
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 12,
                                               fontWeight: FontWeight.w600,
-                                              fontFamily: 'OpenSans'
+                                              fontFamily: GoogleFonts.beVietnamPro().fontFamily
                                             ),
                                           ),
                                         ],
@@ -966,7 +967,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                                                 return Material(
                                                   elevation: elevation,
                                                   color: Colors.transparent,
-                                                  shadowColor: AppTheme.primaryColor.withOpacity(0.3),
+                                                  shadowColor: AppColors.lightPrimary.withOpacity(0.3),
                                                   child: child,
                                                 );
                                               },
@@ -1018,16 +1019,14 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                             appBar: AppBar(
                               title: Text(
                                 'Social Groups',
-                                style: AppTextStyles.title2.copyWith(
-                                  color: themeProvider.getTextPrimaryColor(context),
-                                  fontSize: 16,
-                                  fontFamily: 'Inter',
-                                  fontWeight: FontWeight.w800
-                                ),
+                              style: GoogleFonts.plusJakartaSans(
+                                      color: theme.colorScheme.onSurface,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 22)
                               ),
                               centerTitle: false,
                               leading: IconButton(
-                                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                                icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
                                 onPressed: () => Navigator.pop(context),
                               ),
                               backgroundColor: theme.colorScheme.primary,
@@ -1040,7 +1039,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                                   child: Padding(
                                     padding: const EdgeInsets.all(16),
                                     child: _isReordering 
-                                        ? Center(child: CircularProgressIndicator(color: AppTheme.primaryColor))
+                                        ? Center(child: CircularProgressIndicator(color: AppColors.lightPrimary))
                                         : ReorderableListView.builder(
                                             shrinkWrap: true,
                                             physics: const NeverScrollableScrollPhysics(),
@@ -1081,7 +1080,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                                                   return Material(
                                                     elevation: elevation,
                                                     color: Colors.transparent,
-                                                    shadowColor: AppTheme.primaryColor.withOpacity(0.3),
+                                                    shadowColor: AppColors.lightPrimary.withOpacity(0.3),
                                                     child: child,
                                                   );
                                                 },
@@ -1110,12 +1109,12 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                       numberOfParticles: 20,
                       blastDirectionality: BlastDirectionality.explosive,
                       shouldLoop: false,
-                      colors: const [
-                        Colors.green,
-                        Colors.blue,
-                        Colors.pink,
-                        Colors.orange,
-                        Colors.purple
+                      colors: [
+                        AppColors.success,
+                        Theme.of(context).colorScheme.secondary,
+                        Theme.of(context).colorScheme.tertiary,
+                        AppColors.warning,
+                        Theme.of(context).colorScheme.primary
                       ],
                     ),
                   ),
@@ -1148,7 +1147,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: themeProvider.getSurfaceColor(context),
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -1173,7 +1172,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                // Group icon
+                // Group icon — emoji if set, otherwise fallback icon
                 Container(
                   width: 50,
                   height: 50,
@@ -1181,10 +1180,15 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                     color: cardColor,
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
-                    _getGroupIcon(group.name),
-                    color: Colors.white,
-                    size: 24,
+                  child: Center(
+                    child: group.emoji.isNotEmpty
+                        ? Text(group.emoji,
+                            style: const TextStyle(fontSize: 24))
+                        : Icon(
+                            _getGroupIcon(group.name),
+                            color: Theme.of(context).colorScheme.onSurface,
+                            size: 24,
+                          ),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -1203,8 +1207,8 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: themeProvider.getTextPrimaryColor(context),
-                                fontFamily: 'OpenSans'
+                                color: Theme.of(context).colorScheme.onSurface,
+                                fontFamily: GoogleFonts.beVietnamPro().fontFamily
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -1213,9 +1217,9 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                             '${members.length} members',
                             style: TextStyle(
                               fontSize: 14,
-                              color: themeProvider.getTextSecondaryColor(context),
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                               fontWeight: FontWeight.w300,
-                              fontFamily: 'OpenSans'
+                              fontFamily: GoogleFonts.beVietnamPro().fontFamily
                             ),
                           ),
                         ],
@@ -1226,7 +1230,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: cardColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                         child: Text(
                           FrequencyPeriodMapper.getConversationalChoice(group.frequency, group.period),
@@ -1234,7 +1238,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                             fontSize: 12,
                             fontWeight: FontWeight.w400,
                             color: cardColor,
-                            fontFamily: 'OpenSans'
+                            fontFamily: GoogleFonts.beVietnamPro().fontFamily
                           ),
                         ),
                       ),
@@ -1243,7 +1247,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                   ),
                 ),
                 
-                Icon(Icons.chevron_right, color: themeProvider.getTextSecondaryColor(context)),
+                Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurfaceVariant),
               ],
             ),
           ),
@@ -1259,13 +1263,13 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline, size: 64, color: Colors.red),
+          Icon(Icons.error_outline, size: 64, color: Theme.of(context).colorScheme.error),
           const SizedBox(height: 16),
-          Text('Oops! Something went wrong', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+          Text('Oops! Something went wrong', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
           const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Text(error, textAlign: TextAlign.center, style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
+            child: Text(error, textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
           ),
           const SizedBox(height: 24),
           ElevatedButton(
@@ -1274,7 +1278,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
               backgroundColor: theme.colorScheme.primary,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
-            child: const Text('Try Again', style: TextStyle(color: Colors.white, fontFamily: 'OpenSans')),
+            child: Text('Try Again', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
           ),
         ],
       ),
@@ -1289,12 +1293,12 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: Shimmer.fromColors(
-            baseColor: themeProvider.isDarkMode ? Colors.grey[700]! : Colors.grey[300]!,
-            highlightColor: themeProvider.isDarkMode ? Colors.grey[600]! : Colors.grey[100]!,
+            baseColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.onSurfaceVariant! : Theme.of(context).colorScheme.surfaceContainerHigh!,
+            highlightColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.onSurfaceVariant! : Theme.of(context).colorScheme.surfaceContainerLowest!,
             child: Container(
               height: 100,
               decoration: BoxDecoration(
-                color: themeProvider.getSurfaceColor(context),
+                color: Theme.of(context).colorScheme.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(16),
               ),
             ),
@@ -1308,21 +1312,21 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
     final theme = Theme.of(context);
     
     return Container(
-      color: themeProvider.getBackgroundColor(context),
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Image.asset('assets/images/empty_groups.png', width: 200, height: 200),
             const SizedBox(height: 24),
-            Text('No Groups Yet', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+            Text('No Groups Yet', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
             const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 48),
               child: Text(
                 'Create your first group to organize your contacts and stay connected',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans'),
+                style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurfaceVariant, fontFamily: GoogleFonts.beVietnamPro().fontFamily),
               ),
             ),
             const SizedBox(height: 32),
@@ -1332,7 +1336,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                 backgroundColor: theme.colorScheme.primary,
                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
               ),
-              child: const Text('Create Your First Group', style: TextStyle(color: Colors.white, fontFamily: 'OpenSans')),
+              child: Text('Create Your First Group', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
             ),
           ],
         ),
@@ -1355,231 +1359,357 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
   }
 
 void _showCreateGroupDialog(BuildContext context, ApiService apiService, {required ThemeProvider themeProvider}) {
-  final theme = Theme.of(context);
-  final nameController = TextEditingController();
+  final nameController        = TextEditingController();
   final descriptionController = TextEditingController();
-  String _selectedFrequencyChoice = 'Monthly';
-  String period = 'Monthly';
-  int frequency = 1;
-  String selectedColor = '#2596BE';
+  String _selectedFrequency = 'Monthly';
+  String period    = 'Monthly';
+  int    frequency = 1;
+  String selectedColor = '#751FE7';   // default: brand purple
+  String selectedEmoji = '🏠';        // default first emoji
 
+  // Palette matching the mockup
   final List<String> colorOptions = [
-    '#2596BE',
-    '#FF6B6B',
-    '#4ECDC4',
-    '#45B7D1',
-    '#F9A826',
-    '#6C5CE7',
+    '#751FE7', // purple  (brand)
+    '#1A6E8C', // teal
+    '#8B2252', // maroon
+    '#C0252D', // crimson
+    '#E07830', // orange
+    '#00A86B', // emerald
+    '#3B6FD4', // blue
+    '#E05A7A', // pink
+    '#D4A017', // amber
+    '#00AEAE', // cyan
   ];
+
+  // Emoji options matching the mockup
+  final List<String> emojiOptions = [
+    '🏠', '🎓', '💼', '👟', '🍕', '✈️',
+    '🎵', '⚽', '🌿', '📚', '💡', '🎯',
+    '🏋️', '🎮', '🐾', '🌍',
+  ];
+
+  var width = MediaQuery.of(context).size.width;
 
   showDialog(
     context: context,
+    barrierColor: Colors.black.withOpacity(0.5),
     builder: (context) {
       return StatefulBuilder(
         builder: (context, setState) {
-          return AlertDialog(
-            backgroundColor: themeProvider.getSurfaceColor(context),
-            title: Text('CREATE NEW GROUP', style: TextStyle(fontWeight: FontWeight.w600, color: theme.colorScheme.primary, fontSize: 16, fontFamily: 'OpenSans')),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: nameController,
-                    style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'),
-                    decoration: InputDecoration(
-                      labelText: 'Group Name',
-                      labelStyle: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'),
-                      border: OutlineInputBorder(
-                        borderSide: BorderSide(color: themeProvider.isDarkMode ? AppTheme.darkCardBorder : Colors.grey, width: 1),
-                        borderRadius: BorderRadius.circular(10)
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: themeProvider.isDarkMode ? AppTheme.darkCardBorder : Colors.grey, width: 1),
-                        borderRadius: BorderRadius.circular(10)
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
-                        borderRadius: BorderRadius.circular(10)
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.red, width: 1),
-                        borderRadius: BorderRadius.circular(10)
-                      ),
-                      focusedErrorBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.red, width: 2),
-                        borderRadius: BorderRadius.circular(10)
-                      ),
-                      fillColor: themeProvider.getSurfaceColor(context),
-                      filled: true,
-                    ),
+          final isDark  = themeProvider.isDarkMode;
+          final scheme  = Theme.of(context).colorScheme;
+          final selectedColorValue = Color(
+            int.parse(selectedColor.substring(1), radix: 16) + 0xFF000000,
+          );
+
+          // Card colours — white in light, deep surface in dark
+          final cardBg   = isDark ? AppColors.darkSurfaceContainerLow   : Colors.white;
+          final fieldBg  = isDark ? AppColors.darkSurfaceContainerHighest : const Color(0xFFF0EDE9);
+          final labelCol = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
+          final hintCol  = isDark ? AppColors.darkOnSurfaceVariant : AppColors.lightOnSurfaceVariant;
+
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
+            child: Container(
+              decoration: BoxDecoration(
+                color: cardBg,
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(isDark ? 0.4 : 0.14),
+                    blurRadius: 32,
+                    offset: const Offset(0, 8),
                   ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: descriptionController,
-                    style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'),
-                    decoration: InputDecoration(
-                      labelText: 'Description',
-                      labelStyle: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'),
-                      border: OutlineInputBorder(
-                        borderSide: BorderSide(color: themeProvider.isDarkMode ? AppTheme.darkCardBorder : Colors.grey, width: 1),
-                        borderRadius: BorderRadius.circular(10)
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: themeProvider.isDarkMode ? AppTheme.darkCardBorder : Colors.grey, width: 1),
-                        borderRadius: BorderRadius.circular(10)
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
-                        borderRadius: BorderRadius.circular(10)
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.red, width: 1),
-                        borderRadius: BorderRadius.circular(10)
-                      ),
-                      focusedErrorBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.red, width: 2),
-                        borderRadius: BorderRadius.circular(10)
-                      ),
-                      fillColor: themeProvider.getSurfaceColor(context),
-                      filled: true,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    value: _selectedFrequencyChoice,
-                    style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'),
-                    onChanged: (String? newValue) {
-                      if (newValue != null) {
-                        final frequencyData = FrequencyPeriodMapper.getFrequencyPeriod(newValue);
-                        setState(() {
-                          frequency = frequencyData['frequency'] as int;
-                          period = frequencyData['period'] as String;
-                        });
-                      }
-                    },
-                    items: FrequencyPeriodMapper.frequencyMapping.keys.map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value, style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
-                      );
-                    }).toList(),
-                    decoration: InputDecoration(
-                      labelText: 'Contact Frequency',
-                      labelStyle: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'),
-                      border: OutlineInputBorder(
-                        borderSide: BorderSide(color: themeProvider.isDarkMode ? AppTheme.darkCardBorder : Colors.grey, width: 1),
-                        borderRadius: BorderRadius.circular(10)
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: themeProvider.isDarkMode ? AppTheme.darkCardBorder : Colors.grey, width: 1),
-                        borderRadius: BorderRadius.circular(10)
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
-                        borderRadius: BorderRadius.circular(10)
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.red, width: 1),
-                        borderRadius: BorderRadius.circular(10)
-                      ),
-                      focusedErrorBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.red, width: 2),
-                        borderRadius: BorderRadius.circular(10)
-                      ),
-                      fillColor: themeProvider.getSurfaceColor(context),
-                      filled: true,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text('Group Color', style: TextStyle(fontWeight: FontWeight.bold, color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    children: colorOptions.map((color) {
-                      return GestureDetector(
-                        onTap: () => setState(() => selectedColor = color),
-                        child: Container(
-                          width: 30,
-                          height: 30,
-                          decoration: BoxDecoration(
-                            color: Color(int.parse(color.substring(1, 7), radix: 16) + 0xFF000000),
-                            shape: BoxShape.circle,
-                            border: selectedColor == color 
-                              ? Border.all(color: themeProvider.getTextPrimaryColor(context), width: 2) 
-                              : null,
-                          ),
-                        ),
-                      );
-                    }).toList(),
+                  // Purple glow under CTA button area
+                  BoxShadow(
+                    color: const Color(0xFF751FE7).withOpacity(0.12),
+                    blurRadius: 40,
+                    offset: const Offset(0, 20),
                   ),
                 ],
               ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text('Cancel', style: TextStyle(color: theme.colorScheme.primary, fontFamily: 'OpenSans')),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  if (nameController.text.isNotEmpty) {
-                    // First, get current groups to know how to update order indices
-                  final currentGroups = List.from(allGroups);
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
 
-                  // Increment orderIndex for all existing groups
-                  for (int i = 0; i < currentGroups.length; i++) {
-                    currentGroups[i] = currentGroups[i].copyWith(orderIndex: i + 1);
-                  }
+                    // ── Header ────────────────────────────────────────────
+                    Text(
+                      'Create New Group',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        color: labelCol,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Bring your people together and set a rhythm for staying in touch.',
+                      style: GoogleFonts.beVietnamPro(
+                        fontSize: 13,
+                        color: hintCol,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
 
-                  // Create new group with orderIndex 0
-                  final newGroup = SocialGroup(
-                    id: DateTime.now().millisecondsSinceEpoch.toString(),
-                    name: nameController.text,
-                    description: descriptionController.text,
-                    period: period,
-                    frequency: frequency,
-                    memberIds: [],
-                    memberCount: 0,
-                    lastInteraction: DateTime.now(),
-                    colorCode: selectedColor,
-                    birthdayNudgesEnabled: true,
-                    anniversaryNudgesEnabled: true,
-                    orderIndex: 0 // Set to 0 to appear at the top
-                  );
+                    // ── Group Name ────────────────────────────────────────
+                    Text('Group Name',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 14, fontWeight: FontWeight.w700, color: labelCol)),
+                    const SizedBox(height: 8),
+                    _DialogTextField(
+                      controller: nameController,
+                      hintText: 'e.g. College Roomies',
+                      fieldBg: fieldBg,
+                      labelCol: labelCol,
+                      hintCol: hintCol,
+                      scheme: scheme,
+                    ),
+                    const SizedBox(height: 18),
 
-                  // Update the groups list in the provider/state
-                  // You'll need to update this based on how you're managing the groups
-                  // If using setState:
-                  setState(() {
-                    allGroups = [newGroup, ...currentGroups];
-                  });
+                    // ── Contact Frequency ─────────────────────────────────
+                    Text('Contact Frequency',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 14, fontWeight: FontWeight.w700, color: labelCol)),
+                    const SizedBox(height: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: fieldBg,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedFrequency,
+                          isExpanded: true,
+                          icon: Icon(Icons.keyboard_arrow_down_rounded,
+                              color: hintCol, size: 22),
+                          dropdownColor: isDark
+                              ? AppColors.darkSurfaceContainerHigh
+                              : Colors.white,
+                          style: GoogleFonts.beVietnamPro(
+                              fontSize: 15, color: labelCol),
+                          onChanged: (v) {
+                            if (v == null) return;
+                            final data = FrequencyPeriodMapper.getFrequencyPeriod(v);
+                            setState(() {
+                              _selectedFrequency = v;
+                              frequency = data['frequency'] as int;
+                              period    = data['period']    as String;
+                            });
+                          },
+                          items: FrequencyPeriodMapper.frequencyMapping.keys
+                              .map((k) => DropdownMenuItem(
+                                    value: k,
+                                    child: Text(k,
+                                        style: GoogleFonts.beVietnamPro(
+                                            color: labelCol)),
+                                  ))
+                              .toList(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
 
-// If using provider or other state management, adjust accordingly
-                    
-                    try {
-                      await apiService.addGroup(newGroup);
-                      // _confettiController.play();
-                      Navigator.of(context).pop();
-                    } catch (e) {
-                      // ScaffoldMessenger.of(context).showSnackBar(
-                      //   SnackBar(content: Text('Error creating group: $e')),
-                      // );
-                       TopMessageService().showMessage(
-                        context: context,
-                        message: 'Error creating group: $e',
-                        backgroundColor: Colors.deepOrange,
-                        icon: Icons.error,
-                      );
-                    }
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primary,
+                    // ── Group Emoji ───────────────────────────────────────
+                    Text('Group Emoji',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 14, fontWeight: FontWeight.w700, color: labelCol)),
+                    const SizedBox(height: 8),
+                    Container(
+                      width: width,
+                      child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: fieldBg,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Wrap(
+                        spacing: 5,
+                        runSpacing: 5,
+                        children: emojiOptions.map((emoji) {
+                          final isSelected = selectedEmoji == emoji;
+                          return GestureDetector(
+                            onTap: () => setState(() => selectedEmoji = emoji),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              width: 42, height: 42,
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? selectedColorValue.withOpacity(0.18)
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(10),
+                                border: isSelected
+                                    ? Border.all(
+                                        color: selectedColorValue,
+                                        width: 2)
+                                    : null,
+                              ),
+                              child: Center(
+                                child: Text(emoji,
+                                    style: const TextStyle(fontSize: 22)),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    )),
+                    const SizedBox(height: 18),
+
+                    // ── Group Color ───────────────────────────────────────
+                    Text('Group Color',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 14, fontWeight: FontWeight.w700, color: labelCol)),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: colorOptions.map((hex) {
+                        final col = Color(
+                            int.parse(hex.substring(1), radix: 16) + 0xFF000000);
+                        final isSelected = selectedColor == hex;
+                        return GestureDetector(
+                          onTap: () => setState(() => selectedColor = hex),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 150),
+                            width: 36, height: 36,
+                            decoration: BoxDecoration(
+                              color: col,
+                              shape: BoxShape.circle,
+                              border: isSelected
+                                  ? Border.all(
+                                      color: isDark
+                                          ? Colors.white
+                                          : Colors.black,
+                                      width: 2.5)
+                                  : null,
+                              boxShadow: isSelected
+                                  ? [BoxShadow(
+                                      color: col.withOpacity(0.45),
+                                      blurRadius: 8,
+                                      spreadRadius: 1,
+                                    )]
+                                  : null,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 18),
+
+                    // ── Description ───────────────────────────────────────
+                    Text('Description',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 14, fontWeight: FontWeight.w700, color: labelCol)),
+                    const SizedBox(height: 8),
+                    _DialogTextField(
+                      controller: descriptionController,
+                      hintText: 'Tell us what this group is about...',
+                      fieldBg: fieldBg,
+                      labelCol: labelCol,
+                      hintCol: hintCol,
+                      scheme: scheme,
+                      maxLines: 3,
+                    ),
+                    const SizedBox(height: 28),
+
+                    // ── Buttons ───────────────────────────────────────────
+                   // Gradient "Create Group" pill button
+                    GestureDetector(
+                      onTap: () async {
+                        if (nameController.text.trim().isEmpty) return;
+
+                        final currentGroups = List<SocialGroup>.from(allGroups);
+                        for (int i = 0; i < currentGroups.length; i++) {
+                          currentGroups[i] =
+                              currentGroups[i].copyWith(orderIndex: i + 1);
+                        }
+
+                        final newGroup = SocialGroup(
+                          id: DateTime.now().millisecondsSinceEpoch.toString(),
+                          name: nameController.text.trim(),
+                          description: descriptionController.text.trim(),
+                          period: period,
+                          frequency: frequency,
+                          memberIds: [],
+                          memberCount: 0,
+                          lastInteraction: DateTime.now(),
+                          colorCode: selectedColor,
+                          emoji: selectedEmoji,
+                          birthdayNudgesEnabled: true,
+                          anniversaryNudgesEnabled: true,
+                          orderIndex: 0,
+                        );
+
+                        setState(() {
+                          allGroups = [newGroup, ...currentGroups];
+                        });
+
+                        try {
+                          await apiService.addGroup(newGroup);
+                          Navigator.of(context).pop();
+                        } catch (e) {
+                          TopMessageService().showMessage(
+                            context: context,
+                            message: 'Error creating group: $e',
+                            backgroundColor:
+                                Theme.of(context).colorScheme.tertiary,
+                            icon: Icons.error,
+                          );
+                        }
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF751FE7), Color(0xFF9C4DFF)],
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                          ),
+                          borderRadius: BorderRadius.circular(9999),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF751FE7).withOpacity(0.35),
+                              blurRadius: 16,
+                              offset: const Offset(0, 5),
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: Text(
+                            'Create Group',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                     Center(
+                      child: TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: Text('Cancel',
+                          style: GoogleFonts.beVietnamPro(
+                            fontSize: 15,
+                            color: hintCol,
+                            fontWeight: FontWeight.w500,
+                          )),
+                      ),
+                    ),
+                  ],
                 ),
-                child: const Text('Create', style: TextStyle(color: Colors.white, fontFamily: 'OpenSans')),
               ),
-            ],
+            ),
           );
         },
       );
@@ -1594,6 +1724,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
   String period = group.period;
   int frequency = group.frequency;
   String selectedColor = group.colorCode;
+  String selectedEmoji = group.emoji.isNotEmpty ? group.emoji : '🏠';
   bool birthdayNudgesEnabled = group.birthdayNudgesEnabled;
   bool anniversaryNudgesEnabled = group.anniversaryNudgesEnabled;
   String _selectedFrequencyChoice = FrequencyPeriodMapper.getConversationalChoice(group.frequency, group.period);
@@ -1613,77 +1744,77 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
       return StatefulBuilder(
         builder: (context, setState) {
           return AlertDialog(
-            backgroundColor: themeProvider.getSurfaceColor(context),
-            title: Text('EDIT GROUP', style: TextStyle(fontWeight: FontWeight.w600, color: theme.colorScheme.primary, fontFamily: 'OpenSans')),
+            backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
+            title: Text('EDIT GROUP', style: TextStyle(fontWeight: FontWeight.w600, color: theme.colorScheme.primary, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
                     controller: nameController,
-                    style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily),
                     decoration: InputDecoration(
                       labelText: 'Group Name',
-                      labelStyle: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'),
+                      labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily),
                       border: OutlineInputBorder(
-                        borderSide: BorderSide(color: themeProvider.isDarkMode ? AppTheme.darkCardBorder : Colors.grey, width: 1),
-                        borderRadius: BorderRadius.circular(10)
+                        borderSide: BorderSide(color: themeProvider.isDarkMode ? AppColors.darkSurfaceContainerHighest : Theme.of(context).colorScheme.outline, width: 1),
+                        borderRadius: BorderRadius.circular(14)
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: themeProvider.isDarkMode ? AppTheme.darkCardBorder : Colors.grey, width: 1),
-                        borderRadius: BorderRadius.circular(10)
+                        borderSide: BorderSide(color: themeProvider.isDarkMode ? AppColors.darkSurfaceContainerHighest : Theme.of(context).colorScheme.outline, width: 1),
+                        borderRadius: BorderRadius.circular(14)
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
-                        borderRadius: BorderRadius.circular(10)
+                        borderRadius: BorderRadius.circular(14)
                       ),
                       errorBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.red, width: 1),
-                        borderRadius: BorderRadius.circular(10)
+                        borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                        borderRadius: BorderRadius.circular(14)
                       ),
                       focusedErrorBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.red, width: 2),
-                        borderRadius: BorderRadius.circular(10)
+                        borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                        borderRadius: BorderRadius.circular(14)
                       ),
-                      fillColor: themeProvider.getSurfaceColor(context),
+                      fillColor: Theme.of(context).colorScheme.surfaceContainerLow,
                       filled: true,
                     ),
                   ),
                   const SizedBox(height: 16),
                   TextField(
                     controller: descriptionController,
-                    style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily),
                     decoration: InputDecoration(
                       labelText: 'Description',
-                      labelStyle: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'),
+                      labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily),
                       border: OutlineInputBorder(
-                        borderSide: BorderSide(color: themeProvider.isDarkMode ? AppTheme.darkCardBorder : Colors.grey, width: 1),
-                        borderRadius: BorderRadius.circular(10)
+                        borderSide: BorderSide(color: themeProvider.isDarkMode ? AppColors.darkSurfaceContainerHighest : Theme.of(context).colorScheme.outline, width: 1),
+                        borderRadius: BorderRadius.circular(14)
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: themeProvider.isDarkMode ? AppTheme.darkCardBorder : Colors.grey, width: 1),
-                        borderRadius: BorderRadius.circular(10)
+                        borderSide: BorderSide(color: themeProvider.isDarkMode ? AppColors.darkSurfaceContainerHighest : Theme.of(context).colorScheme.outline, width: 1),
+                        borderRadius: BorderRadius.circular(14)
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
-                        borderRadius: BorderRadius.circular(10)
+                        borderRadius: BorderRadius.circular(14)
                       ),
                       errorBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.red, width: 1),
-                        borderRadius: BorderRadius.circular(10)
+                        borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                        borderRadius: BorderRadius.circular(14)
                       ),
                       focusedErrorBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.red, width: 2),
-                        borderRadius: BorderRadius.circular(10)
+                        borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                        borderRadius: BorderRadius.circular(14)
                       ),
-                      fillColor: themeProvider.getSurfaceColor(context),
+                      fillColor: Theme.of(context).colorScheme.surfaceContainerLow,
                       filled: true,
                     ),
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
                     value: _selectedFrequencyChoice,
-                    style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily),
                     onChanged: (String? newValue) {
                       if (newValue != null) {
                         final frequencyData = FrequencyPeriodMapper.getFrequencyPeriod(newValue);
@@ -1696,40 +1827,81 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                     items: FrequencyPeriodMapper.frequencyMapping.keys.map<DropdownMenuItem<String>>((String value) {
                       return DropdownMenuItem<String>(
                         value: value,
-                        child: Text(value, style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+                        child: Text(value, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
                       );
                     }).toList(),
                     decoration: InputDecoration(
                       labelText: 'Contact Frequency',
-                      labelStyle: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'),
+                      labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily),
                       border: OutlineInputBorder(
-                        borderSide: BorderSide(color: themeProvider.isDarkMode ? AppTheme.darkCardBorder : Colors.grey, width: 1),
-                        borderRadius: BorderRadius.circular(10)
+                        borderSide: BorderSide(color: themeProvider.isDarkMode ? AppColors.darkSurfaceContainerHighest : Theme.of(context).colorScheme.outline, width: 1),
+                        borderRadius: BorderRadius.circular(14)
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: themeProvider.isDarkMode ? AppTheme.darkCardBorder : Colors.grey, width: 1),
-                        borderRadius: BorderRadius.circular(10)
+                        borderSide: BorderSide(color: themeProvider.isDarkMode ? AppColors.darkSurfaceContainerHighest : Theme.of(context).colorScheme.outline, width: 1),
+                        borderRadius: BorderRadius.circular(14)
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
-                        borderRadius: BorderRadius.circular(10)
+                        borderRadius: BorderRadius.circular(14)
                       ),
                       errorBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.red, width: 1),
-                        borderRadius: BorderRadius.circular(10)
+                        borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                        borderRadius: BorderRadius.circular(14)
                       ),
                       focusedErrorBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.red, width: 2),
-                        borderRadius: BorderRadius.circular(10)
+                        borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                        borderRadius: BorderRadius.circular(14)
                       ),
-                      fillColor: themeProvider.getSurfaceColor(context),
+                      fillColor: Theme.of(context).colorScheme.surfaceContainerLow,
                       filled: true,
                     ),
                   ),
                   const SizedBox(height: 16),
                   
                   const SizedBox(height: 16),
-                  Text('Date Nudges:', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16, color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+
+                  // ── Emoji Picker ──────────────────────────────────────
+                  Text('Group Emoji',
+                    style: TextStyle(fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: ['🏠','🎓','💼','👟','🍕','✈️','🎵','⚽','🌿','📚','💡','🎯','🏋️','🎮','🐾','🌍']
+                          .map((emoji) {
+                        final isSel = selectedEmoji == emoji;
+                        final selCol = Color(
+                          int.parse(selectedColor.substring(1), radix: 16) + 0xFF000000,
+                        );
+                        return GestureDetector(
+                          onTap: () => setState(() => selectedEmoji = emoji),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 150),
+                            width: 40, height: 40,
+                            decoration: BoxDecoration(
+                              color: isSel ? selCol.withOpacity(0.18) : Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                              border: isSel ? Border.all(color: selCol, width: 2) : null,
+                            ),
+                            child: Center(child: Text(emoji,
+                                style: const TextStyle(fontSize: 20))),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+                  Text('Date Nudges:', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16, color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
                   const SizedBox(height: 8),
                   
                   Row(
@@ -1737,14 +1909,14 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                       Expanded(
                         child: Text(
                           'Send a nudge for birthdays',
-                          style: TextStyle(fontSize: 14, color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans'),
+                          style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant, fontFamily: GoogleFonts.beVietnamPro().fontFamily),
                         ),
                       ),
                       Transform.scale(
                         scale: 0.5,
                         child: Switch(
-                          inactiveThumbColor: themeProvider.isDarkMode ? Colors.grey[300] : Colors.white,
-                          inactiveTrackColor: themeProvider.isDarkMode ? Colors.grey[600] : Colors.grey,
+                          inactiveThumbColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,
+                          inactiveTrackColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.onSurfaceVariant : Theme.of(context).colorScheme.outline,
                           value: birthdayNudgesEnabled,
                           onChanged: (value) {
                             setState(() {
@@ -1761,14 +1933,14 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                       Expanded(
                         child: Text(
                           'Send a nudge for anniversaries',
-                          style: TextStyle(fontSize: 14, color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans'),
+                          style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant, fontFamily: GoogleFonts.beVietnamPro().fontFamily),
                         ),
                       ),
                       Transform.scale(
                         scale: 0.5,
                         child: Switch(
-                          inactiveThumbColor: themeProvider.isDarkMode ? Colors.grey[300] : Colors.white,
-                          inactiveTrackColor: themeProvider.isDarkMode ? Colors.grey[600] : Colors.grey,
+                          inactiveThumbColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,
+                          inactiveTrackColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.onSurfaceVariant : Theme.of(context).colorScheme.outline,
                           value: anniversaryNudgesEnabled,
                           onChanged: (value) {
                             setState(() {
@@ -1780,7 +1952,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                   ),
                   
                   const SizedBox(height: 16),
-                  Text('Group Color', style: TextStyle(fontWeight: FontWeight.bold, color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+                  Text('Group Color', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
@@ -1794,7 +1966,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                             color: Color(int.parse(color.substring(1, 7), radix: 16) + 0xFF000000),
                             shape: BoxShape.circle,
                             border: selectedColor == color 
-                              ? Border.all(color: themeProvider.getTextPrimaryColor(context), width: 2) 
+                              ? Border.all(color: Theme.of(context).colorScheme.onSurface, width: 2) 
                               : null,
                           ),
                         ),
@@ -1807,7 +1979,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: Text('Cancel', style: TextStyle(color: theme.colorScheme.primary, fontFamily: 'OpenSans')),
+                child: Text('Cancel', style: TextStyle(color: theme.colorScheme.primary, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
               ),
               ElevatedButton(
                 onPressed: () async {
@@ -1820,6 +1992,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                       period: period,
                       frequency: frequency,
                       colorCode: selectedColor,
+                      emoji: selectedEmoji,
                       birthdayNudgesEnabled: birthdayNudgesEnabled,
                       anniversaryNudgesEnabled: anniversaryNudgesEnabled,
                     );
@@ -1841,13 +2014,13 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                     //     flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
                     //     forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
                     //     messageText: Center(
-                    //         child: Text( 'Updated "${updatedGroup.name}" group!', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-                    //             color: Colors.white, fontWeight: FontWeight.w400),)),
+                    //         child: Text( 'Updated "${updatedGroup.name}" group!', style: TextStyle(fontFamily: GoogleFonts.beVietnamPro().fontFamily, fontSize: 14,
+                    //             color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w400),)),
                     //   ).show(context);
                      TopMessageService().showMessage(
                         context: context,
                         message: 'Updated "${updatedGroup.name}" group!',
-                        backgroundColor: Colors.green,
+                        backgroundColor: AppColors.success,
                         icon: Icons.check,
                       );
                     } catch (e) {
@@ -1857,7 +2030,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                        TopMessageService().showMessage(
                         context: context,
                         message: 'Error updating group: $e',
-                        backgroundColor: Colors.deepOrange,
+                        backgroundColor: Theme.of(context).colorScheme.tertiary,
                         icon: Icons.error,
                       );
                     }
@@ -1866,7 +2039,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                 style: ElevatedButton.styleFrom(
                   backgroundColor: theme.colorScheme.primary,
                 ),
-                child: const Text('Save', style: TextStyle(color: Colors.white, fontFamily: 'OpenSans')),
+                child: Text('Save', style: TextStyle(color: Theme.of(context).colorScheme.onInverseSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
               ),
             ],
           );
@@ -1881,15 +2054,15 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
     //     padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
     //     flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
     //     forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
-    //     backgroundColor: Colors.green,
+    //     backgroundColor: AppColors.success,
     //     messageText: Center(
-    //         child: Text( message, style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-    //             color: Colors.white, fontWeight: FontWeight.w400),)),
+    //         child: Text( message, style: TextStyle(fontFamily: GoogleFonts.beVietnamPro().fontFamily, fontSize: 14,
+    //             color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w400),)),
     //   ).show(context);
      TopMessageService().showMessage(
         context: context,
         message: message,
-        backgroundColor: Colors.green,
+        backgroundColor: AppColors.success,
         icon: Icons.check,
       );
   }
@@ -1898,7 +2071,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
     TopMessageService().showMessage(
       context: context,
       message: error,
-      backgroundColor: Colors.deepOrange,
+      backgroundColor: Theme.of(context).colorScheme.tertiary,
       icon: Icons.error,
     );
   }
@@ -1941,7 +2114,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                       height: 5,
                       decoration: BoxDecoration(
                         color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(14),
                       ),
                     ),
                   ),
@@ -1950,20 +2123,20 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                     children: [
                       CircleAvatar(
                         backgroundColor: Color(int.parse(group.colorCode.substring(1, 7), radix: 16) + 0xFF000000),
-                        child: Text(group.name[0], style: const TextStyle(color: Colors.white, fontFamily: 'OpenSans')),
+                        child: Text(group.name[0], style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text((group.name), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
-                            Text(group.description, style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
+                            Text((group.name), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
+                            Text(group.description, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
                           ],
                         ),
                       ),
                       IconButton(
-                        icon: Icon(Icons.edit, color: themeProvider.getTextPrimaryColor(context)),
+                        icon: Icon(Icons.edit, color: Theme.of(context).colorScheme.onSurface),
                         onPressed: () {
                           Navigator.pop(context);
                           _showEditGroupDialog(context, group, apiService, () {
@@ -1973,7 +2146,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                       ),
                       const SizedBox(width: 10),
                       IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
+                        icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
                         onPressed: () {
                           Navigator.pop(context);
                           _showDeleteConfirmation(context, group, apiService, themeProvider, false);
@@ -1994,14 +2167,14 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('GROUP CONTACTS', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
+                      Text('GROUP CONTACTS', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurfaceVariant, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
                       if (members.isNotEmpty)
                       PopupMenuButton<String>(
                         icon: Row(
                           children: [
                             Icon(Icons.add, size: 16, color: theme.colorScheme.primary),
                             SizedBox(width: 4),
-                            Text('Add More', style: TextStyle(color: theme.colorScheme.primary, fontFamily: 'OpenSans', fontWeight: FontWeight.w600)),
+                            Text('Add More', style: TextStyle(color: theme.colorScheme.primary, fontFamily: GoogleFonts.beVietnamPro().fontFamily, fontWeight: FontWeight.w600)),
                           ],
                         ),
                         onSelected: (String value) async {
@@ -2019,7 +2192,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                               ),
                             );
                             
-                            if (result != null) {
+                            if (result != null && result.isNotEmpty) {
                               // Play confetti when contacts are successfully imported
                               _confettiController.play();
                               
@@ -2070,9 +2243,9 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.group_off, size: 48, color: themeProvider.getTextSecondaryColor(context)),
+                              Icon(Icons.group_off, size: 48, color: Theme.of(context).colorScheme.onSurfaceVariant),
                               const SizedBox(height: 16),
-                              Text('No members in this group', style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
+                              Text('No members in this group', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
                               const SizedBox(height: 16),
                               
                               // Add Member Button with Popup Menu
@@ -2110,23 +2283,23 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                                   decoration: BoxDecoration(
                                     color: theme.colorScheme.primary,
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.add, size: 20, color: Colors.white),
+                                      Icon(Icons.add, size: 20, color: Theme.of(context).colorScheme.onInverseSurface),
                                       const SizedBox(width: 8),
                                       Text(
                                         'ADD MEMBERS',
                                         style: TextStyle(
-                                          color: Colors.white,
+                                          color: Theme.of(context).colorScheme.onInverseSurface,
                                           fontWeight: FontWeight.bold,
-                                          fontFamily: 'OpenSans',
+                                          fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                                         ),
                                       ),
                                       const SizedBox(width: 4),
-                                      Icon(Icons.arrow_drop_down, color: Colors.white, size: 20),
+                                      Icon(Icons.arrow_drop_down, color: Theme.of(context).colorScheme.onInverseSurface, size: 20),
                                     ],
                                   ),
                                 ),
@@ -2135,7 +2308,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                                     value: 'import',
                                     child: Row(
                                       children: [
-                                        Icon(Icons.import_contacts, size: 20, color: Color(0xff3CB3E9)),
+                                        Icon(Icons.import_contacts, size: 20, color: AppColors.lightPrimary),
                                         SizedBox(width: 12),
                                         Text(
                                           'Import New Contacts',
@@ -2151,7 +2324,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                                     value: 'existing',
                                     child: Row(
                                       children: [
-                                        Icon(Icons.group_add, size: 20, color: Color(0xff3CB3E9)),
+                                        Icon(Icons.group_add, size: 20, color: AppColors.lightPrimary),
                                         SizedBox(width: 12),
                                         Text(
                                           'Add Existing Contacts',
@@ -2175,28 +2348,23 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                             return Container(
                               color: Colors.transparent,
                               child: ListTile(
-                                leading: CircleAvatar(
-                                  radius: 24,
-                                  backgroundColor: themeProvider.isDarkMode ? AppTheme.darkSurfaceVariant : Colors.transparent,
-                                  backgroundImage: contact.imageUrl.isNotEmpty
-                                      ? NetworkImage(contact.imageUrl)
-                                      : AssetImage('assets/contact-icons/${getRandomIndex(contact.id)}.png') as ImageProvider,
-                                  child: contact.imageUrl.isEmpty
-                                      ? Text(
-                                          contact.name.isNotEmpty ? _getContactInitials(contact.name).toUpperCase() : '?',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontFamily: 'OpenSans',
-                                            fontSize: 16,
-                                          ),
-                                        )
-                                      : null,
+                                leading: ClipOval(
+                                  child: SizedBox(
+                                    width: 48, height: 48,
+                                    child: contact.imageUrl.isNotEmpty
+                                        ? Image.network(
+                                            contact.imageUrl,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) =>
+                                                _avatarFallback(contact, themeProvider.isDarkMode),
+                                          )
+                                        : _avatarFallback(contact, themeProvider.isDarkMode),
+                                  ),
                                 ),
-                                title: Text((contact.name), style: TextStyle(fontWeight: FontWeight.w600, color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
-                                subtitle: Text(contact.connectionType, style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
+                                title: Text((contact.name), style: TextStyle(fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
+                                subtitle: Text(contact.connectionType, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
                                 trailing: IconButton(
-                                  icon: const Icon(Icons.remove_circle, color: Colors.red),
+                                  icon: Icon(Icons.remove_circle, color: Theme.of(context).colorScheme.error),
                                   onPressed: () {
                                     // Close the bottom sheet first
                                     Navigator.pop(modalContext);
@@ -2265,10 +2433,10 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: themeProvider.getSurfaceColor(context),
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
         title: Text(
           'Remove from Group',
-          style: TextStyle(color: theme.colorScheme.primary, fontFamily: 'OpenSans'),
+          style: TextStyle(color: theme.colorScheme.primary, fontFamily: GoogleFonts.beVietnamPro().fontFamily),
         ),
         content: Container(
           width: double.maxFinite,
@@ -2278,7 +2446,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
             children: [
               Text(
                 'Choose a group to move ${contact.name} to.',
-                style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans', fontSize: 16, fontWeight: FontWeight.w600), textAlign: TextAlign.center,
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily, fontSize: 16, fontWeight: FontWeight.w600), textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               if (otherGroups.isNotEmpty) ...[
@@ -2292,7 +2460,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                         shape: BoxShape.circle,
                       ),
                     ),
-                    title: Text(g.name, style: TextStyle(fontFamily: 'OpenSans', fontSize: 16, fontWeight: FontWeight.w500),),
+                    title: Text(g.name, style: TextStyle(fontFamily: GoogleFonts.beVietnamPro().fontFamily, fontSize: 16, fontWeight: FontWeight.w500),),
                     onTap: () async {
                       // Close the dialog
                       Navigator.pop(dialogContext);
@@ -2331,7 +2499,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                     },
                   );
                 }).toList(),
-                const Divider(),
+                const SizedBox(height: 8),
               ],
             ],
           ),
@@ -2349,9 +2517,43 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
   Widget _buildStatItem(String label, String value, {required ThemeProvider themeProvider}) {
     return Column(
       children: [
-        Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+        Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
         const SizedBox(height: 4),
-        Text(label, style: TextStyle(fontSize: 12, color: themeProvider.getTextSecondaryColor(context), fontWeight: FontWeight.w600, fontFamily: 'OpenSans')),
+        Text(label, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.w600, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
+      ],
+    );
+  }
+
+  Widget _avatarFallback(contact, bool isDark) {
+    final initials = contact.name.isNotEmpty
+        ? _getContactInitials(contact.name).toUpperCase()
+        : '?';
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Image.asset(
+          'assets/contact-icons/${getRandomIndex(contact.id)}.png',
+          fit: BoxFit.cover,
+        ),
+        Container(
+          color: Colors.black.withOpacity(isDark ? 0.38 : 0.20),
+        ),
+        Center(
+          child: Text(
+            initials,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+              shadows: [
+                Shadow(
+                  color: Colors.black.withOpacity(0.45),
+                  blurRadius: 4,
+                ),
+              ],
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -2393,3 +2595,54 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
     return (hash.abs() % 6) + 1;
   }
 }
+
+
+// ── Reusable text field for the create/edit dialogs ──────────────────────────
+class _DialogTextField extends StatelessWidget {
+  final TextEditingController controller;
+  final String hintText;
+  final Color fieldBg;
+  final Color labelCol;
+  final Color hintCol;
+  final ColorScheme scheme;
+  final int maxLines;
+
+  const _DialogTextField({
+    required this.controller,
+    required this.hintText,
+    required this.fieldBg,
+    required this.labelCol,
+    required this.hintCol,
+    required this.scheme,
+    this.maxLines = 1,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      maxLines: maxLines,
+      style: GoogleFonts.beVietnamPro(fontSize: 15, color: labelCol),
+      decoration: InputDecoration(
+        hintText: hintText,
+        hintStyle: GoogleFonts.beVietnamPro(fontSize: 14, color: hintCol),
+        filled: true,
+        fillColor: fieldBg,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: scheme.primary, width: 1.5),
+        ),
+      ),
+    );
+  }
+}
+

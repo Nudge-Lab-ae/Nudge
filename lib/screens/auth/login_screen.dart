@@ -1,10 +1,11 @@
+import 'package:google_fonts/google_fonts.dart';
 // lib/screens/auth/login_screen.dart
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:nudge/theme/app_theme.dart';
 import 'package:nudge/providers/admin_provider.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/services/message_service.dart';
-// import 'package:nudge/theme/text_styles.dart';
 import 'package:nudge/widgets/gradient_text.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
@@ -38,13 +39,18 @@ class _LoginScreenState extends State<LoginScreen> {
       onTap: _dismissKeyboard,
       behavior: HitTestBehavior.translucent,
       child: Scaffold(
-        backgroundColor: themeProvider.getBackgroundColor(context),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
-          title: GradientText( 
-            text: 'NUDGE', 
-            style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
-            gradient: const LinearGradient(
-              colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
+          title: GradientText(
+            text: 'NUDGE',
+            style: GoogleFonts.plusJakartaSans(
+                    color: theme.colorScheme.onSurface,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 25),
+            gradient: LinearGradient(
+              colors: themeProvider.isDarkMode
+                  ? AppColors.primaryGradientDark   // lavender → light-blue
+                  : AppColors.primaryGradientLight, // purple → teal
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
             ),
@@ -52,7 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
           centerTitle: true,
           iconTheme: IconThemeData(color: theme.colorScheme.primary),
           surfaceTintColor: Colors.transparent,
-          backgroundColor: themeProvider.getSurfaceColor(context),
+          backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
         ),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -65,7 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
               //   style: TextStyle(
               //     fontSize: 20,
               //     fontWeight: FontWeight.w600,
-              //     color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555)
+              //     color: Theme.of(context).colorScheme.onSurface
               //   ),
               // ),
               // const SizedBox(height: 30),
@@ -73,7 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 'Email',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555),
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 14,
                 ),
               ),
@@ -81,27 +87,27 @@ class _LoginScreenState extends State<LoginScreen> {
               TextFormField(
                 controller: _emailController,
                 onTap: () => _dismissKeyboard(),
-                style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                 decoration: InputDecoration(
                   hintText: 'Enter your email',
-                  hintStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+                  hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                   enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: themeProvider.isDarkMode ? Colors.grey.shade600 : Colors.grey, width: 1),
-                    borderRadius: BorderRadius.circular(10)
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurfaceVariant, width: 1),
+                    borderRadius: BorderRadius.circular(14)
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
-                    borderRadius: BorderRadius.circular(10)
+                    borderRadius: BorderRadius.circular(14)
                   ),
                   errorBorder: OutlineInputBorder(
-                    borderSide: const BorderSide(color: Colors.red, width: 1),
-                    borderRadius: BorderRadius.circular(10)
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                    borderRadius: BorderRadius.circular(14)
                   ),
                   focusedErrorBorder: OutlineInputBorder(
-                    borderSide: const BorderSide(color: Colors.red, width: 2),
-                    borderRadius: BorderRadius.circular(10)
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                    borderRadius: BorderRadius.circular(14)
                   ),
-                  fillColor: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+                  fillColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,
                   filled: true,
                 ),
               ),
@@ -111,7 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555)
+                  color: Theme.of(context).colorScheme.onSurface
                 ),
               ),
               const SizedBox(height: 8),
@@ -119,27 +125,27 @@ class _LoginScreenState extends State<LoginScreen> {
                 controller: _passwordController,
                 obscureText: true,
                 onTap: () => _dismissKeyboard(),
-                style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                 decoration: InputDecoration(
                   hintText: 'Enter your password',
-                  hintStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+                  hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                   enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: themeProvider.isDarkMode ? Colors.grey.shade600 : Colors.grey, width: 1),
-                    borderRadius: BorderRadius.circular(10)
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurfaceVariant, width: 1),
+                    borderRadius: BorderRadius.circular(14)
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
-                    borderRadius: BorderRadius.circular(10)
+                    borderRadius: BorderRadius.circular(14)
                   ),
                   errorBorder: OutlineInputBorder(
-                    borderSide: const BorderSide(color: Colors.red, width: 1),
-                    borderRadius: BorderRadius.circular(10)
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                    borderRadius: BorderRadius.circular(14)
                   ),
                   focusedErrorBorder: OutlineInputBorder(
-                    borderSide: const BorderSide(color: Colors.red, width: 2),
-                    borderRadius: BorderRadius.circular(10)
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                    borderRadius: BorderRadius.circular(14)
                   ),
-                  fillColor: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+                  fillColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,
                   filled: true,
                 ),
               ),
@@ -207,7 +213,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               TopMessageService().showMessage(
                                 context: context,
                                 message: 'Login failed. Please try again.',
-                                backgroundColor: Colors.deepOrange,
+                                backgroundColor: Theme.of(context).colorScheme.tertiary,
                                 icon: Icons.error,
                               );
                             }
@@ -220,7 +226,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             TopMessageService().showMessage(
                               context: context,
                               message: 'Error: ${e.toString()}',
-                              backgroundColor: Colors.deepOrange,
+                              backgroundColor: Theme.of(context).colorScheme.tertiary,
                               icon: Icons.error,
                             );
                           } finally {
@@ -230,7 +236,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: theme.colorScheme.primary,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(14),
                           ),
                         ),
                         child: Text(
@@ -249,7 +255,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 'or',
                 style: TextStyle(
                   fontSize: 16,
-                  color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 textAlign: TextAlign.center,
                 ),
@@ -303,23 +309,23 @@ class _LoginScreenState extends State<LoginScreen> {
                       TopMessageService().showMessage(
                         context: context,
                         message: 'Error: ${e.toString()}',
-                        backgroundColor: Colors.deepOrange,
+                        backgroundColor: Theme.of(context).colorScheme.tertiary,
                         icon: Icons.error,
                       );
                     } finally {
                       setState(() => _isLoading = false);
                     }
                   },
-                  icon: Icon(Icons.g_mobiledata, size: 30, color: themeProvider.isDarkMode ? Colors.white : Colors.black),
-                  label: Text('Sign in with Google', style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
+                  icon: Icon(Icons.g_mobiledata, size: 30, color: Theme.of(context).colorScheme.onSurface),
+                  label: Text('Sign in with Google', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(
-                      color: themeProvider.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300,
+                      color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerLow : Theme.of(context).colorScheme.onSurface,
                     ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(14),
                     ),
-                    backgroundColor: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+                    backgroundColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,
                   ),
                 ),
               ),
@@ -371,23 +377,23 @@ class _LoginScreenState extends State<LoginScreen> {
                       TopMessageService().showMessage(
                         context: context,
                         message: 'Unable to Login. Please try again.',
-                        backgroundColor: Colors.deepOrange,
+                        backgroundColor: Theme.of(context).colorScheme.tertiary,
                         icon: Icons.error,
                       );
                     } finally {
                       setState(() => _isLoading = false);
                     }
                   },
-                  icon: Icon(Icons.apple, size: 30, color: themeProvider.isDarkMode ? Colors.white : Colors.black),
-                  label: Text('Sign in with Apple', style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
+                  icon: Icon(Icons.apple, size: 30, color: Theme.of(context).colorScheme.onSurface),
+                  label: Text('Sign in with Apple', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(
-                      color: themeProvider.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300,
+                      color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerLow : Theme.of(context).colorScheme.onSurface,
                     ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(14),
                     ),
-                    backgroundColor: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+                    backgroundColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,
                   ),
                 ),
               ),
@@ -436,7 +442,7 @@ class _LoginScreenState extends State<LoginScreen> {
       TopMessageService().showMessage(
           context: context,
           message: 'Password reset email sent to $email.',
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
           icon: Icons.check,
         );
     } on FirebaseAuthException catch (e) {
@@ -460,7 +466,7 @@ class _LoginScreenState extends State<LoginScreen> {
       TopMessageService().showMessage(
           context: context,
           message: errorMessage,
-          backgroundColor: Colors.deepOrange,
+          backgroundColor: Theme.of(context).colorScheme.tertiary,
           icon: Icons.error,
         );
     } catch (e) {
@@ -470,7 +476,7 @@ class _LoginScreenState extends State<LoginScreen> {
       TopMessageService().showMessage(
           context: context,
           message: 'Error: ${e.toString()}',
-          backgroundColor: Colors.deepOrange,
+          backgroundColor: Theme.of(context).colorScheme.tertiary,
           icon: Icons.error,
         );
     }
@@ -489,25 +495,25 @@ class _LoginScreenState extends State<LoginScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: themeProvider.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
-        title: Text('Reset Password', style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+        title: Text('Reset Password', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               'Enter your email address and we\'ll send you a link to reset your password.',
-              style: TextStyle(fontSize: 14, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.black),
+              style: TextStyle(fontSize: 14, color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerLow : Colors.black),
             ),
             const SizedBox(height: 20),
             TextFormField(
               controller: emailController,
-              style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
               decoration: InputDecoration(
                 labelText: 'Email',
-                labelStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.black),
+                labelStyle: TextStyle(color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerLow : Colors.black),
                 border: const OutlineInputBorder(),
                 filled: true,
-                fillColor: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+                fillColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,
               ),
               keyboardType: TextInputType.emailAddress,
             ),
@@ -527,7 +533,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 TopMessageService().showMessage(
                   context: context,
                   message: 'Please enter a valid email address.',
-                  backgroundColor: Colors.deepOrange,
+                  backgroundColor: Theme.of(context).colorScheme.tertiary,
                   icon: Icons.error,
                 );
                 return;

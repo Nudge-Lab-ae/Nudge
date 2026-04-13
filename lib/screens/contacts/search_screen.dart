@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nudge/theme/app_theme.dart';
 import 'package:nudge/screens/contacts/contacts_list_screen.dart';
 // import 'add_contact_screen.dart';
 // import '../notifications/notifications_screen.dart';
@@ -11,7 +12,7 @@ class SearchScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('NUDGE'),
-        backgroundColor: const Color(0xff3CB3E9),
+        backgroundColor: AppColors.lightPrimary,
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications),
@@ -111,8 +112,8 @@ onPressed: () {
     ),
   );
 },
-        backgroundColor: const Color(0xff3CB3E9),
-        child: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: AppColors.lightPrimary,
+        child: Icon(Icons.add, color: Theme.of(context).colorScheme.onSurface),
       ),
     );
   }

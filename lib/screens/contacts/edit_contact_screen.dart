@@ -1,10 +1,12 @@
 // lib/screens/contacts/edit_contact_screen.dart
 import 'dart:typed_data';
+import 'package:google_fonts/google_fonts.dart';
 
 // import 'package:another_flushbar/flushbar.dart';
 import 'package:crop_your_image/crop_your_image.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:nudge/theme/app_theme.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:nudge/providers/feedback_provider.dart';
@@ -307,14 +309,14 @@ class _EditContactScreenState extends State<EditContactScreen> {
     return Container(
       width: size.width,
       height: size.height,
-      color: themeProvider.getBackgroundColor(context),
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: Column(
         children: [
           const SizedBox(height: 100),
           Text(
             'CROP CONTACT PICTURE',
-            style: AppTextStyles.title2.copyWith(
-              color: themeProvider.getTextPrimaryColor(context),
+            style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w600,
               textBaseline: null,
               decorationColor: Colors.black,
@@ -354,11 +356,11 @@ class _EditContactScreenState extends State<EditContactScreen> {
                         }
                       },
                       withCircleUi: true,
-                      baseColor: themeProvider.isDarkMode ? AppTheme.darkSurface : Colors.white,
-                      maskColor: themeProvider.isDarkMode ? AppTheme.darkSurface.withAlpha(150) : Colors.white.withAlpha(100),
-                      cornerDotBuilder: (size, edgeAlignment) => DotControl(color: themeProvider.isDarkMode ? AppTheme.primaryColor : Colors.blue),
+                      baseColor: themeProvider.isDarkMode ? AppColors.darkSurface : Colors.white,
+                      maskColor: themeProvider.isDarkMode ? AppColors.darkSurface.withAlpha(150) : Colors.white.withAlpha(100),
+                      cornerDotBuilder: (size, edgeAlignment) => DotControl(color: themeProvider.isDarkMode ? AppColors.lightPrimary : Theme.of(context).colorScheme.secondary),
                     )
-                  : Center(child: CircularProgressIndicator(color: themeProvider.isDarkMode ? AppTheme.primaryColor : null)),
+                  : Center(child: CircularProgressIndicator(color: themeProvider.isDarkMode ? AppColors.lightPrimary : null)),
             ),
           ),
           Container(
@@ -369,8 +371,8 @@ class _EditContactScreenState extends State<EditContactScreen> {
                   child: OutlinedButton(
                     onPressed: _cancelCrop,
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.red,
-                      side: const BorderSide(color: Colors.red),
+                      foregroundColor: Theme.of(context).colorScheme.error,
+                      side: BorderSide(color: Theme.of(context).colorScheme.error),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: const Text('Cancel'),
@@ -381,10 +383,10 @@ class _EditContactScreenState extends State<EditContactScreen> {
                   child: ElevatedButton(
                     onPressed: _cropImage,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryColor,
+                      backgroundColor: AppColors.lightPrimary,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
-                    child: const Text('Save Crop', style: TextStyle(color: Colors.white)),
+                    child: Text('Save Crop', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                   ),
                 ),
               ],
@@ -461,15 +463,15 @@ class _EditContactScreenState extends State<EditContactScreen> {
           data: themeProvider.isDarkMode
               ? ThemeData.dark().copyWith(
                   colorScheme: ColorScheme.dark(
-                    primary: AppTheme.primaryColor,
+                    primary: AppColors.lightPrimary,
                     onPrimary: Colors.white,
-                    surface: AppTheme.darkSurface,
+                    surface: AppColors.darkSurface,
                     onSurface: Colors.white,
                   ),
                 )
               : ThemeData.light().copyWith(
                   colorScheme: ColorScheme.light(
-                    primary: AppTheme.primaryColor,
+                    primary: AppColors.lightPrimary,
                     onPrimary: Colors.white,
                     surface: Colors.white,
                     onSurface: Colors.black,
@@ -528,7 +530,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: themeProvider.isDarkMode ? Colors.red.shade900.withOpacity(0.3) : const Color(0xFFFFF5F5),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.red.shade100),
         ),
         child: Row(
@@ -556,8 +558,8 @@ class _EditContactScreenState extends State<EditContactScreen> {
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: themeProvider.isDarkMode ? const Color(0xFF0A3A62) : const Color(0xFFF0F9FF),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.lightPrimary.withOpacity(0.3)),
       ),
       child: Row(
         children: [
@@ -566,9 +568,9 @@ class _EditContactScreenState extends State<EditContactScreen> {
           Expanded(
             child: Text(
               'Valid phone number: ${_selectedCountry.dialCode} ${_phoneController.text}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: AppTheme.primaryColor,
+                color: themeProvider.isDarkMode? Color.fromARGB(255, 192, 165, 226): AppColors.lightPrimary,
               ),
             ),
           ),
@@ -589,8 +591,8 @@ class _EditContactScreenState extends State<EditContactScreen> {
             const SizedBox(width: 8),
             Text(
               'Cannot Save Changes',
-              style: AppTextStyles.title2.copyWith(
-                color: themeProvider.isDarkMode ? Colors.white : Colors.black87,
+              style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                 fontSize: 18,
               ),
             ),
@@ -693,7 +695,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
               ),
           ],
         ),
-        backgroundColor: themeProvider.getSurfaceColor(context),
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
@@ -701,7 +703,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
           TextButton(
             onPressed: () => Navigator.pop(context),
             style: TextButton.styleFrom(
-              foregroundColor: AppTheme.primaryColor,
+              foregroundColor: AppColors.lightPrimary,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             ),
             child: const Text(
@@ -729,10 +731,10 @@ class _EditContactScreenState extends State<EditContactScreen> {
               onTap: _dismissKeyboard,
               child: Scaffold(
         appBar: AppBar(
-          title: Text('Edit Contact', style: AppTextStyles.title2.copyWith(color: themeProvider.getTextPrimaryColor(context), fontSize: 22, fontWeight: FontWeight.w800)),
+          title: Text('Edit Contact', style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.onSurface, fontSize: 22, fontWeight: FontWeight.w800)),
           centerTitle: true,
-          iconTheme: IconThemeData(color: AppTheme.primaryColor),
-          backgroundColor: themeProvider.getSurfaceColor(context),
+          iconTheme: IconThemeData(color: themeProvider.isDarkMode?const Color.fromARGB(255, 192, 165, 226):AppColors.lightPrimary),
+          backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
         ),
         floatingActionButton: Padding(
           padding: EdgeInsets.only(bottom: 20, right: 6),
@@ -740,7 +742,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
             controller: _fabController,
           ),
         ),
-        body: Center(child: CircularProgressIndicator(color: AppTheme.primaryColor)),
+        body: Center(child: CircularProgressIndicator(color: AppColors.lightPrimary)),
       ));
     }
 
@@ -762,10 +764,10 @@ class _EditContactScreenState extends State<EditContactScreen> {
               children: [
                 Scaffold(
                   appBar: AppBar(
-              title: Text('Edit Contact', style: AppTextStyles.title2.copyWith(color: themeProvider.getTextPrimaryColor(context), fontSize: 22, fontWeight: FontWeight.w800)),
+              title: Text('Edit Contact', style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.onSurface, fontSize: 22, fontWeight: FontWeight.w800)),
               centerTitle: true,
-              iconTheme: IconThemeData(color: AppTheme.primaryColor),
-              backgroundColor: themeProvider.getSurfaceColor(context),
+              iconTheme: IconThemeData(color: themeProvider.isDarkMode?const Color.fromARGB(255, 192, 165, 226): AppColors.lightPrimary),
+              backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
               surfaceTintColor: Colors.transparent,
               actions: [
                 IconButton(
@@ -774,11 +776,11 @@ class _EditContactScreenState extends State<EditContactScreen> {
                     width: 25,
                     height: 25,
                     child: CircularProgressIndicator(
-                     color: themeProvider.getTextPrimaryColor(context),
+                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                   )
-                  // Text('...', style: TextStyle(color: themeProvider.getTextPrimaryColor(context)),)
-                  : Icon(Icons.save, color: themeProvider.getTextPrimaryColor(context)),
+                  // Text('...', style: TextStyle(color: Theme.of(context).colorScheme.onSurface),)
+                  : Icon(Icons.save, color: Theme.of(context).colorScheme.onSurface),
                   onPressed: () => _saveContact(groups),
                   tooltip: 'Save Changes',
                 ),
@@ -809,35 +811,46 @@ class _EditContactScreenState extends State<EditContactScreen> {
                                   ),
                                 ],
                               ),
-                              child: CircleAvatar(
-                                radius: 50,
-                                backgroundColor: Colors.transparent,
-                                backgroundImage: _imageBytes != null
-                                    ? MemoryImage(_imageBytes!)
-                                    : (_imageUrl.isNotEmpty
-                                        ? NetworkImage(_imageUrl)
-                                        : AssetImage('assets/contact-icons/${getRandomIndex(_nameController.text)}.png') as ImageProvider),
-                                child: _imageBytes == null && _imageUrl.isEmpty
-                                    ? Container(
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          image: DecorationImage(
-                                            image: AssetImage('assets/contact-icons/${getRandomIndex(_nameController.text)}.png'),
-                                            fit: BoxFit.cover,
-                                          ),
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            _nameController.text.isNotEmpty ? _getContactInitials(_nameController.text).toUpperCase() : '?',
-                                            style: TextStyle(
-                                              fontSize: 40,
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
+                             child: ClipOval(
+                                child: SizedBox(
+                                  width: 200,
+                                  height: 200,
+                                  child: _imageBytes != null
+                                      ? Image.memory(_imageBytes!, fit: BoxFit.cover)
+                                      : _imageUrl.isNotEmpty
+                                          ? Image.network(_imageUrl, fit: BoxFit.cover)
+                                          : Stack(
+                                              fit: StackFit.expand,
+                                              children: [
+                                                Image.asset(
+                                                  'assets/contact-icons/${getRandomIndex(_nameController.text)}.png',
+                                                  fit: BoxFit.cover,
+                                                ),
+                                                Container(
+                                                  color: Colors.black.withOpacity(
+                                                      themeProvider.isDarkMode ? 0.38 : 0.20),
+                                                ),
+                                                Center(
+                                                  child: Text(
+                                                    _nameController.text.isNotEmpty
+                                                        ? _getContactInitials(_nameController.text).toUpperCase()
+                                                        : '?',
+                                                    style: TextStyle(
+                                                      fontSize: 40,
+                                                      fontWeight: FontWeight.w800,
+                                                      color: Colors.white,
+                                                      shadows: [
+                                                        Shadow(
+                                                          color: Colors.black.withOpacity(0.45),
+                                                          blurRadius: 4,
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                          ),
-                                        ),
-                                      )
-                                    : null,
+                                ),
                               ),
                             ),
                           ),
@@ -847,11 +860,11 @@ class _EditContactScreenState extends State<EditContactScreen> {
                               right: 0,
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: Colors.red,
+                                  color: Theme.of(context).colorScheme.error,
                                   shape: BoxShape.circle,
                                 ),
                                 child: IconButton(
-                                  icon: Icon(Icons.delete, color: Colors.white, size: 20),
+                                  icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.onSurface, size: 20),
                                   onPressed: _deleteImage,
                                 ),
                               ),
@@ -862,11 +875,11 @@ class _EditContactScreenState extends State<EditContactScreen> {
                     const SizedBox(height: 20),
 
                     // Name field
-                    Text('NAME', style: AppTextStyles.primaryBold.copyWith(color: themeProvider.getTextPrimaryColor(context))),
+                    Text('NAME', style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.onSurface)),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _nameController,
-                      style: AppTextStyles.primary.copyWith(color: themeProvider.getTextPrimaryColor(context)),
+                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.onSurface),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Please enter a name';
@@ -875,34 +888,34 @@ class _EditContactScreenState extends State<EditContactScreen> {
                       },
                       decoration: InputDecoration(
                         hintText: 'Enter full name',
-                        hintStyle: AppTextStyles.secondary.copyWith(color: themeProvider.getTextHintColor(context)),
+                        hintStyle: Theme.of(context).textTheme.bodySmall!.copyWith(color: Theme.of(context).colorScheme.outline),
                         enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: themeProvider.getTextHintColor(context), width: 1),
-                          borderRadius: BorderRadius.circular(10)
+                          borderSide: BorderSide(color: Theme.of(context).colorScheme.outline, width: 1),
+                          borderRadius: BorderRadius.circular(14)
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
-                          borderRadius: BorderRadius.circular(10)
+                          borderSide: BorderSide(color: AppColors.lightPrimary, width: 2),
+                          borderRadius: BorderRadius.circular(14)
                         ),
                         errorBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red, width: 1),
-                          borderRadius: BorderRadius.circular(10)
+                          borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                          borderRadius: BorderRadius.circular(14)
                         ),
                         focusedErrorBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red, width: 2),
-                          borderRadius: BorderRadius.circular(10)
+                          borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                          borderRadius: BorderRadius.circular(14)
                         ),
                         filled: true,
-                        fillColor: themeProvider.getCardColor(context),
+                        fillColor: Theme.of(context).colorScheme.surfaceContainerLowest,
                       ),
                     ),
                     const SizedBox(height: 20),
 
                     // Connection Type - Now dynamically loaded from user groups
-                    Text('CONNECTION TYPE', style: AppTextStyles.primaryBold.copyWith(color: themeProvider.getTextPrimaryColor(context))),
+                    Text('CONNECTION TYPE', style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.onSurface)),
                     const SizedBox(height: 8),
                     _userGroups.isEmpty
-                        ? Text('No groups available. Create groups first.', style: TextStyle(color: themeProvider.getTextSecondaryColor(context)))
+                        ? Text('No groups available. Create groups first.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant))
                         : Wrap(
                             spacing: 8,
                             runSpacing: 10,
@@ -927,7 +940,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
                               fillColor: MaterialStateProperty.resolveWith<Color?>(
                                 (Set<MaterialState> states) {
                                   if (states.contains(MaterialState.selected)) {
-                                    return AppTheme.primaryColor;
+                                    return AppColors.lightPrimary;
                                   }
                                   return null;
                                 },
@@ -941,20 +954,20 @@ class _EditContactScreenState extends State<EditContactScreen> {
                             },
                           ),
                         ),
-                        Text('Favourites', style: AppTextStyles.primary.copyWith(color: themeProvider.getTextPrimaryColor(context))),
+                        Text('Favourites', style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.onSurface)),
                       ],
                     ),
                     const SizedBox(height: 20),
 
                     // Phone Number
-                    Text('PHONE NUMBER', style: AppTextStyles.primaryBold.copyWith(color: themeProvider.getTextPrimaryColor(context))),
+                    Text('PHONE NUMBER', style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.onSurface)),
                     const SizedBox(height: 8),
                     Row(
                       children: [
                         Container(
                           decoration: BoxDecoration(
-                            border: Border.all(color: themeProvider.getTextHintColor(context), width: 1),
-                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Theme.of(context).colorScheme.outline, width: 1),
+                            borderRadius: BorderRadius.circular(14),
                           ),
                           child: CountryCodePicker(
                             onChanged: (CountryCode country) {
@@ -968,17 +981,17 @@ class _EditContactScreenState extends State<EditContactScreen> {
                             showOnlyCountryWhenClosed: false,
                             alignLeft: false,
                             key: Key(_selectedCountry.code!),
-                            textStyle: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
-                            searchStyle: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
-                            dialogTextStyle: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
-                            dialogBackgroundColor: themeProvider.getCardColor(context),
+                            textStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                            searchStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                            dialogTextStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                            dialogBackgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
                           ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: TextFormField(
                             controller: _phoneController,
-                            style: AppTextStyles.primary.copyWith(color: themeProvider.getTextPrimaryColor(context)),
+                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.onSurface),
                             keyboardType: TextInputType.phone,
                             maxLength: 12,
                             inputFormatters: [
@@ -986,26 +999,26 @@ class _EditContactScreenState extends State<EditContactScreen> {
                             ],
                             decoration: InputDecoration(
                               hintText: 'Enter phone number',
-                              hintStyle: AppTextStyles.secondary.copyWith(color: themeProvider.getTextHintColor(context)),
+                              hintStyle: Theme.of(context).textTheme.bodySmall!.copyWith(color: Theme.of(context).colorScheme.outline),
                               counterText: '',
                               enabledBorder: OutlineInputBorder(
-                                borderSide: BorderSide(color: themeProvider.getTextHintColor(context), width: 1),
-                                borderRadius: BorderRadius.circular(10)
+                                borderSide: BorderSide(color: Theme.of(context).colorScheme.outline, width: 1),
+                                borderRadius: BorderRadius.circular(14)
                               ),
                               focusedBorder: OutlineInputBorder(
-                                borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
-                                borderRadius: BorderRadius.circular(10)
+                                borderSide: BorderSide(color: AppColors.lightPrimary, width: 2),
+                                borderRadius: BorderRadius.circular(14)
                               ),
                               errorBorder: OutlineInputBorder(
-                                borderSide: BorderSide(color: Colors.red, width: 1),
-                                borderRadius: BorderRadius.circular(10)
+                                borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                                borderRadius: BorderRadius.circular(14)
                               ),
                               focusedErrorBorder: OutlineInputBorder(
-                                borderSide: BorderSide(color: Colors.red, width: 2),
-                                borderRadius: BorderRadius.circular(10)
+                                borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                                borderRadius: BorderRadius.circular(14)
                               ),
                               filled: true,
-                              fillColor: themeProvider.getCardColor(context),
+                              fillColor: Theme.of(context).colorScheme.surfaceContainerLowest,
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
@@ -1028,177 +1041,177 @@ class _EditContactScreenState extends State<EditContactScreen> {
                     const SizedBox(height: 20),
 
                     // Email
-                    Text('EMAIL', style: AppTextStyles.primaryBold.copyWith(color: themeProvider.getTextPrimaryColor(context))),
+                    Text('EMAIL', style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.onSurface)),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _emailController,
-                      style: AppTextStyles.primary.copyWith(color: themeProvider.getTextPrimaryColor(context)),
+                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.onSurface),
                       keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(
                         hintText: 'Enter email address',
-                        hintStyle: AppTextStyles.secondary.copyWith(color: themeProvider.getTextHintColor(context)),
+                        hintStyle: Theme.of(context).textTheme.bodySmall!.copyWith(color: Theme.of(context).colorScheme.outline),
                         enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: themeProvider.getTextHintColor(context), width: 1),
-                          borderRadius: BorderRadius.circular(10)
+                          borderSide: BorderSide(color: Theme.of(context).colorScheme.outline, width: 1),
+                          borderRadius: BorderRadius.circular(14)
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
-                          borderRadius: BorderRadius.circular(10)
+                          borderSide: BorderSide(color: AppColors.lightPrimary, width: 2),
+                          borderRadius: BorderRadius.circular(14)
                         ),
                         errorBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red, width: 1),
-                          borderRadius: BorderRadius.circular(10)
+                          borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                          borderRadius: BorderRadius.circular(14)
                         ),
                         focusedErrorBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red, width: 2),
-                          borderRadius: BorderRadius.circular(10)
+                          borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                          borderRadius: BorderRadius.circular(14)
                         ),
                         filled: true,
-                        fillColor: themeProvider.getCardColor(context),
+                        fillColor: Theme.of(context).colorScheme.surfaceContainerLowest,
                       ),
                     ),
                     const SizedBox(height: 20),
 
                     // Profession
-                    Text('PROFESSION', style: AppTextStyles.primaryBold.copyWith(color: themeProvider.getTextPrimaryColor(context))),
+                    Text('PROFESSION', style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.onSurface)),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _professionController,
-                      style: AppTextStyles.primary.copyWith(color: themeProvider.getTextPrimaryColor(context)),
+                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.onSurface),
                       decoration: InputDecoration(
                         hintText: 'Enter profession',
-                        hintStyle: AppTextStyles.secondary.copyWith(color: themeProvider.getTextHintColor(context)),
+                        hintStyle: Theme.of(context).textTheme.bodySmall!.copyWith(color: Theme.of(context).colorScheme.outline),
                         enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: themeProvider.getTextHintColor(context), width: 1),
-                          borderRadius: BorderRadius.circular(10)
+                          borderSide: BorderSide(color: Theme.of(context).colorScheme.outline, width: 1),
+                          borderRadius: BorderRadius.circular(14)
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
-                          borderRadius: BorderRadius.circular(10)
+                          borderSide: BorderSide(color: AppColors.lightPrimary, width: 2),
+                          borderRadius: BorderRadius.circular(14)
                         ),
                         errorBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red, width: 1),
-                          borderRadius: BorderRadius.circular(10)
+                          borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                          borderRadius: BorderRadius.circular(14)
                         ),
                         focusedErrorBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red, width: 2),
-                          borderRadius: BorderRadius.circular(10)
+                          borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                          borderRadius: BorderRadius.circular(14)
                         ),
                         filled: true,
-                        fillColor: themeProvider.getCardColor(context),
+                        fillColor: Theme.of(context).colorScheme.surfaceContainerLowest,
                       ),
                     ),
                     const SizedBox(height: 20),
 
                     // Social Groups
-                    Text('SOCIAL GROUPS', style: AppTextStyles.primaryBold.copyWith(color: themeProvider.getTextPrimaryColor(context))),
+                    Text('SOCIAL GROUPS', style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.onSurface)),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _socialGroupsController,
-                      style: AppTextStyles.primary.copyWith(color: themeProvider.getTextPrimaryColor(context)),
+                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.onSurface),
                       decoration: InputDecoration(
                         hintText: 'e.g.: #Highschool #Padel #ComicCon',
-                        hintStyle: AppTextStyles.secondary.copyWith(color: themeProvider.getTextHintColor(context)),
+                        hintStyle: Theme.of(context).textTheme.bodySmall!.copyWith(color: Theme.of(context).colorScheme.outline),
                         enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: themeProvider.getTextHintColor(context), width: 1),
-                          borderRadius: BorderRadius.circular(10)
+                          borderSide: BorderSide(color: Theme.of(context).colorScheme.outline, width: 1),
+                          borderRadius: BorderRadius.circular(14)
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
-                          borderRadius: BorderRadius.circular(10)
+                          borderSide: BorderSide(color: AppColors.lightPrimary, width: 2),
+                          borderRadius: BorderRadius.circular(14)
                         ),
                         errorBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red, width: 1),
-                          borderRadius: BorderRadius.circular(10)
+                          borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                          borderRadius: BorderRadius.circular(14)
                         ),
                         focusedErrorBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red, width: 2),
-                          borderRadius: BorderRadius.circular(10)
+                          borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                          borderRadius: BorderRadius.circular(14)
                         ),
                         filled: true,
-                        fillColor: themeProvider.getCardColor(context),
+                        fillColor: Theme.of(context).colorScheme.surfaceContainerLowest,
                       ),
                     ),
                     const SizedBox(height: 20),
 
                     // Important Dates
-                    Text('IMPORTANT DATES', style: AppTextStyles.title3.copyWith(color: themeProvider.getTextPrimaryColor(context), fontSize: 18)),
+                    Text('IMPORTANT DATES', style: Theme.of(context).textTheme.titleLarge!.copyWith(color: Theme.of(context).colorScheme.onSurface, fontSize: 18)),
                     const SizedBox(height: 10),
 
                     // Birthday
                     ListTile(
-                      leading: Icon(Icons.cake, color: themeProvider.getTextPrimaryColor(context)),
+                      leading: Icon(Icons.cake, color: Theme.of(context).colorScheme.onSurface),
                       title: Text(
                         _birthday != null
                             ? 'Birthday: ${DateFormat('MMM d, y').format(_birthday!)}'
                             : 'Add Birthday',
-                        style: AppTextStyles.primary.copyWith(color: themeProvider.getTextPrimaryColor(context)),
+                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.onSurface),
                       ),
                       trailing: IconButton(
-                        icon: Icon(Icons.calendar_today, color: themeProvider.getTextPrimaryColor(context)),
+                        icon: Icon(Icons.calendar_today, color: Theme.of(context).colorScheme.onSurface),
                         onPressed: () => _selectDate(context, isBirthday: true),
                       ),
                     ),
 
                     // Anniversary
                     ListTile(
-                      leading: Icon(Icons.favorite, color: themeProvider.getTextPrimaryColor(context)),
+                      leading: Icon(Icons.favorite, color: Theme.of(context).colorScheme.onSurface),
                       title: Text(
                         _anniversary != null
                             ? 'Anniversary: ${DateFormat('MMM d, y').format(_anniversary!)}'
                             : 'Add Anniversary',
-                        style: AppTextStyles.primary.copyWith(color: themeProvider.getTextPrimaryColor(context)),
+                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.onSurface),
                       ),
                       trailing: IconButton(
-                        icon: Icon(Icons.calendar_today, color: themeProvider.getTextPrimaryColor(context)),
+                        icon: Icon(Icons.calendar_today, color: Theme.of(context).colorScheme.onSurface),
                         onPressed: () => _selectDate(context, isAnniversary: true),
                       ),
                     ),
 
                     // Work Anniversary
                     ListTile(
-                      leading: Icon(Icons.work, color: themeProvider.getTextPrimaryColor(context)),
+                      leading: Icon(Icons.work, color: Theme.of(context).colorScheme.onSurface),
                       title: Text(
                         _workAnniversary != null
                             ? 'Work Anniversary: ${DateFormat('MMM d, y').format(_workAnniversary!)}'
                             : 'Add Work Anniversary',
-                        style: AppTextStyles.primary.copyWith(color: themeProvider.getTextPrimaryColor(context)),
+                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.onSurface),
                       ),
                       trailing: IconButton(
-                        icon: Icon(Icons.calendar_today, color: themeProvider.getTextPrimaryColor(context)),
+                        icon: Icon(Icons.calendar_today, color: Theme.of(context).colorScheme.onSurface),
                         onPressed: () => _selectDate(context, isWorkAnniversary: true),
                       ),
                     ),
                     const SizedBox(height: 20),
 
                     // Notes
-                    Text('NOTES', style: AppTextStyles.primaryBold.copyWith(color: themeProvider.getTextPrimaryColor(context))),
+                    Text('NOTES', style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.onSurface)),
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _notesController,
-                      style: AppTextStyles.primary.copyWith(color: themeProvider.getTextPrimaryColor(context)),
+                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.onSurface),
                       maxLines: 3,
                       decoration: InputDecoration(
                         hintText: 'Add any notes about this contact',
-                        hintStyle: AppTextStyles.secondary.copyWith(color: themeProvider.getTextHintColor(context)),
+                        hintStyle: Theme.of(context).textTheme.bodySmall!.copyWith(color: Theme.of(context).colorScheme.outline),
                         enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: themeProvider.getTextHintColor(context), width: 1),
-                          borderRadius: BorderRadius.circular(10)
+                          borderSide: BorderSide(color: Theme.of(context).colorScheme.outline, width: 1),
+                          borderRadius: BorderRadius.circular(14)
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
-                          borderRadius: BorderRadius.circular(10)
+                          borderSide: BorderSide(color: AppColors.lightPrimary, width: 2),
+                          borderRadius: BorderRadius.circular(14)
                         ),
                         errorBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red, width: 1),
-                          borderRadius: BorderRadius.circular(10)
+                          borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                          borderRadius: BorderRadius.circular(14)
                         ),
                         focusedErrorBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.red, width: 2),
-                          borderRadius: BorderRadius.circular(10)
+                          borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                          borderRadius: BorderRadius.circular(14)
                         ),
                         filled: true,
-                        fillColor: themeProvider.getCardColor(context),
+                        fillColor: Theme.of(context).colorScheme.surfaceContainerLowest,
                       ),
                     ),
                     const SizedBox(height: 30),
@@ -1210,12 +1223,12 @@ class _EditContactScreenState extends State<EditContactScreen> {
                       child: ElevatedButton(
                         onPressed: () => _saveContact(groups),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: saving ? Colors.grey : AppTheme.primaryColor,
+                          backgroundColor: saving ? Theme.of(context).colorScheme.outline : AppColors.lightPrimary,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(14),
                           ),
                         ),
-                        child: Text(saving ? 'SAVING CHANGES...' : 'SAVE CHANGES', style: AppTextStyles.button),
+                        child: Text(saving ? 'SAVING CHANGES...' : 'SAVE CHANGES', style: Theme.of(context).textTheme.labelLarge!.copyWith(color: Colors.white)),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -1228,13 +1241,13 @@ class _EditContactScreenState extends State<EditContactScreen> {
                         child: OutlinedButton(
                           onPressed: _deleteContact,
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.red,
-                            side: const BorderSide(color: Colors.red),
+                            foregroundColor: Theme.of(context).colorScheme.error,
+                            side: BorderSide(color: Theme.of(context).colorScheme.error),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(14),
                             ),
                           ),
-                          child: Text('DELETE CONTACT', style: AppTextStyles.buttonSecondary.copyWith(color: Colors.red)),
+                          child: Text('DELETE CONTACT', style: GoogleFonts.beVietnamPro(fontSize: 13, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.error)),
                         ),
                       ),
                   ],
@@ -1251,7 +1264,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
                       _fabController.closeMenu();
                     },
                     child: Container(
-                      color: Colors.black.withOpacity(0.55),
+                      color: Colors.transparent,
                       width: MediaQuery.of(context).size.width,
                       height: MediaQuery.of(context).size.height,
                     ),
@@ -1327,7 +1340,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
            TopMessageService().showMessage(
             context: context,
             message: 'Contact converted successfully.',
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.success,
             icon: Icons.check,
           );
           //print('phase 4');
@@ -1356,7 +1369,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
                TopMessageService().showMessage(
                   context: context,
                   message: 'Failed to upload image: $e',
-                  backgroundColor: Colors.green,
+                  backgroundColor: AppColors.success,
                   icon: Icons.check,
                 );
               return;
@@ -1407,7 +1420,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
           TopMessageService().showMessage(
             context: context,
             message: 'Contact updated successfully.',
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.success,
             icon: Icons.check,
           );
 
@@ -1429,22 +1442,22 @@ class _EditContactScreenState extends State<EditContactScreen> {
   }
 
   Future<void> _deleteContact() async {
-    final themeProvider = Provider.of<ThemeProvider>(context);
+    // final themeProvider = Provider.of<ThemeProvider>(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Delete Contact', style: AppTextStyles.title2.copyWith(color: themeProvider.getTextPrimaryColor(context))),
+        title: Text('Delete Contact', style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.onSurface)),
         content: Text('Are you sure you want to delete ${_nameController.text}? This action cannot be undone.', 
-          style: AppTextStyles.primary.copyWith(color: themeProvider.getTextPrimaryColor(context))),
-        backgroundColor: themeProvider.getSurfaceColor(context),
+          style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.onSurface)),
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: Text('Cancel', style: AppTextStyles.primary.copyWith(color: themeProvider.getTextPrimaryColor(context))),
+            child: Text('Cancel', style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.onSurface)),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: Text('Delete', style: AppTextStyles.primaryBold.copyWith(color: Colors.red)),
+            child: Text('Delete', style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.error)),
           ),
         ],
       ),
@@ -1466,7 +1479,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
         TopMessageService().showMessage(
           context: context,
           message: 'Contact deleted successfully.',
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
           icon: Icons.check,
         );
       }

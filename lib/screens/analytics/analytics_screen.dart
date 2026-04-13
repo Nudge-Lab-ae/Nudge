@@ -1,11 +1,12 @@
 // Updated analytics_screen.dart
 // lib/screens/analytics/analytics_screen.dart
 import 'package:flutter/material.dart';
+import 'package:nudge/theme/app_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 // import 'package:nudge/models/analytics.dart';
 import 'package:nudge/models/contact.dart';
 // import 'package:nudge/models/nudge.dart';
 import 'package:nudge/services/api_service.dart';
-import 'package:nudge/theme/text_styles.dart';
 import 'package:nudge/widgets/gradient_text.dart';
 import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
@@ -39,17 +40,17 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         title: GradientText( text: 'NUDGE', style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
                 gradient: LinearGradient(
                   colors: [
-                    Color(0xFF5CDEE5), // #5CDEE5
-                    Color(0xFF2D85F6), // #2D85F6
+                    AppColors.lightSecondary, // #5CDEE5
+                    AppColors.lightPrimary, // #2D85F6
                     Color(0xFF7A4BFF), // #7A4BFF
                   ], stops: [0.0, 0.6, 1.0], begin: Alignment.topCenter, end: Alignment.bottomCenter,
             ),
           ),
-        // Text('NUDGE', style: AppTextStyles.title2.copyWith(color: Color(0xff3CB3E9), fontFamily: 'RobotoMono')),
+        // Text('NUDGE', style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: AppColors.lightPrimary, fontFamily: 'RobotoMono')),
         centerTitle: true,
         surfaceTintColor: Colors.transparent,
-        iconTheme: IconThemeData(color: Color(0xff3CB3E9)),
-        backgroundColor: Colors.white
+        iconTheme: IconThemeData(color: AppColors.lightPrimary),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor
       ),
       body: StreamBuilder<List<Contact>>(
         stream: apiService.getContactsStream(),
@@ -71,7 +72,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               children: [
                 Padding(
                   padding: EdgeInsets.only(left: 20),
-                  child: Text('Analytics', style: AppTextStyles.title3.copyWith(color: Colors.black, fontWeight: FontWeight.w700, fontFamily: 'Quicksand')),
+                  child: Text('Analytics', style: Theme.of(context).textTheme.titleLarge!.copyWith(color: Colors.black, fontWeight: FontWeight.w700, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
                 ),
                 const SizedBox(height: 24),
                 
@@ -94,7 +95,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     
     return Card(
       elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -107,14 +108,14 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             const SizedBox(height: 16),
             
             if (distributionData.isEmpty)
-              const Center(
+               Center(
                 child: Column(
                   children: [
-                    Icon(Icons.people_outline, size: 64, color: Colors.grey),
+                    Icon(Icons.people_outline, size: 64, color: Theme.of(context).colorScheme.outline),
                     SizedBox(height: 16),
                     Text(
                       'No contacts yet',
-                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                      style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.outline),
                     ),
                   ],
                 ),
@@ -210,7 +211,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
     return Card(
       elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -230,9 +231,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'More detailed analytics coming soon as your network grows!',
-              style: TextStyle(fontSize: 12, color: Colors.grey, fontStyle: FontStyle.italic),
+              style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.outline, fontStyle: FontStyle.italic),
               textAlign: TextAlign.center,
             ),
           ],
@@ -244,7 +245,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   Widget _buildInsightItem(String title, String value, IconData icon) {
     return Column(
       children: [
-        Icon(icon, size: 24, color: const Color(0xff3CB3E9)),
+        Icon(icon, size: 24, color: AppColors.lightPrimary),
         const SizedBox(height: 8),
         Text(
           value,
@@ -287,7 +288,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   Color _getCategoryColor(String category) {
     // Generate consistent colors based on category
     final colors = [
-      const Color(0xff3CB3E9), // Primary teal
+      AppColors.lightPrimary, // Primary teal
       Colors.green[600]!,
       Colors.purple[600]!,
       Colors.amber[700]!,

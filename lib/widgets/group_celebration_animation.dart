@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:nudge/theme/app_theme.dart';
 
 class GroupCelebrationAnimation extends StatefulWidget {
   final String groupName;
@@ -91,12 +92,12 @@ class _GroupCelebrationAnimationState extends State<GroupCelebrationAnimation>
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: [
-                        const Color(0xFF3CB3E9),
-                        Colors.amber,
-                        Colors.green,
-                        Colors.orange,
-                        Colors.purple,
-                        Colors.pink,
+                        AppColors.lightPrimary,
+                        AppColors.vipGold,
+                        AppColors.success,
+                        AppColors.warning,
+                        Theme.of(context).colorScheme.primary,
+                        Theme.of(context).colorScheme.tertiary,
                       ][index % 6],
                     ),
                   ),
@@ -124,8 +125,8 @@ class _GroupCelebrationAnimationState extends State<GroupCelebrationAnimation>
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        const Color(0xFF3CB3E9).withOpacity(0.9),
-                        const Color(0xFF3CB3E9).withOpacity(0.4),
+                        AppColors.lightPrimary.withOpacity(0.9),
+                        AppColors.lightPrimary.withOpacity(0.4),
                         Colors.transparent,
                       ],
                       stops: const [0.2, 0.6, 1.0],

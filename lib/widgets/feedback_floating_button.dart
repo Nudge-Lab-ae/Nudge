@@ -1,5 +1,7 @@
-import 'dart:math';
+import 'dart:ui';
+import 'package:nudge/theme/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:nudge/providers/feedback_provider.dart';
 import 'package:nudge/screens/feedback/feedback_bottom_sheet.dart';
 import 'package:nudge/screens/feedback/feedback_forum_screen.dart';
@@ -25,6 +27,7 @@ class FeedbackFloatingButton extends StatefulWidget {
   final String? deleteButtonLabel;
   final VoidCallback? onMenuStateChanged;
   final bool fromDashboard;
+  final bool onDarkBackground;
   final FeedbackFloatingButtonController? controller;
 
   const FeedbackFloatingButton({
@@ -34,100 +37,77 @@ class FeedbackFloatingButton extends StatefulWidget {
     this.isDeleteMode = false,
     this.onDeletePressed,
     this.deleteButtonLabel = 'Delete',
-    this.onMenuStateChanged, 
+    this.onMenuStateChanged,
     this.fromDashboard = false,
-    this.controller, // Add this
+    this.onDarkBackground = false,
+    this.controller,
   });
 
   @override
   State<FeedbackFloatingButton> createState() => _FeedbackFloatingButtonState();
 }
 
-class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton> 
-    with TickerProviderStateMixin { // Changed to TickerProviderStateMixin
+class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
+    with TickerProviderStateMixin {
   bool _isExpanded = false;
   late AnimationController _menuController;
   late Animation<double> _scaleAnimation;
   late Animation<double> _fadeAnimation;
-  
-  // Heartbeat animation controller
+
   late AnimationController _heartbeatController;
   late Animation<double> _heartbeatAnimation;
 
   @override
   void initState() {
     super.initState();
-    
-    // Menu animation controller
+
     _menuController = AnimationController(
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 280),
       vsync: this,
     );
-    
+
     _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _menuController,
-        curve: Curves.easeOutBack,
-      ),
+      CurvedAnimation(parent: _menuController, curve: Curves.easeOutBack),
     );
-    
+
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _menuController,
-        curve: Curves.easeInOut,
-      ),
+      CurvedAnimation(parent: _menuController, curve: Curves.easeInOut),
     );
-    
-    // Heartbeat animation controller
+
     _heartbeatController = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
-    
-    // Create a sequence of scale values for heartbeat effect
+
     _heartbeatAnimation = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween<double>(begin: 1.0, end: 1.2),
-        weight: 1,
-      ),
+          tween: Tween<double>(begin: 1.0, end: 1.15), weight: 1),
       TweenSequenceItem(
-        tween: Tween<double>(begin: 1.2, end: 1.0),
-        weight: 1,
-      ),
+          tween: Tween<double>(begin: 1.15, end: 1.0), weight: 1),
       TweenSequenceItem(
-        tween: Tween<double>(begin: 1.0, end: 1.1),
-        weight: 1,
-      ),
+          tween: Tween<double>(begin: 1.0, end: 1.08), weight: 1),
       TweenSequenceItem(
-        tween: Tween<double>(begin: 1.1, end: 1.0),
-        weight: 2,
-      ),
-    ]).animate(CurvedAnimation(
-      parent: _heartbeatController,
-      curve: Curves.easeInOut,
-    ));
-    
-    // Start heartbeat animation
+          tween: Tween<double>(begin: 1.08, end: 1.0), weight: 2),
+    ]).animate(
+        CurvedAnimation(parent: _heartbeatController, curve: Curves.easeInOut));
+
     _heartbeatController.repeat();
 
-    widget.controller?.registerCloseCallback(() {
-      closeMenuExternally();
-    });
+    widget.controller?.registerCloseCallback(closeMenuExternally);
   }
+
+  // ── Menu state ────────────────────────────────────────────────────────────
 
   void _toggleExpanded() {
     setState(() {
       _isExpanded = !_isExpanded;
       if (_isExpanded) {
         _menuController.forward();
-        // Stop heartbeat when menu is open
         _heartbeatController.stop();
       } else {
         _menuController.reverse();
-        // Resume heartbeat when menu is closed
         _heartbeatController.repeat();
       }
-      // Update the global provider
       context.read<FeedbackProvider>().setFabMenuState(_isExpanded);
       widget.onMenuStateChanged?.call();
     });
@@ -138,40 +118,33 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
       setState(() {
         _isExpanded = false;
         _menuController.reverse();
-        // Resume heartbeat when menu is closed
         _heartbeatController.repeat();
       });
-      // Update the global provider
       context.read<FeedbackProvider>().setFabMenuState(false);
       widget.onMenuStateChanged?.call();
     }
   }
 
-  void _showFeedbackDialog(BuildContext context, String section, {String? initialType}) {
-    final currentSection = widget.currentSection ?? section;
-    
+  void closeMenuExternally() => _closeMenu();
+
+  // ── Navigation ────────────────────────────────────────────────────────────
+
+  void _showFeedbackDialog(BuildContext context, String section) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => FeedbackBottomSheet(
-        currentSection: currentSection,
-        initialType: initialType,
+        currentSection: widget.currentSection ?? section,
       ),
-    ).whenComplete(() {
-      _closeMenu();
-    });
+    ).whenComplete(_closeMenu);
   }
 
   void _openFeedbackForum(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const FeedbackForumScreen(),
-      ),
-    ).whenComplete(() {
-      _closeMenu();
-    });
+      MaterialPageRoute(builder: (_) => const FeedbackForumScreen()),
+    ).whenComplete(_closeMenu);
   }
 
   @override
@@ -181,36 +154,18 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
     super.dispose();
   }
 
+  // ── Build ─────────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
-    var size = MediaQuery.of(context).size;
-    
-    // Build all menu items including fixed and extra actions
+    final size = MediaQuery.of(context).size;
+
+    // Build items: extra actions first (top of column), then fixed actions
     final allMenuItems = <Map<String, dynamic>>[];
-    
-    // Fixed actions
-    if (!widget.fromDashboard){
-      allMenuItems.add({
-        'icon': Icons.forum,
-        'text': 'View Forum',
-        'onTap': () {
-          _openFeedbackForum(context);
-        },
-      });
-    }
-    
-     allMenuItems.add({
-        'icon': Icons.feedback,
-        'text': 'Give Feedback',
-        'onTap': () {
-          final currentRoute = ModalRoute.of(context)?.settings.name ?? 'unknown';
-          _showFeedbackDialog(context, currentRoute);
-        },
-      });
-    
-    // Extra actions (now we'll have 3 extra to make total of 5)
+
+    // Extra actions (Settings, Add Group, Log Interaction, etc.) — appear at top
     if (widget.extraActions != null) {
-      for (var action in widget.extraActions!) {
+      for (final action in widget.extraActions!) {
         allMenuItems.add({
           'icon': action.icon,
           'text': action.label,
@@ -218,143 +173,242 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
         });
       }
     }
-    
-    // Delete mode action
+
+    // Delete action
     if (widget.isDeleteMode && widget.onDeletePressed != null) {
       allMenuItems.add({
-        'icon': Icons.delete,
+        'icon': Icons.delete_outline_rounded,
         'text': widget.deleteButtonLabel ?? 'Delete',
         'onTap': widget.onDeletePressed!,
       });
     }
-    
-    final totalItems = allMenuItems.length;
-    
+
+    // Fixed: View Forum (non-dashboard only)
+    if (!widget.fromDashboard) {
+      allMenuItems.add({
+        'icon': Icons.forum_outlined,
+        'text': 'View Forum',
+        'onTap': () => _openFeedbackForum(context),
+      });
+    }
+
+    // Fixed: Give Feedback — always last (closest to close button)
+    allMenuItems.add({
+      'icon': Icons.chat_bubble_outline_rounded,
+      'text': 'Give Feedback',
+      'onTap': () {
+        final route = ModalRoute.of(context)?.settings.name ?? 'unknown';
+        _showFeedbackDialog(context, route);
+      },
+    });
+
+    // ── Collapsed: just the FAB ──────────────────────────────────────────
+    if (!_isExpanded) {
+      return _buildMainButton();
+    }
+
+    // ── Expanded: full-screen overlay + vertical menu ─────────────────────
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final useWhiteLabels = isDark || widget.onDarkBackground;
+
     return SizedBox(
-      width: _isExpanded ? size.width * 2 : size.width,
-      height: _isExpanded ? size.height * 2 : size.width,
+      width: size.width,
+      height: size.height,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          
-          // White glow circle (appears when menu is open)
-          if (_isExpanded)
-            Positioned(
-              right: -40,
-              bottom: -50,
-              child: AnimatedBuilder(
-                animation: _scaleAnimation,
-                builder: (context, child) {
-                  return Transform.scale(
-                    scale: _scaleAnimation.value,
-                    child: Container(
-                      width: 280,
-                      height: 280,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withOpacity(0.65),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.white.withOpacity(0.15),
-                            blurRadius: 30,
-                            spreadRadius: 5,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
+          // ── Backdrop blur (no tint — pure blur only) ───────────────────
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: _closeMenu,
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 6.0, sigmaY: 6.0),
+                child: Container(color: Colors.transparent),
               ),
             ),
-          
-          // Radial menu items
-          if (_isExpanded)
-            for (int i = 0; i < totalItems; i++)
-              _buildRadialMenuItem(
-                index: i,
-                totalItems: totalItems,
-                icon: allMenuItems[i]['icon'] as IconData,
-                text: allMenuItems[i]['text'] as String,
-                onTap: allMenuItems[i]['onTap'] as VoidCallback,
-              ),
-          
-          // Main floating button with heartbeat animation
+          ),
+
+          // ── Vertical menu column (above close button) ──────────────────
           Positioned(
             right: 0,
-            bottom: 50,
+            bottom: 76, // above the 60px close button + 16px gap
             child: AnimatedBuilder(
-              animation: _heartbeatAnimation,
+              animation: _scaleAnimation,
               builder: (context, child) {
-                return Transform.scale(
-                  scale: _isExpanded ? 1.0 : _heartbeatAnimation.value,
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: _toggleExpanded,
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          color: Colors.transparent,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 200),
-                          child: _isExpanded
-                              ? Container(
-                                  key: const ValueKey('close'),
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    color: const Color.fromARGB(255, 221, 44, 44),
-                                    borderRadius: BorderRadius.circular(10),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.2),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: const Icon(
-                                    Icons.close,
-                                    size: 20,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : Container(
-                                  key: const ValueKey('logo'),
-                                  width: 60,
-                                  height: 60,
-                                  decoration: BoxDecoration(
-                                    image: const DecorationImage(
-                                      image: AssetImage('assets/Nudge-logo.png'),
-                                      fit: BoxFit.cover,
-                                    ),
-                                    borderRadius: BorderRadius.circular(12),
-                                    // Add subtle pulse shadow for heartbeat effect
-                                    // boxShadow: _isExpanded ? null : [
-                                    //   BoxShadow(
-                                    //     color: Colors.transparent.withOpacity(0.6),
-                                    //     blurRadius: 15 * (_heartbeatAnimation.value - 0.8),
-                                    //     spreadRadius: 5 * (_heartbeatAnimation.value - 0.8),
-                                    //   ),
-                                    //   BoxShadow(
-                                    //     color: Colors.transparent.withOpacity(0.3),
-                                    //     blurRadius: 8,
-                                    //     spreadRadius: 2,
-                                    //   ),
-                                    // ],
-                                  ),
-                                ),
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    for (int i = 0; i < allMenuItems.length; i++) ...[
+                      FadeTransition(
+                        opacity: _fadeAnimation,
+                        child: Transform.scale(
+                          scale: _scaleAnimation.value,
+                          alignment: Alignment.centerRight,
+                          child: _buildVerticalMenuItem(
+                            icon: allMenuItems[i]['icon'] as IconData,
+                            text: allMenuItems[i]['text'] as String,
+                            onTap: allMenuItems[i]['onTap'] as VoidCallback,
+                            useWhiteLabel: useWhiteLabels,
+                          ),
                         ),
                       ),
-                    ),
-                  ),
+                      if (i < allMenuItems.length - 1)
+                        const SizedBox(height: 12),
+                    ],
+                  ],
                 );
               },
+            ),
+          ),
+
+          // ── Close button (purple X circle) ────────────────────────────
+          Positioned(
+            right: 0,
+            bottom: 0,
+            child: _buildCloseButton(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Collapsed FAB (Nudge logo with heartbeat) ──────────────────────────
+
+  Widget _buildMainButton() {
+    return AnimatedBuilder(
+      animation: _heartbeatAnimation,
+      builder: (context, _) => Transform.scale(
+        scale: _heartbeatAnimation.value,
+        child: GestureDetector(
+          onTap: _toggleExpanded,
+          child: Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              image: const DecorationImage(
+                image: AssetImage('assets/Nudge-logo.png'),
+                fit: BoxFit.cover,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.lightPrimary.withOpacity(0.25),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Close button ──────────────────────────────────────────────────────────
+
+  Widget _buildCloseButton() {
+    return GestureDetector(
+      onTap: _toggleExpanded,
+      child: Container(
+        width: 60,
+        height: 60,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF751FE7), Color(0xFF9C4DFF)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Color(0x55751FE7),
+              blurRadius: 14,
+              offset: Offset(0, 5),
+            ),
+          ],
+        ),
+        child: const Icon(Icons.close_rounded, color: Colors.white, size: 26),
+      ),
+    );
+  }
+
+  // ── Individual menu item ──────────────────────────────────────────────────
+
+  Widget _buildVerticalMenuItem({
+    required IconData icon,
+    required String text,
+    required VoidCallback onTap,
+    bool useWhiteLabel = false,
+  }) {
+    final isHighlighted = _isPrimaryAction(text);
+    final iconColor =
+        isHighlighted ? Colors.white : AppColors.lightPrimary;
+    final btnDecoration = isHighlighted
+        ? const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF751FE7), Color(0xFF9C4DFF)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Color(0x55751FE7),
+                blurRadius: 10,
+                offset: Offset(0, 4),
+              ),
+            ],
+          )
+        : BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.10),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          );
+
+    return GestureDetector(
+      onTap: () {
+        onTap();
+        _closeMenu();
+      },
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Label
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              // Subtle shadow under the text for readability over blurred bg
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              text,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: useWhiteLabel ? Colors.white : Colors.black87,
+                shadows: useWhiteLabel
+                    ? null
+                    : const [Shadow(color: Colors.white, blurRadius: 8)],
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          // Circle button
+          Container(
+            width: 54,
+            height: 54,
+            decoration: btnDecoration,
+            child: Center(
+              child: Icon(icon, size: 22, color: iconColor),
             ),
           ),
         ],
@@ -362,260 +416,17 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
     );
   }
 
-  void closeMenuExternally() {
-    if (_isExpanded) {
-      setState(() {
-        _isExpanded = false;
-        _menuController.reverse();
-        _heartbeatController.repeat();
-      });
-      context.read<FeedbackProvider>().setFabMenuState(false);
-      widget.onMenuStateChanged?.call();
-    }
-  }
-
-  Widget _buildRadialMenuItem({
-    required int index,
-    required int totalItems,
-    required IconData icon,
-    required String text,
-    required VoidCallback onTap,
-  }) {
-    // Calculate angle from 90° (top) to 270° (bottom)
-     double startAngle = 90 * (pi / 180);   // 90° - Top
-     double endAngle = 270 * (pi / 180);    // 270° - Bottom
-
-     if (totalItems < 4) {
-       startAngle = 130 * (pi / 180);   
-        endAngle = 270 * (pi / 180);
-     }
-     
-     if (totalItems < 3) {
-       startAngle = 180 * (pi / 180); 
-        endAngle = 270 * (pi / 180);
-     }
-    
-    // Spread items evenly in the range
-    final double angleStep = totalItems > 1 ? (endAngle - startAngle) / (totalItems - 1) : 0;
-    final double angle = startAngle + (index * angleStep);
-    
-    // Calculate vertical offset based on sine of angle
-    // sin(90°) = 1 (top) -> offset -15
-    // sin(180°) = 0 (middle) -> offset 0
-    // sin(270°) = -1 (bottom) -> offset 15
-    double verticalOffset = 0;
-    if (index == 0 || index == 4) {
-      verticalOffset = 20 * sin(angle);
-    }
-    
-    // Radius for compact layout
-    final double radius = 75.0;
-    
-    // Calculate position from button center
-    final double x = radius * cos(angle);
-    final double y = radius * sin(angle);
-    
-    // Button center (right: 30, bottom: 30 for 60px button)
-    final double centerX = 30.0;
-    final double centerY = 30.0;
-    
-    // Get gradient colors based on action type
-    final List<Color> gradientColors = _getActionGradient(text);
-    
-    return Positioned(
-      right: centerX - x - 25,
-      bottom: centerY - y + 30,
-      child: AnimatedBuilder(
-        animation: _scaleAnimation,
-        builder: (context, child) {
-          return Transform.scale(
-            scale: _scaleAnimation.value,
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: index==4
-              ?Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // Text label with dynamic vertical positioning
-                    Transform.translate(
-                      offset: Offset(0, verticalOffset),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Text(
-                          text,
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xff333333),
-                            fontFamily: 'OpenSans',
-                          ),
-                        ),
-                      ),
-                    ),
-                    
-                    const SizedBox(width: 6),
-                    
-                    // Circular button
-                    GestureDetector(
-                // behavior: HitTestBehavior.opaque,
-                // padding: EdgeInsets.zero,
-                onTap: () {
-                  //print('Tapped on: $text'); 
-                  onTap();
-                  _closeMenu();
-                },
-                child: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: gradientColors,
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: gradientColors[0].withOpacity(0.4),
-                            blurRadius: 6,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Icon(
-                          icon,
-                          size: 18,
-                          color: Colors.white,
-                        ),
-                      ),
-                    )),
-                  ],
-                )
-              :MaterialButton(
-                // behavior: HitTestBehavior.opaque,
-                padding: EdgeInsets.zero,
-                onPressed: () {
-                  //print('Tapped on: $text'); 
-                  onTap();
-                  _closeMenu();
-                },
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // Text label with dynamic vertical positioning
-                    Transform.translate(
-                      offset: Offset(0, verticalOffset),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Text(
-                          text,
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xff333333),
-                            fontFamily: 'OpenSans',
-                          ),
-                        ),
-                      ),
-                    ),
-                    
-                    const SizedBox(width: 6),
-                    
-                    // Circular button
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: gradientColors,
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: gradientColors[0].withOpacity(0.4),
-                            blurRadius: 6,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Icon(
-                          icon,
-                          size: 18,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-    
-  List<Color> _getActionGradient(String actionText) {
-    switch (actionText) {
-      case 'Give Feedback':
-        return [const Color.fromARGB(255, 15, 194, 222), const Color.fromARGB(255, 12, 196, 228)];
-      case 'Go to Settings':
-        return [const Color(0xff4CAF50), const Color(0xff2E7D32)];
-      case 'Report Bug':
-        return [const Color(0xffF44336), const Color(0xffC62828)];
-      case 'Delete':
-        return [const Color(0xffF44336), const Color(0xffC62828)];
-      case 'Log Interaction':
-        return [const Color(0xff9C27B0), const Color(0xff7B1FA2)];
-      case 'Add Group':
-        return [const Color(0xffFF9800), const Color(0xffF57C00)];
-      case 'Add Contact':
-        return [const Color(0xff2196F3), const Color(0xff1976D2)];
-      case 'View Stats':
-        return [const Color(0xff4CAF50), const Color(0xff388E3C)];
-      case 'Settings':
-        return [const Color(0xff9E9E9E), const Color(0xff616161)];
-      default:
-        return [const Color(0xff9C27B0), const Color(0xff7B1FA2)];
-    }
+  // Determines if an action should get the purple gradient highlight
+  bool _isPrimaryAction(String text) {
+    return text == 'Log Interaction' || text == 'Add Interaction';
   }
 }
 
 class FeedbackFloatingButtonController {
   void Function()? _closeMenuCallback;
-  
-  void closeMenu() {
-    _closeMenuCallback?.call();
-  }
-  
+
+  void closeMenu() => _closeMenuCallback?.call();
+
   void registerCloseCallback(void Function() callback) {
     _closeMenuCallback = callback;
   }

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:nudge/theme/app_theme.dart';
 import 'package:intl/intl.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/services/message_service.dart';
@@ -39,13 +40,13 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
       onTap: _dismissKeyboard,
       behavior: HitTestBehavior.translucent,
       child: Scaffold(
-        backgroundColor: themeProvider.getBackgroundColor(context),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
           title: GradientText(
             text: 'NUDGE',
             style: const TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
             gradient: const LinearGradient(
-              colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
+              colors: [AppColors.lightSecondary, AppColors.lightPrimary],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
             ),
@@ -53,7 +54,7 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
           centerTitle: true,
           iconTheme: IconThemeData(color: theme.colorScheme.primary),
           surfaceTintColor: Colors.transparent,
-          backgroundColor: themeProvider.getSurfaceColor(context),
+          backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
           actions: [
             IconButton(
               icon: Icon(Icons.refresh, color: themeProvider.isDarkMode ? Colors.white : null),
@@ -91,7 +92,7 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Container(
             padding: const EdgeInsets.all(16),
-            color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.grey.shade50,
+            color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Theme.of(context).colorScheme.outline,
             child: Center(
               child: CircularProgressIndicator(
                 color: Theme.of(context).colorScheme.primary,
@@ -103,10 +104,10 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
         if (snapshot.hasError) {
           return Container(
             padding: const EdgeInsets.all(16),
-            color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.grey.shade50,
+            color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Theme.of(context).colorScheme.outline,
             child: Text(
               'Error loading stats: ${snapshot.error}',
-              style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
             ),
           );
         }
@@ -119,7 +120,7 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
         
         return Container(
           padding: const EdgeInsets.all(16),
-          color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.grey.shade50,
+          color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Theme.of(context).colorScheme.outline,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -128,17 +129,17 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: themeProvider.isDarkMode ? Colors.white : const Color(0xff3CB3E9),
+                  color: themeProvider.isDarkMode ? Colors.white : AppColors.lightPrimary,
                 ),
               ),
               const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildStatCard('Total', total.toString(), Colors.blue),
-                  _buildStatCard('New', newCount.toString(), Colors.orange),
-                  _buildStatCard('Reviewed', reviewedCount.toString(), Colors.green),
-                  _buildStatCard('Responded', respondedCount.toString(), Colors.purple),
+                  _buildStatCard('Total', total.toString(), Theme.of(context).colorScheme.secondary),
+                  _buildStatCard('New', newCount.toString(), AppColors.warning),
+                  _buildStatCard('Reviewed', reviewedCount.toString(), AppColors.success),
+                  _buildStatCard('Responded', respondedCount.toString(), Theme.of(context).colorScheme.primary),
                 ],
               ),
             ],
@@ -157,7 +158,7 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
             value,
@@ -173,7 +174,7 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
           title,
           style: TextStyle(
             fontSize: 12,
-            color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+            color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerLow : Theme.of(context).colorScheme.surfaceContainerLow,
           ),
         ),
       ],
@@ -187,10 +188,10 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: themeProvider.getSurfaceColor(context),
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
         border: Border(
           bottom: BorderSide(
-            color: themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade300,
+            color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ),
@@ -206,13 +207,13 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
                       'STATUS',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
-                        color: themeProvider.isDarkMode ? Colors.grey.shade400 : const Color(0xff6e6e6e),
+                        color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerLow : AppColors.lightOnSurfaceVariant,
                       ),
                     ),
                     DropdownButton<String>(
                       value: _statusFilter,
                       isExpanded: true,
-                      dropdownColor: themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.white,
+                      dropdownColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,
                       items: _statusOptions.map((status) {
                         return DropdownMenuItem(
                           value: status,
@@ -220,7 +221,7 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
                             status == 'all' ? 'All Statuses' : status.toUpperCase(),
                             style: TextStyle(
                               color: status == 'all' 
-                                  ? (themeProvider.isDarkMode ? Colors.white : Colors.black)
+                                  ? (Theme.of(context).colorScheme.onSurface)
                                   : _getStatusColor(status),
                             ),
                           ),
@@ -244,15 +245,15 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
                       'TYPE',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: themeProvider.isDarkMode ? Colors.grey.shade400 : const Color(0xff6e6e6e),
+                        color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerLow : AppColors.lightOnSurfaceVariant,
                       ),
                     ),
                     DropdownButton<String>(
                       value: _typeFilter,
                       isExpanded: true,
-                      dropdownColor: themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.white,
+                      dropdownColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,
                       style: TextStyle(
-                        color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555),
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                       items: _typeOptions.map((type) {
                         return DropdownMenuItem(
@@ -260,7 +261,7 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
                           child: Text(
                             type == 'all' ? 'All Types' : type,
                             style: TextStyle(
-                              color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                         );
@@ -314,7 +315,7 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
           return Center(
             child: Text(
               'Error loading feedbacks: ${snapshot.error}',
-              style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
             ),
           );
         }
@@ -330,14 +331,14 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
                 Icon(
                   Icons.feedback_outlined,
                   size: 64,
-                  color: themeProvider.isDarkMode ? Colors.grey.shade600 : Colors.grey,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 const SizedBox(height: 16),
                 Text(
                   'No feedback found',
                   style: TextStyle(
                     fontSize: 18,
-                    color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
                 if (_statusFilter != 'all' || _typeFilter != 'all')
@@ -388,7 +389,7 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      color: themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.white,
+      color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,
       child: ExpansionTile(
         leading: Container(
           padding: const EdgeInsets.all(8),
@@ -406,7 +407,7 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
           adminTitle != null ? adminTitle.toUpperCase() : 'NO TITLE SET',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555),
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         subtitle: Column(
@@ -415,21 +416,21 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
             Text(
               'From: ${user['username'] ?? user['email'] ?? 'Unknown User'}',
               style: TextStyle(
-                color: themeProvider.isDarkMode ? Colors.grey.shade300 : Colors.black,
+                color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.onSurface : Colors.black,
               ),
             ),
             Text(
               'Section: ${_getSectionName(section)}',
               style: TextStyle(
                 fontSize: 12,
-                color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerLow : Theme.of(context).colorScheme.surfaceContainerLow,
               ),
             ),
             Text(
               DateFormat('MMM dd, yyyy - HH:mm').format(timestamp),
               style: TextStyle(
                 fontSize: 12,
-                color: themeProvider.isDarkMode ? Colors.grey.shade500 : Colors.grey.shade500,
+                color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerLow : Theme.of(context).colorScheme.surfaceContainerLow,
               ),
             ),
           ],
@@ -440,9 +441,9 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
             Chip(
               label: Text(
                 status.toUpperCase(),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 10,
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -450,15 +451,15 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
             ),
             if (isPublic)
               Chip(
-                label: const Text(
+                label: Text(
                   'PUBLIC',
                   style: TextStyle(
                     fontSize: 8,
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                backgroundColor: Colors.green,
+                backgroundColor: AppColors.success,
               ),
           ],
         ),
@@ -481,24 +482,24 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
                   'Admin Title (for forum):',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 4),
                 TextField(
                   controller: _titleController,
-                  style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                   decoration: InputDecoration(
                     hintText: 'Enter a descriptive title for the feedback forum...',
-                    hintStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade500 : Colors.grey),
+                    hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                     border: OutlineInputBorder(
                       borderSide: BorderSide(
-                        color: themeProvider.isDarkMode ? Colors.grey.shade700 : Colors.grey,
+                        color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.outline : Theme.of(context).colorScheme.outline,
                       ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderSide: BorderSide(
-                        color: themeProvider.isDarkMode ? Colors.grey.shade700 : Colors.grey,
+                        color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.outline : Theme.of(context).colorScheme.outline,
                       ),
                     ),
                     focusedBorder: OutlineInputBorder(
@@ -521,19 +522,19 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
                           // ScaffoldMessenger.of(context).showSnackBar(
                           //   SnackBar(
                           //     content: const Text('Title updated'),
-                          //     backgroundColor: themeProvider.isDarkMode ? Colors.grey.shade800 : null,
+                          //     backgroundColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : null,
                           //   ),
                           // );
                           TopMessageService().showMessage(
                             context: context,
                             message: 'Title updated',
-                            backgroundColor: Colors.green,
+                            backgroundColor: AppColors.success,
                             icon: Icons.check,
                           );
                         }
                       },
                     ),
-                    fillColor: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+                    fillColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,
                     filled: true,
                   ),
                 ),
@@ -545,7 +546,7 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
                   'User Message:',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -553,16 +554,16 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.grey.shade50,
-                    borderRadius: BorderRadius.circular(8),
+                    color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Theme.of(context).colorScheme.outline,
+                    borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: themeProvider.isDarkMode ? Colors.grey.shade700 : Colors.transparent,
+                      color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.outline : Colors.transparent,
                     ),
                   ),
                   child: Text(
                     message,
                     style: TextStyle(
-                      color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ),
@@ -573,27 +574,27 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
                   'Admin Response:',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: themeProvider.isDarkMode ? Colors.green.shade300 : Colors.green,
+                    color: themeProvider.isDarkMode ? Colors.green.shade300 : AppColors.success,
                   ),
                 ),
                 const SizedBox(height: 4),
                 TextField(
                   controller: _responseController,
                   maxLines: 3,
-                  style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                   decoration: InputDecoration(
                     hintText: adminResponse != null 
                         ? 'Update existing response...' 
                         : 'Enter your response...',
-                    hintStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade500 : Colors.grey),
+                    hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                     border: OutlineInputBorder(
                       borderSide: BorderSide(
-                        color: themeProvider.isDarkMode ? Colors.grey.shade700 : Colors.grey,
+                        color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.outline : Theme.of(context).colorScheme.outline,
                       ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderSide: BorderSide(
-                        color: themeProvider.isDarkMode ? Colors.grey.shade700 : Colors.grey,
+                        color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.outline : Theme.of(context).colorScheme.outline,
                       ),
                     ),
                     focusedBorder: OutlineInputBorder(
@@ -602,7 +603,7 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
                         width: 2,
                       ),
                     ),
-                    fillColor: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+                    fillColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,
                     filled: true,
                   ),
                 ),
@@ -638,15 +639,15 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: themeProvider.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
+                    color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.outline : Theme.of(context).colorScheme.onSurface,
                   ),
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: DropdownButton<String>(
                   value: feedback['status'] ?? 'new',
                   isExpanded: true,
                   underline: const SizedBox(),
-                  dropdownColor: themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.white,
+                  dropdownColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,
                   items: ['new', 'reviewed', 'responded', 'received', 'planned', 'in_progress', 'completed'].map((status) {
                     return DropdownMenuItem(
                       value: status,
@@ -696,13 +697,13 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
                   child: Container(
                     height: 40,
                     decoration: BoxDecoration(
-                      color: Colors.green,
+                      color: AppColors.success,
                       borderRadius: BorderRadius.circular(20)
                     ),
-                    child: const Center(
+                    child:  Center(
                       child: Text(
                         'Send Response',
-                        style: TextStyle(fontSize: 14, color: Colors.white),
+                        style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface),
                       ),
                     ),
                   ),
@@ -723,19 +724,19 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
                     // ScaffoldMessenger.of(context).showSnackBar(
                     //   SnackBar(
                     //     content: const Text('Title saved'),
-                    //     backgroundColor: themeProvider.isDarkMode ? Colors.grey.shade800 : null,
+                    //     backgroundColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : null,
                     //   ),
                     // );
                     TopMessageService().showMessage(
                       context: context,
                       message: 'Title saved.',
-                      backgroundColor: Colors.green,
+                      backgroundColor: AppColors.success,
                       icon: Icons.check,
                     );
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
+                  backgroundColor: Theme.of(context).colorScheme.secondary,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
@@ -755,7 +756,7 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
               onPressed: () => _deleteFeedback(feedback),
               icon: Icon(
                 Icons.delete,
-                color: themeProvider.isDarkMode ? Colors.red.shade300 : Colors.red,
+                color: themeProvider.isDarkMode ? Colors.red.shade300 : Theme.of(context).colorScheme.error,
               ),
               tooltip: 'Delete',
             ),
@@ -789,26 +790,26 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
       // ScaffoldMessenger.of(context).showSnackBar(
       //   SnackBar(
       //     content: const Text('Response sent successfully'),
-      //     backgroundColor: themeProvider.isDarkMode ? Colors.grey.shade800 : null,
+      //     backgroundColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : null,
       //   ),
       // );
       TopMessageService().showMessage(
           context: context,
           message: 'Response sent successfully.',
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
           icon: Icons.check,
         );
     } catch (e) {
       // ScaffoldMessenger.of(context).showSnackBar(
       //   SnackBar(
       //     content: Text('Error sending response: $e'),
-      //     backgroundColor: themeProvider.isDarkMode ? Colors.grey.shade800 : null,
+      //     backgroundColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : null,
       //   ),
       // );
       TopMessageService().showMessage(
           context: context,
           message: 'Error sending response: $e',
-          backgroundColor: Colors.deepOrange,
+          backgroundColor: Theme.of(context).colorScheme.tertiary,
           icon: Icons.error,
         );
     }
@@ -833,14 +834,14 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
 
   Color _getStatusColor(String status) {
     switch (status) {
-      case 'new': return Colors.orange;
-      case 'reviewed': return Colors.blue;
-      case 'responded': return Colors.green;
-      case 'received': return Colors.orange;
-      case 'planned': return Colors.blue;
-      case 'in_progress': return Colors.purple;
-      case 'completed': return Colors.green;
-      default: return Colors.grey;
+      case 'new': return AppColors.warning;
+      case 'reviewed': return Theme.of(context).colorScheme.secondary;
+      case 'responded': return AppColors.success;
+      case 'received': return AppColors.warning;
+      case 'planned': return Theme.of(context).colorScheme.secondary;
+      case 'in_progress': return Theme.of(context).colorScheme.primary;
+      case 'completed': return AppColors.success;
+      default: return Theme.of(context).colorScheme.outline;
     }
   }
 
@@ -857,7 +858,7 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 12,
-              color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           Expanded(
@@ -865,7 +866,7 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
               value,
               style: TextStyle(
                 fontSize: 12,
-                color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade700,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ),
@@ -892,26 +893,26 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
       // ScaffoldMessenger.of(context).showSnackBar(
       //   SnackBar(
       //     content: const Text('Status updated successfully'),
-      //     backgroundColor: themeProvider.isDarkMode ? Colors.grey.shade800 : null,
+      //     backgroundColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : null,
       //   ),
       // );
       TopMessageService().showMessage(
           context: context,
           message: 'Status updated succesfully.',
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
           icon: Icons.check,
         );
     } catch (e) {
       // ScaffoldMessenger.of(context).showSnackBar(
       //   SnackBar(
       //     content: Text('Error updating status: $e'),
-      //     backgroundColor: themeProvider.isDarkMode ? Colors.grey.shade800 : null,
+      //     backgroundColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : null,
       //   ),
       // );
       TopMessageService().showMessage(
           context: context,
           message: 'Error updating status: $e',
-          backgroundColor: Colors.deepOrange,
+          backgroundColor: Theme.of(context).colorScheme.tertiary,
           icon: Icons.error,
         );
     }
@@ -924,14 +925,14 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: themeProvider.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
         title: Text(
           'Delete Feedback',
-          style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
         ),
         content: Text(
           'Are you sure you want to delete this feedback? This action cannot be undone.',
-          style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.black),
+          style: TextStyle(color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerLow : Colors.black),
         ),
         actions: [
           TextButton(
@@ -943,7 +944,7 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
             child: Text(
               'Delete',
               style: TextStyle(
-                color: themeProvider.isDarkMode ? Colors.red.shade300 : Colors.red,
+                color: themeProvider.isDarkMode ? Colors.red.shade300 : Theme.of(context).colorScheme.error,
               ),
             ),
           ),
@@ -957,26 +958,26 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
         // ScaffoldMessenger.of(context).showSnackBar(
         //   SnackBar(
         //     content: const Text('Feedback deleted successfully'),
-        //     backgroundColor: themeProvider.isDarkMode ? Colors.grey.shade800 : null,
+        //     backgroundColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : null,
         //   ),
         // );
         TopMessageService().showMessage(
           context: context,
           message: 'Feedback deleted successfully.',
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
           icon: Icons.check,
         );
       } catch (e) {
         // ScaffoldMessenger.of(context).showSnackBar(
         //   SnackBar(
         //     content: Text('Error deleting feedback: $e'),
-        //     backgroundColor: themeProvider.isDarkMode ? Colors.grey.shade800 : null,
+        //     backgroundColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : null,
         //   ),
         // );
         TopMessageService().showMessage(
           context: context,
           message: 'Error deleting feedback: $e',
-          backgroundColor: Colors.deepOrange,
+          backgroundColor: Theme.of(context).colorScheme.tertiary,
           icon: Icons.error,
         );
       }

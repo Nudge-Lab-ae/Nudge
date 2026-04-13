@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:nudge/main.dart';
+import 'package:nudge/theme/app_theme.dart';
 import 'package:intl/intl.dart';
 import '../models/nudge.dart';
 
@@ -41,10 +43,10 @@ class NudgeCard extends StatelessWidget {
                   ),
                 ),
                 if (nudge.isSnoozed)
-                  const Chip(
+                   Chip(
                     label: Text('Snoozed'),
-                    backgroundColor: Colors.orange,
-                    labelStyle: TextStyle(color: Colors.white),
+                    backgroundColor: AppColors.warning,
+                    labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                   ),
               ],
             ),
@@ -60,19 +62,19 @@ class NudgeCard extends StatelessWidget {
                   DateFormat('MMM d, y - h:mm a').format(nudge.scheduledTime),
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey[600],
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
                 const Spacer(),
                 if (!nudge.isCompleted && onComplete != null)
                   IconButton(
-                    icon: const Icon(Icons.check, color: Colors.green),
+                    icon: Icon(Icons.check, color: AppColors.success),
                     onPressed: onComplete,
                     tooltip: 'Mark as completed',
                   ),
                 if (!nudge.isCompleted && onSnooze != null)
                   IconButton(
-                    icon: const Icon(Icons.snooze, color: Colors.orange),
+                    icon: Icon(Icons.snooze, color: AppColors.warning),
                     onPressed: onSnooze,
                     tooltip: 'Snooze reminder',
                   ),
@@ -100,13 +102,13 @@ class NudgeCard extends StatelessWidget {
   Color _getNudgeColor(String nudgeType) {
     switch (nudgeType) {
       case 'birthday':
-        return Colors.pink;
+        return Theme.of(navigatorKey.currentContext!).colorScheme.tertiary;
       case 'anniversary':
-        return Colors.red;
+        return Theme.of(navigatorKey.currentContext!).colorScheme.error;
       case 'followup':
-        return Colors.blue;
+        return Theme.of(navigatorKey.currentContext!).colorScheme.secondary;
       default:
-        return const Color(0xff3CB3E9);
+        return AppColors.lightPrimary;
     }
   }
 }

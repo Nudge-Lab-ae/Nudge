@@ -1,98 +1,65 @@
 // lib/theme/text_styles.dart
 import 'package:flutter/material.dart';
+import 'package:nudge/theme/app_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'app_theme.dart';
 
 class AppTextStyles {
-  // Title styles
-  static const TextStyle title1 = TextStyle(
-    fontSize: 28,
-    fontWeight: FontWeight.bold,
-    color: Colors.black87,
-  );
+  // ── Headlines (Plus Jakarta Sans) ──────────────────────────
+  static TextStyle displayLarge(BuildContext context) =>
+      Theme.of(context).textTheme.displayLarge!;
+  static TextStyle displayMedium(BuildContext context) =>
+      Theme.of(context).textTheme.displayMedium!;
 
-  static const TextStyle title2 = TextStyle(
-    fontSize: 24,
-    fontWeight: FontWeight.w600,
-    color: Colors.black87,
-  );
+  static TextStyle headline(BuildContext context) =>
+      Theme.of(context).textTheme.headlineMedium!;
+  static TextStyle headlineSmall(BuildContext context) =>
+      Theme.of(context).textTheme.headlineSmall!;
 
-  static const TextStyle title3 = TextStyle(
-    fontSize: 20,
-    fontWeight: FontWeight.w600,
-    color: Colors.black87,
-  );
+  static TextStyle titleLarge(BuildContext context) =>
+      Theme.of(context).textTheme.titleLarge!;
+  static TextStyle titleMedium(BuildContext context) =>
+      Theme.of(context).textTheme.titleMedium!;
+  static TextStyle titleSmall(BuildContext context) =>
+      Theme.of(context).textTheme.titleSmall!;
 
-  // Primary text styles
-  static const TextStyle primary = TextStyle(
-    fontSize: 14,
-    fontWeight: FontWeight.normal,
-    color: Colors.black87,
-  );
+  // ── Body (Be Vietnam Pro) ───────────────────────────────────
+  static TextStyle bodyLarge(BuildContext context) =>
+      Theme.of(context).textTheme.bodyLarge!;
+  static TextStyle body(BuildContext context) =>
+      Theme.of(context).textTheme.bodyMedium!;
+  static TextStyle bodySmall(BuildContext context) =>
+      Theme.of(context).textTheme.bodySmall!;
 
-  static const TextStyle primaryBold = TextStyle(
-    fontSize: 16,
-    fontWeight: FontWeight.bold,
-    color: Colors.black87,
-  );
+  // ── Labels ─────────────────────────────────────────────────
+  static TextStyle labelLarge(BuildContext context) =>
+      Theme.of(context).textTheme.labelLarge!;
+  static TextStyle label(BuildContext context) =>
+      Theme.of(context).textTheme.labelMedium!;
+  static TextStyle labelSmall(BuildContext context) =>
+      Theme.of(context).textTheme.labelSmall!;
 
-  static const TextStyle primarySemiBold = TextStyle(
-    fontSize: 16,
-    fontWeight: FontWeight.w600,
-    color: Colors.black87,
+  // ── Static convenience styles (use sparingly) ──────────────
+  static final TextStyle nudgeTitle = GoogleFonts.plusJakartaSans(
+    fontSize: 20, fontWeight: FontWeight.w700, height: 1.3,
   );
-
-  // Secondary text styles
-  static const TextStyle secondary = TextStyle(
-    fontSize: 14,
-    fontWeight: FontWeight.normal,
-    color: Colors.black54,
+  static final TextStyle sectionHeader = GoogleFonts.plusJakartaSans(
+    fontSize: 17, fontWeight: FontWeight.w700, letterSpacing: 0.1,
   );
-
-  static const TextStyle secondaryBold = TextStyle(
-    fontSize: 14,
-    fontWeight: FontWeight.bold,
-    color: Colors.black54,
+  static final TextStyle cardTitle = GoogleFonts.plusJakartaSans(
+    fontSize: 15, fontWeight: FontWeight.w600, height: 1.4,
   );
-
-  // Caption styles
-  static const TextStyle caption = TextStyle(
-    fontSize: 12,
-    fontWeight: FontWeight.normal,
-    color: Colors.black38,
+  static final TextStyle bodyText = GoogleFonts.beVietnamPro(
+    fontSize: 14, fontWeight: FontWeight.w400, height: 1.55,
   );
-
-  static const TextStyle captionBold = TextStyle(
-    fontSize: 12,
-    fontWeight: FontWeight.bold,
-    color: Colors.black38,
+  static final TextStyle caption = GoogleFonts.beVietnamPro(
+    fontSize: 12, fontWeight: FontWeight.w400, height: 1.4,
+    color: AppColors.lightOnSurfaceVariant,
   );
-
-  // Button styles
-  static const TextStyle button = TextStyle(
-    fontSize: 16,
-    fontWeight: FontWeight.w600,
-    color: Colors.white,
+  static final TextStyle pill = GoogleFonts.beVietnamPro(
+    fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 0.2,
   );
-
-  static const TextStyle buttonSecondary = TextStyle(
-    fontSize: 16,
-    fontWeight: FontWeight.w600,
-    color: Color(0xff3CB3E9),
+  static final TextStyle buttonLabel = GoogleFonts.plusJakartaSans(
+    fontSize: 15, fontWeight: FontWeight.w700, letterSpacing: 0.1,
   );
-
-  // Custom text styles with parameters
-  static TextStyle custom({
-    double fontSize = 16,
-    FontWeight fontWeight = FontWeight.normal,
-    Color color = Colors.black87,
-    double letterSpacing = 0,
-    double height = 1.2,
-  }) {
-    return TextStyle(
-      fontSize: fontSize,
-      fontWeight: fontWeight,
-      color: color,
-      letterSpacing: letterSpacing,
-      height: height,
-    );
-  }
 }

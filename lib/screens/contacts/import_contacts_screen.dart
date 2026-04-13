@@ -6,6 +6,8 @@ import 'dart:io';
 
 // import 'package:another_flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
+import 'package:nudge/theme/app_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:nudge/models/contact.dart';
 import 'package:nudge/models/social_group.dart';
 import 'package:nudge/models/user.dart';
@@ -14,7 +16,6 @@ import 'package:nudge/screens/dashboard/dashboard_screen.dart';
 import 'package:nudge/services/message_service.dart';
 // import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
-// import 'package:nudge/theme/text_styles.dart';
 import 'package:nudge/widgets/gradient_text.dart';
 import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -44,6 +45,7 @@ class ImportContactsScreen extends StatefulWidget {
 
 class _ImportContactsScreenState extends State<ImportContactsScreen> {
   bool _isImporting = false;
+  bool _isFetchingContacts = false; // true while permission+contacts load before picker opens
   // int _processedCount = 0;
   // int _totalCount = 0;
   // String _statusMessage = '';
@@ -63,7 +65,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Permission Required'),
         content: Text(message),
-        backgroundColor: themeProvider.getSurfaceColor(context),
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -233,14 +235,14 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   //         //   flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
   //         //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
   //         //   messageText: Center(
-  //         //       child: Text( 'Successfully imported ${result['importedCount']} contacts to ${selectedGroup.name}!', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-  //         //           color: Colors.white, fontWeight: FontWeight.w400),)),
+  //         //       child: Text( 'Successfully imported ${result['importedCount']} contacts to ${selectedGroup.name}!', style: TextStyle(fontFamily: GoogleFonts.beVietnamPro().fontFamily, fontSize: 14,
+  //         //           color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w400),)),
   //         // ).show(context);
 
   //         TopMessageService().showMessage(
   //           context: context,
   //           message: 'Successfully imported ${result['importedCount']} contacts to ${selectedGroup.name}!',
-  //           backgroundColor: Colors.green,
+  //           backgroundColor: AppColors.success,
   //           icon: Icons.check,
   //         );
 
@@ -257,7 +259,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   //        TopMessageService().showMessage(
   //           context: context,
   //           message: 'Failed to import contacts: ${result['message']})',
-  //           backgroundColor: Colors.deepOrange,
+  //           backgroundColor: Theme.of(context).colorScheme.tertiary,
   //           icon: Icons.error,
   //         );
         
@@ -276,7 +278,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   //      TopMessageService().showMessage(
   //           context: context,
   //           message: 'Failed to import contact: $e',
-  //           backgroundColor: Colors.deepOrange,
+  //           backgroundColor: Theme.of(context).colorScheme.tertiary,
   //           icon: Icons.error,
   //         );
       
@@ -285,54 +287,171 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   // }
 
   Future<SocialGroup?> _showGroupSelectionDialog(List<SocialGroup> groupsForSelection, ThemeProvider themeProvider) async {
-    
     if (groupsForSelection.isEmpty) {
       groupsForSelection = _createDefaultGroups();
     }
-    
-    // Show dialog for group selection
-    return await showDialog<SocialGroup>(
+
+    return await showModalBottomSheet<SocialGroup>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Choose a Category', style: TextStyle(color: themeProvider.isDarkMode?const Color.fromARGB(255, 171, 170, 170):const Color.fromARGB(137, 55, 54, 54), fontSize: 20, fontWeight: FontWeight.w700, fontFamily: 'OpenSans')),
-        backgroundColor: themeProvider.getSurfaceColor(context),
-        content: Container(
-          width: double.maxFinite,
-          height: 300,
-          child: ListView.builder(
-            itemCount: groupsForSelection.length,
-            itemBuilder: (context, index) {
-              final group = groupsForSelection[index];
-              return Card(
-                color: themeProvider.getCardColor(context),
-                margin: const EdgeInsets.only(bottom: 8),
-                child: ListTile(
-                  leading: Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: Color(int.parse(group.colorCode.replaceAll('#', '0xFF'))),
-                      shape: BoxShape.circle,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        final isDark = themeProvider.isDarkMode;
+        final scheme = Theme.of(context).colorScheme;
+        final cardBg = isDark ? AppColors.darkSurfaceContainerHigh : Colors.white;
+        final bg     = isDark ? AppColors.darkSurfaceContainerLow  : const Color(0xFFF5F3F0);
+        final textP  = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
+        final textS  = isDark ? AppColors.darkOnSurfaceVariant : AppColors.lightOnSurfaceVariant;
+
+        return Container(
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Drag handle
+              Container(
+                margin: const EdgeInsets.only(top: 12, bottom: 4),
+                width: 36, height: 4,
+                decoration: BoxDecoration(
+                  color: scheme.outlineVariant,
+                  borderRadius: BorderRadius.circular(9999)),
+              ),
+              const SizedBox(height: 8),
+
+              // Header
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('Choose a Group',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 20, fontWeight: FontWeight.w800, color: textP)),
+                      const SizedBox(height: 2),
+                      Text('Contacts will be added to this group',
+                        style: GoogleFonts.beVietnamPro(
+                          fontSize: 13, color: textS)),
+                    ]),
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        width: 32, height: 32,
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? AppColors.darkSurfaceContainerHighest
+                              : const Color(0xFFECE7E2),
+                          shape: BoxShape.circle),
+                        child: Icon(Icons.close_rounded, size: 16, color: textS),
+                      ),
                     ),
-                  ),
-                  title: Text(group.name, style: TextStyle(color: themeProvider.getTextPrimaryColor(context))),
-                  subtitle: Text(
-                    FrequencyPeriodMapper.getConversationalChoice(group.frequency, group.period),
-                    style: TextStyle(color: themeProvider.getTextSecondaryColor(context)),
-                  ),
-                  onTap: () => Navigator.pop(context, group),
+                  ],
                 ),
-              );
-            },
+              ),
+
+              // Group list
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.55),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  itemCount: groupsForSelection.length,
+                  itemBuilder: (context, index) {
+                    final group = groupsForSelection[index];
+                    Color groupColor;
+                    try {
+                      groupColor = Color(
+                          int.parse(group.colorCode.replaceAll('#', '0xFF')));
+                    } catch (_) {
+                      groupColor = AppColors.lightPrimary;
+                    }
+
+                    return GestureDetector(
+                      onTap: () => Navigator.pop(context, group),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: cardBg,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [BoxShadow(
+                            color: Colors.black.withOpacity(
+                                isDark ? 0.15 : 0.05),
+                            blurRadius: 10, offset: const Offset(0, 2))],
+                        ),
+                        child: Row(children: [
+                          // Colour dot + emoji or initial
+                          Container(
+                            width: 44, height: 44,
+                            decoration: BoxDecoration(
+                              color: groupColor.withOpacity(0.15),
+                              shape: BoxShape.circle),
+                            child: Center(
+                              child: group.emoji.isNotEmpty
+                                  ? Text(group.emoji,
+                                      style: const TextStyle(fontSize: 20))
+                                  : Text(
+                                      group.name.isNotEmpty
+                                          ? group.name[0].toUpperCase()
+                                          : '?',
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w700,
+                                        color: groupColor)),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          // Name + frequency
+                          Expanded(child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(group.name,
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 16, fontWeight: FontWeight.w700,
+                                  color: textP)),
+                              const SizedBox(height: 2),
+                              Text(
+                                FrequencyPeriodMapper.getConversationalChoice(
+                                    group.frequency, group.period),
+                                style: GoogleFonts.beVietnamPro(
+                                    fontSize: 13, color: textS)),
+                            ],
+                          )),
+                          // Chevron
+                          Icon(Icons.chevron_right_rounded,
+                              color: textS, size: 20),
+                        ]),
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              // Cancel text
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
+                child: GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Center(
+                    child: Text('Cancel',
+                      style: GoogleFonts.beVietnamPro(
+                        fontSize: 15, fontWeight: FontWeight.w500,
+                        color: textS)),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -418,6 +537,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
 
     // Get contacts with ALL properties (including events for birthdays)
     //print('Fetching contacts with full properties...');
+    setState(() => _isFetchingContacts = true);
     List<fContacts.Contact> contacts = [];
     
     try {
@@ -440,10 +560,11 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
       //     duration: const Duration(seconds: 3),
       //   ),
       // );
+      setState(() => _isFetchingContacts = false);
       TopMessageService().showMessage(
           context: context,
           message: 'Failed to load contacts: ${e.toString()}',
-          backgroundColor: Colors.deepOrange,
+          backgroundColor: Theme.of(context).colorScheme.tertiary,
           icon: Icons.error,
         );
       return;
@@ -469,7 +590,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
           TopMessageService().showMessage(
                   context: context,
                   message: 'iOS Simulator detected. Please ensure you have added contacts in the Simulator\'s Contacts app and granted permission.',
-                  backgroundColor: Colors.green,
+                  backgroundColor: AppColors.success,
                   icon: Icons.check,
                 );
         } else {
@@ -482,7 +603,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
           TopMessageService().showMessage(
                   context: context,
                   message: 'No contacts found on device.',
-                  backgroundColor: Colors.green,
+                  backgroundColor: AppColors.success,
                   icon: Icons.check,
                 );
         }
@@ -506,6 +627,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
     final existingContacts = await apiService.getAllContacts();
     //print('Existing contacts retrieved: ${existingContacts.length}');
 
+    setState(() => _isFetchingContacts = false);
     final selectedContacts = await Navigator.of(context).push<List<fContacts.Contact>>(
       MaterialPageRoute(
         builder: (context) => _FullScreenContactPicker(
@@ -602,14 +724,14 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
       //       flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
       //       forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
       //       messageText: Center(
-      //           child: Text( 'Successfully imported ${result['importedCount']} contacts to ${selectedGroup.name}!', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-      //               color: Colors.white, fontWeight: FontWeight.w400),)),
+      //           child: Text( 'Successfully imported ${result['importedCount']} contacts to ${selectedGroup.name}!', style: TextStyle(fontFamily: GoogleFonts.beVietnamPro().fontFamily, fontSize: 14,
+      //               color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w400),)),
       //     ).show(context);
 
       TopMessageService().showMessage(
             context: context,
             message: 'Successfully imported ${result['importedCount']} contacts to ${selectedGroup.name}!',
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.success,
             icon: Icons.check,
           );
     } else {
@@ -623,7 +745,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
       TopMessageService().showMessage(
             context: context,
             message: 'Failed to import contacts: ${result['message']}',
-            backgroundColor: Colors.deepOrange,
+            backgroundColor: Theme.of(context).colorScheme.tertiary,
             icon: Icons.error,
           );
     }
@@ -811,11 +933,15 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
             appBar: AppBar(
       title: Column(
         children: [
-          GradientText(
+         GradientText(
             text: 'NUDGE',
-            style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
-            gradient: const LinearGradient(
-              colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
+            style: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 25),
+            gradient: LinearGradient(
+              colors: themeProvider.isDarkMode
+                  ? AppColors.primaryGradientDark
+                  : AppColors.primaryGradientLight,
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
             ),
@@ -825,7 +951,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
               'Import to ${_preSelectedGroup!.name}',
               style: TextStyle(
                 fontSize: 12,
-                color: AppTheme.primaryColor,
+                color: AppColors.lightPrimary,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -833,11 +959,11 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
       ),
       centerTitle: true,
       surfaceTintColor: Colors.transparent,
-      iconTheme: IconThemeData(color: AppTheme.primaryColor),
-      backgroundColor: themeProvider.getSurfaceColor(context),
+      iconTheme: themeProvider.isDarkMode?IconThemeData(color: const Color.fromARGB(255, 165, 141, 196)):IconThemeData(color: AppColors.lightPrimary),
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
     ),
             body: Container(
-        color: themeProvider.getBackgroundColor(context),
+        color: Theme.of(context).scaffoldBackgroundColor,
         child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Column(
@@ -847,7 +973,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
               Icon(
                 Icons.contacts,
                 size: 80,
-                color: AppTheme.primaryColor,
+                color: AppColors.lightPrimary,
               ),
               const SizedBox(height: 24),
               Text(
@@ -855,7 +981,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: themeProvider.getTextPrimaryColor(context),
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -864,64 +990,89 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
                 'Select contacts from your device to import into Nudge',
                 style: TextStyle(
                   fontSize: 16,
-                  color: themeProvider.getTextSecondaryColor(context),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
               
-              // Import button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    _isImporting ? null : _pickContactsAndImport(themeProvider);
-                  }, 
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  icon: _isImporting
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Icon(Icons.import_contacts, color: Colors.white),
-                  label: _isImporting
-                      ? const Text('Importing...', style: TextStyle(color: Colors.white))
-                      : const Text('Select Contacts to Import', 
-                          style: TextStyle(fontSize: 16, color: Colors.white)),
-                ),
-              ),
-              const SizedBox(height: 16),
-              
-              // Cancel button
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () {
-                    Navigator.pop(context, []);
-                  },
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    side: BorderSide(color: themeProvider.getTextHintColor(context)),
-                  ),
-                  child: Text(
-                    'Cancel',
-                    style: TextStyle(fontSize: 16, color: themeProvider.getTextSecondaryColor(context)),
+              // Show a loading state while fetching contacts (between tapping
+              // the button and the picker screen appearing), otherwise show
+              // the normal import / cancel buttons.
+              if (_isFetchingContacts) ...[
+                const SizedBox(height: 8),
+                const SizedBox(
+                  width: 40,
+                  height: 40,
+                  child: CircularProgressIndicator(
+                    color: AppColors.lightPrimary,
+                    strokeWidth: 3,
                   ),
                 ),
-              ),
+                const SizedBox(height: 14),
+                Text(
+                  'Loading your contacts…',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ] else ...[
+                // Import button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      _isImporting ? null : _pickContactsAndImport(themeProvider);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.lightPrimary,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    icon: _isImporting
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Theme.of(context).colorScheme.onInverseSurface,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Icon(Icons.import_contacts, color: Colors.white),
+                    label: _isImporting
+                        ? const Text('Importing...', style: TextStyle(color: Colors.white))
+                        : const Text('Select Contacts to Import',
+                            style: TextStyle(fontSize: 16, color: Colors.white)),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Cancel button
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      Navigator.pop(context, []);
+                    },
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      side: BorderSide(color: Theme.of(context).colorScheme.outline),
+                    ),
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(
+                          fontSize: 16,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -936,7 +1087,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
                       _fabController.closeMenu();
                     },
                     child: Container(
-                      color: Colors.black.withOpacity(0.55),
+                      color: Colors.transparent,
                       width: MediaQuery.of(context).size.width,
                       height: MediaQuery.of(context).size.height,
                     ),
@@ -961,7 +1112,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   //                   text: 'NUDGE',
   //                   style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
   //                   gradient: const LinearGradient(
-  //                     colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
+  //                     colors: [AppColors.lightSecondary, AppColors.lightPrimary],
   //                     begin: Alignment.topCenter,
   //                     end: Alignment.bottomCenter,
   //                   ),
@@ -971,7 +1122,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   //                     'Import to ${_preSelectedGroup!.name}',
   //                     style: TextStyle(
   //                       fontSize: 12,
-  //                       color: AppTheme.primaryColor,
+  //                       color: AppColors.lightPrimary,
   //                       fontWeight: FontWeight.w500,
   //                     ),
   //                   ),
@@ -979,23 +1130,23 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   //             ),
   //             centerTitle: true,
   //             surfaceTintColor: Colors.transparent,
-  //             iconTheme: IconThemeData(color: AppTheme.primaryColor),
-  //             backgroundColor: themeProvider.getSurfaceColor(context),
+  //             iconTheme: IconThemeData(color: AppColors.lightPrimary),
+  //             backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
   //           ),
   //           body: Container(
-  //       color: themeProvider.getBackgroundColor(context),
+  //       color: Theme.of(context).scaffoldBackgroundColor,
   //       child: Padding(
   //         padding: const EdgeInsets.all(20.0),
   //         child: ListView(
   //           children: [
   //             Text(
   //               'IMPORT YOUR CONTACTS',
-  //               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: themeProvider.getTextPrimaryColor(context)),
+  //               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
   //             ),
   //             const SizedBox(height: 8),
   //             Text(
   //               'Easily import your existing contacts to get started with Nudge',
-  //               style: TextStyle(fontSize: 16, color: themeProvider.getTextSecondaryColor(context), fontWeight: FontWeight.w500),
+  //               style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500),
   //             ),
   //             const SizedBox(height: 30),
 
@@ -1003,9 +1154,9 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   //             Card(
   //               elevation: 4,
   //               shape: RoundedRectangleBorder(
-  //                 borderRadius: BorderRadius.circular(12),
+  //                 borderRadius: BorderRadius.circular(16),
   //               ),
-  //               color: themeProvider.getCardColor(context),
+  //               color: Theme.of(context).colorScheme.onSurface,
   //               child: Padding(
   //                 padding: const EdgeInsets.all(16.0),
   //                 child: Column(
@@ -1013,14 +1164,14 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   //                   children: [
   //                     Text(
   //                       'IMPORT OPTIONS',
-  //                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: themeProvider.getTextSecondaryColor(context)),
+  //                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurfaceVariant),
   //                     ),
   //                     const SizedBox(height: 16),
 
   //                     // Quantity Selection - Android only
   //                     Text(
   //                       'How many contacts would you like to import?',
-  //                       style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: themeProvider.getTextPrimaryColor(context)),
+  //                       style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface),
   //                     ),
   //                     const SizedBox(height: 12),
 
@@ -1031,8 +1182,8 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   //                         return FilterChip(
   //                           label: Text(_getQuantityLabel(quantity), style: TextStyle(
   //                             color: _selectedQuantity == quantity
-  //                                 ? AppTheme.primaryColor
-  //                                 : themeProvider.getTextPrimaryColor(context),
+  //                                 ? AppColors.lightPrimary
+  //                                 : Theme.of(context).colorScheme.onSurface,
   //                             fontWeight: _selectedQuantity == quantity
   //                                 ? FontWeight.bold
   //                                 : FontWeight.normal,
@@ -1043,12 +1194,12 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   //                               _selectedQuantity = selected ? quantity : 0;
   //                             });
   //                           },
-  //                           backgroundColor: themeProvider.getBackgroundColor(context),
-  //                           selectedColor: AppTheme.primaryColor.withOpacity(0.2),
-  //                           checkmarkColor: AppTheme.primaryColor,
+  //                           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+  //                           selectedColor: AppColors.lightPrimary.withOpacity(0.2),
+  //                           checkmarkColor: AppColors.lightPrimary,
   //                           shape: RoundedRectangleBorder(
   //                             borderRadius: BorderRadius.circular(20),
-  //                             side: BorderSide(color: themeProvider.getTextHintColor(context)),
+  //                             side: BorderSide(color: Theme.of(context).colorScheme.outline),
   //                           ),
   //                         );
   //                       }).toList(),
@@ -1066,8 +1217,8 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   //                               _useSmartFilter = value;
   //                             });
   //                           },
-  //                           activeColor: AppTheme.primaryColor,
-  //                           inactiveTrackColor: themeProvider.getTextHintColor(context),
+  //                           activeColor: AppColors.lightPrimary,
+  //                           inactiveTrackColor: Theme.of(context).colorScheme.outline,
   //                         ),
   //                         const SizedBox(width: 8),
   //                         Expanded(
@@ -1076,11 +1227,11 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   //                             children: [
   //                               Text(
   //                                 'SMART FILTER',
-  //                                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: themeProvider.getTextSecondaryColor(context)),
+  //                                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurfaceVariant),
   //                               ),
   //                               Text(
   //                                 'Prioritize contacts you interact with most',
-  //                                 style: TextStyle(fontSize: 14, color: themeProvider.getTextSecondaryColor(context)),
+  //                                 style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
   //                               ),
   //                             ],
   //                           ),
@@ -1099,31 +1250,31 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   //                               _isImporting ? null : _importDeviceContacts(themeProvider);
   //                             } ,
   //                             style: ElevatedButton.styleFrom(
-  //                               backgroundColor: AppTheme.primaryColor,
+  //                               backgroundColor: AppColors.lightPrimary,
   //                               padding: const EdgeInsets.symmetric(vertical: 16),
   //                               shape: RoundedRectangleBorder(
-  //                                 borderRadius: BorderRadius.circular(12),
+  //                                 borderRadius: BorderRadius.circular(16),
   //                               ),
   //                             ),
   //                             child: _isImporting
-  //                                 ? const Row(
+  //                                 ? Row(
   //                                     mainAxisAlignment: MainAxisAlignment.center,
   //                                     children: [
   //                                       SizedBox(
   //                                         width: 20,
   //                                         height: 20,
   //                                         child: CircularProgressIndicator(
-  //                                           color: Colors.white,
+  //                                           color: Theme.of(context).colorScheme.onSurface,
   //                                           strokeWidth: 2,
   //                                         ),
   //                                       ),
   //                                       SizedBox(width: 12),
-  //                                       Text('Importing...', style: TextStyle(color: Colors.white)),
+  //                                       Text('Importing...', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
   //                                     ],
   //                                   )
   //                                 : const Text(
   //                                     'Start Import',
-  //                                     style: TextStyle(fontSize: 16, color: Colors.white),
+  //                                     style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurface),
   //                                   ),
   //                           ),
   //                         ),
@@ -1136,19 +1287,19 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   //                             style: OutlinedButton.styleFrom(
   //                               padding: const EdgeInsets.symmetric(vertical: 16),
   //                               shape: RoundedRectangleBorder(
-  //                                 borderRadius: BorderRadius.circular(12),
+  //                                 borderRadius: BorderRadius.circular(16),
   //                               ),
-  //                               side: BorderSide(color: AppTheme.primaryColor),
+  //                               side: BorderSide(color: AppColors.lightPrimary),
   //                             ),
   //                             icon: const Padding(
   //                               padding: EdgeInsets.only(left: 5),
-  //                               child: Icon(Icons.group_add, color: AppTheme.primaryColor),
+  //                               child: Icon(Icons.group_add, color: AppColors.lightPrimary),
   //                             ),
   //                             label: const Text(
   //                               'Pick & Import Selected',
   //                               style: TextStyle(
   //                                 fontSize: 16,
-  //                                 color: AppTheme.primaryColor,
+  //                                 color: AppColors.lightPrimary,
   //                               ),
   //                             ),
   //                           ),
@@ -1167,9 +1318,9 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   //               Card(
   //                 elevation: 4,
   //                 shape: RoundedRectangleBorder(
-  //                   borderRadius: BorderRadius.circular(12),
+  //                   borderRadius: BorderRadius.circular(16),
   //                 ),
-  //                 color: themeProvider.getCardColor(context),
+  //                 color: Theme.of(context).colorScheme.onSurface,
   //                 child: Padding(
   //                   padding: const EdgeInsets.all(16.0),
   //                   child: Column(
@@ -1177,15 +1328,15 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   //                     children: [
   //                       Text(
   //                         'Import Progress',
-  //                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: themeProvider.getTextPrimaryColor(context)),
+  //                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
   //                       ),
   //                       const SizedBox(height: 16),
 
   //                       LinearProgressIndicator(
   //                         value: _totalCount > 0 ? _processedCount / _totalCount : 0,
-  //                         backgroundColor: themeProvider.getBackgroundColor(context),
-  //                         valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
-  //                         borderRadius: BorderRadius.circular(4),
+  //                         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+  //                         valueColor: const AlwaysStoppedAnimation<Color>(AppColors.lightPrimary),
+  //                         borderRadius: BorderRadius.circular(8),
   //                       ),
 
   //                       const SizedBox(height: 12),
@@ -1195,14 +1346,14 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   //                         children: [
   //                           Text(
   //                             _statusMessage,
-  //                             style: TextStyle(fontSize: 14, color: themeProvider.getTextPrimaryColor(context)),
+  //                             style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface),
   //                           ),
   //                           Text(
   //                             '$_processedCount/$_totalCount',
   //                             style: TextStyle(
   //                               fontSize: 14,
   //                               fontWeight: FontWeight.bold,
-  //                               color: themeProvider.getTextPrimaryColor(context),
+  //                               color: Theme.of(context).colorScheme.onSurface,
   //                             ),
   //                           ),
   //                         ],
@@ -1220,7 +1371,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   //               Card(
   //                 elevation: 4,
   //                 shape: RoundedRectangleBorder(
-  //                   borderRadius: BorderRadius.circular(12),
+  //                   borderRadius: BorderRadius.circular(16),
   //                 ),
   //                 color: _statusMessage.contains('Successfully')
   //                         ?Colors.green[themeProvider.isDarkMode ? 900 : 50]
@@ -1238,10 +1389,10 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   //                         ?Icons.error
   //                         :Icons.question_mark,
   //                         color: _statusMessage.contains('Successfully')
-  //                         ?Colors.green
+  //                         ?AppColors.success
   //                         :_statusMessage.contains('failed') || _statusMessage.contains('Error')
-  //                         ? Colors.red
-  //                         : Colors.grey,
+  //                         ? Theme.of(context).colorScheme.error
+  //                         : Theme.of(context).colorScheme.outline,
   //                         size: 32,
   //                       ),
   //                       const SizedBox(width: 12),
@@ -1259,10 +1410,10 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   //                                 fontSize: 16,
   //                                 fontWeight: FontWeight.bold,
   //                                 color: _statusMessage.contains('Successfully')
-  //                         ?Colors.green
+  //                         ?AppColors.success
   //                         : _statusMessage.contains('failed') || _statusMessage.contains('Error')
   //                         ? Colors.white
-  //                         : Color(0xff555555),
+  //                         : AppColors.lightOnSurface,
   //                               ),
   //                             ),
   //                             const SizedBox(height: 4),
@@ -1270,10 +1421,10 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   //                               _statusMessage,
   //                               style: TextStyle(
   //                                 color:_statusMessage.contains('Successfully')
-  //                         ?Colors.green
+  //                         ?AppColors.success
   //                         : _statusMessage.contains('failed') || _statusMessage.contains('Error')
   //                         ? Colors.white
-  //                         : Color(0xff555555),
+  //                         : AppColors.lightOnSurface,
   //                               ),
   //                             ),
   //                           ],
@@ -1291,9 +1442,9 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   //             Card(
   //               elevation: 2,
   //               shape: RoundedRectangleBorder(
-  //                 borderRadius: BorderRadius.circular(12),
+  //                 borderRadius: BorderRadius.circular(16),
   //               ),
-  //               color: themeProvider.getCardColor(context),
+  //               color: Theme.of(context).colorScheme.onSurface,
   //               child: Padding(
   //                 padding: const EdgeInsets.all(16.0),
   //                 child: Column(
@@ -1301,26 +1452,26 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
   //                   children: [
   //                     Text(
   //                       'HOW IT WORKS',
-  //                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: themeProvider.getTextSecondaryColor(context)),
+  //                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurfaceVariant),
   //                     ),
   //                     const SizedBox(height: 12),
   //                     ListTile(
-  //                       leading: Icon(Icons.filter_list, color: AppTheme.primaryColor),
-  //                       title: Text('Smart Filter', style: TextStyle(fontWeight: FontWeight.w800, color: themeProvider.getTextPrimaryColor(context))),
+  //                       leading: Icon(Icons.filter_list, color: AppColors.lightPrimary),
+  //                       title: Text('Smart Filter', style: TextStyle(fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface)),
   //                       subtitle: Text('Prioritizes contacts based on your interaction frequency', 
-  //                         style: TextStyle(color: themeProvider.getTextSecondaryColor(context))),
+  //                         style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
   //                     ),
   //                     ListTile(
-  //                       leading: Icon(Icons.group, color: AppTheme.primaryColor),
-  //                       title: Text('Customizable Quantity', style: TextStyle(fontWeight: FontWeight.w800, color: themeProvider.getTextPrimaryColor(context))),
+  //                       leading: Icon(Icons.group, color: AppColors.lightPrimary),
+  //                       title: Text('Customizable Quantity', style: TextStyle(fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface)),
   //                       subtitle: Text('Choose how many contacts to import based on your needs', 
-  //                         style: TextStyle(color: themeProvider.getTextSecondaryColor(context))),
+  //                         style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
   //                     ),
   //                     ListTile(
-  //                       leading: Icon(Icons.security, color: AppTheme.primaryColor),
-  //                       title: Text('Privacy First', style: TextStyle(fontWeight: FontWeight.w800, color: themeProvider.getTextPrimaryColor(context))),
+  //                       leading: Icon(Icons.security, color: AppColors.lightPrimary),
+  //                       title: Text('Privacy First', style: TextStyle(fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface)),
   //                       subtitle: Text('Your contacts are only stored on your device and our secure servers', 
-  //                         style: TextStyle(color: themeProvider.getTextSecondaryColor(context))),
+  //                         style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
   //                     ),
   //                   ],
   //                 ),
@@ -1665,339 +1816,351 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
     @override
     Widget build(BuildContext context) {
       final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-      
+      final isDark = themeProvider.isDarkMode;
+      final scheme = Theme.of(context).colorScheme;
+
+      final scaffoldBg = isDark ? AppColors.darkBackground : const Color(0xFFF2EEE8);
+      final cardBg     = isDark ? AppColors.darkSurfaceContainerHigh : Colors.white;
+      final fieldBg    = isDark ? AppColors.darkSurfaceContainerHighest : const Color(0xFFECE7E2);
+      final textP      = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
+      final textS      = isDark ? AppColors.darkOnSurfaceVariant : AppColors.lightOnSurfaceVariant;
+
+      // Alphabetical sections
+      final Map<String, List<fContacts.Contact>> alphaSections = {};
+      for (final c in _filteredContacts) {
+        final letter = c.displayName.isNotEmpty ? c.displayName[0].toUpperCase() : '#';
+        alphaSections.putIfAbsent(letter, () => []).add(c);
+      }
+      final sortedLetters = alphaSections.keys.toList()..sort();
+
+      // "Frequently contacted" = already-in-nudge contacts at top
+      final frequent = _filteredContacts
+          .where((c) => _isContactAlreadyExists(c))
+          .take(3)
+          .toList();
+
       return GestureDetector(
         onTap: _dismissKeyboard,
         child: Scaffold(
-        appBar: AppBar(
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'SELECT CONTACTS',
-                style: TextStyle(
-                  color: themeProvider.getTextPrimaryColor(context),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+          backgroundColor: scaffoldBg,
+          appBar: AppBar(
+            backgroundColor: scaffoldBg,
+            surfaceTintColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
+              icon: Icon(Icons.close_rounded, color: textP, size: 22),
+              onPressed: () => Navigator.pop(context),
+            ),
+            centerTitle: true,
+            title: Text('SELECT CONTACTS',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 17, fontWeight: FontWeight.w800,
+                color: textP, letterSpacing: 0.5)),
+            actions: [
+              IconButton(
+                icon: Icon(Icons.select_all_rounded,
+                    color: AppColors.lightPrimary, size: 22),
+                tooltip: 'Select all',
+                onPressed: _selectAllFiltered,
               ),
-              if (widget.selectedGroup != null)
-                Text(
-                  'for ${widget.selectedGroup!.name}',
-                  style: TextStyle(
-                    color: AppTheme.primaryColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+              IconButton(
+                icon: Icon(Icons.deselect_rounded, color: textS, size: 22),
+                tooltip: 'Clear selection',
+                onPressed: _clearFilteredSelection,
+              ),
             ],
           ),
-          backgroundColor: themeProvider.getSurfaceColor(context),
-          actions: [
-            IconButton(
-              icon: Icon(Icons.select_all, color: themeProvider.getTextPrimaryColor(context)),
-              tooltip: 'Select all',
-              onPressed: _selectAllFiltered,
-            ),
-            IconButton(
-              icon: Icon(Icons.clear, color: themeProvider.getTextPrimaryColor(context)),
-              tooltip: 'Clear selection',
-              onPressed: _clearFilteredSelection,
-            ),
-            Padding(
-              padding: const EdgeInsets.only(right: 8.0),
-              child: Text(
-                '${_tempSelected.length}',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: themeProvider.getTextPrimaryColor(context)),
+
+          body: Column(children: [
+            // Group banner
+            if (widget.selectedGroup != null)
+              Container(
+                margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppColors.lightPrimary.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: AppColors.lightPrimary.withOpacity(0.2))),
+                child: Row(children: [
+                  Container(
+                    width: 10, height: 10,
+                    decoration: BoxDecoration(
+                      color: () {
+                        try {
+                          return Color(int.parse(widget.selectedGroup!.colorCode
+                              .replaceAll('#', '0xFF')));
+                        } catch (_) { return AppColors.lightPrimary; }
+                      }(),
+                      shape: BoxShape.circle)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text('Adding to: ${widget.selectedGroup!.name}',
+                      style: GoogleFonts.beVietnamPro(
+                        fontSize: 13, fontWeight: FontWeight.w600,
+                        color:  isDark?Colors.white: AppColors.lightPrimary))),
+                ]),
               ),
-            ),
-          ],
-        ),
-        body: Container(
-          color: themeProvider.getBackgroundColor(context),
-          child: Column(
-            children: [
-              // Group info banner (if group is selected)
-              if (widget.selectedGroup != null)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  color: AppTheme.primaryColor.withOpacity(0.1),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 16,
-                        height: 16,
-                        decoration: BoxDecoration(
-                          color: Color(int.parse(widget.selectedGroup!.colorCode.replaceAll('#', '0xFF'))),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Contacts will be added to: ${widget.selectedGroup!.name}',
-                          style: TextStyle(
-                            color: AppTheme.primaryColor,
-                            fontWeight: FontWeight.w500,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              
-              // Search bar
-              Padding(
-                padding: const EdgeInsets.all(16.0),
+
+            // Search bar
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: Container(
+                height: 48,
+                decoration: BoxDecoration(
+                    color: fieldBg,
+                    borderRadius: BorderRadius.circular(9999)),
                 child: TextField(
                   controller: _searchController,
-                  style: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
+                  style: GoogleFonts.beVietnamPro(fontSize: 14, color: textP),
                   decoration: InputDecoration(
-                    prefixIcon: Icon(Icons.search, color: themeProvider.getTextSecondaryColor(context)),
-                    hintText: 'Search by name, phone, or email',
-                    hintStyle: TextStyle(color: themeProvider.getTextHintColor(context)),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: themeProvider.getTextHintColor(context)),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: themeProvider.getTextHintColor(context)),
-                    ),
-                    filled: true,
-                    fillColor: themeProvider.getCardColor(context),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    prefixIcon: Icon(Icons.search_rounded, color: textS, size: 20),
+                    hintText: 'Search by name or number...',
+                    hintStyle: GoogleFonts.beVietnamPro(fontSize: 14, color: textS),
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 14),
                   ),
                   onChanged: _applyFilter,
                 ),
               ),
-              
-              // Info bar
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Showing ${_filteredContacts.length} of ${widget.contacts.length} contacts',
-                      style: TextStyle(fontSize: 12, color: themeProvider.getTextSecondaryColor(context)),
-                    ),
-                    Text(
-                      'Selected: ${_tempSelected.length}',
-                      style: TextStyle(fontSize: 12, color: themeProvider.getTextSecondaryColor(context)),
-                    ),
-                  ],
-                ),
-              ),
-              
-              // Divider
-              Divider(height: 1, color: themeProvider.getTextHintColor(context)),
-              
-              // Contacts list
-              Expanded(
-                child: _filteredContacts.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.group_off, size: 64, color: themeProvider.getTextSecondaryColor(context)),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No contacts found',
-                              style: TextStyle(fontSize: 18, color: themeProvider.getTextSecondaryColor(context)),
-                            ),
-                            if (_searchController.text.isNotEmpty)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8.0),
-                                child: Text(
-                                  'Try a different search term',
-                                  style: TextStyle(fontSize: 14, color: themeProvider.getTextHintColor(context)),
-                                ),
-                              ),
-                          ],
-                        ),
-                      )
-                    : ListView.builder(
-                        itemCount: _filteredContacts.length,
-                        itemBuilder: (context, index) {
-                          final contact = _filteredContacts[index];
-                          final isSelected = _tempSelected.contains(contact);
-                          final alreadyExists = _isContactAlreadyExists(contact);
-                          final primaryPhone = contact.phones.isNotEmpty
-                              ? contact.phones.first.number
-                              : '';
-                          final primaryEmail = contact.emails.isNotEmpty
-                              ? contact.emails.first.address
-                              : '';
-                          
-                          final avatarIndex = _getAvatarIndex(contact);
+            ),
+            const SizedBox(height: 8),
 
-                          Widget avatar;
-                          if (contact.photo != null && contact.photo!.isNotEmpty) {
-                            avatar = CircleAvatar(
-                              backgroundImage: MemoryImage(contact.photo!),
-                              radius: 24,
-                            );
-                          } else {
-                            avatar = CircleAvatar(
-                              radius: 24,
-                              backgroundColor: Colors.transparent,
-                              backgroundImage: AssetImage('assets/contact-icons/$avatarIndex.png'),
-                              child: Text(
-                                contact.displayName.isNotEmpty ? _getContactInitials(contact.displayName).toUpperCase() : '',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
-                              )
-                            );
-                          }
-                          
-                          // Determine text color based on contact state
-                          Color textColor;
-                          Color subtitleColor;
-                          
-                          if (alreadyExists) {
-                            textColor = themeProvider.getTextHintColor(context);
-                            subtitleColor = themeProvider.getTextHintColor(context).withOpacity(0.7);
-                          } else if (isSelected) {
-                            textColor = AppTheme.primaryColor;
-                            subtitleColor = AppTheme.primaryColor.withOpacity(0.8);
-                          } else {
-                            textColor = themeProvider.getTextPrimaryColor(context);
-                            subtitleColor = themeProvider.getTextSecondaryColor(context);
-                          }
-                          
-                          return Container(
-                            color: isSelected 
-                                ? AppTheme.primaryColor.withOpacity(0.1)
-                                : Colors.transparent,
-                            child: ListTile(
-                              leading: Opacity(
-                                opacity: alreadyExists ? 0.5 : 1.0,
-                                child: avatar,
-                              ),
-                              title: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      contact.displayName,
-                                      style: TextStyle(
-                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                        color: textColor,
-                                        fontStyle: alreadyExists ? FontStyle.italic : FontStyle.normal,
-                                      ),
-                                    ),
-                                  ),
-                                  if (alreadyExists)
-                                    Container(
-                                      margin: const EdgeInsets.only(left: 8),
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: themeProvider.getTextHintColor(context).withOpacity(0.2),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(
-                                        'Already in Nudge',
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          color: themeProvider.getTextHintColor(context),
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                              subtitle: Text(
-                                [primaryPhone, primaryEmail]
-                                    .where((s) => s.isNotEmpty)
-                                    .join(' • '),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: subtitleColor,
-                                  fontStyle: alreadyExists ? FontStyle.italic : FontStyle.normal,
-                                ),
-                              ),
-                              trailing: isSelected
-                                  ? Icon(Icons.check_circle, color: AppTheme.primaryColor)
-                                  : alreadyExists
-                                      ? Icon(Icons.check_circle_outline, color: themeProvider.getTextHintColor(context))
-                                      : null,
-                              onTap: alreadyExists
-                                  ? null // Make already existing contacts unselectable
-                                  : () {
-                                      setState(() {
-                                        if (isSelected) {
-                                          _tempSelected.remove(contact);
-                                        } else {
-                                          _tempSelected.add(contact);
-                                        }
-                                      });
-                                    },
-                            ),
-                          );
-                        },
-                      ),
-              ),
-            ],
-          ),
-        ),
-        bottomNavigationBar: BottomAppBar(
-          color: themeProvider.getSurfaceColor(context),
-          child: Padding(
-            padding: const EdgeInsets.all(0.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      side: BorderSide(color: themeProvider.getTextHintColor(context)),
-                    ),
-                    child: Text(
-                      'Cancel',
-                      style: TextStyle(fontSize: 16, color: themeProvider.getTextSecondaryColor(context)),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _tempSelected.isEmpty
-                        ? null
-                        : () => Navigator.pop(context, _tempSelected),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryColor,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Row(
+            // Contact list
+            Expanded(
+              child: _filteredContacts.isEmpty
+                  ? Center(child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.download, color: Colors.white),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Import (${_tempSelected.length})',
-                          style: const TextStyle(fontSize: 16, color: Colors.white),
-                        ),
+                        Icon(Icons.search_off_rounded,
+                            size: 56, color: textS.withOpacity(0.4)),
+                        const SizedBox(height: 12),
+                        Text('No contacts found',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 16, fontWeight: FontWeight.w600,
+                            color: textP)),
+                        if (_searchController.text.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text('Try a different search term',
+                              style: GoogleFonts.beVietnamPro(
+                                  fontSize: 13, color: textS))),
+                      ]))
+                  : ListView(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                      children: [
+                        // Frequently contacted (already-in-nudge) section
+                        if (frequent.isNotEmpty && _searchController.text.isEmpty) ...[
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(4, 4, 4, 8),
+                            child: Text('FREQUENTLY CONTACTED',
+                              style: GoogleFonts.beVietnamPro(
+                                fontSize: 11, fontWeight: FontWeight.w700,
+                                color: textS, letterSpacing: 0.8))),
+                          ...frequent.map((c) =>
+                              _buildContactCard(c, cardBg, textP, textS, isDark)),
+                          const SizedBox(height: 12),
+                        ],
+                        // Alphabetical sections
+                        ...sortedLetters.expand((letter) => [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(4, 8, 4, 6),
+                            child: Text(letter,
+                              style: GoogleFonts.beVietnamPro(
+                                fontSize: 11, fontWeight: FontWeight.w700,
+                                color: textS, letterSpacing: 0.5))),
+                          ...alphaSections[letter]!.map((c) =>
+                              _buildContactCard(c, cardBg, textP, textS, isDark)),
+                        ]),
                       ],
                     ),
+            ),
+          ]),
+
+          // Bottom bar
+          bottomNavigationBar: Container(
+            color: scaffoldBg,
+            padding: EdgeInsets.fromLTRB(
+                24, 12, 24, MediaQuery.of(context).padding.bottom + 12),
+            child: Row(children: [
+              GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Text('Cancel',
+                  style: GoogleFonts.beVietnamPro(
+                    fontSize: 16, fontWeight: FontWeight.w500, color: textS)),
+              ),
+              const Spacer(),
+              GestureDetector(
+                onTap: _tempSelected.isEmpty
+                    ? null
+                    : () => Navigator.pop(context, _tempSelected),
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 200),
+                  opacity: _tempSelected.isEmpty ? 0.45 : 1.0,
+                  child: Container(
+                    height: 52,
+                    padding: const EdgeInsets.symmetric(horizontal: 28),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF751FE7), Color(0xFF9C4DFF)]),
+                      borderRadius: BorderRadius.circular(9999),
+                      boxShadow: _tempSelected.isNotEmpty
+                          ? [BoxShadow(
+                              color: AppColors.lightPrimary.withOpacity(0.4),
+                              blurRadius: 16, offset: const Offset(0, 5))]
+                          : null,
+                    ),
+                    child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                      Text('Import (${_tempSelected.length})',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 16, fontWeight: FontWeight.w700,
+                          color: Colors.white)),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.arrow_forward_rounded,
+                          color: Colors.white, size: 18),
+                    ]),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ]),
           ),
         ),
-      ));
+      );
     }
-  }
+
+    // ── Contact card ──────────────────────────────────────────────────────
+    Widget _buildContactCard(
+      fContacts.Contact contact,
+      Color cardBg, Color textP, Color textS, bool isDark,
+    ) {
+      final isSelected    = _tempSelected.contains(contact);
+      final alreadyExists = _isContactAlreadyExists(contact);
+      final primaryPhone  = contact.phones.isNotEmpty
+          ? contact.phones.first.number : '';
+      final avatarIndex   = _getAvatarIndex(contact);
+      final initials      = contact.displayName.isNotEmpty
+          ? _getContactInitials(contact.displayName) : '?';
+
+      return GestureDetector(
+        onTap: alreadyExists ? null : () => setState(() {
+          if (isSelected) {
+            _tempSelected.remove(contact);
+          } else {
+            _tempSelected.add(contact);
+          }
+        }),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: cardBg,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.14 : 0.05),
+              blurRadius: 10, offset: const Offset(0, 2))],
+          ),
+          child: Row(children: [
+            // Avatar
+            Stack(clipBehavior: Clip.none, children: [
+              Opacity(
+                opacity: alreadyExists ? 0.65 : 1.0,
+                child: contact.photo != null && contact.photo!.isNotEmpty
+                    ? ClipOval(child: Image.memory(
+                        contact.photo!, width: 48, height: 48,
+                        fit: BoxFit.cover))
+                    : ClipOval(
+                        child: SizedBox(width: 48, height: 48,
+                          child: Stack(fit: StackFit.expand, children: [
+                            Image.asset('assets/contact-icons/$avatarIndex.png',
+                                fit: BoxFit.cover),
+                            Container(color: Colors.black.withOpacity(
+                                isDark ? 0.38 : 0.18)),
+                            Center(child: Text(initials,
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 16, fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                shadows: [Shadow(
+                                  color: Colors.black.withOpacity(0.4),
+                                  blurRadius: 4)]))),
+                          ]))),
+              ),
+              if (alreadyExists)
+                Positioned(
+                  bottom: -2, right: -2,
+                  child: Container(
+                    width: 18, height: 18,
+                    decoration: BoxDecoration(
+                      color: AppColors.lightPrimary,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: cardBg, width: 1.5)),
+                    child: const Icon(Icons.check, color: Colors.white, size: 10))),
+            ]),
+            const SizedBox(width: 14),
+
+            // Name + phone
+            Expanded(child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  Expanded(
+                    child: Text(contact.displayName,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 16, fontWeight: FontWeight.w700,
+                        color: alreadyExists ? textS : textP),
+                      maxLines: 1, overflow: TextOverflow.ellipsis)),
+                  if (alreadyExists) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 7, vertical: 3),
+                      decoration: BoxDecoration(
+                        color:  isDark?AppColors.lightPrimary.withOpacity(0.4):AppColors.lightPrimary.withOpacity(0.10),
+                        borderRadius: BorderRadius.circular(6)),
+                      child: Text('ALREADY IN NUDGE',
+                        style: GoogleFonts.beVietnamPro(
+                          fontSize: 9, fontWeight: FontWeight.w700,
+                          color: isDark?Colors.white:AppColors.lightPrimary,
+                          letterSpacing: 0.3))),
+                  ],
+                ]),
+                if (primaryPhone.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(primaryPhone,
+                    style: GoogleFonts.beVietnamPro(
+                        fontSize: 13, color: textS)),
+                ],
+              ],
+            )),
+            const SizedBox(width: 12),
+
+            // Checkbox
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              width: 28, height: 28,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isSelected ? AppColors.lightPrimary : Colors.transparent,
+                border: Border.all(
+                  color: isSelected
+                      ? AppColors.lightPrimary
+                      : alreadyExists
+                          ?  isDark?Colors.white: AppColors.lightPrimary.withOpacity(0.4)
+                          : textS.withOpacity(0.35),
+                  width: 1.5)),
+              child: isSelected
+                  ? const Icon(Icons.check_rounded, color: Colors.white, size: 16)
+                  : alreadyExists
+                      ? Icon(Icons.check_rounded,
+                          color:  isDark?Colors.white: AppColors.lightPrimary.withOpacity(0.6), size: 14)
+                      : null,
+            ),
+          ]),
+        ),
+      );
+    }
+}

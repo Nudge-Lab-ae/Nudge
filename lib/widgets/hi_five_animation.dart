@@ -45,7 +45,7 @@
 //               child: const Icon(
 //                 Icons.pan_tool,
 //                 size: 100,
-//                 color: Colors.blue,
+//                 color: Theme.of(context).colorScheme.secondary,
 //               ),
 //             ),
 //           ),
@@ -61,7 +61,7 @@
 //               child: const Icon(
 //                 Icons.pan_tool,
 //                 size: 100,
-//                 color: Colors.red,
+//                 color: Theme.of(context).colorScheme.error,
 //               ),
 //             ),
 //           ),

@@ -1,5 +1,6 @@
 // scrollable_roadmap.dart - Enhanced with Social Universe Preview
 import 'package:flutter/material.dart';
+import 'package:nudge/theme/app_theme.dart';
 import 'package:nudge/providers/theme_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -188,7 +189,7 @@ class _ScrollableRoadmapWidgetState extends State<ScrollableRoadmapWidget> {
     
     // Fix: Wrap the entire widget in a Column instead of using Expanded directly
     return Container(
-      color: themeProvider.getBackgroundColor(context),
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: Column(
         children: [
           // Living roadmap text at the very top
@@ -198,7 +199,7 @@ class _ScrollableRoadmapWidgetState extends State<ScrollableRoadmapWidget> {
               '✨ This is a living roadmap — it evolves as we grow with you ✨',
               style: TextStyle(
                 fontSize: 11,
-                color: themeProvider.isDarkMode ? Colors.grey.shade500 : Colors.grey.shade400,
+                color: themeProvider.isDarkMode ? AppColors.darkOnSurfaceVariant : AppColors.lightOnSurfaceVariant,
                 fontStyle: FontStyle.italic,
               ),
               textAlign: TextAlign.center,
@@ -213,8 +214,8 @@ class _ScrollableRoadmapWidgetState extends State<ScrollableRoadmapWidget> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  themeProvider.getBackgroundColor(context),
-                  themeProvider.getBackgroundColor(context).withOpacity(0),
+                  Theme.of(context).scaffoldBackgroundColor,
+                  Theme.of(context).scaffoldBackgroundColor.withOpacity(0),
                 ],
               ),
             ),
@@ -281,7 +282,7 @@ class _ScrollableRoadmapWidgetState extends State<ScrollableRoadmapWidget> {
                               offset: Offset(0, -4 * value),
                               child: Icon(
                                 Icons.keyboard_arrow_up,
-                                color: themeProvider.isDarkMode ? Colors.grey.shade500 : Colors.grey.shade400,
+                                color: themeProvider.isDarkMode ? AppColors.darkOnSurfaceVariant : AppColors.lightOnSurfaceVariant,
                                 size: 24,
                               ),
                             );
@@ -334,7 +335,7 @@ class _ScrollableRoadmapWidgetState extends State<ScrollableRoadmapWidget> {
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 13,
-                              color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                              color: themeProvider.isDarkMode ? AppColors.darkOnSurfaceVariant : AppColors.lightOnSurfaceVariant,
                             ),
                           ),
                         ),
@@ -360,7 +361,7 @@ class _ScrollableRoadmapWidgetState extends State<ScrollableRoadmapWidget> {
         gradient: LinearGradient(
           colors: [
             Colors.transparent,
-            themeProvider.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
+            themeProvider.isDarkMode ? AppColors.darkSurfaceContainerHighest : AppColors.lightSurfaceContainerHigh,
             Colors.transparent,
           ],
         ),
@@ -422,7 +423,7 @@ class _ScrollableRoadmapWidgetState extends State<ScrollableRoadmapWidget> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
-              color: themeProvider.isDarkMode ? Colors.white : const Color(0xFF1A1A2E),
+              color: themeProvider.isDarkMode ? Colors.white : AppColors.darkBackground,
             ),
           ),
           
@@ -446,12 +447,12 @@ class _ScrollableRoadmapWidgetState extends State<ScrollableRoadmapWidget> {
                 decoration: BoxDecoration(
                   color: isExpanded
                       ? phaseColor.withOpacity(0.05)
-                      : (themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white),
+                      : (themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
                     color: isExpanded
                         ? phaseColor.withOpacity(0.3)
-                        : (themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200),
+                        : (themeProvider.isDarkMode ? AppColors.darkSurfaceContainerHighest : AppColors.lightSurfaceContainerHigh),
                     width: 1,
                   ),
                 ),
@@ -478,14 +479,14 @@ class _ScrollableRoadmapWidgetState extends State<ScrollableRoadmapWidget> {
                               fontSize: 14,
                               fontWeight: isExpanded ? FontWeight.w600 : FontWeight.w500,
                               color: isExpanded
-                                  ? (themeProvider.isDarkMode ? Colors.white : Colors.black)
-                                  : (themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade700),
+                                  ? (Theme.of(context).colorScheme.onSurface)
+                                  : (themeProvider.isDarkMode ? AppColors.darkOnSurface : AppColors.lightOnSurface),
                             ),
                           ),
                         ),
                         Icon(
                           isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                          color: themeProvider.isDarkMode ? Colors.grey.shade500 : Colors.grey.shade400,
+                          color: themeProvider.isDarkMode ? AppColors.darkOnSurfaceVariant : AppColors.lightOnSurfaceVariant,
                           size: 18,
                         ),
                       ],
@@ -496,7 +497,7 @@ class _ScrollableRoadmapWidgetState extends State<ScrollableRoadmapWidget> {
                         feature['desc'],
                         style: TextStyle(
                           fontSize: 12,
-                          color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                          color: themeProvider.isDarkMode ? AppColors.darkOnSurfaceVariant : AppColors.lightOnSurfaceVariant,
                           height: 1.5,
                         ),
                       ),

@@ -1,5 +1,6 @@
 // lib/widgets/connection_type_chip.dart
 import 'package:flutter/material.dart';
+import 'package:nudge/theme/app_theme.dart';
 
 class ConnectionTypeChip extends StatelessWidget {
   final String label;
@@ -23,13 +24,13 @@ class ConnectionTypeChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color(0xff3CB3E9)
-              : Colors.grey.shade100,
+              ? AppColors.lightPrimary
+              : Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected
-                ? const Color(0xff3CB3E9)
-                : Colors.grey.shade300,
+                ? AppColors.lightPrimary
+                : Theme.of(context).colorScheme.surfaceContainerHighest,
           ),
         ),
         child: Column(
@@ -38,7 +39,7 @@ class ConnectionTypeChip extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? Colors.white : Color(0xff555555),
+                color: isSelected ? Colors.white : Theme.of(context).colorScheme.inverseSurface,
               ),
             ),
             if (count != null)
@@ -47,7 +48,7 @@ class ConnectionTypeChip extends StatelessWidget {
                 child: Text(
                   count!,
                   style: TextStyle(
-                    color: isSelected ? Colors.white : Color(0xff555555),
+                    color: isSelected ? Colors.white : AppColors.lightOnSurface,
                     fontSize: 12,
                   ),
                 ),

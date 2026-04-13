@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nudge/theme/app_theme.dart';
 
 class VIPBadge extends StatelessWidget {
   final double size;
@@ -7,7 +8,7 @@ class VIPBadge extends StatelessWidget {
   const VIPBadge({
     super.key,
     this.size = 20.0,
-    this.color = Colors.amber,
+    this.color = AppColors.vipGold,
   });
 
   @override
@@ -16,7 +17,7 @@ class VIPBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
@@ -31,13 +32,13 @@ class VIPBadge extends StatelessWidget {
           Icon(
             Icons.star,
             size: size - 4,
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
           const SizedBox(width: 2),
           Text(
             'Favourite',
             style: TextStyle(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.onSurface,
               fontSize: size - 6,
               fontWeight: FontWeight.bold,
             ),

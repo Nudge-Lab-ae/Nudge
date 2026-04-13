@@ -1,8 +1,9 @@
+import 'package:google_fonts/google_fonts.dart';
 // register_screen.dart
 import 'package:flutter/material.dart';
+import 'package:nudge/theme/app_theme.dart';
 import 'package:nudge/models/user.dart' as thisUser;
 import 'package:nudge/services/message_service.dart'; 
-// import 'package:nudge/theme/text_styles.dart';
 import 'package:nudge/widgets/gradient_text.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
@@ -113,16 +114,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        backgroundColor: themeProvider.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
-        title: Text('Email Already Registered', style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+        title: Text('Email Already Registered', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('The email address "$email" is already associated with an account.', 
-              style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.black)),
+              style: TextStyle(color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerLow : Colors.black)),
             const SizedBox(height: 16),
-            Text('Would you like to:', style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.black)),
+            Text('Would you like to:', style: TextStyle(color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerLow : Colors.black)),
           ],
         ),
         actions: [
@@ -160,13 +161,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
               height: 16,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(const Color(0xff3CB3E9)),
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.lightPrimary),
               ),
             ),
             const SizedBox(width: 8),
             Text(
               'Checking email availability...',
-              style: TextStyle(fontSize: 12, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+              style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -178,11 +179,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
         margin: const EdgeInsets.only(top: 4),
         child: Row(
           children: [
-            Icon(Icons.error_outline, color: Colors.red, size: 16),
+            Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error, size: 16),
             const SizedBox(width: 8),
             Text(
               _emailError,
-              style: const TextStyle(fontSize: 12, color: Colors.red),
+              style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.error),
             ),
           ],
         ),
@@ -197,11 +198,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
         margin: const EdgeInsets.only(top: 4),
         child: Row(
           children: [
-            Icon(Icons.check_circle, color: Colors.green, size: 16),
+            Icon(Icons.check_circle, color: AppColors.success, size: 16),
             const SizedBox(width: 8),
             Text(
               'Email is available',
-              style: const TextStyle(fontSize: 12, color: Colors.green),
+              style: TextStyle(fontSize: 12, color: AppColors.success),
             ),
           ],
         ),
@@ -223,13 +224,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
       onTap: _dismissKeyboard,
       behavior: HitTestBehavior.translucent,
       child: Scaffold(
-        backgroundColor: themeProvider.getBackgroundColor(context),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
-          title: GradientText( 
-            text: 'NUDGE', 
-            style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
-            gradient: const LinearGradient(
-              colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
+         title: GradientText(
+            text: 'NUDGE',
+            style: GoogleFonts.plusJakartaSans(
+                    color: theme.colorScheme.onSurface,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 25),
+            gradient: LinearGradient(
+              colors: themeProvider.isDarkMode
+                  ? AppColors.primaryGradientDark   // lavender → light-blue
+                  : AppColors.primaryGradientLight, // purple → teal
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
             ),
@@ -237,7 +243,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           centerTitle: true,
           iconTheme: IconThemeData(color: theme.colorScheme.primary),
           surfaceTintColor: Colors.transparent,
-          backgroundColor: themeProvider.getSurfaceColor(context),
+          backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
         ),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -254,7 +260,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -267,7 +273,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
-                    color: themeProvider.isDarkMode ? Colors.white : Color(0xff555555),
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -276,10 +282,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
                   onTap: () => _dismissKeyboard(),
-                  style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                   decoration: InputDecoration(
                     hintText: 'Enter email address',
-                    hintStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+                    hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                     suffixIcon: _emailController.text.isNotEmpty && _emailController.text.contains('@')
                         ? IconButton(
                             icon: _isCheckingEmail
@@ -288,7 +294,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     height: 16,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(const Color(0xff3CB3E9)),
+                                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.lightPrimary),
                                     ),
                                   )
                                 : Icon(
@@ -296,8 +302,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                         ? Icons.check_circle
                                         : Icons.check_circle_outline,
                                     color: _emailHasBeenChecked && _emailError.isEmpty
-                                        ? Colors.green
-                                        : themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey,
+                                        ? AppColors.success
+                                        : themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerLow : Theme.of(context).colorScheme.outline,
                                   ),
                             onPressed: () async {
                               if (_emailController.text.isNotEmpty && 
@@ -319,22 +325,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           )
                         : null,
                     enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: themeProvider.isDarkMode ? Colors.grey.shade600 : Colors.grey, width: 1),
-                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurfaceVariant, width: 1),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                     errorBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Colors.red, width: 1),
-                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                     focusedErrorBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Colors.red, width: 2),
-                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                      borderRadius: BorderRadius.circular(14),
                     ),
-                    fillColor: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+                    fillColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,
                     filled: true,
                   ),
                   validator: _emailValidator,
@@ -361,7 +367,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
-                    color: themeProvider.isDarkMode ? Colors.white :  Color(0xff555555),
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -370,27 +376,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   obscureText: true,
                   textInputAction: TextInputAction.next,
                   onTap: () => _dismissKeyboard(),
-                  style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                   decoration: InputDecoration(
                     hintText: 'Enter password',
-                    hintStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+                    hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                     enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: themeProvider.isDarkMode ? Colors.grey.shade600 : Colors.grey, width: 1),
-                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurfaceVariant, width: 1),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                     errorBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Colors.red, width: 1),
-                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                     focusedErrorBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Colors.red, width: 2),
-                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                      borderRadius: BorderRadius.circular(14),
                     ),
-                    fillColor: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+                    fillColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,
                     filled: true,
                   ),
                   validator: (value) {
@@ -411,7 +417,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
-                    color: themeProvider.isDarkMode ? Colors.white :  Color(0xff555555),
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -420,27 +426,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   obscureText: true,
                   textInputAction: TextInputAction.done,
                   onTap: () => _dismissKeyboard(),
-                  style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                   decoration: InputDecoration(
                     hintText: 'Confirm your password',
-                    hintStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+                    hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                     enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: themeProvider.isDarkMode ? Colors.grey.shade600 : Colors.grey, width: 1),
-                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurfaceVariant, width: 1),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                     errorBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Colors.red, width: 1),
-                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                     focusedErrorBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Colors.red, width: 2),
-                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                      borderRadius: BorderRadius.circular(14),
                     ),
-                    fillColor: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+                    fillColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,
                     filled: true,
                   ),
                   validator: (value) {
@@ -527,7 +533,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   TopMessageService().showMessage(
                                     context: context,
                                     message: 'Registration failed. Please try again.',
-                                    backgroundColor: Colors.deepOrange,
+                                    backgroundColor: Theme.of(context).colorScheme.tertiary,
                                     icon: Icons.error,
                                   );
                                 }
@@ -554,13 +560,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 // ScaffoldMessenger.of(context).showSnackBar(
                                 //   SnackBar(
                                 //     content: Text(e.toString()),
-                                //     backgroundColor: Colors.red,
+                                //     backgroundColor: Theme.of(context).colorScheme.error,
                                 //   ),
                                 // );
                                 TopMessageService().showMessage(
                                     context: context,
                                     message: e.toString(),
-                                    backgroundColor: Colors.deepOrange,
+                                    backgroundColor: Theme.of(context).colorScheme.tertiary,
                                     icon: Icons.error,
                                   );
                                 setState(() => _isLoading = false);
@@ -568,13 +574,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 // ScaffoldMessenger.of(context).showSnackBar(
                                 //   SnackBar(
                                 //     content: Text('Error: ${e.toString()}'),
-                                //     backgroundColor: Colors.red,
+                                //     backgroundColor: Theme.of(context).colorScheme.error,
                                 //   ),
                                 // );
                                 TopMessageService().showMessage(
                                   context: context,
                                   message: 'Error: ${e.toString()}',
-                                  backgroundColor: Colors.deepOrange,
+                                  backgroundColor: Theme.of(context).colorScheme.tertiary,
                                   icon: Icons.error,
                                 );
                                 setState(() => _isLoading = false);
@@ -584,7 +590,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: theme.colorScheme.primary,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(14),
                             ),
                           ),
                           child: Text(
@@ -604,7 +610,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   'or',
                   style: TextStyle(
                     fontSize: 16,
-                    color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -641,13 +647,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               // ScaffoldMessenger.of(context).showSnackBar(
                               //   SnackBar(
                               //     content: Text('The email ${user.email} is already registered. Please log in.'),
-                              //     backgroundColor: Colors.red,
+                              //     backgroundColor: Theme.of(context).colorScheme.error,
                               //   ),
                               // );
                               TopMessageService().showMessage(
                                 context: context,
                                 message: 'The email ${user.email} is already registered. Please log in.',
-                                backgroundColor: Colors.deepOrange,
+                                backgroundColor: Theme.of(context).colorScheme.tertiary,
                                 icon: Icons.error,
                               );
                               setState(() => _isLoading = false);
@@ -696,42 +702,42 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         // ScaffoldMessenger.of(context).showSnackBar(
                         //   SnackBar(
                         //     content: Text(errorMessage),
-                        //     backgroundColor: Colors.red,
+                        //     backgroundColor: Theme.of(context).colorScheme.error,
                         //   ),
                         // );
                         TopMessageService().showMessage(
                             context: context,
                             message: errorMessage,
-                            backgroundColor: Colors.deepOrange,
+                            backgroundColor: Theme.of(context).colorScheme.tertiary,
                             icon: Icons.error,
                           );
                       } catch (e) {
                         // ScaffoldMessenger.of(context).showSnackBar(
                         //   SnackBar(
                         //     content: Text('Error: ${e.toString()}'),
-                        //     backgroundColor: Colors.red,
+                        //     backgroundColor: Theme.of(context).colorScheme.error,
                         //   ),
                         // );
                         TopMessageService().showMessage(
                           context: context,
                           message: 'Error: ${e.toString()}',
-                          backgroundColor: Colors.deepOrange,
+                          backgroundColor: Theme.of(context).colorScheme.tertiary,
                           icon: Icons.error,
                         );
                       } finally {
                         setState(() => _isLoading = false);
                       }
                     },
-                    icon: Icon(Icons.g_mobiledata, size: 30, color: themeProvider.isDarkMode ? Colors.white : Colors.black),
-                    label: Text('Sign-up with Google', style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
+                    icon: Icon(Icons.g_mobiledata, size: 30, color: Theme.of(context).colorScheme.onSurface),
+                    label: Text('Sign-up with Google', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(
-                        color: themeProvider.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300,
+                        color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerLow : Theme.of(context).colorScheme.onSurface,
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(14),
                       ),
-                      backgroundColor: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+                      backgroundColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,
                     ),
                   ),
                 ),
@@ -759,13 +765,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               // ScaffoldMessenger.of(context).showSnackBar(
                               //   SnackBar(
                               //     content: Text('The email ${user.email} is already registered. Please log in.'),
-                              //     backgroundColor: Colors.red,
+                              //     backgroundColor: Theme.of(context).colorScheme.error,
                               //   ),
                               // );
                               TopMessageService().showMessage(
                                 context: context,
                                 message: 'The email ${user.email} is alrady registered. Please log in.',
-                                backgroundColor: Colors.deepOrange,
+                                backgroundColor: Theme.of(context).colorScheme.tertiary,
                                 icon: Icons.error,
                               );
                               setState(() => _isLoading = false);
@@ -810,42 +816,42 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         // ScaffoldMessenger.of(context).showSnackBar(
                         //   SnackBar(
                         //     content: Text(errorMessage),
-                        //     backgroundColor: Colors.red,
+                        //     backgroundColor: Theme.of(context).colorScheme.error,
                         //   ),
                         // );
                         TopMessageService().showMessage(
                           context: context,
                           message: errorMessage,
-                          backgroundColor: Colors.deepOrange,
+                          backgroundColor: Theme.of(context).colorScheme.tertiary,
                           icon: Icons.error,
                         );
                       } catch (e) {
                         // ScaffoldMessenger.of(context).showSnackBar(
                         //   SnackBar(
                         //     content: Text('Error: ${e.toString()}'),
-                        //     backgroundColor: Colors.red,
+                        //     backgroundColor: Theme.of(context).colorScheme.error,
                         //   ),
                         // );
                         TopMessageService().showMessage(
                           context: context,
                           message: 'Error: ${e.toString()}',
-                          backgroundColor: Colors.deepOrange,
+                          backgroundColor: Theme.of(context).colorScheme.tertiary,
                           icon: Icons.error,
                         );
                       } finally {
                         setState(() => _isLoading = false);
                       }
                     },
-                    icon: Icon(Icons.apple, size: 30, color: themeProvider.isDarkMode ? Colors.white : Colors.black),
-                    label: Text('Sign-up with Apple', style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
+                    icon: Icon(Icons.apple, size: 30, color: Theme.of(context).colorScheme.onSurface),
+                    label: Text('Sign-up with Apple', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(
-                        color: themeProvider.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300,
+                        color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerLow : Theme.of(context).colorScheme.onSurface,
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(14),
                       ),
-                      backgroundColor: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+                      backgroundColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,
                     ),
                   ),
                 ),

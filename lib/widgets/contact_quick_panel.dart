@@ -1,5 +1,6 @@
 // lib/widgets/contact_quick_panel.dart - SIMPLIFIED VERSION
 import 'package:flutter/material.dart';
+import 'package:nudge/theme/app_theme.dart';
 import 'package:nudge/services/message_service.dart';
 // import 'package:intl/intl.dart';
 import '../models/contact.dart';
@@ -34,8 +35,8 @@ class _ContactQuickPanelState extends State<ContactQuickPanel> {
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.onSurface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SingleChildScrollView(
@@ -51,8 +52,8 @@ class _ContactQuickPanelState extends State<ContactQuickPanel> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
+                    color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
               ),
@@ -75,7 +76,7 @@ class _ContactQuickPanelState extends State<ContactQuickPanel> {
                               fit: BoxFit.cover,
                             )
                           : null,
-                      color: contact.imageUrl.isEmpty ? const Color(0xFF3CB3E9) : null,
+                      color: contact.imageUrl.isEmpty ? AppColors.lightPrimary : null,
                     ),
                     child: contact.imageUrl.isEmpty
                         ? Center(
@@ -83,8 +84,8 @@ class _ContactQuickPanelState extends State<ContactQuickPanel> {
                               contact.name.isNotEmpty 
                                 ? contact.name.substring(0, 1).toUpperCase()
                                 : '?',
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -102,7 +103,7 @@ class _ContactQuickPanelState extends State<ContactQuickPanel> {
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xff555555),
+                            color: AppColors.lightOnSurface,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -167,15 +168,15 @@ class _ContactQuickPanelState extends State<ContactQuickPanel> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xff555555),
+                      color: AppColors.lightOnSurface,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     'Log an interaction to maintain this connection',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.grey,
+                      color: Theme.of(context).colorScheme.outline,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -203,12 +204,12 @@ class _ContactQuickPanelState extends State<ContactQuickPanel> {
                     decoration: InputDecoration(
                       hintText: 'Add notes (optional)',
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFF3CB3E9)),
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: AppColors.lightPrimary),
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
@@ -227,23 +228,23 @@ class _ContactQuickPanelState extends State<ContactQuickPanel> {
                         ? const Center(
                             child: CircularProgressIndicator(
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                Color(0xFF3CB3E9),
+                                AppColors.lightPrimary,
                               ),
                             ),
                           )
                         : ElevatedButton(
                             onPressed: _logInteraction,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF3CB3E9),
+                              backgroundColor: AppColors.lightPrimary,
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(16),
                               ),
                             ),
-                            child: const Text(
+                            child: Text(
                               'LOG INTERACTION',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -259,10 +260,10 @@ class _ContactQuickPanelState extends State<ContactQuickPanel> {
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
-                      child: const Text(
+                      child: Text(
                         'CANCEL',
                         style: TextStyle(
-                          color: Colors.grey,
+                          color: Theme.of(context).colorScheme.outline,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -286,11 +287,11 @@ class _ContactQuickPanelState extends State<ContactQuickPanel> {
     
     switch (ring) {
       case 'inner':
-        color = Colors.green;
+        color = AppColors.success;
         label = 'Inner Circle';
         break;
       case 'middle':
-        color = Colors.orange;
+        color = AppColors.warning;
         label = 'Middle Circle';
         break;
       case 'outer':
@@ -298,7 +299,7 @@ class _ContactQuickPanelState extends State<ContactQuickPanel> {
         label = 'Outer Circle';
         break;
       default:
-        color = Colors.grey;
+        color = Theme.of(context).colorScheme.outline;
         label = 'Unknown';
     }
     
@@ -328,7 +329,7 @@ class _ContactQuickPanelState extends State<ContactQuickPanel> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 20, color: Colors.grey),
+        Icon(icon, size: 20, color: Theme.of(context).colorScheme.outline),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -336,9 +337,9 @@ class _ContactQuickPanelState extends State<ContactQuickPanel> {
             children: [
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey,
+                  color: Theme.of(context).colorScheme.outline,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -347,7 +348,7 @@ class _ContactQuickPanelState extends State<ContactQuickPanel> {
                 value,
                 style: const TextStyle(
                   fontSize: 15,
-                  color: Color(0xff555555),
+                  color: AppColors.lightOnSurface,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -371,13 +372,13 @@ class _ContactQuickPanelState extends State<ContactQuickPanel> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color(0xFF3CB3E9)
-              : Colors.grey[100],
+              ? AppColors.lightPrimary
+              : Theme.of(context).colorScheme.surfaceContainerLowest,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected
-                ? const Color(0xFF3CB3E9)
-                : Colors.grey[300]!,
+                ? AppColors.lightPrimary
+                : Theme.of(context).colorScheme.surfaceContainerHigh!,
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -387,13 +388,13 @@ class _ContactQuickPanelState extends State<ContactQuickPanel> {
             Icon(
               icon,
               size: 16,
-              color: isSelected ? Colors.white : Colors.grey[700],
+              color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? Colors.white : Colors.grey[700],
+                color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w500,
                 fontSize: 13,
               ),
@@ -449,7 +450,7 @@ class _ContactQuickPanelState extends State<ContactQuickPanel> {
       // ScaffoldMessenger.of(context).showSnackBar(
       //   SnackBar(
       //     content: Text('✓ Interaction logged for ${widget.contact.name}'),
-      //     backgroundColor: Colors.green,
+      //     backgroundColor: AppColors.success,
       //     duration: const Duration(seconds: 2),
       //   ),
       // );
@@ -457,7 +458,7 @@ class _ContactQuickPanelState extends State<ContactQuickPanel> {
        TopMessageService().showMessage(
           context: context,
           message: 'Interaction logged for ${widget.contact.name}',
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
           icon: Icons.check,
         );
       
@@ -470,14 +471,14 @@ class _ContactQuickPanelState extends State<ContactQuickPanel> {
       // ScaffoldMessenger.of(context).showSnackBar(
       //   SnackBar(
       //     content: Text('Failed to log interaction: $e'),
-      //     backgroundColor: Colors.red,
+      //     backgroundColor: Theme.of(context).colorScheme.error,
       //     duration: const Duration(seconds: 3),
       //   ),
       // );
       TopMessageService().showMessage(
           context: context,
           message: 'Failed to log interaction: $e',
-          backgroundColor: Colors.deepOrange,
+          backgroundColor: Theme.of(context).colorScheme.tertiary,
           icon: Icons.error,
         );
     } finally {

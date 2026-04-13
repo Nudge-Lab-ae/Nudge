@@ -2,6 +2,7 @@
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
 import 'package:nudge/models/contact.dart';
 import 'package:nudge/providers/theme_provider.dart';
@@ -156,7 +157,7 @@ class _ReflectionDigestModalState extends State<ReflectionDigestModal>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Something went wrong — please try again.'),
-            backgroundColor: AppTheme.errorColor,
+            backgroundColor: AppColors.lightError,
           ),
         );
       }
@@ -168,9 +169,9 @@ class _ReflectionDigestModalState extends State<ReflectionDigestModal>
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-    final bg = themeProvider.getSurfaceColor(context);
-    final textPrimary = themeProvider.getTextPrimaryColor(context);
-    final textSecondary = themeProvider.getTextSecondaryColor(context);
+    final bg = Theme.of(context).colorScheme.surfaceContainerLow;
+    final textPrimary = Theme.of(context).colorScheme.onSurface;
+    final textSecondary = Theme.of(context).colorScheme.onSurfaceVariant;
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.87,
@@ -218,9 +219,9 @@ class _ReflectionDigestModalState extends State<ReflectionDigestModal>
       height: 4,
       decoration: BoxDecoration(
         color: widget.isDarkMode
-            ? Colors.grey.shade600
-            : Colors.grey.shade300,
-        borderRadius: BorderRadius.circular(2),
+            ? Theme.of(context).colorScheme.surfaceContainerLow
+            : Theme.of(context).colorScheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(8),
       ),
     );
   }
@@ -238,12 +239,12 @@ class _ReflectionDigestModalState extends State<ReflectionDigestModal>
               height: 3,
               margin: const EdgeInsets.symmetric(horizontal: 3),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(2),
+                borderRadius: BorderRadius.circular(8),
                 color: filled
-                    ? AppTheme.primaryColor
+                    ? AppColors.lightPrimary
                     : (widget.isDarkMode
-                        ? Colors.grey.shade700
-                        : Colors.grey.shade200),
+                        ? Theme.of(context).colorScheme.outline
+                        : Theme.of(context).colorScheme.surfaceContainerLowest),
               ),
             ),
           );
@@ -263,7 +264,7 @@ class _ReflectionDigestModalState extends State<ReflectionDigestModal>
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w700,
-              fontFamily: 'OpenSans',
+              fontFamily: GoogleFonts.beVietnamPro().fontFamily,
               color: textPrimary,
             ),
           ),
@@ -272,7 +273,7 @@ class _ReflectionDigestModalState extends State<ReflectionDigestModal>
             'Take a moment to reflect on your Close Circle 🌿',
             style: TextStyle(
               fontSize: 14,
-              fontFamily: 'OpenSans',
+              fontFamily: GoogleFonts.beVietnamPro().fontFamily,
               color: textSecondary,
             ),
           ),
@@ -326,7 +327,7 @@ class _ReflectionDigestModalState extends State<ReflectionDigestModal>
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              fontFamily: 'OpenSans',
+              fontFamily: GoogleFonts.beVietnamPro().fontFamily,
               color: textPrimary,
               height: 1.4,
             ),
@@ -350,12 +351,12 @@ class _ReflectionDigestModalState extends State<ReflectionDigestModal>
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: isSelected
-                        ? AppTheme.primaryColor.withOpacity(
+                        ? AppColors.lightPrimary.withOpacity(
                             widget.isDarkMode ? 0.25 : 0.12)
                         : Colors.transparent,
                     border: Border.all(
                       color: isSelected
-                          ? AppTheme.primaryColor
+                          ? AppColors.lightPrimary
                           : Colors.transparent,
                       width: 2,
                     ),
@@ -384,12 +385,12 @@ class _ReflectionDigestModalState extends State<ReflectionDigestModal>
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 10,
-                    fontFamily: 'OpenSans',
+                    fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                     fontWeight: isSelected
                         ? FontWeight.w600
                         : FontWeight.normal,
                     color: isSelected
-                        ? AppTheme.primaryColor
+                        ? AppColors.lightPrimary
                         : textSecondary,
                   ),
                 ),
@@ -420,7 +421,7 @@ class _ReflectionDigestModalState extends State<ReflectionDigestModal>
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              fontFamily: 'OpenSans',
+              fontFamily: GoogleFonts.beVietnamPro().fontFamily,
               color: textPrimary,
               height: 1.4,
             ),
@@ -483,7 +484,7 @@ class _ReflectionDigestModalState extends State<ReflectionDigestModal>
                   shape: BoxShape.circle,
                   border: Border.all(
                     color: isSelected
-                        ? AppTheme.primaryColor
+                        ? AppColors.lightPrimary
                         : Colors.transparent,
                     width: 3,
                   ),
@@ -514,17 +515,17 @@ class _ReflectionDigestModalState extends State<ReflectionDigestModal>
                     height: 22,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppTheme.primaryColor,
+                      color: AppColors.lightPrimary,
                       border: Border.all(
                         color: widget.isDarkMode
-                            ? AppTheme.darkSurface
-                            : AppTheme.lightSurface,
+                            ? AppColors.darkSurface
+                            : AppColors.lightSurface,
                         width: 2,
                       ),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.check,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSurface,
                       size: 12,
                     ),
                   ),
@@ -539,10 +540,10 @@ class _ReflectionDigestModalState extends State<ReflectionDigestModal>
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 11,
-              fontFamily: 'OpenSans',
+              fontFamily: GoogleFonts.beVietnamPro().fontFamily,
               fontWeight:
                   isSelected ? FontWeight.w700 : FontWeight.normal,
-              color: isSelected ? AppTheme.primaryColor : textSecondary,
+              color: isSelected ? AppColors.lightPrimary : textSecondary,
             ),
           ),
         ],
@@ -569,14 +570,14 @@ class _ReflectionDigestModalState extends State<ReflectionDigestModal>
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: _allGoodSelected
-                  ? AppTheme.successColor.withOpacity(
+                  ? AppColors.success.withOpacity(
                       widget.isDarkMode ? 0.25 : 0.12)
                   : (widget.isDarkMode
-                      ? Colors.grey.shade800
-                      : Colors.grey.shade100),
+                      ? Theme.of(context).colorScheme.surfaceContainerHigh
+                      : Theme.of(context).colorScheme.outline),
               border: Border.all(
                 color: _allGoodSelected
-                    ? AppTheme.successColor
+                    ? AppColors.success
                     : Colors.transparent,
                 width: 3,
               ),
@@ -595,12 +596,12 @@ class _ReflectionDigestModalState extends State<ReflectionDigestModal>
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 11,
-              fontFamily: 'OpenSans',
+              fontFamily: GoogleFonts.beVietnamPro().fontFamily,
               fontWeight: _allGoodSelected
                   ? FontWeight.w700
                   : FontWeight.normal,
               color: _allGoodSelected
-                  ? AppTheme.successColor
+                  ? AppColors.success
                   : textSecondary,
             ),
           ),
@@ -624,7 +625,7 @@ class _ReflectionDigestModalState extends State<ReflectionDigestModal>
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
-                fontFamily: 'OpenSans',
+                fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                 color: textPrimary,
               ),
             ),
@@ -636,7 +637,7 @@ class _ReflectionDigestModalState extends State<ReflectionDigestModal>
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 15,
-                fontFamily: 'OpenSans',
+                fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                 color: textSecondary,
                 height: 1.5,
               ),
@@ -657,31 +658,31 @@ class _ReflectionDigestModalState extends State<ReflectionDigestModal>
         child: ElevatedButton(
           onPressed: _canAdvance && !_isSubmitting ? _advance : null,
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.primaryColor,
+            backgroundColor: AppColors.lightPrimary,
             disabledBackgroundColor: widget.isDarkMode
-                ? Colors.grey.shade700
-                : Colors.grey.shade200,
+                ? Theme.of(context).colorScheme.outline
+                : Theme.of(context).colorScheme.surfaceContainerLowest,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),
             ),
             elevation: 0,
           ),
           child: _isSubmitting
-              ? const SizedBox(
+              ? SizedBox(
                   width: 22,
                   height: 22,
                   child: CircularProgressIndicator(
                     strokeWidth: 2.5,
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 )
               : Text(
                   isLastStep ? 'Done reflecting' : 'Next',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    fontFamily: 'OpenSans',
-                    color: Colors.white,
+                    fontFamily: GoogleFonts.beVietnamPro().fontFamily,
+                    color: _canAdvance?Colors.white:Color(0xff777777),
                   ),
                 ),
         ),
@@ -691,15 +692,15 @@ class _ReflectionDigestModalState extends State<ReflectionDigestModal>
 
   Widget _avatarFallback(String initials) {
     return Container(
-      color: AppTheme.primaryColor.withOpacity(0.15),
+      color: AppColors.lightPrimary.withOpacity(0.15),
       child: Center(
         child: Text(
           initials.toUpperCase(),
           style: TextStyle(
-            color: AppTheme.primaryColor,
+            color: AppColors.lightPrimary,
             fontWeight: FontWeight.bold,
             fontSize: 18,
-            fontFamily: 'OpenSans',
+            fontFamily: GoogleFonts.beVietnamPro().fontFamily,
           ),
         ),
       ),
@@ -777,12 +778,10 @@ class DigestScheduler {
     if (!context.mounted) return;
 
     showModalBottomSheet(
+      backgroundColor: Colors.transparent,
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      isDismissible: false, // User must complete or swipe to dismiss
-      enableDrag: true,
-      builder: (_) => ReflectionDigestModal(
+    builder: (_) => ReflectionDigestModal(
         closeCircleContacts: closeCircleContacts,
         apiService: apiService,
         isDarkMode: isDarkMode,

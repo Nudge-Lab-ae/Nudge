@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nudge/theme/app_theme.dart';
 
 class FrequencyButton extends StatelessWidget {
   final String text;
@@ -19,13 +20,13 @@ class FrequencyButton extends StatelessWidget {
       height: 80,
       decoration: BoxDecoration(
         color: isSelected
-            ? const Color(0xff3CB3E9)
-            : Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(10),
+            ? AppColors.lightPrimary
+            : Theme.of(context).colorScheme.outline,
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: isSelected
-              ? const Color(0xff3CB3E9)
-              : Colors.grey.shade300,
+              ? AppColors.lightPrimary
+              : Theme.of(context).colorScheme.surfaceContainerLowest,
         ),
       ),
       child: Column(

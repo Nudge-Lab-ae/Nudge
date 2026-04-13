@@ -1,8 +1,10 @@
 import 'dart:io';
+import 'package:nudge/theme/app_theme.dart';
 // import 'package:another_flushbar/flushbar.dart';
 import 'package:another_flushbar/flushbar.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:nudge/main.dart';
 // import 'package:nudge/services/message_service.dart';
@@ -68,10 +70,10 @@ class NotificationService {
           if (payloadMap['type'] == 'event_notification') {
             //print('it is event notification');
             if (response.actionId == 'remind_me_then') {
-              _handleRemindMeThenAction(payloadMap);
+              _handleRemindMeThenAction(payloadMap, navigatorKey.currentContext!);
               // //print('handling remind then');
             } else if (response.actionId == 'dismiss') {
-              _handleDismissAction(payloadMap);
+              _handleDismissAction(payloadMap, navigatorKey.currentContext!);
               // //print('handling dismiss');
             } else {
               //print('forcing 1');
@@ -208,14 +210,14 @@ class NotificationService {
     });
   }
 
-  Future<void> _handleRemindMeThenAction(Map<String, dynamic> data) async {
+  Future<void> _handleRemindMeThenAction(Map<String, dynamic> data, BuildContext context) async {
     final notificationId = data['notificationId'];
     
     if (notificationId == null) {
       //print('No notificationId found in data');
       return;
     }
-    _showSnackBar('Reminder rescheduled!', Color.fromARGB(255, 18, 132, 27));
+    _showSnackBar('Reminder rescheduled!', Color.fromARGB(255, 18, 132, 27), context);
     try {
       await FirebaseFunctions.instance
           .httpsCallable('scheduleEventReminderForActualDate')
@@ -232,14 +234,14 @@ class NotificationService {
     }
   }
 
-  Future<void> _handleDismissAction(Map<String, dynamic> data) async {
+  Future<void> _handleDismissAction(Map<String, dynamic> data, BuildContext context) async {
     final notificationId = data['notificationId'];
     
     if (notificationId == null) {
       //print('No notificationId found in data');
       return;
     }
-    _showSnackBar('Dismissed Reminder', Color(0xff999999));
+    _showSnackBar('Dismissed Reminder', Color(0xff999999), context);
     try {
       await FirebaseFunctions.instance
           .httpsCallable('dismissEventNotification')
@@ -252,24 +254,24 @@ class NotificationService {
       // }
     } catch (e) {
       //print('Error dismissing notification: $e');
-      _showSnackBar('Error dismissing notification',  Color.fromARGB(255, 134, 17, 27));
+      _showSnackBar('Error dismissing notification',  Color.fromARGB(255, 134, 17, 27), context);
     }
   }
 
-  void _showSnackBar(String message, Color messageColor) {
+  void _showSnackBar(String message, Color messageColor, BuildContext context) {
      Flushbar(
         padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
         flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
         forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
         backgroundColor: messageColor,
         messageText: Center(
-            child: Text(message, style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-                color: Colors.white, fontWeight: FontWeight.w400),)),
+            child: Text(message, style: TextStyle(fontFamily: GoogleFonts.beVietnamPro().fontFamily, fontSize: 14,
+                color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w400),)),
       ).show(navigatorKey.currentContext!);
     //  TopMessageService().showMessage(
     //       context: navigatorKey.currentContext!,
     //       message: message,
-    //       backgroundColor: Colors.green,
+    //       backgroundColor: AppColors.success,
     //       icon: Icons.check,
     //     );
   }

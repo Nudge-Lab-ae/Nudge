@@ -4,12 +4,14 @@ import 'dart:typed_data';
 import 'package:crop_your_image/crop_your_image.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:nudge/theme/app_theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:nudge/helpers/deletion_retry_helper.dart';
 import 'package:nudge/providers/admin_provider.dart';
 import 'package:nudge/providers/theme_provider.dart';
 import 'package:nudge/screens/admin/feedback_management_screen.dart';
+import 'package:nudge/screens/admin/ai_testing_screen.dart';
 import 'package:nudge/screens/feedback/feedback_forum_screen.dart';
 import 'package:nudge/services/auth_service.dart';
 import 'package:nudge/services/message_service.dart';
@@ -167,14 +169,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       TopMessageService().showMessage(
         context: context,
         message: 'Profile picture updated successfully.',
-        backgroundColor: Colors.green,
+        backgroundColor: AppColors.success,
         icon: Icons.check,
       );
     } catch (e) {
       TopMessageService().showMessage(
           context: context,
           message: 'Failed to update profile picture.',
-          backgroundColor: Colors.deepOrange,
+          backgroundColor: Theme.of(context).colorScheme.tertiary,
           icon: Icons.error,
         );
     } finally {
@@ -214,7 +216,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         TopMessageService().showMessage(
           context: context,
           message: 'Profile updated successfully.',
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
           icon: Icons.check,
         );
         
@@ -238,7 +240,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         TopMessageService().showMessage(
           context: context,
           message: errorMessage,
-          backgroundColor: Colors.deepOrange,
+          backgroundColor: Theme.of(context).colorScheme.tertiary,
           icon: Icons.error,
         );
       } catch (e) {
@@ -248,7 +250,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         TopMessageService().showMessage(
           context: context,
           message: 'Error updating profile: $e',
-          backgroundColor: Colors.deepOrange,
+          backgroundColor: Theme.of(context).colorScheme.tertiary,
           icon: Icons.error,
         );
       } finally {
@@ -284,7 +286,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         TopMessageService().showMessage(
           context: context,
           message: 'Thank you for your feedback!',
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
           icon: Icons.check,
         );
 
@@ -298,7 +300,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         TopMessageService().showMessage(
           context: context,
           message: 'Error submitting feedback: $e',
-          backgroundColor: Colors.deepOrange,
+          backgroundColor: Theme.of(context).colorScheme.tertiary,
           icon: Icons.error,
         );
       } finally {
@@ -324,11 +326,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           Text(
             'Help / Feedback',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555)),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface),
           ),
           const SizedBox(height: 15),
           
-          Text('Type', style: TextStyle(fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555))),
+          Text('Type', style: TextStyle(fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface)),
           const SizedBox(height: 8),
           GestureDetector(
             onTap: () {
@@ -338,17 +340,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: AbsorbPointer(
               child: TextFormField(
                 controller: _feedbackTypeController,
-                style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555)),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                 decoration: InputDecoration(
                   suffixIcon: const Icon(Icons.arrow_drop_down),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                   enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: themeProvider.isDarkMode ? Colors.grey.shade600 : Colors.grey, width: 1),
-                    borderRadius: BorderRadius.circular(10)
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurfaceVariant, width: 1),
+                    borderRadius: BorderRadius.circular(14)
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
-                    borderRadius: BorderRadius.circular(10)
+                    borderRadius: BorderRadius.circular(14)
                   ),
                 ),
                 validator: (value) {
@@ -362,7 +364,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 20),
           
-          Text('Comments', style: TextStyle(fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555))),
+          Text('Comments', style: TextStyle(fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface)),
           const SizedBox(height: 8),
           TextFormField(
             controller: _feedbackMessageController,
@@ -372,25 +374,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onEditingComplete: () {
               _dismissKeyboard();
             },
-            style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
             decoration: InputDecoration(
               hintText: 'Please share your feedback, suggestions, or issues...',
-              hintStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : const Color(0xff555555)),
+              hintStyle: TextStyle(color: themeProvider.isDarkMode? Color(0xff666666):Color(0xff999999)),
               enabledBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: themeProvider.isDarkMode ? Colors.grey.shade600 : Colors.grey, width: 1),
-                borderRadius: BorderRadius.circular(10)
+                borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurfaceVariant, width: 1),
+                borderRadius: BorderRadius.circular(14)
               ),
               focusedBorder: OutlineInputBorder(
                 borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
-                borderRadius: BorderRadius.circular(10)
+                borderRadius: BorderRadius.circular(14)
               ),
               errorBorder: OutlineInputBorder(
-                borderSide: const BorderSide(color: Colors.red, width: 1),
-                borderRadius: BorderRadius.circular(10)
+                borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                borderRadius: BorderRadius.circular(14)
               ),
               focusedErrorBorder: OutlineInputBorder(
-                borderSide: const BorderSide(color: Colors.red, width: 2),
-                borderRadius: BorderRadius.circular(10)
+                borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                borderRadius: BorderRadius.circular(14)
               ),
             ),
             validator: (value) {
@@ -417,12 +419,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: theme.colorScheme.primary,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
                     child: Center(
                       child: Text(
                       'SUBMIT FEEDBACK',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode?Colors.black:Colors.white),
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onPrimary),
                     ),
                     )
                   ),
@@ -439,8 +441,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('SELECT FEEDBACK TYPE', style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555))),
-          backgroundColor: themeProvider.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+          title: Text('SELECT FEEDBACK TYPE', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+          backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
           content: SizedBox(
             width: double.maxFinite,
             child: ListView.builder(
@@ -449,7 +451,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               itemBuilder: (context, index) {
                 final type = _feedbackTypes[index];
                 return ListTile(
-                  title: Text(type, style: TextStyle(fontWeight: FontWeight.w600, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555))),
+                  title: Text(type, style: TextStyle(fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
                   onTap: () {
                     setState(() {
                       _feedbackTypeController.text = type;
@@ -482,11 +484,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('DELETE ACCOUNT', style: TextStyle(fontWeight: FontWeight.w600, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555))),
+        title: Text('DELETE ACCOUNT', style: TextStyle(fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
         content: const Text(
           'This action cannot be undone. All your data, contacts, groups, and settings will be permanently deleted.',
         ),
-        backgroundColor: themeProvider.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -498,7 +500,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               deleteUser(authService);
             },
             style: TextButton.styleFrom(
-              foregroundColor: deleting ? Colors.grey : Colors.red,
+              foregroundColor: deleting ? Theme.of(context).colorScheme.outline : Theme.of(context).colorScheme.error,
             ),
             child: Text(deleting ? 'Deleting...' : 'Delete Account'),
           ),
@@ -517,11 +519,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     //             crossAxisAlignment: CrossAxisAlignment.start,
     //             mainAxisSize: MainAxisSize.min,
     //             children: [
-    //               const Text(
+    //               Text(
     //                 'Deleted Account!',
     //                 style: TextStyle(
     //                   fontWeight: FontWeight.bold,
-    //                   color: Colors.white,
+    //                   color: Theme.of(context).colorScheme.onSurface,
     //                 ),
     //               ),
     //               Text(
@@ -533,14 +535,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     //         ),
     //       ],
     //     ),
-    //     backgroundColor: Colors.green,
+    //     backgroundColor: AppColors.success,
     //     duration: const Duration(seconds: 4),
     //   ),
     // );
 
     TopMessageService().showCustomContent(
       context: context,
-      backgroundColor: Colors.green,
+      backgroundColor: AppColors.success,
       height: 150,
       customContent: Row(
           children: [
@@ -549,11 +551,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
+                  Text(
                     'Deleted Account!',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 18
                     ),
                   ),
@@ -590,7 +592,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         content: const Text(
           'Please try deleting your account again. The app state has been refreshed.',
         ),
-        backgroundColor: themeProvider.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -613,7 +615,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
        TopMessageService().showMessage(
           context: context,
           message: 'No user logged in.',
-          backgroundColor: Colors.deepOrange,
+          backgroundColor: Theme.of(context).colorScheme.tertiary,
           icon: Icons.error,
         );
       return false;
@@ -671,6 +673,227 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  // ── Subscription card (purple gradient) ─────────────────────────────────
+  Widget _buildSubscriptionCard() {
+    final isDark = Provider.of<ThemeProvider>(context, listen: false).isDarkMode;
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF751FE7), Color(0xFF4A0FAA)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF751FE7).withOpacity(0.35),
+            blurRadius: 20,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Stack(children: [
+        // Decorative star shapes
+        Positioned(
+          top: -12, right: 20,
+          child: Transform.rotate(
+            angle: 0.4,
+            child: Icon(Icons.star_rounded,
+                size: 72, color: Colors.white.withOpacity(0.10)),
+          ),
+        ),
+        Positioned(
+          top: 24, right: -8,
+          child: Transform.rotate(
+            angle: -0.3,
+            child: Icon(Icons.star_rounded,
+                size: 44, color: Colors.white.withOpacity(0.07)),
+          ),
+        ),
+
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // PRO PLAN pill
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.18),
+                borderRadius: BorderRadius.circular(9999),
+              ),
+              child: const Text(
+                'PRO PLAN',
+                style: TextStyle(
+                  fontSize: 10, fontWeight: FontWeight.w700,
+                  color: Colors.white, letterSpacing: 0.8),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            const Text(
+              'Subscription',
+              style: TextStyle(
+                fontSize: 24, fontWeight: FontWeight.w800, color: Colors.white),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'You are on an exclusive access subscription.',
+              style: TextStyle(
+                fontSize: 13, color: Colors.white.withOpacity(0.8), height: 1.4),
+            ),
+            const SizedBox(height: 20),
+
+            // Manage Plan button
+            SizedBox(
+              width: double.infinity, height: 46,
+              child: ElevatedButton(
+                onPressed: () {
+                  // Subscription management navigation can go here
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFF751FE7),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(9999)),
+                ),
+                child: const Text(
+                  'Manage Plan',
+                  style: TextStyle(
+                    fontSize: 15, fontWeight: FontWeight.w700,
+                    color: Color(0xFF751FE7)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ]),
+    );
+  }
+
+  // ── Log Out card ─────────────────────────────────────────────────────────
+  Widget _buildLogOutCard(AuthService authService, ThemeProvider themeProvider) {
+    final isDark = themeProvider.isDarkMode;
+    final cardBg = isDark ? AppColors.darkSurfaceContainerHigh : Colors.white;
+    final textP  = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
+
+    return GestureDetector(
+      onTap: () {
+        _dismissKeyboard();
+        _showLogoutConfirmation(authService, themeProvider);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          color: cardBg,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.15 : 0.05),
+              blurRadius: 10, offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(children: [
+          Container(
+            width: 36, height: 36,
+            decoration: BoxDecoration(
+              color: isDark
+                  ? AppColors.darkSurfaceContainerHighest
+                  : const Color(0xFFF0EDE9),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(Icons.logout_rounded,
+                size: 18, color: textP),
+          ),
+          const SizedBox(width: 14),
+          Text(
+            'Log Out',
+            style: TextStyle(
+              fontSize: 16, fontWeight: FontWeight.w600, color: textP),
+          ),
+          const Spacer(),
+          Icon(Icons.chevron_right_rounded,
+              color: isDark
+                  ? AppColors.darkOnSurfaceVariant
+                  : AppColors.lightOnSurfaceVariant,
+              size: 20),
+        ]),
+      ),
+    );
+  }
+
+  // ── Danger Zone card ─────────────────────────────────────────────────────
+  Widget _buildDangerZoneCard(AuthService authService, ThemeProvider themeProvider) {
+    final isDark = themeProvider.isDarkMode;
+    final errorColor = Theme.of(context).colorScheme.error;
+
+    // Subtle tinted background — not pure red, just a warm blush
+    final cardBg = isDark
+        ? const Color(0xFF2A1010)   // very dark red-tinted surface
+        : const Color(0xFFFFF0F0);  // very light blush
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: errorColor.withOpacity(isDark ? 0.3 : 0.15)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Danger Zone',
+            style: TextStyle(
+              fontSize: 17, fontWeight: FontWeight.w700,
+              color: errorColor),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Permanently delete your account and all associated nudges. '
+            'This action cannot be undone.',
+            style: TextStyle(
+              fontSize: 13,
+              color: isDark
+                  ? AppColors.darkOnSurfaceVariant
+                  : AppColors.lightOnSurfaceVariant,
+              height: 1.5),
+          ),
+          const SizedBox(height: 16),
+
+          GestureDetector(
+            onTap: () {
+              _dismissKeyboard();
+              _showDeleteAccountConfirmation(authService, themeProvider);
+            },
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Container(
+                width: 28, height: 28,
+                decoration: BoxDecoration(
+                  color: errorColor.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Icon(Icons.delete_outline_rounded,
+                    size: 16, color: errorColor),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Delete Account',
+                style: TextStyle(
+                  fontSize: 14, fontWeight: FontWeight.w700,
+                  color: errorColor),
+              ),
+            ]),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildDeletionOverlay() {
     final themeProvider = Provider.of<ThemeProvider>(context);
     
@@ -683,8 +906,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           width: 300,
           height: 200,
           decoration: BoxDecoration(
-            color: themeProvider.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
-            borderRadius: BorderRadius.circular(12),
+            color: Theme.of(context).colorScheme.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(16),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -694,26 +917,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 height: 50,
                 child: CircularProgressIndicator(
                   strokeWidth: 4,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+                  valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.error),
                 ),
               ),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'Deleting Account',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.red,
+                  color: Theme.of(context).colorScheme.error,
                 ),
               ),
               const SizedBox(height: 10),
-              const Padding(
+              Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20),
                 child: Text(
                   'This may take a moment. Please wait while we delete your account and all associated data.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.grey,
+                    color: Theme.of(context).colorScheme.outline,
                     fontSize: 14,
                   ),
                 ),
@@ -735,12 +958,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 20),
           Text(
             'Crop Your Profile Picture',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
           ),
           const SizedBox(height: 10),
           Text(
             'Adjust the square to frame your photo',
-            style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 20),
           Expanded(
@@ -787,8 +1010,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: OutlinedButton(
                     onPressed: _cancelCrop,
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.red,
-                      side: const BorderSide(color: Colors.red),
+                      foregroundColor: Theme.of(context).colorScheme.error,
+                      side: BorderSide(color: Theme.of(context).colorScheme.error),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: const Text('Cancel'),
@@ -835,7 +1058,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         color: theme.colorScheme.primary,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.edit, size: 16, color: Colors.white),
+                      child: Icon(Icons.edit, size: 16, color: Theme.of(context).colorScheme.onInverseSurface),
                     ),
                   ),
                 ],
@@ -845,7 +1068,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 10),
           Text(
             'Tap to change profile picture',
-            style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey, fontSize: 14),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14),
           ),
           const SizedBox(height: 30),
         ],
@@ -859,9 +1082,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('LOGGING OUT', style: TextStyle(fontWeight: FontWeight.w600, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555))),
+        title: Text('LOGGING OUT', style: TextStyle(fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
         content: const Text('Are you sure you want to log out of your account?', style: TextStyle(fontWeight: FontWeight.w500)),
-        backgroundColor: themeProvider.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context), 
@@ -877,7 +1100,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 (route) => false
               );
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
             child: const Text('Confirm'),
           ),
         ],
@@ -887,74 +1110,130 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildThemeToggleSection() {
     final themeProvider = Provider.of<ThemeProvider>(context);
-    final theme = Theme.of(context);
-    
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'APPEARANCE',
-          style: TextStyle(
-            fontSize: 16,
-            color: themeProvider.isDarkMode ? Colors.grey.shade400 : const Color(0xff6e6e6e),
-            fontWeight: FontWeight.w500,
+    final isDark = themeProvider.isDarkMode;
+    final scheme = Theme.of(context).colorScheme;
+
+    final cardBg   = isDark ? AppColors.darkSurfaceContainerHigh : Colors.white;
+    final textP    = isDark ? AppColors.darkOnSurface             : AppColors.lightOnSurface;
+    final textS    = isDark ? AppColors.darkOnSurfaceVariant      : AppColors.lightOnSurfaceVariant;
+    final fieldBg  = isDark ? AppColors.darkSurfaceContainerHighest : const Color(0xFFF0EDE9);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.18 : 0.06),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
           ),
-        ),
-        const SizedBox(height: 15),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: themeProvider.isDarkMode ? const Color(0xFF2D2D2D) : Colors.grey.shade50,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
-                    color: theme.colorScheme.primary,
-                  ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        themeProvider.isDarkMode ? 'Dark Mode' : 'Light Mode',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: themeProvider.isDarkMode ? Colors.white : Colors.black,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        themeProvider.isDarkMode 
-                          ? 'Switch to light appearance'
-                          : 'Switch to dark appearance',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header row: palette icon + title
+          Row(children: [
+            Container(
+              width: 40, height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.lightPrimary.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(12),
               ),
-              Switch(
-                value: themeProvider.isDarkMode,
-                onChanged: (value) {
-                  themeProvider.toggleTheme(value);
-                },
-                activeColor: theme.colorScheme.primary,
-                activeTrackColor: theme.colorScheme.primary.withOpacity(0.5),
-              ),
-            ],
+              child: const Icon(Icons.palette_outlined,
+                  color: AppColors.lightPrimary, size: 20),
+            ),
+            const SizedBox(width: 14),
+            Text(
+              'Appearance',
+              style: TextStyle(
+                fontSize: 18, fontWeight: FontWeight.w700, color: textP),
+            ),
+          ]),
+          const SizedBox(height: 12),
+
+          // Description
+          Text(
+            'Choose how Nudge looks on your device. Auto syncs with your system settings.',
+            style: TextStyle(fontSize: 13, color: textS, height: 1.5),
           ),
-        ),
-      ],
+          const SizedBox(height: 18),
+
+          // Light / Dark pill toggle
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: fieldBg,
+              borderRadius: BorderRadius.circular(9999),
+            ),
+            child: Row(children: [
+              // Light pill
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => themeProvider.toggleTheme(false),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: !isDark ? Colors.white : Colors.transparent,
+                      borderRadius: BorderRadius.circular(9999),
+                      boxShadow: !isDark
+                          ? [BoxShadow(
+                              color: Colors.black.withOpacity(0.08),
+                              blurRadius: 8, offset: const Offset(0, 1))]
+                          : null,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.light_mode_rounded,
+                          size: 16,
+                          color: !isDark ? AppColors.lightPrimary : textS),
+                        const SizedBox(width: 6),
+                        Text('Light',
+                          style: TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.w600,
+                            color: !isDark ? AppColors.lightPrimary : textS)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              // Dark pill
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => themeProvider.toggleTheme(true),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? AppColors.darkBackground
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(9999),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.dark_mode_rounded,
+                          size: 16,
+                          color: isDark ? AppColors.darkPrimary : textS),
+                        const SizedBox(width: 6),
+                        Text('Dark',
+                          style: TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.w600,
+                            color: isDark ? AppColors.darkPrimary : textS)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ]),
+          ),
+        ],
+      ),
     );
   }
 
@@ -969,7 +1248,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           'FEATURE REQUESTS',
           style: TextStyle(
             fontSize: 16,
-            color: themeProvider.isDarkMode ? Colors.grey.shade400 : const Color(0xff6e6e6e),
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -978,7 +1257,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: themeProvider.isDarkMode ? Colors.blue.shade900.withOpacity(0.3) : Colors.blue.shade50,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: themeProvider.isDarkMode ? Colors.blue.shade800 : Colors.blue.shade100,
             ),
@@ -990,7 +1269,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   Icon(
                     Icons.auto_awesome_outlined,
-                    color: themeProvider.isDarkMode ? Colors.blue.shade300 : Colors.blue,
+                    color: themeProvider.isDarkMode ? Colors.blue.shade300 : Theme.of(context).colorScheme.secondary,
                   ),
                   const SizedBox(width: 12),
                   Text(
@@ -998,7 +1277,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
-                      color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ],
@@ -1007,7 +1286,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Text(
                 'Browse, upvote, and track feature requests from other users. See what\'s being planned and vote for your favorite ideas!',
                 style: TextStyle(
-                  color: themeProvider.isDarkMode ? Colors.grey.shade300 : Colors.grey.shade700,
+                  color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.outline,
                 ),
               ),
               const SizedBox(height: 12),
@@ -1025,22 +1304,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
+                    backgroundColor: Theme.of(context).colorScheme.secondary,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.forum_outlined, color: Colors.white),
+                      Icon(Icons.forum_outlined, color: !themeProvider.isDarkMode ? Colors.white:Color(0xff555555),),
                       const SizedBox(width: 8),
-                      const Text(
+                      Text(
                         'VIEW FEATURE REQUESTS',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: !themeProvider.isDarkMode ? Colors.white:Color(0xff555555),
                         ),
                       ),
                     ],
@@ -1063,7 +1342,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     
     if (_isLoading || adminProvider.isLoading) {
       return Scaffold(
-        backgroundColor: themeProvider.getBackgroundColor(context),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: Center(child: CircularProgressIndicator(color: theme.colorScheme.primary)),
       );
     }
@@ -1078,12 +1357,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w700,
-              color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555),
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           centerTitle: true,
           iconTheme: IconThemeData(color: theme.colorScheme.primary),
-          backgroundColor: themeProvider.getSurfaceColor(context),
+          backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
           surfaceTintColor: Colors.transparent,
         ),
         body: Stack(
@@ -1107,57 +1386,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'SUBSCRIPTION',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: themeProvider.isDarkMode ? Colors.grey.shade400 : const Color(0xff6e6e6e),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 15),
-                            Text(
-                              'You are on an exclusive access subscription.',
-                              style: TextStyle(fontSize: 16, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555)),
-                            ),
+                            _buildSubscriptionCard(),
                             const SizedBox(height: 30),
                             
                             Text(
                               'GENERAL',
                               style: TextStyle(
                                 fontSize: 16,
-                                color: themeProvider.isDarkMode ? Colors.grey.shade400 : const Color(0xff6e6e6e),
-                                fontWeight: FontWeight.w500,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
                             ),
                             const SizedBox(height: 15),
                             
                             Text(
                               'Username',
-                              style: TextStyle(fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555)),
+                              style: TextStyle(fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface),
                             ),
                             const SizedBox(height: 8),
                             TextFormField(
                               controller: _usernameController,
                               focusNode: _usernameFocusNode,
                               textInputAction: TextInputAction.next,
-                              style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
+                              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                               decoration: InputDecoration(
+                                hintText: 'Username',
+                                hintStyle: TextStyle(color: themeProvider.isDarkMode? Color(0xff666666):Color(0xff999999)),
                                 enabledBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(color: themeProvider.isDarkMode ? Colors.grey.shade600 : Colors.grey, width: 1),
-                                  borderRadius: BorderRadius.circular(10)
+                                  borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurfaceVariant, width: 1),
+                                  borderRadius: BorderRadius.circular(14)
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
-                                  borderRadius: BorderRadius.circular(10)
+                                  borderRadius: BorderRadius.circular(14)
                                 ),
                                 errorBorder: OutlineInputBorder(
-                                  borderSide: const BorderSide(color: Colors.red, width: 1),
-                                  borderRadius: BorderRadius.circular(10)
+                                  borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                                  borderRadius: BorderRadius.circular(14)
                                 ),
                                 focusedErrorBorder: OutlineInputBorder(
-                                  borderSide: const BorderSide(color: Colors.red, width: 2),
-                                  borderRadius: BorderRadius.circular(10)
+                                  borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                                  borderRadius: BorderRadius.circular(14)
                                 ),
                               ),
                               validator: (value) {
@@ -1171,18 +1439,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             
                             Text(
                               'Email',
-                              style: TextStyle(fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555)),
+                              style: TextStyle(fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface),
                             ),
                             const SizedBox(height: 8),
                             TextFormField(
                               controller: _emailController,
                               enabled: false,
-                              style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600),
+                             style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                               decoration: InputDecoration(
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                                 enabledBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(color: themeProvider.isDarkMode ? Colors.grey.shade600 : Colors.grey, width: 1),
-                                  borderRadius: BorderRadius.circular(10)
+                                  borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurfaceVariant, width: 1),
+                                  borderRadius: BorderRadius.circular(14)
                                 ),
                               ),
                               validator: (value) {
@@ -1202,7 +1470,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 'CHANGE PASSWORD',
                                 style: TextStyle(
                                   fontSize: 16,
-                                  color: themeProvider.isDarkMode ? Colors.grey.shade400 : const Color(0xff6e6e6e),
+                                  color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerLow : AppColors.lightOnSurfaceVariant,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -1210,7 +1478,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               
                               Text(
                                 'Current Password',
-                                style: TextStyle(fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555)),
+                                style: TextStyle(fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface),
                               ),
                               const SizedBox(height: 8),
                               TextFormField(
@@ -1221,25 +1489,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 onEditingComplete: () {
                                   FocusScope.of(context).requestFocus(_newPasswordFocusNode);
                                 },
-                                style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
+                                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                                 decoration: InputDecoration(
                                   hintText: 'Enter your current password',
-                                  hintStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : const Color(0xff555555)),
+                                  hintStyle: TextStyle(color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerLow : AppColors.lightOnSurface),
                                   enabledBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: themeProvider.isDarkMode ? Colors.grey.shade600 : Colors.grey, width: 1),
-                                    borderRadius: BorderRadius.circular(10)
+                                    borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurfaceVariant, width: 1),
+                                    borderRadius: BorderRadius.circular(14)
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
-                                    borderRadius: BorderRadius.circular(10)
+                                    borderRadius: BorderRadius.circular(14)
                                   ),
                                   errorBorder: OutlineInputBorder(
-                                    borderSide: const BorderSide(color: Colors.red, width: 1),
-                                    borderRadius: BorderRadius.circular(10)
+                                    borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                                    borderRadius: BorderRadius.circular(14)
                                   ),
                                   focusedErrorBorder: OutlineInputBorder(
-                                    borderSide: const BorderSide(color: Colors.red, width: 2),
-                                    borderRadius: BorderRadius.circular(10)
+                                    borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                                    borderRadius: BorderRadius.circular(14)
                                   ),
                                 ),
                                 validator: (value) {
@@ -1254,7 +1522,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               
                               Text(
                                 'New Password',
-                                style: TextStyle(fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555)),
+                                style: TextStyle(fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface),
                               ),
                               const SizedBox(height: 8),
                               TextFormField(
@@ -1263,25 +1531,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 obscureText: true,
                                 textInputAction: TextInputAction.done,
                                 onEditingComplete: _dismissKeyboard,
-                                style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
+                                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                                 decoration: InputDecoration(
                                   hintText: 'Enter your new password',
-                                  hintStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : const Color(0xff555555)),
+                                  hintStyle: TextStyle(color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerLow : AppColors.lightOnSurface),
                                   enabledBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: themeProvider.isDarkMode ? Colors.grey.shade600 : Colors.grey, width: 1),
-                                    borderRadius: BorderRadius.circular(10)
+                                    borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurfaceVariant, width: 1),
+                                    borderRadius: BorderRadius.circular(14)
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
-                                    borderRadius: BorderRadius.circular(10)
+                                    borderRadius: BorderRadius.circular(14)
                                   ),
                                   errorBorder: OutlineInputBorder(
-                                    borderSide: const BorderSide(color: Colors.red, width: 1),
-                                    borderRadius: BorderRadius.circular(10)
+                                    borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                                    borderRadius: BorderRadius.circular(14)
                                   ),
                                   focusedErrorBorder: OutlineInputBorder(
-                                    borderSide: const BorderSide(color: Colors.red, width: 2),
-                                    borderRadius: BorderRadius.circular(10)
+                                    borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                                    borderRadius: BorderRadius.circular(14)
                                   ),
                                 ),
                                 validator: (value) {
@@ -1306,7 +1574,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       },
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: theme.colorScheme.primary,
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                                       ),
                                       child: Text(
                                         'CONFIRM CHANGES',
@@ -1318,52 +1586,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ),
                       
-                      // Delete Account Section
-                      const SizedBox(height: 40),
-                      Text(
-                        'ACCOUNT ACTIONS',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.grey.shade400 : const Color(0xff6e6e6e)),
-                      ),
-                      const SizedBox(height: 35),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: OutlinedButton(
-                          onPressed: () {
-                            _dismissKeyboard();
-                            _showLogoutConfirmation(authService, themeProvider);
-                          },
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: theme.colorScheme.primary,
-                            side: BorderSide(color: theme.colorScheme.primary),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                          child: const Text(
-                            'LOG OUT',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 35),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: OutlinedButton(
-                          onPressed: () {
-                            _dismissKeyboard();
-                            _showDeleteAccountConfirmation(authService, themeProvider);
-                          },
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.red,
-                            side: const BorderSide(color: Colors.red),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                          child: const Text(
-                            'DELETE ACCOUNT',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ),
+                      // Log Out + Danger Zone (separated per new design)
+                      const SizedBox(height: 30),
+                      _buildLogOutCard(authService, themeProvider),
+                      const SizedBox(height: 16),
+                      _buildDangerZoneCard(authService, themeProvider),
                       
                       const SizedBox(height: 30),
                       
@@ -1382,20 +1609,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           width: double.infinity,
                           padding: const EdgeInsets.only(top: 16, bottom: 16, left: 16, right: 16),
                           decoration: BoxDecoration(
-                            color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.grey.shade50,
-                            borderRadius: BorderRadius.circular(10),
+                            color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.outline : Theme.of(context).colorScheme.surfaceContainerHigh,
+                            borderRadius: BorderRadius.circular(14),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 'FEEDBACK MANAGEMENT',
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.grey.shade400 : const Color(0xff6e6e6e)),
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.inverseSurface : AppColors.lightOnSurfaceVariant),
                               ),
                               const SizedBox(height: 8),
                               Text(
                                 'View and manage user feedback submissions',
-                                style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+                                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                               ),
                               const SizedBox(height: 12),
                               SizedBox(
@@ -1412,17 +1639,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     );
                                   },
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.blue,
+                                    backgroundColor: Theme.of(context).colorScheme.secondary,
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
+                                      borderRadius: BorderRadius.circular(14),
                                     ),
                                   ),
-                                  child: const Text(
+                                  child: Text(
                                     'MANAGE FEEDBACK',
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.white,
+                                      color: Theme.of(context).colorScheme.onInverseSurface,
                                     ),
                                   ),
                                 ),
@@ -1431,7 +1658,89 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                         )
                       : const SizedBox(),
-                      
+
+                      // ── AI Integration Testing (admin only) ───────────
+                      if (adminProvider.isAdmin) ...[
+                        const SizedBox(height: 16),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                AppColors.lightPrimary.withOpacity(
+                                    themeProvider.isDarkMode ? 0.20 : 0.08),
+                                AppColors.lightSecondary.withOpacity(
+                                    themeProvider.isDarkMode ? 0.14 : 0.05),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: AppColors.lightPrimary.withOpacity(
+                                  themeProvider.isDarkMode ? 0.30 : 0.18),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(children: [
+                                Container(
+                                  width: 28, height: 28,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.lightPrimary,
+                                    borderRadius: BorderRadius.circular(8)),
+                                  child: const Icon(Icons.auto_awesome_rounded,
+                                      size: 14, color: Colors.white)),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'AI INTEGRATION',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w900,
+                                    color: themeProvider.isDarkMode
+                                        ? AppColors.darkOnSurface
+                                        : AppColors.lightOnSurface),
+                                ),
+                              ]),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Test Claude AI features — nudge copy, greeting cards, weekly digest and the relationship assistant.',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant),
+                              ),
+                              const SizedBox(height: 14),
+                              SizedBox(
+                                width: double.infinity,
+                                height: 50,
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    _dismissKeyboard();
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => const AITestingScreen()),
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.lightPrimary,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(14)),
+                                  ),
+                                  child: const Text(
+                                    'OPEN AI TESTING PANEL',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+
                       const SizedBox(height: 20),
                     ],
                   ),

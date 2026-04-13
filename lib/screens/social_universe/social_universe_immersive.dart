@@ -33,7 +33,7 @@ class SocialUniverseImmersiveScreen extends StatelessWidget {
                   borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                 ),
                 isScrollControlled: true,
-                backgroundColor: Colors.white,
+                backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
                 builder: (context) {
                   return ContactDetailsModal(
                     contact: contact,

@@ -1,6 +1,7 @@
 // dashboard_screen.dart - Updated for theme support
 // import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:nudge/helpers/deletion_retry_helper.dart';
 import 'package:nudge/models/analytics.dart';
@@ -242,18 +243,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     
     if (user == null) {
       return Scaffold(
-        backgroundColor: themeProvider.getBackgroundColor(context),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: Center(
           child: Text(
             'Please log in to view dashboard',
-            style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans',),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily,),
           ),
         ),
       );
     }
 
     return Scaffold(
-      backgroundColor: themeProvider.getBackgroundColor(context),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           StreamProvider<List<Contact>>.value(
@@ -307,7 +308,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         _fabController.closeMenu(); // Call this to close the menu
                       },
                       child: Container(
-                        color: Colors.black.withOpacity(0.55),
+                        color: Colors.transparent,
                         width: MediaQuery.of(context).size.width,
                         height: MediaQuery.of(context).size.height,
                       ),
@@ -324,6 +325,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: FeedbackFloatingButton(
                   currentSection: getCurrentSection(),
                   fromDashboard: true,
+                  onDarkBackground: _currentIndex == 1, // Social Universe tab
                   controller: _fabController,
                   extraActions: [
                     FeedbackAction(
@@ -371,12 +373,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 numberOfParticles: 20,
                 blastDirectionality: BlastDirectionality.explosive,
                 shouldLoop: false,
-                colors: const [
-                  Colors.green,
-                  Colors.blue,
-                  Colors.pink,
-                  Colors.orange,
-                  Colors.purple
+                colors: [
+                  AppColors.success,
+                  Theme.of(context).colorScheme.secondary,
+                  Theme.of(context).colorScheme.tertiary,
+                  AppColors.warning,
+                  Theme.of(context).colorScheme.primary
                 ],
               ),
             ),
@@ -391,7 +393,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final theme = Theme.of(context);
     
     return Scaffold(
-      backgroundColor: themeProvider.getBackgroundColor(context),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: StreamBuilder<List<Nudge>>(
         stream: NudgeService().getNudgesStream(Provider.of<AuthService>(context).currentUser!.uid),
         builder: (context, nudgeSnapshot) {
@@ -412,13 +414,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     'Dashboard',
                     style: TextStyle(
                       fontSize: 22, 
-                      fontFamily: 'Inter', 
+                      fontFamily: GoogleFonts.plusJakartaSans().fontFamily, 
                       fontWeight: FontWeight.w800,
-                      color: themeProvider.getTextPrimaryColor(context),
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ),
-                backgroundColor: themeProvider.getBackgroundColor(context),
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
                 leading: const Center(),
                 iconTheme: IconThemeData(color: theme.colorScheme.primary),
                 elevation: 0,
@@ -435,7 +437,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(color: Colors.white24),
                         ),
-                        child: Icon(Icons.settings, color: themeProvider.isDarkMode ? Colors.white : Color(0xff555555), size: 20),
+                        child: Icon(Icons.settings, color: Theme.of(context).colorScheme.onSurface, size: 20),
                       ),
                       onPressed: () {
                         Navigator.pushNamed(context, '/settings');
@@ -499,10 +501,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             Text(
                               'FAVOURITES',
                               style: TextStyle(
-                                fontFamily: 'OpenSans',
+                                fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                                 fontSize: 15,
                                 fontWeight: FontWeight.w500,
-                                color: themeProvider.getTextSecondaryColor(context),
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
                             ),
                             const Spacer(),
@@ -514,7 +516,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   vipFilter = true;
                                 });
                               },
-                              child: Text('View All', style: TextStyle(color: theme.colorScheme.primary, fontFamily: 'OpenSans',)),
+                              child: Text('View All', style: TextStyle(color: theme.colorScheme.primary, fontFamily: GoogleFonts.beVietnamPro().fontFamily,)),
                             ),
                           ],
                         ),
@@ -547,9 +549,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     //           'NEEDS CARE',
                     //           style: TextStyle(
                     //             fontSize: 16,
-                    //             fontFamily: 'OpenSans',
+                    //             fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                     //             fontWeight: FontWeight.w500,
-                    //             color: themeProvider.getTextSecondaryColor(context),
+                    //             color: Theme.of(context).colorScheme.onSurfaceVariant,
                     //           ),
                     //         ),
                     //         const Spacer(),
@@ -559,7 +561,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     //           },
                     //           child: Text(
                     //             'View All',
-                    //             style: TextStyle(color: theme.colorScheme.primary, fontFamily: 'OpenSans',),
+                    //             style: TextStyle(color: theme.colorScheme.primary, fontFamily: GoogleFonts.beVietnamPro().fontFamily,),
                     //           ),
                     //         ),
                     //       ],
@@ -648,7 +650,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      backgroundColor: themeProvider.getSurfaceColor(context),
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
       builder: (context) {
         return SafeArea(
           child: Column(
@@ -659,26 +661,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: Text(
                   'ADD CONTACTS',
                   style: TextStyle(
-                    color: themeProvider.getTextPrimaryColor(context),
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 18,
-                    fontFamily: 'OpenSans',
+                    fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
               ListTile(
-                leading: Icon(Icons.person_add, color: themeProvider.isDarkMode ? AppTheme.darkIconColor : AppTheme.primaryColor),
-                title: Text('ADD CONTACT MANUALLY', style: TextStyle(fontWeight: FontWeight.w700, fontFamily: 'OpenSans', color: themeProvider.getTextPrimaryColor(context))),
-                subtitle: Text('Create a new contact from scratch', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans',)),
+                leading: Icon(Icons.person_add, color: Theme.of(context).colorScheme.primary),
+                title: Text('ADD CONTACT MANUALLY', style: TextStyle(fontWeight: FontWeight.w700, fontFamily: GoogleFonts.beVietnamPro().fontFamily, color: Theme.of(context).colorScheme.onSurface)),
+                subtitle: Text('Create a new contact from scratch', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily,)),
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.pushNamed(context, '/add_contact');
                 },
               ),
               ListTile(
-                leading: Icon(Icons.import_contacts, color: themeProvider.isDarkMode ? AppTheme.darkIconColor : AppTheme.primaryColor),
-                title: Text('IMPORT CONTACTS', style: TextStyle(fontWeight: FontWeight.w700, fontFamily: 'OpenSans', color: themeProvider.getTextPrimaryColor(context))),
-                subtitle: Text('Import from your device contacts', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans',)),
+                leading: Icon(Icons.import_contacts, color: Theme.of(context).colorScheme.primary),
+                title: Text('IMPORT CONTACTS', style: TextStyle(fontWeight: FontWeight.w700, fontFamily: GoogleFonts.beVietnamPro().fontFamily, color: Theme.of(context).colorScheme.onSurface)),
+                subtitle: Text('Import from your device contacts', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily,)),
                 onTap: () async{
                   Navigator.pop(context);
                   // Navigator.pushNamed(context, '/import_contacts');
@@ -718,22 +720,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
         color: themeProvider.isDarkMode
-            ? Color(0xff111111).withOpacity(0.7)
-            : Colors.white.withOpacity(0.7),
-        border: Border.all(color: themeProvider.isDarkMode ? Colors.white.withOpacity(0.2) : Colors.white.withOpacity(0.4)),
+            ? AppColors.darkSurfaceContainerLow.withOpacity(0.85)
+            : AppColors.lightSurfaceContainerLowest.withOpacity(0.92),
         boxShadow: [
           BoxShadow(
-            color: themeProvider.isDarkMode ? Colors.white.withOpacity(0.5) : Colors.white.withOpacity(0.7),
-            blurRadius: themeProvider.isDarkMode ?35: 50,
-            spreadRadius: 3,
-          ),
-          BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 12,
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 24,
+            spreadRadius: 0,
             offset: const Offset(0, 4),
           ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
         ],
-      ),
+        ),
+       
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
@@ -746,8 +749,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           //     height: 22,
           //     colorFilter: ColorFilter.mode(
           //       _currentIndex == 0 
-          //         ? themeProvider.isDarkMode ? AppTheme.darkIconColor : AppTheme.primaryColor 
-          //         : themeProvider.getTextHintColor(context),
+          //         ? Theme.of(context).colorScheme.primary 
+          //         : Theme.of(context).colorScheme.outline,
           //       BlendMode.srcIn,
           //     ),
           //   ),
@@ -763,8 +766,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   height: 30,
                   colorFilter: ColorFilter.mode(
                     _currentIndex == 1 
-                      ? themeProvider.isDarkMode ? AppTheme.darkIconColor : AppTheme.primaryColor 
-                      : themeProvider.getTextHintColor(context),
+                      ? Theme.of(context).colorScheme.primary 
+                      : Theme.of(context).colorScheme.outline,
                     BlendMode.srcIn,
                   ),
                 ),
@@ -782,8 +785,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   height: 22,
                   colorFilter: ColorFilter.mode(
                     _currentIndex == 2 
-                      ? themeProvider.isDarkMode ? AppTheme.darkIconColor : AppTheme.primaryColor 
-                      : themeProvider.getTextHintColor(context),
+                      ? Theme.of(context).colorScheme.primary 
+                      : Theme.of(context).colorScheme.outline,
                     BlendMode.srcIn,
                   ),
                 ),
@@ -795,7 +798,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       width: 8,
                       height: 8,
                       decoration: BoxDecoration(
-                        color: Colors.red,
+                        color: Theme.of(context).colorScheme.error,
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
@@ -821,8 +824,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               height: 25,
               colorFilter: ColorFilter.mode(
                 _currentIndex == 3 
-                  ? themeProvider.isDarkMode ? AppTheme.darkIconColor : AppTheme.primaryColor 
-                  : themeProvider.getTextHintColor(context),
+                  ? Theme.of(context).colorScheme.primary 
+                  : Theme.of(context).colorScheme.outline,
                 BlendMode.srcIn,
               ),
             ),
@@ -838,8 +841,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               height: 22,
               colorFilter: ColorFilter.mode(
                 _currentIndex == 4 
-                  ? themeProvider.isDarkMode ? AppTheme.darkIconColor : AppTheme.primaryColor 
-                  : themeProvider.getTextHintColor(context),
+                  ? Theme.of(context).colorScheme.primary 
+                  : Theme.of(context).colorScheme.outline,
                 BlendMode.srcIn,
               ),
             ),
@@ -888,7 +891,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       isScrollControlled: true,
-      backgroundColor: themeProvider.getSurfaceColor(context),
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
       builder: (context) {
         return ContactDetailsModal(
           contact: contact,
@@ -907,9 +910,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Container(
       margin: const EdgeInsets.only(top: 4, left: 4),
       decoration: BoxDecoration(
-        color: themeProvider.getSurfaceColor(context),
-        border: Border.all(color: themeProvider.isDarkMode ? AppTheme.darkCardBorder : AppTheme.lightCardBorder, width: 0.6),
-        borderRadius: BorderRadius.circular(12),
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(themeProvider.isDarkMode ? 0.15 : 0.08),
@@ -926,10 +928,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Text(
               'QUICK INSIGHTS',
               style: TextStyle(
-                fontFamily: 'OpenSans',
+                fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
-                color: themeProvider.getTextSecondaryColor(context),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 16),
@@ -994,9 +996,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Container(
       margin: const EdgeInsets.only(top: 4, left: 4),
       decoration: BoxDecoration(
-        color: themeProvider.getSurfaceColor(context),
-        border: Border.all(color: themeProvider.isDarkMode ? AppTheme.darkCardBorder : AppTheme.lightCardBorder, width: 0.6),
-        borderRadius: BorderRadius.circular(12),
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(themeProvider.isDarkMode ? 0.15 : 0.08),
@@ -1013,10 +1014,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Text(
               'NUDGES THIS WEEK',
               style: TextStyle(
-                fontFamily: 'OpenSans',
+                fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
-                color: themeProvider.getTextSecondaryColor(context),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 16),
@@ -1038,7 +1039,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   iconSize: 35,
                   iconAsset: 'assets/performance-icons/check-completed.svg',
                   backgroundAsset: 'assets/card-backgrounds/needs-care.png',
-                  iconColor: AppTheme.successColor,
+                  iconColor: AppColors.success,
                   context: context,
                 ),
                 _buildStatCard(
@@ -1055,7 +1056,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(height: 16),
             Text(
               'Nudge Completion Rate',
-              style: TextStyle(fontSize: 10, fontFamily: 'OpenSans', fontWeight: FontWeight.w700, color: theme.colorScheme.primary),
+              style: TextStyle(fontSize: 10, fontFamily: GoogleFonts.beVietnamPro().fontFamily, fontWeight: FontWeight.w700, color: theme.colorScheme.primary),
             ),
             const SizedBox(height: 8),
             LinearPercentIndicator(
@@ -1065,15 +1066,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
               percent: (weeklyNudgePerformance['completionRate'] ?? 0) / 100,
               center: Text(
                 "${(weeklyNudgePerformance['completionRate'] ?? 0).toStringAsFixed(1)}%",
-                style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans', fontSize: 12),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily, fontSize: 12),
               ),
               barRadius: const Radius.circular(10),
               linearGradient: const LinearGradient(
-                colors: [Color(0xFF2D85F6), Color(0xFF5CDEE5)],
+                colors: [AppColors.lightPrimary, AppColors.lightSecondary],
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
               ),
-              backgroundColor: themeProvider.isDarkMode ? Colors.grey[800] : Colors.grey[300],
+              backgroundColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHighest : Theme.of(context).colorScheme.surfaceContainerHigh,
             ),
             const SizedBox(height: 16),
           ],
@@ -1090,9 +1091,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Container(
       margin: const EdgeInsets.only(top: 4, left: 4),
       decoration: BoxDecoration(
-        color: themeProvider.getSurfaceColor(context),
-        border: Border.all(color: themeProvider.isDarkMode ? AppTheme.darkCardBorder : AppTheme.lightCardBorder, width: 0.6),
-        borderRadius: BorderRadius.circular(12),
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(themeProvider.isDarkMode ? 0.15 : 0.08),
@@ -1109,10 +1109,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Text(
               'QUICK ACTIONS',
               style: TextStyle(
-                fontFamily: 'OpenSans',
+                fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
-                color: themeProvider.getTextSecondaryColor(context),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 16),
@@ -1158,10 +1158,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         // Fallback background color when no image
         color: backgroundAsset == null
             ? (themeProvider.isDarkMode 
-                ? AppTheme.darkSurfaceVariant 
+                ? Theme.of(context).colorScheme.surfaceContainerHighest 
                 : Colors.white)
             : null,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.15),
@@ -1171,8 +1171,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
         border: Border.all(
           color: themeProvider.isDarkMode 
-              ? AppTheme.darkCardBorder 
-              : AppTheme.lightCardBorder, 
+              ? AppColors.darkSurfaceContainerHighest 
+              : AppColors.lightSurfaceContainerHigh, 
           width: 0.6
         ),
       ),
@@ -1182,7 +1182,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           if (backgroundAsset != null && themeProvider.isDarkMode)
             Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
@@ -1217,13 +1217,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Text(
                     value,
                     style: TextStyle(
-                      fontFamily: 'OpenSans',
+                      fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                       color: backgroundAsset != null
                           // White text for cards with background images
                           ? Colors.white
-                          : themeProvider.getTextPrimaryColor(context),
+                          : Theme.of(context).colorScheme.onSurface,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -1232,13 +1232,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Text(
                     title,
                     style: TextStyle(
-                      fontFamily: 'OpenSans',
+                      fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: backgroundAsset != null
                           // White text for cards with background images
                           ? Colors.white
-                          : themeProvider.getTextSecondaryColor(context),
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -1319,7 +1319,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      backgroundColor: themeProvider.getSurfaceColor(context),
+      backgroundColor: Colors.white,
       builder: (context) {
         return Padding(
           padding: EdgeInsets.only(
@@ -1367,10 +1367,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         // Fallback background color when no image
         color: backgroundAsset == null
             ? (themeProvider.isDarkMode 
-                ? AppTheme.darkSurfaceVariant 
+                ? Theme.of(context).colorScheme.surfaceContainerHighest 
                 : Colors.white)
             : null,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.15),
@@ -1380,8 +1380,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
         border: Border.all(
           color: themeProvider.isDarkMode 
-              ? AppTheme.darkCardBorder 
-              : AppTheme.lightCardBorder, 
+              ? AppColors.darkSurfaceContainerHighest 
+              : AppColors.lightSurfaceContainerHigh, 
           width: 0.6
         ),
       ),
@@ -1391,7 +1391,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           if (backgroundAsset != null && themeProvider.isDarkMode)
             Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
@@ -1430,13 +1430,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Text(
                     title,
                     style: TextStyle(
-                      fontFamily: 'OpenSans',
+                      fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
                       color: backgroundAsset != null
                           // White text for cards with background images
                           ? Colors.white
-                          : themeProvider.getTextSecondaryColor(context),
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -1492,9 +1492,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: themeProvider.getSurfaceColor(context),
-        border: Border.all(color: themeProvider.isDarkMode ? AppTheme.darkCardBorder : AppTheme.lightCardBorder, width: 0.6),
-        borderRadius: BorderRadius.circular(12),
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(themeProvider.isDarkMode ? 0.15 : 0.08),
@@ -1511,10 +1510,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Text(
               'YOUR SOCIAL LANDSCAPE',
               style: TextStyle(
-                fontFamily: 'OpenSans',
+                fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
-                color: themeProvider.getTextSecondaryColor(context),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 16),
@@ -1522,9 +1521,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Center(
                 child: Column(
                   children: [
-                    Icon(Icons.people_outline, size: 64, color: themeProvider.isDarkMode ? AppTheme.darkTextHint : Colors.grey),
+                    Icon(Icons.people_outline, size: 64, color: themeProvider.isDarkMode ? AppColors.darkOutline : Theme.of(context).colorScheme.outline),
                     const SizedBox(height: 16),
-                    Text('No contacts yet', style: TextStyle(fontSize: 16, fontFamily: 'OpenSans', color: themeProvider.isDarkMode ? AppTheme.darkTextHint : Colors.grey)),
+                    Text('No contacts yet', style: TextStyle(fontSize: 16, fontFamily: GoogleFonts.beVietnamPro().fontFamily, color: themeProvider.isDarkMode ? AppColors.darkOutline : Theme.of(context).colorScheme.outline)),
                   ],
                 ),
               )
@@ -1560,7 +1559,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: _getCategoryColor(category, 0).withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: _getCategoryColor(category, 0).withOpacity(0.3), width: 1),
       ),
       child: Row(
@@ -1569,9 +1568,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(category, style: TextStyle(fontSize: 16, fontFamily: 'OpenSans', fontWeight: FontWeight.bold, color: themeProvider.getTextPrimaryColor(context))),
+              Text(category, style: TextStyle(fontSize: 16, fontFamily: GoogleFonts.beVietnamPro().fontFamily, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
               const SizedBox(height: 4),
-              Text('$count contact${count != 1 ? 's' : ''}', style: TextStyle(fontSize: 14, fontFamily: 'OpenSans', color: themeProvider.getTextSecondaryColor(context))),
+              Text('$count contact${count != 1 ? 's' : ''}', style: TextStyle(fontSize: 14, fontFamily: GoogleFonts.beVietnamPro().fontFamily, color: Theme.of(context).colorScheme.onSurfaceVariant)),
             ],
           ),
           Column(
@@ -1579,10 +1578,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               Text(
                 '$percentage%',
-                style: TextStyle(fontSize: 18, fontFamily: 'OpenSans', fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
+                style: TextStyle(fontSize: 18, fontFamily: GoogleFonts.beVietnamPro().fontFamily, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
               ),
               const SizedBox(height: 4),
-              Text('of total contacts', style: TextStyle(fontSize: 12, fontFamily: 'OpenSans', color: themeProvider.getTextSecondaryColor(context))),
+              Text('of total contacts', style: TextStyle(fontSize: 12, fontFamily: GoogleFonts.beVietnamPro().fontFamily, color: Theme.of(context).colorScheme.onSurfaceVariant)),
             ],
           ),
         ],
@@ -1634,12 +1633,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Color _getCategoryColor(String category, int index) {
     final List<List<Color>> gradientColors = const [
-      [Color(0xFF2D85F6), Color(0xFF5CDEE5)],
+      [AppColors.lightPrimary, AppColors.lightSecondary],
       [Color(0xFF4CAF50), Color(0xFF8BC34A)],
       [Color(0xFF9C27B0), Color(0xFFE040FB)],
       [Color(0xFFFF9800), Color(0xFFFFC107)],
-      [Color(0xFFF44336), Color(0xFFFF5252)],
-      [Color(0xFF2196F3), Color(0xFF64B5F6)],
+      [Color(0xFFF44336), AppColors.lightError],
+      [AppColors.lightPrimary, AppColors.lightPrimaryContainer],
       [Color(0xFFFFC107), Color(0xFFFFEB3B)],
       [Color(0xFF795548), Color(0xFFA1887F)],
       [Color(0xFF607D8B), Color(0xFF90A4AE)],
@@ -1652,7 +1651,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       [Color(0xFF3F51B5), Color(0xFF7986CB)],
       [Color(0xFFCDDC39), Color(0xFFE6EE9C)],
       [Color(0xFFFFEB3B), Color(0xFFFFF59D)],
-      [Color(0xFF9E9E9E), Color(0xFFE0E0E0)],
+      [AppColors.lightOutline, AppColors.lightSurfaceContainerHigh],
       [Color(0xFF00E676), Color(0xFF69F0AE)],
     ];
     
@@ -1702,7 +1701,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         width: size.width * 0.3,
         margin: const EdgeInsets.only(right: 10),
         child: Card(
-          color: themeProvider.getSurfaceColor(context),
+          color: Theme.of(context).colorScheme.surfaceContainerLow,
           child: Padding(
             padding: const EdgeInsets.all(8.0),
             child: Column(
@@ -1728,11 +1727,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ? Center(
                               child: Text(
                                 initials,
-                                style: const TextStyle(
-                                  fontFamily: 'OpenSans',
+                                style: TextStyle(
+                                  fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                                  color: Theme.of(context).colorScheme.onSurface,
                                 ),
                               ),
                             )
@@ -1768,7 +1767,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(height: 8),
                 Text(
                   contact.name.split(' ').first,
-                  style: TextStyle(fontSize: 12, fontFamily: 'OpenSans', color: themeProvider.getTextPrimaryColor(context)),
+                  style: TextStyle(fontSize: 12, fontFamily: GoogleFonts.beVietnamPro().fontFamily, color: Theme.of(context).colorScheme.onSurface),
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                 ),
@@ -1779,12 +1778,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: theme.colorScheme.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       contact.connectionType,
                       style: TextStyle(
-                        fontFamily: 'OpenSans',
+                        fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                         color: theme.colorScheme.primary,
                         fontSize: 10,
                         fontWeight: FontWeight.w500,
@@ -1802,13 +1801,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // Helper method to get text hint color based on theme
   // Color _getTextHintColor(BuildContext context, ThemeProvider themeProvider) {
-  //   return themeProvider.isDarkMode ? AppTheme.darkTextHint : AppTheme.lightTextHint;
+  //   return themeProvider.isDarkMode ? AppColors.darkOutline : AppColors.lightOutline;
   // }
 }
 
 // Add extension method to ThemeProvider for convenience
 extension ThemeProviderExtension on ThemeProvider {
   Color getTextHintColor(BuildContext context) {
-    return isDarkMode ? AppTheme.darkTextHint : AppTheme.lightTextHint;
+    return isDarkMode ? AppColors.darkOutline : AppColors.lightOutline;
   }
 }

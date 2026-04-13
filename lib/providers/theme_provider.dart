@@ -1,7 +1,7 @@
 // lib/providers/theme_provider.dart
 import 'package:flutter/material.dart';
+import 'package:nudge/theme/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../theme/app_theme.dart';
 
 class ThemeProvider extends ChangeNotifier {
   ThemeMode _themeMode = ThemeMode.light;
@@ -10,9 +10,7 @@ class ThemeProvider extends ChangeNotifier {
   ThemeMode get themeMode => _themeMode;
   bool get isDarkMode => _isDarkMode;
 
-  ThemeProvider() {
-    _loadTheme();
-  }
+  ThemeProvider() { _loadTheme(); }
 
   Future<void> _loadTheme() async {
     final prefs = await SharedPreferences.getInstance();
@@ -24,42 +22,36 @@ class ThemeProvider extends ChangeNotifier {
   Future<void> toggleTheme(bool isDark) async {
     _isDarkMode = isDark;
     _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
-    
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isDarkMode', isDark);
-    
     notifyListeners();
   }
 
-  ThemeData getCurrentTheme(BuildContext context) {
-    return _isDarkMode ? AppTheme.darkTheme() : AppTheme.lightTheme();
-  }
+  ThemeData getCurrentTheme(BuildContext context) =>
+      _isDarkMode ? AppTheme.darkTheme() : AppTheme.lightTheme();
 
-  Color getBackgroundColor(BuildContext context) {
-    return _isDarkMode ? AppTheme.darkBackground : AppTheme.lightBackground;
-  }
+  // Kept for backward compatibility - prefer Theme.of(context) directly
+  Color getBackgroundColor(BuildContext context) =>
+      _isDarkMode ? AppColors.darkBackground : AppColors.lightBackground;
 
-  Color getSurfaceColor(BuildContext context) {
-    return _isDarkMode ? AppTheme.darkSurface : AppTheme.lightSurface;
-  }
+  Color getSurfaceColor(BuildContext context) =>
+      _isDarkMode ? AppColors.darkSurfaceContainerLow : AppColors.lightSurfaceContainerLow;
 
-  Color getCardColor(BuildContext context) {
-    return _isDarkMode ? const Color.fromARGB(255, 57, 57, 57) : Colors.white;
-  }
+  Color getCardColor(BuildContext context) =>
+      _isDarkMode ? AppColors.darkSurfaceContainerLow : AppColors.lightSurfaceContainerLowest;
 
-  Color getButtonColor(BuildContext context) {
-    return _isDarkMode ? const Color.fromARGB(255, 146, 145, 145) : const Color.fromARGB(255, 196, 195, 195);
-  }
+  Color getButtonColor(BuildContext context) =>
+      _isDarkMode ? AppColors.darkSurfaceContainerHigh : AppColors.lightSurfaceContainerHigh;
 
-  Color getButtonSecondaryColor(BuildContext context) {
-    return _isDarkMode ? const Color.fromARGB(255, 167, 166, 166) : const Color.fromARGB(255, 90, 89, 89);
-  }
+  Color getButtonSecondaryColor(BuildContext context) =>
+      _isDarkMode ? AppColors.darkOnSurfaceVariant : AppColors.lightOnSurfaceVariant;
 
-  Color getTextPrimaryColor(BuildContext context) {
-    return _isDarkMode ? AppTheme.darkTextPrimary : AppTheme.lightTextPrimary;
-  }
+  Color getTextPrimaryColor(BuildContext context) =>
+      Theme.of(context).colorScheme.onSurface;
 
-  Color getTextSecondaryColor(BuildContext context) {
-    return _isDarkMode ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary;
-  }
+  Color getTextSecondaryColor(BuildContext context) =>
+      _isDarkMode ? AppColors.darkOnSurfaceVariant : AppColors.lightOnSurfaceVariant;
+
+  Color getTextHintColor(BuildContext context) =>
+      _isDarkMode ? AppColors.darkOutline : AppColors.lightOutline;
 }

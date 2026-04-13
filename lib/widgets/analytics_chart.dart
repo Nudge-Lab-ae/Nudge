@@ -1,5 +1,6 @@
 // // lib/widgets/analytics_chart.dart (Custom Implementation)
 // import 'package:flutter/material.dart';
+import 'package:nudge/theme/app_theme.dart';
 // import '../models/analytics.dart';
 
 // class AnalyticsChart extends StatelessWidget {
@@ -39,7 +40,7 @@
 //                     const SizedBox(height: 4),
 //                     LinearProgressIndicator(
 //                       value: entry.value / analytics.totalContacts,
-//                       backgroundColor: Colors.grey[300],
+//                       backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
 //                       valueColor: AlwaysStoppedAnimation<Color>(
 //                         _getColorForType(entry.key),
 //                       ),
@@ -56,13 +57,13 @@
 //             const SizedBox(height: 10),
 //             LinearProgressIndicator(
 //               value: analytics.successRate / 100,
-//               backgroundColor: Colors.grey[300],
+//               backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
 //               valueColor: AlwaysStoppedAnimation<Color>(
 //                 analytics.successRate >= 70
-//                     ? Colors.green
+//                     ? AppColors.success
 //                     : analytics.successRate >= 40
-//                         ? Colors.orange
-//                         : Colors.red,
+//                         ? AppColors.warning
+//                         : Theme.of(context).colorScheme.error,
 //               ),
 //             ),
 //             const SizedBox(height: 5),
@@ -71,10 +72,10 @@
 //               style: TextStyle(
 //                 fontWeight: FontWeight.bold,
 //                 color: analytics.successRate >= 70
-//                     ? Colors.green
+//                     ? AppColors.success
 //                     : analytics.successRate >= 40
-//                         ? Colors.orange
-//                         : Colors.red,
+//                         ? AppColors.warning
+//                         : Theme.of(context).colorScheme.error,
 //               ),
 //             ),
 //           ],
@@ -85,12 +86,12 @@
 
 //   Color _getColorForType(String type) {
 //     final colorMap = {
-//       'Family': const Color(0xff3CB3E9),
-//       'Friend': Colors.green,
-//       'Colleague': Colors.orange,
-//       'Client': Colors.purple,
-//       'Mentor': Colors.teal,
+//       'Family': AppColors.lightPrimary,
+//       'Friend': AppColors.success,
+//       'Colleague': AppColors.warning,
+//       'Client': Theme.of(context).colorScheme.primary,
+//       'Mentor': Theme.of(context).colorScheme.secondary,
 //     };
-//     return colorMap[type] ?? Colors.grey;
+//     return colorMap[type] ?? Theme.of(context).colorScheme.outline;
 //   }
 // }

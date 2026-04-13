@@ -3,6 +3,7 @@ import 'dart:async';
 
 // import 'package:another_flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:nudge/main.dart';
 import 'package:nudge/models/contact.dart';
 import 'package:nudge/models/nudge.dart';
@@ -257,13 +258,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: Shimmer.fromColors(
-            baseColor: themeProvider.isDarkMode ? Colors.grey[800]! : Colors.grey[300]!,
-            highlightColor: themeProvider.isDarkMode ? Colors.grey[700]! : Colors.grey[100]!,
+            baseColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHighest! : Theme.of(context).colorScheme.surfaceContainerHigh!,
+            highlightColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.onSurfaceVariant! : Theme.of(context).colorScheme.surfaceContainerLowest!,
             child: Container(
               height: 100,
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                color: Theme.of(context).colorScheme.onSurface,
+                borderRadius: BorderRadius.circular(16),
               ),
             ),
           ),
@@ -278,11 +279,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline, size: 48, color: Colors.red),
+          Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.error),
           const SizedBox(height: 16),
           Text(
             'Failed to load nudges',
-            style: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
           ),
           const SizedBox(height: 8),
           ElevatedButton(
@@ -306,8 +307,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     
     if (user == null) {
       return Scaffold(
-        backgroundColor: themeProvider.getBackgroundColor(context),
-        body: Center(child: Text('Please log in to view notifications', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'))),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: Center(child: Text('Please log in to view notifications', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily))),
       );
     }
     
@@ -349,21 +350,21 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   children: [
                     FloatingActionButton.extended(
                     onPressed: () => _completeSelectedNudges(context, themeProvider),
-                    backgroundColor: const Color.fromARGB(255, 25, 183, 56),
+                    backgroundColor: AppColors.success,
                     icon: const Icon(Icons.check, color: Colors.white),
                     label: Text(
                       'COMPLETE ${_selectedNudgeIds.length} NUDGE${_selectedNudgeIds.length == 1 ? '' : 'S'}',
-                      style: const TextStyle(color: Colors.white, fontFamily: 'OpenSans'),
+                      style: TextStyle(color: Colors.white, fontFamily: GoogleFonts.beVietnamPro().fontFamily),
                     ),
                   ),
                   SizedBox(height: 20,),
                   FloatingActionButton.extended(
                     onPressed: () => _cancelSelectedNudges(context, themeProvider),
-                    backgroundColor: Colors.red,
+                    backgroundColor: Color.fromARGB(255, 206, 37, 85),
                     icon: const Icon(Icons.cancel, color: Colors.white),
                     label: Text(
                       'CANCEL ${_selectedNudgeIds.length} NUDGE${_selectedNudgeIds.length == 1 ? '' : 'S'}',
-                      style: const TextStyle(color: Colors.white, fontFamily: 'OpenSans'),
+                      style: TextStyle(color: Colors.white, fontFamily: GoogleFonts.beVietnamPro().fontFamily),
                     ),
                   )
                   ],
@@ -382,17 +383,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           padding: const EdgeInsets.only(left: 10),
                           child: Text(
                             'Nudges',
-                            style: TextStyle(
-                              fontSize: 22, 
-                              fontWeight: FontWeight.w800,
-                              color: themeProvider.getTextPrimaryColor(context), 
-                              fontFamily: 'Inter'
-                            ),
+                            style: GoogleFonts.plusJakartaSans(
+                                      color: theme.colorScheme.onSurface,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 22)
                           ),
                         ),
                         centerTitle: false,
                         leading: const Center(),
-                        backgroundColor: themeProvider.getBackgroundColor(context),
+                        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
                         floating: true,
                         snap: true,
                         pinned: false,
@@ -407,9 +406,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                 });
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: themeProvider.getSurfaceColor(context),
+                                backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
                                 foregroundColor: theme.colorScheme.primary,
-                                side: BorderSide(color: themeProvider.isDarkMode ? AppTheme.darkCardBorder : Colors.grey.shade300, width: 1),
+                                side: BorderSide.none,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(20),
                                 ),
@@ -426,10 +425,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                   const SizedBox(width: 6),
                                   Text(
                                     _showCalendar ? 'List View' : 'Calendar View',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
-                                      fontFamily: 'OpenSans'
+                                      fontFamily: GoogleFonts.beVietnamPro().fontFamily
                                     ),
                                   ),
                                 ],
@@ -536,11 +535,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       floatingActionButton: _selectedNudgeIds.isNotEmpty
         ? FloatingActionButton.extended(
             onPressed: () => _cancelSelectedNudges(context, themeProvider),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
             icon: const Icon(Icons.cancel, color: Colors.white),
             label: Text(
               'CANCEL ${_selectedNudgeIds.length} NUDGE${_selectedNudgeIds.length == 1 ? '' : 'S'}',
-              style: const TextStyle(color: Colors.white, fontFamily: 'OpenSans'),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily),
             ),
           )
         : const SizedBox(),
@@ -561,7 +560,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           return Stack(
             children: [
               Container(
-                color: themeProvider.getBackgroundColor(context),
+                color: Theme.of(context).scaffoldBackgroundColor,
                 child: Column(
                   children: [
                     _buildHeader(themeProvider: themeProvider),
@@ -637,7 +636,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget _buildSelectableNudgeItem(Nudge nudge, bool isSelected, bool isOverdue, BuildContext context, {required ThemeProvider themeProvider}) {
     final bool isBirthday = nudge.message.toLowerCase().contains('birthday');
     return ListTile(
-      tileColor: themeProvider.getSurfaceColor(context),
+      tileColor: Theme.of(context).colorScheme.surfaceContainerLow,
       leading: Checkbox(
         value: isSelected,
         onChanged: (value) {
@@ -653,22 +652,22 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       title: Text(
         nudge.contactName,
         style: TextStyle(
-          fontFamily: 'OpenSans',
+          fontFamily: GoogleFonts.beVietnamPro().fontFamily,
           fontWeight: FontWeight.w600,
           color: isBirthday
                           ? Colors.green.shade600
-                          : isOverdue ? const Color.fromRGBO(243, 87, 87, 1) : themeProvider.getTextPrimaryColor(context),
+                          : isOverdue ? Color.fromRGBO(243, 87, 87, 1) : Theme.of(context).colorScheme.onSurface,
         ),
       ),
-      subtitle: Text(nudge.message, style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')),
+      subtitle: Text(nudge.message, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
       trailing: Text(
         DateFormat('MMM d, h:mm a').format(nudge.scheduledTime),
         style: TextStyle(
           fontSize: 12,
-          fontFamily: 'OpenSans',
+          fontFamily: GoogleFonts.beVietnamPro().fontFamily,
           color: isBirthday
                           ? Colors.green.shade600
-                          : isOverdue ? const Color.fromRGBO(243, 87, 87, 1) : themeProvider.getTextSecondaryColor(context),
+                          : isOverdue ? Color.fromRGBO(243, 87, 87, 1) : Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       ),
       onTap: () {
@@ -722,10 +721,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 _selectedNudgeIds.length == visibleNudges.length && _selectedNudgeIds.isNotEmpty
                   ? 'DESELECT ALL' 
                   : 'SELECT ALL',
-                style: TextStyle(color: theme.colorScheme.primary, fontSize: 15, fontFamily: 'OpenSans'),
+                style: TextStyle(color: theme.colorScheme.primary, fontSize: 15, fontFamily: GoogleFonts.beVietnamPro().fontFamily),
               ),
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: theme.colorScheme.primary),
+                padding: EdgeInsets.only(left: 5, right: 5, top: 15, bottom: 15)
               ),
             ),
           ),
@@ -735,10 +735,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           Expanded(
             child: OutlinedButton.icon(
               onPressed: _exitSelectionMode,
-              icon: const Icon(Icons.cancel, color: Colors.red),
-              label: const Text('CANCEL', style: TextStyle(color: Colors.red, fontSize: 15, fontFamily: 'OpenSans')),
+              icon: Icon(Icons.cancel, color: Color.fromARGB(255, 206, 37, 85)),
+              label: Text('CANCEL', style: TextStyle(color: Color.fromARGB(255, 206, 37, 85), fontSize: 15, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Colors.red),
+                side: BorderSide(color: Color.fromARGB(255, 206, 37, 85)),
               ),
             ),
           ),
@@ -756,21 +756,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       right: 50,
       child: Material(
         elevation: 8,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: themeProvider.getSurfaceColor(context),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: themeProvider.isDarkMode ? AppTheme.darkCardBorder : Colors.grey.shade300),
+            color: Theme.of(context).colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(16),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
+              Text(
                 'Completing Nudges',
                 style: TextStyle(
-                  fontFamily: 'OpenSans',
+                  fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: Color.fromARGB(255, 17, 213, 46),
@@ -781,14 +780,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 value: _completionTotalCount > 0 
                     ? _completionSuccessCount / _completionTotalCount 
                     : 0,
-                backgroundColor: themeProvider.isDarkMode ? Colors.grey[800] : Colors.grey.shade300,
+                backgroundColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHighest : Theme.of(context).colorScheme.surfaceContainerLowest,
                 valueColor: const AlwaysStoppedAnimation<Color>(Color.fromARGB(255, 13, 199, 54)),
               ),
               const SizedBox(height: 8),
               Text(
                 '$_completionSuccessCount of $_completionTotalCount nudges completed'
                 '${_completionErrorCount > 0 ? ' ($_completionErrorCount errors)' : ''}',
-                style: TextStyle(fontSize: 14, color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'),
+                style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily),
               ),
             ],
           ),
@@ -807,24 +806,23 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       right: 50,
       child: Material(
         elevation: 8,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: themeProvider.getSurfaceColor(context),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: themeProvider.isDarkMode ? AppTheme.darkCardBorder : Colors.grey.shade300),
+            color: Theme.of(context).colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(16),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
+               Text(
                 'Cancelling Nudges',
                 style: TextStyle(
-                  fontFamily: 'OpenSans',
+                  fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Colors.red,
+                  color: Theme.of(context).colorScheme.error,
                 ),
               ),
               const SizedBox(height: 12),
@@ -832,14 +830,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 value: _cancellationTotalCount > 0 
                     ? _cancellationSuccessCount / _cancellationTotalCount 
                     : 0,
-                backgroundColor: themeProvider.isDarkMode ? Colors.grey[800] : Colors.grey.shade300,
-                valueColor: const AlwaysStoppedAnimation<Color>(Colors.red),
+                backgroundColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHighest : Theme.of(context).colorScheme.surfaceContainerLowest,
+                valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.error),
               ),
               const SizedBox(height: 8),
               Text(
                 '$_cancellationSuccessCount of $_cancellationTotalCount nudges cancelled'
                 '${_cancellationErrorCount > 0 ? ' ($_cancellationErrorCount errors)' : ''}',
-                style: TextStyle(fontSize: 14, color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'),
+                style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily),
               ),
             ],
           ),
@@ -856,17 +854,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: themeProvider.getSurfaceColor(context),
-        title: Text('CANCEL NUDGES', style: TextStyle(fontWeight: FontWeight.w700, color: theme.colorScheme.primary, fontFamily: 'OpenSans')),
-        content: Text('Are you sure you want to cancel ${_selectedNudgeIds.length} nudge${_selectedNudgeIds.length == 1 ? '' : 's'}?', style: TextStyle(color: themeProvider.getTextPrimaryColor(context))),
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
+        title: Text('CANCEL NUDGES', style: TextStyle(fontWeight: FontWeight.w700, color: theme.colorScheme.primary, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
+        content: Text('Are you sure you want to cancel ${_selectedNudgeIds.length} nudge${_selectedNudgeIds.length == 1 ? '' : 's'}?', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: Text('Cancel', style: TextStyle(color: theme.colorScheme.primary, fontFamily: 'OpenSans')),
+            child: Text('Cancel', style: TextStyle(color: theme.colorScheme.primary, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Cancel Nudges', style: TextStyle(color: Colors.red, fontFamily: 'OpenSans')),
+            child: Text('Cancel Nudges', style: TextStyle(color: Theme.of(context).colorScheme.error, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
           ),
         ],
       ),
@@ -886,17 +884,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: themeProvider.getSurfaceColor(context),
-        title: Text('COMPLETE NUDGES', style: TextStyle(fontWeight: FontWeight.w700, color: theme.colorScheme.primary, fontFamily: 'OpenSans')),
-        content: Text('Are you sure you want to complete ${_selectedNudgeIds.length} nudge${_selectedNudgeIds.length == 1 ? '' : 's'}?', style: TextStyle(color: themeProvider.getTextPrimaryColor(context))),
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
+        title: Text('COMPLETE NUDGES', style: TextStyle(fontWeight: FontWeight.w700, color: theme.colorScheme.primary, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
+        content: Text('Are you sure you want to complete ${_selectedNudgeIds.length} nudge${_selectedNudgeIds.length == 1 ? '' : 's'}?', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: Text('Cancel', style: TextStyle(color: theme.colorScheme.primary, fontFamily: 'OpenSans')),
+            child: Text('Cancel', style: TextStyle(color: theme.colorScheme.primary, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Complete Nudges', style: TextStyle(color: Color.fromARGB(255, 14, 203, 67), fontFamily: 'OpenSans')),
+            child: Text('Complete Nudges', style: TextStyle(color: Color.fromARGB(255, 14, 203, 67), fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
           ),
         ],
       ),
@@ -968,7 +966,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
        TopMessageService().showMessage(
           context: context,
           message: 'Completed $_completionSuccessCount nudge${_completionSuccessCount == 1 ? '' : 's'}${_completionErrorCount > 0 ? '. $_completionErrorCount failed' : ''}',
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
           icon: Icons.check,
         );
     }
@@ -1076,9 +1074,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               DateFormat('EEEE, MMMM d, y').format(_selectedDay!),
               style: TextStyle(
                 fontSize: 18,
-                fontFamily: 'OpenSans',
+                fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                 fontWeight: FontWeight.bold,
-                color: themeProvider.getTextPrimaryColor(context),
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ),
@@ -1112,15 +1110,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             Icon(
               Icons.notifications_off,
               size: 64,
-              color: themeProvider.getTextSecondaryColor(context),
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(height: 16),
             Text(
               'No nudges scheduled',
               style: TextStyle(
                 fontSize: 16,
-                fontFamily: 'OpenSans',
-                color: themeProvider.getTextSecondaryColor(context),
+                fontFamily: GoogleFonts.beVietnamPro().fontFamily,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -1165,7 +1163,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       const Color.fromRGBO(45, 161, 175, 0.7),
                     ],
             ),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(themeProvider.isDarkMode ? 0.3 : 0.1),
@@ -1212,15 +1210,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     children: [
                       _buildCompactFilterToggle('TODAY', 0, themeProvider: themeProvider),
-                      Container(width: 1, height: 30, color: Colors.white.withOpacity(0.3)),
+                      Container(width: 1, height: 30, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
                       _buildCompactFilterToggle('THIS WEEK', 1, themeProvider: themeProvider),
-                      Container(width: 1, height: 30, color: Colors.white.withOpacity(0.3)),
+                      Container(width: 1, height: 30, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
                       _buildCompactFilterToggle('THIS MONTH', 2, themeProvider: themeProvider),
                     ],
                   ),
@@ -1245,27 +1243,27 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           width: 36,
           height: 36,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: Theme.of(context).colorScheme.onInverseSurface.withOpacity(0.2),
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, color: Colors.white, size: 18),
+          child: Icon(icon, color: Theme.of(context).colorScheme.onInverseSurface, size: 18),
         ),
         const SizedBox(height: 4),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
-            fontFamily: 'OpenSans',
+            fontFamily: GoogleFonts.beVietnamPro().fontFamily,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onInverseSurface,
           ),
         ),
         Text(
           label,
           style: TextStyle(
             fontSize: 10,
-            fontFamily: 'OpenSans',
-            color: Colors.white.withOpacity(0.9),
+            fontFamily: GoogleFonts.beVietnamPro().fontFamily,
+            color: Theme.of(context).colorScheme.onInverseSurface.withOpacity(0.9),
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -1282,14 +1280,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
             color: isSelected ? Colors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
             text,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 12,
-              fontFamily: 'OpenSans',
+              fontFamily: GoogleFonts.beVietnamPro().fontFamily,
               fontWeight: FontWeight.w600,
               color: isSelected ? Colors.black : Colors.white,
             ),
@@ -1417,15 +1415,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           Icon(
             Icons.notifications_off,
             size: 64,
-            color: themeProvider.getTextSecondaryColor(context),
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
           const SizedBox(height: 16),
           Text(
             message,
             style: TextStyle(
               fontSize: 16,
-              fontFamily: 'OpenSans',
-              color: themeProvider.getTextPrimaryColor(context),
+              fontFamily: GoogleFonts.beVietnamPro().fontFamily,
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -1434,8 +1432,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             'All caught up! 🎉',
             style: TextStyle(
               fontSize: 14,
-              fontFamily: 'OpenSans',
-              color: themeProvider.getTextSecondaryColor(context),
+              fontFamily: GoogleFonts.beVietnamPro().fontFamily,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -1454,7 +1452,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             title,
             style: TextStyle(
               fontSize: 16,
-              fontFamily: 'OpenSans',
+              fontFamily: GoogleFonts.beVietnamPro().fontFamily,
               fontWeight: FontWeight.bold,
               color: theme.colorScheme.primary,
             ),
@@ -1464,20 +1462,90 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
               color: theme.colorScheme.primary,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
             ),
             child: Text(
               count.toString(),
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 12,
-                fontFamily: 'OpenSans',
+                fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+
+  Widget _buildNudgeAvatar(Nudge nudge, ThemeProvider themeProvider) {
+    final isDark = themeProvider.isDarkMode;
+    final scheme = Theme.of(context).colorScheme;
+    final initials = _getContactInitials(nudge.contactName);
+    final iconIndex = getRandomIndex(nudge.contactId);
+    final assetPath = 'assets/contact-icons/$iconIndex.png';
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          width: 48,
+          height: 48,
+          decoration: const BoxDecoration(shape: BoxShape.circle),
+          child: ClipOval(
+            child: nudge.contactImageUrl.isNotEmpty
+                ? Image.network(
+                    nudge.contactImageUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) =>
+                        Image.asset(assetPath, fit: BoxFit.cover),
+                  )
+                : Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Image.asset(assetPath, fit: BoxFit.cover),
+                      Container(
+                        color: Colors.black.withOpacity(isDark ? 0.38 : 0.20),
+                      ),
+                      Center(
+                        child: Text(
+                          initials,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black.withOpacity(0.45),
+                                blurRadius: 4,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+        // VIP star badge
+        if (nudge.isVIP)
+          Positioned(
+            right: 0,
+            bottom: 0,
+            child: Container(
+              width: 16,
+              height: 16,
+              decoration: BoxDecoration(
+                color: AppColors.vipGold,
+                shape: BoxShape.circle,
+                border: Border.all(color: scheme.surface, width: 1.5),
+              ),
+              child: const Icon(Icons.star, size: 9, color: Colors.white),
+            ),
+          ),
+      ],
     );
   }
 
@@ -1534,43 +1602,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         child: Card(
           margin: const EdgeInsets.symmetric(vertical: 4),
           elevation: 0.7,
-          color: birthdayCardColor ?? themeProvider.getSurfaceColor(context),
+          color: birthdayCardColor ?? Theme.of(context).colorScheme.surfaceContainerLow,
           child: ListTile(
-            leading: Stack(
-              children: [
-                CircleAvatar(
-                  radius: 24,
-                  backgroundColor: (themeProvider.isDarkMode ? AppTheme.darkSurfaceVariant : Colors.transparent),
-                  backgroundImage: nudge.contactImageUrl.isNotEmpty
-                      ? NetworkImage(nudge.contactImageUrl)
-                      : AssetImage('assets/contact-icons/$iconIndex.png') as ImageProvider,
-                  child: nudge.contactImageUrl.isEmpty
-                      ? Text(
-                          initials,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'OpenSans',
-                            fontSize: 16,
-                          ),
-                        )
-                      : null,
-                ),
-                if (nudge.isVIP)
-                  Positioned(
-                    right: 0,
-                    bottom: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: const BoxDecoration(
-                        color: Colors.amber,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.star, size: 12, color: Colors.white),
-                    ),
-                ),
-              ],
-            ),
+            leading: _buildNudgeAvatar(nudge, themeProvider),
             title: Row(
               children: [
                 Expanded(
@@ -1579,12 +1613,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 15,
-                      fontFamily: 'OpenSans',
+                      fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                       color:/*  isBirthday
                           ? Colors.green.shade600
                           :  */isOverdue && !isBirthday
                           ? const Color.fromRGBO(243, 87, 87, 1) 
-                          : (themeProvider.getTextPrimaryColor(context)),
+                          : (Theme.of(context).colorScheme.onSurface),
                     ),
                   ),
                 ),
@@ -1598,8 +1632,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   style: TextStyle(
                     fontSize: 12,
                     height: 1.4,
-                    fontFamily: 'OpenSans',
-                    color: themeProvider.getTextSecondaryColor(context),
+                    fontFamily: GoogleFonts.beVietnamPro().fontFamily,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -1608,19 +1642,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     Icon(
                       Icons.access_time, 
                       size: 12, 
-                      color: themeProvider.getTextSecondaryColor(context)
+                      color: Theme.of(context).colorScheme.onSurfaceVariant
                     ),
                     const SizedBox(width: 4),
                     Text(
                       DateFormat('MMM d, y • h:mm a').format(nudge.scheduledTime),
                       style: TextStyle(
                         fontSize: 12,
-                        fontFamily: 'OpenSans',
+                        fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                         color: /* isBirthday
                           ? Colors.green.shade600
                           :  */ isOverdue  && !isBirthday
                             ? const Color.fromRGBO(243, 87, 87, 1)  
-                            : (themeProvider.getTextSecondaryColor(context)),
+                            : (Theme.of(context).colorScheme.onSurfaceVariant),
                         fontWeight: FontWeight.normal,
                       ),
                     ),
@@ -1654,23 +1688,23 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: themeProvider.getSurfaceColor(context),
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
         title: Text(
           'Complete Nudge',
-          style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans', fontWeight: FontWeight.w600),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily, fontWeight: FontWeight.w600),
         ),
         content: Text(
           'Mark nudge for ${nudge.contactName} as complete?',
-          style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: Text('Cancel', style: TextStyle(color: theme.colorScheme.primary, fontFamily: 'OpenSans')),
+            child: Text('Cancel', style: TextStyle(color: theme.colorScheme.primary, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Complete', style: TextStyle(color: Colors.green, fontFamily: 'OpenSans')),
+            child: Text('Complete', style: TextStyle(color: AppColors.success, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
           ),
         ],
       ),
@@ -1754,14 +1788,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       //   dismissDirection: FlushbarDismissDirection.HORIZONTAL,
       //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
       //   messageText: Center(
-      //     child: Text('Error: $e', style: const TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-      //         color: Colors.white, fontWeight: FontWeight.w400)),
+      //     child: Text('Error: $e', style: TextStyle(fontFamily: GoogleFonts.beVietnamPro().fontFamily, fontSize: 14,
+      //         color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w400)),
       //   ),
       // ).show(navigatorKey.currentContext!);
        TopMessageService().showMessage(
           context: context,
           message: 'Error: $e',
-          backgroundColor: Colors.deepOrange,
+          backgroundColor: Theme.of(context).colorScheme.tertiary,
           icon: Icons.error,
         );
       return null;
@@ -1774,10 +1808,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     IconData icon;
 
     if (action == 'complete') {
-      color = theme.colorScheme.primary;
+      color = const Color.fromARGB(255, 28, 174, 35);
       icon = Icons.check;
     } else {
-      color = Colors.orange;
+      color = const Color.fromARGB(255, 243, 122, 57);
       icon = Icons.snooze;
     }
 
@@ -1788,11 +1822,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         child: Row(
           mainAxisAlignment: action == 'complete' ? MainAxisAlignment.start : MainAxisAlignment.end,
           children: [
-            Icon(icon, color: Colors.white),
+            Icon(icon, color: Theme.of(context).colorScheme.onSurface),
             const SizedBox(width: 10),
             Text(
               action == 'complete' ? 'Complete' : 'Snooze',
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontFamily: 'OpenSans'),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontFamily: GoogleFonts.beVietnamPro().fontFamily),
             ),
           ],
         ),
@@ -1814,7 +1848,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     
     showModalBottomSheet(
       context: context,
-      backgroundColor: themeProvider.getSurfaceColor(context),
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
       builder: (context) {
         return SafeArea(
           child: Column(
@@ -1822,40 +1856,40 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             children: [
               const SizedBox(height: 20),
               ListTile(
-                leading: Icon(Icons.person, color: themeProvider.getTextPrimaryColor(context)),
-                title: Text('View Contact', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+                leading: Icon(Icons.person, color: Theme.of(context).colorScheme.onSurface),
+                title: Text('View Contact', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
                 onTap: () {
                   Navigator.pop(context);
                   _viewContact(nudge.contactName);
                 },
               ),
               ListTile(
-                leading: Icon(Icons.schedule, color: themeProvider.getTextPrimaryColor(context)),
-                title: Text('Adjust Frequency', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+                leading: Icon(Icons.schedule, color: Theme.of(context).colorScheme.onSurface),
+                title: Text('Adjust Frequency', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
                 onTap: () {
                   Navigator.pop(context);
                   _showFrequencyDialog(nudge, themeProvider, Provider.of<AuthService>(context, listen: false).currentUser!.uid);
                 },
               ),
               ListTile(
-                leading: Icon(Icons.snooze, color: themeProvider.getTextPrimaryColor(context)),
-                title: Text('Snooze', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+                leading: Icon(Icons.snooze, color: Theme.of(context).colorScheme.onSurface),
+                title: Text('Snooze', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
                 onTap: () {
                   Navigator.pop(context);
                   _showSnoozeDialog(nudge, themeProvider, Provider.of<AuthService>(context, listen: false).currentUser!.uid);
                 },
               ),
               ListTile(
-                leading: Icon(Icons.check_circle, color: themeProvider.getTextPrimaryColor(context)),
-                title: Text('Mark Complete', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+                leading: Icon(Icons.check_circle, color: Theme.of(context).colorScheme.onSurface),
+                title: Text('Mark Complete', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
                 onTap: () {
                   Navigator.pop(context);
                   _confirmCompleteNudge(nudge, context, themeProvider);
                 },
               ),
               ListTile(
-                leading: Icon(Icons.cancel, color: themeProvider.getTextPrimaryColor(context)),
-                title: Text('Cancel Nudge', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+                leading: Icon(Icons.cancel, color: Theme.of(context).colorScheme.onSurface),
+                title: Text('Cancel Nudge', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
                 onTap: () {
                   Navigator.pop(context);
                   _cancelNudge(nudge, themeProvider, Provider.of<AuthService>(context, listen: false).currentUser!.uid);
@@ -1863,8 +1897,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ),
               if (!_isSelecting)
                 ListTile(
-                  leading: Icon(Icons.select_all, color: themeProvider.getTextPrimaryColor(context)),
-                  title: Text('Select Multiple', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+                  leading: Icon(Icons.select_all, color: Theme.of(context).colorScheme.onSurface),
+                  title: Text('Select Multiple', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
                   onTap: () {
                     Navigator.pop(context);
                     setState(() {
@@ -1897,7 +1931,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
      TopMessageService().showMessage(
         context: context,
         message: 'Contact not found.',
-        backgroundColor: Colors.deepOrange,
+        backgroundColor: Theme.of(context).colorScheme.tertiary,
         icon: Icons.error,
       );
     }
@@ -1912,16 +1946,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setState) {
           return AlertDialog(
-            backgroundColor: themeProvider.getSurfaceColor(context),
-            title: Text('Snooze Nudge', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+            backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
+            title: Text('Snooze Nudge', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('How long would you like to snooze this nudge?', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+                Text('How long would you like to snooze this nudge?', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
                 const SizedBox(height: 16),
                 DropdownButton<int>(
                   value: selectedSnoozeHours,
-                  style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily),
                   onChanged: (int? newValue) {
                     if (newValue != null) {
                       setState(() {
@@ -1940,7 +1974,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text('Cancel', style: TextStyle(color: theme.colorScheme.primary, fontFamily: 'OpenSans')),
+                child: Text('Cancel', style: TextStyle(color: theme.colorScheme.primary, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
               ),
               TextButton(
                 onPressed: () async{
@@ -1964,8 +1998,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
                     //   messageText: Center(
                     //     child: Text('Nudge snoozed for $selectedSnoozeHours hour${selectedSnoozeHours > 1 ? 's' : ''}', 
-                    //       style: const TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-                    //           color: Colors.white, fontWeight: FontWeight.w400)),
+                    //       style: TextStyle(fontFamily: GoogleFonts.beVietnamPro().fontFamily, fontSize: 14,
+                    //           color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w400)),
                     //   ),
                     // ).show(context);
                      TopMessageService().showMessage(
@@ -1976,7 +2010,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       );
                   }
                 },
-                child: Text('Snooze', style: TextStyle(color: theme.colorScheme.primary, fontFamily: 'OpenSans')),
+                child: Text('Snooze', style: TextStyle(color: theme.colorScheme.primary, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
               ),
             ],
           );
@@ -2041,13 +2075,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: themeProvider.getSurfaceColor(context),
-        title: Text('Cancel Nudge', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
-        content: Text('Are you sure you want to cancel the nudge for ${nudge.contactName}?', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
+        title: Text('Cancel Nudge', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
+        content: Text('Are you sure you want to cancel the nudge for ${nudge.contactName}?', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Keep', style: TextStyle(color: theme.colorScheme.primary, fontFamily: 'OpenSans')),
+            child: Text('Keep', style: TextStyle(color: theme.colorScheme.primary, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
           ),
           TextButton(
             onPressed: () {
@@ -2057,7 +2091,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 // ScaffoldMessenger.of(context).showSnackBar(
                 //   SnackBar(
                 //     content: Text('Nudge for ${nudge.contactName} cancelled'),
-                //     backgroundColor: Colors.orange,
+                //     backgroundColor: AppColors.warning,
                 //   ),
                 // );
                 TopMessageService().showMessage(
@@ -2068,7 +2102,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 );
               }
             },
-            child: const Text('Cancel Nudge', style: TextStyle(color: Colors.red, fontFamily: 'OpenSans')),
+            child: Text('Cancel Nudge', style: TextStyle(color: Theme.of(context).colorScheme.error, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
           ),
         ],
       ),
@@ -2084,8 +2118,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: themeProvider.getSurfaceColor(context),
-        borderRadius: BorderRadius.circular(12),
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(themeProvider.isDarkMode ? 0.3 : 0.08),
@@ -2130,24 +2164,24 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           todayTextStyle: TextStyle(
             color: theme.colorScheme.primary,
             fontWeight: FontWeight.bold,
-            fontFamily: 'OpenSans',
+            fontFamily: GoogleFonts.beVietnamPro().fontFamily,
             fontSize: 13,
           ),
-          selectedTextStyle: const TextStyle(
-            color: Colors.white,
+          selectedTextStyle: TextStyle(
+            color: Theme.of(context).colorScheme.onInverseSurface,
             fontWeight: FontWeight.bold,
-            fontFamily: 'OpenSans',
+            fontFamily: GoogleFonts.beVietnamPro().fontFamily,
             fontSize: 13,
           ),
           defaultTextStyle: TextStyle(
             fontSize: 13,
-            color: themeProvider.getTextPrimaryColor(context),
-            fontFamily: 'OpenSans'
+            color: Theme.of(context).colorScheme.onSurface,
+            fontFamily: GoogleFonts.beVietnamPro().fontFamily
           ),
           weekendTextStyle: TextStyle(
             fontSize: 13,
-            color: themeProvider.getTextPrimaryColor(context),
-            fontFamily: 'OpenSans'
+            color: Theme.of(context).colorScheme.onSurface,
+            fontFamily: GoogleFonts.beVietnamPro().fontFamily
           ),
           markerDecoration: BoxDecoration(
             color: theme.colorScheme.primary,
@@ -2158,8 +2192,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           cellPadding: const EdgeInsets.all(4),
           cellMargin: EdgeInsets.zero,
           outsideTextStyle: TextStyle(
-            color: themeProvider.getTextSecondaryColor(context),
-            fontFamily: 'OpenSans',
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontFamily: GoogleFonts.beVietnamPro().fontFamily,
             fontSize: 13,
           ),
         ),
@@ -2169,9 +2203,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           titleCentered: true,
           titleTextStyle: TextStyle(
             fontSize: 14,
-            fontFamily: 'OpenSans',
+            fontFamily: GoogleFonts.beVietnamPro().fontFamily,
             fontWeight: FontWeight.w600,
-            color: themeProvider.getTextPrimaryColor(context),
+            color: Theme.of(context).colorScheme.onSurface,
           ),
           leftChevronIcon: Icon(
             Icons.chevron_left,
@@ -2190,15 +2224,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         
         daysOfWeekStyle: DaysOfWeekStyle(
           weekdayStyle: TextStyle(
-            color: themeProvider.getTextPrimaryColor(context),
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w600,
-            fontFamily: 'OpenSans',
+            fontFamily: GoogleFonts.beVietnamPro().fontFamily,
             fontSize: 12,
           ),
           weekendStyle: TextStyle(
-            color: themeProvider.getTextPrimaryColor(context),
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w600,
-            fontFamily: 'OpenSans',
+            fontFamily: GoogleFonts.beVietnamPro().fontFamily,
             fontSize: 12,
           ),
         ),
@@ -2215,17 +2249,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: themeProvider.getBackgroundColor(context),
-        border: Border(
-          bottom: BorderSide(color: themeProvider.isDarkMode ? AppTheme.darkCardBorder : Colors.grey.shade300, width: 1),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(themeProvider.isDarkMode ? 0.1 : 0.05),
-            blurRadius: 3,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: Theme.of(context).scaffoldBackgroundColor,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -2237,12 +2261,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               });
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: themeProvider.getSurfaceColor(context),
+              backgroundColor: theme.colorScheme.surfaceContainerLow,
               foregroundColor: theme.colorScheme.primary,
-              side: BorderSide(color: themeProvider.isDarkMode ? AppTheme.darkCardBorder : Colors.grey.shade300, width: 1),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
+              shape: const StadiumBorder(),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               elevation: 0,
             ),
@@ -2256,9 +2277,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 const SizedBox(width: 8),
                 Text(
                   _showCalendar ? 'View in List' : 'View in Calendar',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
-                    fontFamily: 'OpenSans',
+                    fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -2295,12 +2316,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              backgroundColor: themeProvider.getSurfaceColor(context),
+              backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
               title: Text(
                 'Adjust Social Group',
                 style: TextStyle(
                   color: theme.colorScheme.primary,
-                  fontFamily: 'OpenSans',
+                  fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                   fontWeight: FontWeight.w600,
                 ),
                 textAlign: TextAlign.center,
@@ -2319,14 +2340,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: theme.colorScheme.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         children: [
                           CircleAvatar(
                             radius: 20,
                             backgroundColor: themeProvider.isDarkMode 
-                                ? AppTheme.darkSurfaceVariant 
+                                ? Theme.of(context).colorScheme.surfaceContainerHighest 
                                 : Colors.transparent,
                             backgroundImage: nudgeContact.imageUrl.isNotEmpty
                                 ? NetworkImage(nudgeContact.imageUrl)
@@ -2334,8 +2355,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             child: nudgeContact.imageUrl.isEmpty
                                 ? Text(
                                     _getContactInitials(nudgeContact.name).toUpperCase(),
-                                    style: const TextStyle(
-                                      color: Colors.white,
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.onSurface,
                                       fontWeight: FontWeight.bold,
                                       fontSize: 14,
                                     ),
@@ -2351,16 +2372,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                   nudgeContact.name,
                                   style: TextStyle(
                                     fontWeight: FontWeight.w600,
-                                    color: themeProvider.getTextPrimaryColor(context),
-                                    fontFamily: 'OpenSans',
+                                    color: Theme.of(context).colorScheme.onSurface,
+                                    fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                                   ),
                                 ),
                                 Text(
                                   'Current: ${currentGroup.name!='' ? currentGroup.name: 'No group'}',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: themeProvider.getTextSecondaryColor(context),
-                                    fontFamily: 'OpenSans',
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                                   ),
                                 ),
                               ],
@@ -2377,8 +2398,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: themeProvider.getTextPrimaryColor(context),
-                        fontFamily: 'OpenSans',
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                       ),
                     ),
                     
@@ -2410,17 +2431,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                 color: isSelected 
                                     ? theme.colorScheme.primary.withOpacity(0.1)
                                     : themeProvider.isDarkMode 
-                                        ? AppTheme.darkSurfaceVariant 
-                                        : Colors.grey.shade50,
-                                borderRadius: BorderRadius.circular(12),
+                                        ? Theme.of(context).colorScheme.surfaceContainerHighest 
+                                        : Theme.of(context).colorScheme.outline,
+                                borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
                                   color: isSelected
                                       ? theme.colorScheme.primary
                                       : isCurrentGroup
-                                          ? Colors.green.withOpacity(0.3)
+                                          ? AppColors.success.withOpacity(0.3)
                                           : themeProvider.isDarkMode 
-                                              ? AppTheme.darkCardBorder 
-                                              : Colors.grey.shade200,
+                                              ? AppColors.darkSurfaceContainerHighest 
+                                              : Theme.of(context).colorScheme.surfaceContainerLowest,
                                   width: isSelected ? 2 : 1,
                                 ),
                               ),
@@ -2436,7 +2457,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                     ),
                                     child: Icon(
                                       _getGroupIcon(group.name),
-                                      color: Colors.white,
+                                      color: Theme.of(context).colorScheme.onSurface,
                                       size: 20,
                                     ),
                                   ),
@@ -2453,8 +2474,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                                 group.name,
                                                 style: TextStyle(
                                                   fontWeight: FontWeight.w600,
-                                                  color: themeProvider.getTextPrimaryColor(context),
-                                                  fontFamily: 'OpenSans',
+                                                  color: Theme.of(context).colorScheme.onSurface,
+                                                  fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                                                 ),
                                               ),
                                             ),
@@ -2462,16 +2483,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                               Container(
                                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                                 decoration: BoxDecoration(
-                                                  color: Colors.green,
-                                                  borderRadius: BorderRadius.circular(12),
+                                                  color: AppColors.success,
+                                                  borderRadius: BorderRadius.circular(16),
                                                 ),
-                                                child: const Text(
+                                                child: Text(
                                                   'Current',
                                                   style: TextStyle(
-                                                    color: Colors.white,
+                                                    color: Theme.of(context).colorScheme.onSurface,
                                                     fontSize: 10,
                                                     fontWeight: FontWeight.w600,
-                                                    fontFamily: 'OpenSans',
+                                                    fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                                                   ),
                                                 ),
                                               ),
@@ -2483,7 +2504,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                           style: TextStyle(
                                             fontSize: 12,
                                             color: Color(int.parse(group.colorCode.substring(1, 7), radix: 16) + 0xFF000000),
-                                            fontFamily: 'OpenSans',
+                                            fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                                           ),
                                         ),
                                         // const SizedBox(height: 2),
@@ -2491,8 +2512,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                         //   '${group.memberCount} members',
                                         //   style: TextStyle(
                                         //     fontSize: 11,
-                                        //     color: themeProvider.getTextSecondaryColor(context),
-                                        //     fontFamily: 'OpenSans',
+                                        //     color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                        //     fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                                         //   ),
                                         // ),
                                       ],
@@ -2518,8 +2539,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       'The contact will inherit the frequency settings of the selected group.',
                       style: TextStyle(
                         fontSize: 12,
-                        fontFamily: 'OpenSans',
-                        color: themeProvider.getTextSecondaryColor(context),
+                        fontFamily: GoogleFonts.beVietnamPro().fontFamily,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontStyle: FontStyle.normal,
                       ),
                     ),
@@ -2533,7 +2554,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     'Cancel',
                     style: TextStyle(
                       color: theme.colorScheme.primary,
-                      fontFamily: 'OpenSans',
+                      fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                     ),
                   ),
                 ),
@@ -2605,7 +2626,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: selectedGroup == null || selectedGroup?.id == currentGroup.id
-                        ? Colors.grey
+                        ? Theme.of(context).colorScheme.outline
                         : theme.colorScheme.primary,
                   ),
                   child: Text(
@@ -2614,9 +2635,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         : (selectedGroup?.id == currentGroup.id 
                             ? 'Already in this Group' 
                             : 'Reassign to Group'),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontFamily: 'OpenSans',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onInverseSurface,
+                      fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                     ),
                   ),
                 ),
@@ -2640,10 +2661,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     //   messageText: Center(
     //     child: Text(
     //       'Reassigning contact to new group...',
-    //       style: const TextStyle(
-    //         fontFamily: 'OpenSans',
+    //       style: TextStyle(
+    //         fontFamily: GoogleFonts.beVietnamPro().fontFamily,
     //         fontSize: 14,
-    //         color: Colors.white,
+    //         color: Theme.of(context).colorScheme.onSurface,
     //         fontWeight: FontWeight.w400,
     //       ),
     //     ),
@@ -2663,16 +2684,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     //   borderRadius: BorderRadius.zero,
     //   duration: const Duration(seconds: 2),
     //   flushbarPosition: FlushbarPosition.TOP,
-    //   backgroundColor: Colors.green,
+    //   backgroundColor: AppColors.success,
     //   dismissDirection: FlushbarDismissDirection.HORIZONTAL,
     //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn,
     //   messageText: Center(
     //     child: Text(
     //       message,
-    //       style: const TextStyle(
-    //         fontFamily: 'OpenSans',
+    //       style: TextStyle(
+    //         fontFamily: GoogleFonts.beVietnamPro().fontFamily,
     //         fontSize: 14,
-    //         color: Colors.white,
+    //         color: Theme.of(context).colorScheme.onSurface,
     //         fontWeight: FontWeight.w400,
     //       ),
     //     ),
@@ -2681,7 +2702,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
      TopMessageService().showMessage(
         context: context,
         message: message,
-        backgroundColor: Colors.green,
+        backgroundColor: AppColors.success,
         icon: Icons.check,
       );
   }
@@ -2692,16 +2713,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     //     borderRadius: BorderRadius.zero,
     //     duration: const Duration(seconds: 2),
     //     flushbarPosition: FlushbarPosition.TOP,
-    //     backgroundColor: Colors.deepOrange,
+    //     backgroundColor: Theme.of(context).colorScheme.tertiary,
     //     dismissDirection: FlushbarDismissDirection.HORIZONTAL,
     //     forwardAnimationCurve: Curves.fastLinearToSlowEaseIn,
     //     messageText: Center(
     //       child: Text(
     //         message,
-    //         style: const TextStyle(
-    //           fontFamily: 'OpenSans',
+    //         style: TextStyle(
+    //           fontFamily: GoogleFonts.beVietnamPro().fontFamily,
     //           fontSize: 14,
-    //           color: Colors.white,
+    //           color: Theme.of(context).colorScheme.onSurface,
     //           fontWeight: FontWeight.w400,
     //         ),
     //       ),
@@ -2710,7 +2731,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
      TopMessageService().showMessage(
         context: context,
         message: message,
-        backgroundColor: Colors.deepOrange,
+        backgroundColor: Theme.of(context).colorScheme.tertiary,
         icon: Icons.error,
       );
   }

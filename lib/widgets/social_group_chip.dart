@@ -13,10 +13,10 @@ class SocialGroupChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
+        color: Theme.of(context).colorScheme.outline,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Colors.grey.shade300,
+          color: Theme.of(context).colorScheme.onSurface,
         ),
       ),
       child: Text(

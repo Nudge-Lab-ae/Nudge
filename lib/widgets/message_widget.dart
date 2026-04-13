@@ -1,5 +1,6 @@
 // top_message_widget.dart
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class TopMessageWidget extends StatefulWidget {
   final Duration duration;
@@ -132,7 +133,7 @@ class _TopMessageWidgetState extends State<TopMessageWidget>
               color: widget.textColor,
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              fontFamily: 'OpenSans'
+              fontFamily: GoogleFonts.beVietnamPro().fontFamily
             ), textAlign: TextAlign.center,
             // maxLines: 1,
             // overflow: TextOverflow.ellipsis,

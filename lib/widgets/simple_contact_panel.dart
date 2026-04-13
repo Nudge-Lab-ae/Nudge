@@ -1,5 +1,6 @@
 // lib/widgets/simple_contact_panel.dart - IMPROVED
 import 'package:flutter/material.dart';
+import 'package:nudge/theme/app_theme.dart';
 import 'package:nudge/services/message_service.dart';
 import '../models/contact.dart';
 import '../services/api_service.dart';
@@ -38,8 +39,8 @@ class _SimpleContactPanelState extends State<SimpleContactPanel> {
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.onSurface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
@@ -53,8 +54,8 @@ class _SimpleContactPanelState extends State<SimpleContactPanel> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
+                  color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
             ),
@@ -70,8 +71,8 @@ class _SimpleContactPanelState extends State<SimpleContactPanel> {
                   backgroundColor: _ringColor,
                   child: Text(
                     contact.name.substring(0, 1).toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
                     ),
@@ -83,7 +84,7 @@ class _SimpleContactPanelState extends State<SimpleContactPanel> {
                   style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xff333333),
+                    color: AppColors.darkSurfaceContainerHighest,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -106,17 +107,17 @@ class _SimpleContactPanelState extends State<SimpleContactPanel> {
                 const SizedBox(height: 12),
                 Text(
                   'Last connected: ${_getTimeAgo(daysAgo)}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey,
+                    color: Theme.of(context).colorScheme.outline,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Category: ${contact.connectionType}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey,
+                    color: Theme.of(context).colorScheme.outline,
                   ),
                 ),
               ],
@@ -138,7 +139,7 @@ class _SimpleContactPanelState extends State<SimpleContactPanel> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xff333333),
+                    color: AppColors.darkSurfaceContainerHighest,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -164,11 +165,11 @@ class _SimpleContactPanelState extends State<SimpleContactPanel> {
                       child: OutlinedButton(
                         onPressed: () => Navigator.pop(context),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.grey,
-                          side: const BorderSide(color: Colors.grey),
+                          foregroundColor: Theme.of(context).colorScheme.outline,
+                          side: BorderSide(color: Theme.of(context).colorScheme.outline),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(16),
                           ),
                         ),
                         child: const Text('CANCEL'),
@@ -180,8 +181,8 @@ class _SimpleContactPanelState extends State<SimpleContactPanel> {
                           ? Container(
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                color: const Color(0xFF3CB3E9).withOpacity(0.7),
+                                borderRadius: BorderRadius.circular(16),
+                                color: AppColors.lightPrimary.withOpacity(0.7),
                               ),
                               child: const Center(
                                 child: CircularProgressIndicator(
@@ -193,16 +194,16 @@ class _SimpleContactPanelState extends State<SimpleContactPanel> {
                           : ElevatedButton(
                               onPressed: _logInteraction,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF3CB3E9),
+                                backgroundColor: AppColors.lightPrimary,
                                 padding: const EdgeInsets.symmetric(vertical: 14),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(16),
                                 ),
                               ),
-                              child: const Text(
+                              child: Text(
                                 'LOG CONNECTION',
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: Theme.of(context).colorScheme.onSurface,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -236,15 +237,15 @@ class _SimpleContactPanelState extends State<SimpleContactPanel> {
         width: 70,
         height: 70,
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF3CB3E9) : Colors.grey[100],
+          color: isSelected ? AppColors.lightPrimary : Theme.of(context).colorScheme.onSurface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? const Color(0xFF3CB3E9) : Colors.grey[300]!,
+            color: isSelected ? AppColors.lightPrimary : Theme.of(context).colorScheme.surfaceContainerHigh!,
             width: isSelected ? 2 : 1,
           ),
           boxShadow: isSelected ? [
             BoxShadow(
-              color: const Color(0xFF3CB3E9).withOpacity(0.3),
+              color: AppColors.lightPrimary.withOpacity(0.3),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -253,14 +254,14 @@ class _SimpleContactPanelState extends State<SimpleContactPanel> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 24, color: isSelected ? Colors.white : Colors.grey[700]),
+            Icon(icon, size: 24, color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurfaceVariant),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
-                color: isSelected ? Colors.white : Colors.grey[700],
+                color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ],
@@ -272,13 +273,13 @@ class _SimpleContactPanelState extends State<SimpleContactPanel> {
   Color _getRingColor(String ring) {
     switch (ring) {
       case 'inner':
-        return Colors.green;
+        return AppColors.success;
       case 'middle':
         return Color(0xFFFFC107); // Amber/Yellow
       case 'outer':
         return Colors.redAccent;
       default:
-        return const Color(0xFF3CB3E9);
+        return AppColors.lightPrimary;
     }
   }
 
@@ -321,14 +322,14 @@ class _SimpleContactPanelState extends State<SimpleContactPanel> {
       // ScaffoldMessenger.of(context).showSnackBar(
       //   SnackBar(
       //     content: Text('✓ ${_selectedType} logged with ${widget.contact.name}'),
-      //     backgroundColor: Colors.green,
+      //     backgroundColor: AppColors.success,
       //     duration: const Duration(seconds: 1),
       //   ),
       // );
       TopMessageService().showMessage(
           context: context,
           message: '✓ ${_selectedType} logged with ${widget.contact.name}',
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
           icon: Icons.check,
         );
       
@@ -337,14 +338,14 @@ class _SimpleContactPanelState extends State<SimpleContactPanel> {
       // ScaffoldMessenger.of(context).showSnackBar(
       //   SnackBar(
       //     content: Text('Failed to log: $e'),
-      //     backgroundColor: Colors.red,
+      //     backgroundColor: Theme.of(context).colorScheme.error,
       //     duration: const Duration(seconds: 3),
       //   ),
       // );
       TopMessageService().showMessage(
           context: context,
           message: 'Failed to log: $e',
-          backgroundColor: Colors.deepOrange,
+          backgroundColor: Theme.of(context).colorScheme.tertiary,
           icon: Icons.error,
         );
     } finally {

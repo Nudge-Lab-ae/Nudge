@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:nudge/main.dart';
 
 class InteractiveDonutChart extends StatefulWidget {
   /// Expects distributionData like:
@@ -197,9 +198,8 @@ class _InteractiveDonutChartState extends State<InteractiveDonutChart>
               margin: const EdgeInsets.only(top: 40.0),
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.grey.shade200, width: 1),
+                color: Theme.of(context).colorScheme.outline,
+                borderRadius: BorderRadius.circular(14),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -211,7 +211,7 @@ class _InteractiveDonutChartState extends State<InteractiveDonutChart>
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
-                        color: Colors.grey.shade600,
+                        color: Theme.of(context).colorScheme.surfaceContainerLow,
                         letterSpacing: 0.5,
                       ),
                     ),
@@ -241,12 +241,12 @@ class _InteractiveDonutChartState extends State<InteractiveDonutChart>
                             decoration: BoxDecoration(
                               color: isVisible 
                                   ? Colors.white
-                                  : Colors.grey.shade100,
+                                  : Theme.of(context).colorScheme.outline,
                               borderRadius: BorderRadius.circular(14),
                               border: Border.all(
                                 color: isVisible 
                                     ? _gradients[index % _gradients.length][0].withOpacity(0.4)
-                                    : Colors.grey.shade300,
+                                    : Theme.of(context).colorScheme.surfaceContainerLowest,
                                 width: isVisible ? 1.5 : 1,
                               ),
                               boxShadow: isVisible ? [
@@ -271,7 +271,7 @@ class _InteractiveDonutChartState extends State<InteractiveDonutChart>
                                         gradient: LinearGradient(
                                           colors: isVisible 
                                               ? _gradients[index % _gradients.length]
-                                              : [Colors.grey.shade400, Colors.grey.shade600],
+                                              : [Theme.of(context).colorScheme.surfaceContainerLow, Theme.of(context).colorScheme.surfaceContainerLow],
                                           begin: Alignment.topLeft,
                                           end: Alignment.bottomRight,
                                         ),
@@ -285,14 +285,13 @@ class _InteractiveDonutChartState extends State<InteractiveDonutChart>
                                           width: 4,
                                           height: 4,
                                           decoration: BoxDecoration(
-                                            color: Colors.grey.shade50,
+                                            color: Theme.of(context).colorScheme.outline,
                                             shape: BoxShape.circle,
-                                            border: Border.all(color: Colors.grey.shade400, width: 0.5),
                                           ),
                                           child: Icon(
                                             Icons.close,
                                             size: 3,
-                                            color: Colors.grey.shade700,
+                                            color: Theme.of(context).colorScheme.outline,
                                           ),
                                         ),
                                       ),
@@ -311,7 +310,7 @@ class _InteractiveDonutChartState extends State<InteractiveDonutChart>
                                       fontWeight: FontWeight.w600,
                                       color: isVisible 
                                           ? _gradients[index % _gradients.length][1]
-                                          : Colors.grey.shade600,
+                                          : Theme.of(context).colorScheme.surfaceContainerLow,
                                       height: 1.0,
                                     ),
                                     maxLines: 1,
@@ -325,8 +324,8 @@ class _InteractiveDonutChartState extends State<InteractiveDonutChart>
                                   decoration: BoxDecoration(
                                     color: isVisible 
                                         ? _gradients[index % _gradients.length][0].withOpacity(0.15)
-                                        : Colors.grey.shade300,
-                                    borderRadius: BorderRadius.circular(3),
+                                        : Theme.of(context).colorScheme.surfaceContainerLowest,
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
                                     '${percent.toStringAsFixed(percent >= 10 ? 0 : 1)}%',
@@ -335,7 +334,7 @@ class _InteractiveDonutChartState extends State<InteractiveDonutChart>
                                       fontWeight: FontWeight.w700,
                                       color: isVisible 
                                           ? _gradients[index % _gradients.length][1]
-                                          : Colors.grey.shade700,
+                                          : Theme.of(context).colorScheme.outline,
                                     ),
                                   ),
                                 ),
@@ -363,7 +362,7 @@ class _InteractiveDonutChartState extends State<InteractiveDonutChart>
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
                     ),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
                         color: _gradients[selectedIndex! % _gradients.length][1].withOpacity(0.3),
@@ -394,7 +393,7 @@ class _InteractiveDonutChartState extends State<InteractiveDonutChart>
                         child: Text(
                           '${_filteredData[selectedIndex!]["category"]} • ${_percentFor(selectedIndex!)} '
                           '(${_filteredData[selectedIndex!]["count"]} of ${total.toStringAsFixed(0)})',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
                             color: Colors.white,
@@ -446,7 +445,7 @@ class _DonutPainter extends CustomPainter {
     if (data.isEmpty || total == 0) {
       // Draw empty state
       final paint = Paint()
-        ..color = Colors.grey.shade200
+        ..color = Theme.of(navigatorKey.currentContext!).colorScheme.surfaceContainerLowest
         ..style = PaintingStyle.fill;
       
       final outerPath = Path()
@@ -538,13 +537,13 @@ class _DonutPainter extends CustomPainter {
         final percent = (data[i]["count"] as num).toDouble() / total * 100;
         _tp.text = TextSpan(
           text: '${percent.toStringAsFixed(percent >= 1 ? 0 : 1)}%',
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: Theme.of(navigatorKey.currentContext!).colorScheme.surfaceContainerLowest,
             fontSize: 12,
             fontWeight: FontWeight.w700,
             shadows: [
               Shadow(
-                color: Colors.black54,
+                color: Colors.black.withOpacity(0.3),
                 blurRadius: 2,
                 offset: Offset(1, 1),
               ),

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:nudge/main.dart';
+import 'package:nudge/theme/app_theme.dart';
 import 'package:nudge/screens/feedback/feedback_forum_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:provider/provider.dart';
@@ -18,7 +20,7 @@ class FeedbackForumPreview extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(
             child: CircularProgressIndicator(
-              color: isDarkMode ? const Color(0xFF3CB3E9) : const Color(0xff3CB3E9),
+              color: isDarkMode ? AppColors.lightPrimary : AppColors.lightPrimary,
             ),
           );
         }
@@ -31,14 +33,14 @@ class FeedbackForumPreview extends StatelessWidget {
                 Icon(
                   Icons.error_outline,
                   size: 64,
-                  color: isDarkMode ? const Color(0xFFAAAAAA) : Colors.grey,
+                  color: isDarkMode ? AppColors.darkOnSurfaceVariant : AppColors.lightOnSurfaceVariant,
                 ),
                 const SizedBox(height: 16),
                 Text(
                   'Unable to load feedback forum',
                   style: TextStyle(
                     fontSize: 16,
-                    color: isDarkMode ? const Color(0xFFAAAAAA) : Colors.grey,
+                    color: isDarkMode ? AppColors.darkOnSurfaceVariant : AppColors.lightOnSurfaceVariant,
                   ),
                 ),
               ],
@@ -57,21 +59,21 @@ class FeedbackForumPreview extends StatelessWidget {
                 Icon(
                   Icons.forum_outlined,
                   size: 64,
-                  color: isDarkMode ? const Color(0xFF555555) : Colors.grey,
+                  color: isDarkMode ? AppColors.darkOnSurface : AppColors.lightOnSurface,
                 ),
                 const SizedBox(height: 16),
                 Text(
                   'No feature requests yet',
                   style: TextStyle(
                     fontSize: 16,
-                    color: isDarkMode ? const Color(0xFFCCCCCC) : Colors.grey,
+                    color: isDarkMode ? AppColors.darkOnSurface : AppColors.lightOnSurface,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Be the first to share your thoughts!',
                   style: TextStyle(
-                    color: isDarkMode ? const Color(0xFFAAAAAA) : Colors.grey,
+                    color: isDarkMode ? AppColors.darkOnSurfaceVariant : AppColors.lightOnSurfaceVariant,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -92,7 +94,7 @@ class FeedbackForumPreview extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: isDarkMode ? Colors.white : const Color(0xff333333),
+                      color: isDarkMode ? Colors.white : AppColors.darkSurfaceContainerHighest,
                     ),
                   ),
                   const Spacer(),
@@ -108,7 +110,7 @@ class FeedbackForumPreview extends StatelessWidget {
                     child: Text(
                       'View All',
                       style: TextStyle(
-                        color: const Color(0xff3CB3E9),
+                        color: AppColors.lightPrimary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -142,11 +144,11 @@ class FeedbackForumPreview extends StatelessWidget {
     
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+      color: Theme.of(navigatorKey.currentContext!).colorScheme.surfaceContainerHigh,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: isDarkMode ? const Color(0xFF444444) : const Color(0xFFEEEEEE),
+          color: isDarkMode ? Color(0xFF444444) : AppColors.lightSurfaceContainerHigh,
           width: 1,
         ),
       ),
@@ -162,7 +164,7 @@ class FeedbackForumPreview extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: _getStatusColor(status).withOpacity(isDarkMode ? 0.2 : 0.1),
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     _getStatusDisplayName(status),
@@ -178,14 +180,14 @@ class FeedbackForumPreview extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(isDarkMode ? 0.2 : 0.1),
-                    borderRadius: BorderRadius.circular(4),
+                    color: Theme.of(navigatorKey.currentContext!).colorScheme.secondary.withOpacity(isDarkMode ? 0.2 : 0.1),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     screen,
                     style: TextStyle(
                       fontSize: 10,
-                      color: Colors.blue,
+                      color: Theme.of(navigatorKey.currentContext!).colorScheme.secondary,
                     ),
                   ),
                 ),
@@ -197,7 +199,7 @@ class FeedbackForumPreview extends StatelessWidget {
               title,
               style: TextStyle(
                 fontWeight: FontWeight.w500,
-                color: isDarkMode ? Colors.white : const Color(0xff333333),
+                color: isDarkMode ? Colors.white : AppColors.darkSurfaceContainerHighest,
               ),
             ),
             if (message.isNotEmpty) ...[
@@ -208,7 +210,7 @@ class FeedbackForumPreview extends StatelessWidget {
                   : message,
                 style: TextStyle(
                   fontSize: 12,
-                  color: isDarkMode ? const Color(0xFFAAAAAA) : Colors.grey.shade700,
+                  color: isDarkMode ? AppColors.darkOnSurfaceVariant : AppColors.lightOnSurfaceVariant,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -237,11 +239,11 @@ class FeedbackForumPreview extends StatelessWidget {
 
   Color _getStatusColor(String status) {
     switch (status) {
-      case 'received': return Colors.orange;
-      case 'planned': return Colors.blue;
-      case 'in_progress': return Colors.purple;
-      case 'completed': return Colors.green;
-      default: return Colors.grey;
+      case 'received': return AppColors.warning;
+      case 'planned': return Theme.of(navigatorKey.currentContext!).colorScheme.secondary;
+      case 'in_progress': return Theme.of(navigatorKey.currentContext!).colorScheme.primary;
+      case 'completed': return AppColors.success;
+      default: return AppColors.lightOnSurfaceVariant;
     }
   }
 }

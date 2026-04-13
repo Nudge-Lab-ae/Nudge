@@ -1,110 +1,90 @@
 // lib/screens/splash_screen.dart
-import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:nudge/helpers/restart_helper.dart';
-// import '../helpers/app_restart_helper.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:nudge/theme/app_theme.dart';
+import 'package:nudge/services/auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
-
   @override
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
 class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _fadeAnimation;
-  bool _skipAnimation = false;
+  late AnimationController _ctrl;
+  late Animation<double> _fade;
+  late Animation<double> _scale;
 
   @override
   void initState() {
     super.initState();
-    
-    // Check if we should skip the splash
-    _skipAnimation = AppRestartHelper.shouldSkipSplash;
-    
-    if (_skipAnimation) {
-      // Skip animation and navigate immediately
-      Timer(const Duration(milliseconds: 50), () {
-        _navigateToMain();
-      });
-      return;
-    }
-    
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2000),
-    );
-
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.2,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    ));
-
-    _fadeAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.0,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: const Interval(0.6, 1.0, curve: Curves.easeOut),
-    ));
-
-    // Start animation after a brief delay
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (mounted) {
-        _controller.forward().then((_) {
-          _navigateToMain();
-        });
-      }
-    });
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 900));
+    _fade  = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
+    _scale = Tween<double>(begin: 0.85, end: 1.0).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutBack));
+    _ctrl.forward();
+    _navigate();
   }
 
-  void _navigateToMain() {
-    // Clear the flag after using it
-    if (_skipAnimation) {
-      AppRestartHelper.clearSkipSplashFlag();
+  Future<void> _navigate() async {
+    await Future.delayed(const Duration(milliseconds: 1800));
+    if (!mounted) return;
+    final auth = AuthService();
+    final user = auth.currentUser;
+    if (user != null) {
+      Navigator.pushReplacementNamed(context, '/dashboard');
+    } else {
+      Navigator.pushReplacementNamed(context, '/welcome');
     }
-    
-    // Navigate to main auth wrapper
-    Navigator.of(context).pushReplacementNamed('/');
   }
 
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+  void dispose() { _ctrl.dispose(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
-    if (_skipAnimation) {
-      // Return empty container during brief delay
-      return Container(color: Colors.white);
-    }
-    
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, child) {
-          return Opacity(
-            opacity: _fadeAnimation.value,
-            child: Transform.scale(
-              scale: _scaleAnimation.value,
-              child: child,
+      backgroundColor: scheme.surface,
+      body: Center(
+        child: FadeTransition(
+          opacity: _fade,
+          child: ScaleTransition(
+            scale: _scale,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+               Container(
+                  width: 80, height: 80,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [BoxShadow(
+                      color: scheme.primary.withOpacity(0.25),
+                      blurRadius: 24, offset: const Offset(0, 8))],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Image.asset(
+                      'assets/Nudge-logo.png',
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text('NUDGE',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 28, fontWeight: FontWeight.w800,
+                    color: scheme.onSurface, letterSpacing: 3,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text('Stay meaningfully connected',
+                  style: GoogleFonts.beVietnamPro(
+                    fontSize: 13, color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
             ),
-          );
-        },
-        child: Center(
-          child: Image.asset(
-            'assets/Nudge-logo.jpg',
-            width: 250,
-            height: 250,
-            fit: BoxFit.contain,
           ),
         ),
       ),

@@ -5,6 +5,8 @@ import 'dart:typed_data';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:nudge/theme/app_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:crop_your_image/crop_your_image.dart';
@@ -69,6 +71,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
   // Onboarding state
   int _currentStep = 0;
   List<Contact> _selectedContacts = [];
+  Set<String>? _selectedGoals; // null = user hasn't engaged with step yet
   final List<Contact> _closeCircleContacts = [];
   final List<SocialGroup> _userGroups = [];
 
@@ -83,6 +86,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
     // {'title': 'Welcome to Your Social Universe', 'subtitle': 'See what we\'re building'},
     {'title': 'Add Your Contacts', 'subtitle': 'Import or add contacts'},
     {'title': 'Identify Favourites', 'subtitle': 'Mark important relationships'},
+    {'title': 'What Matters Most to You?', 'subtitle': 'Personalize your nudges'},
     // {'title': 'Review Setup', 'subtitle': 'You\'re all set!'},
     {'title': 'What\'s Coming to NUDGE', 'subtitle': 'See our roadmap'}, // New step
   ];
@@ -488,13 +492,13 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
     //   flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
     //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
     //   messageText: Center(
-    //       child: Text('Error: ${e.toString()}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-    //           color: Colors.white, fontWeight: FontWeight.w400),)),
+    //       child: Text('Error: ${e.toString()}', style: TextStyle(fontFamily: GoogleFonts.beVietnamPro().fontFamily, fontSize: 14,
+    //           color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w400),)),
     // ).show(context);
     TopMessageService().showMessage(
         context: context,
         message: 'Error: ${e.toString()}',
-        backgroundColor: Colors.deepOrange,
+        backgroundColor: Theme.of(context).colorScheme.tertiary,
         icon: Icons.error,
       );
       setState(() => _isLoading = false);
@@ -512,7 +516,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
         return Container(
           height: MediaQuery.of(context).size.height * 0.9,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onSurface,
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(24),
               topRight: Radius.circular(24),
@@ -535,22 +539,22 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
     final apiService = ApiService();
     TopMessageService().showCustomContent(
       context: context,
-      backgroundColor: Colors.green,
+      backgroundColor: AppColors.success,
       height: 100,
       customContent: Row(
           children: [
-            const Icon(Icons.celebration, color: Colors.white),
+            Icon(Icons.celebration, color: Theme.of(context).colorScheme.onSurface),
             const SizedBox(width: 8),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
+                  Text(
                     'Onboarding Complete!',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontFamily: 'Orbitron',
                       fontSize: 18,
                     ),
@@ -643,10 +647,10 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
       width: double.infinity, // Make container full width
       padding: const EdgeInsets.only(top: 16, bottom: 16),
       decoration: BoxDecoration(
-        color: themeProvider.getSurfaceColor(context),
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
         border: Border(
           bottom: BorderSide(
-            color: themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade300,
+            color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ),
@@ -671,9 +675,9 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                     ),
                     decoration: BoxDecoration(
                       color: isActive 
-                          ? const Color(0xff3CB3E9) 
-                          : (themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.grey[300]),
-                      borderRadius: BorderRadius.circular(2),
+                          ? AppColors.lightPrimary 
+                          : (themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Theme.of(context).colorScheme.surfaceContainerHigh),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                 );
@@ -694,7 +698,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xff3CB3E9),
+                    color: AppColors.lightPrimary,
                   ),
                 ),
                 Text(
@@ -702,7 +706,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                   style: TextStyle(
                     fontSize: 14, 
                     fontWeight: FontWeight.w500, 
-                    color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey
+                    color: Theme.of(context).colorScheme.onSurfaceVariant
                   ),
                 ),
               ],
@@ -724,8 +728,9 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
       case 1: return _buildGroupsStep();
       case 2: return _buildContactsStep();
       case 3: return _buildCloseCircleStep();
+      case 4: return _buildWhatMattersStep();
       // case 5: return _buildReviewStep();
-      case 4: return _buildRoadmapStep();
+      case 5: return _buildRoadmapStep();
       default: return _buildProfileStep();
     }
   }
@@ -767,7 +772,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
   //                 textAlign: TextAlign.center,
   //                 style: TextStyle(
   //                   fontSize: 18,
-  //                   color: themeProvider.isDarkMode ? Colors.white70 : Colors.grey.shade700,
+  //                   color: themeProvider.isDarkMode ? Colors.white70 : Theme.of(context).colorScheme.outline,
   //                 ),
   //               ),
   //             ],
@@ -853,7 +858,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
   //               //   style: TextStyle(
   //               //     fontSize: 20,
   //               //     fontWeight: FontWeight.w700,
-  //               //     color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+  //               //     color: Theme.of(context).colorScheme.onSurface,
   //               //   ),
   //               // ),
   //               const SizedBox(height: 8),
@@ -862,7 +867,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
   //                 style: TextStyle(
   //                   fontSize: 16,
   //                   fontWeight: FontWeight.w700,
-  //                   color: themeProvider.isDarkMode ? Colors.white70 : Colors.grey.shade700,
+  //                   color: themeProvider.isDarkMode ? Colors.white70 : Theme.of(context).colorScheme.outline,
   //                 ),
   //               ),
   //             ],
@@ -883,12 +888,12 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
   //         width: 40,
   //         height: 40,
   //         decoration: BoxDecoration(
-  //           color: const Color(0xff3CB3E9).withOpacity(0.1),
-  //           borderRadius: BorderRadius.circular(12),
+  //           color: AppColors.lightPrimary.withOpacity(0.1),
+  //           borderRadius: BorderRadius.circular(16),
   //         ),
   //         child: Icon(
   //           icon,
-  //           color: const Color(0xff3CB3E9),
+  //           color: AppColors.lightPrimary,
   //         ),
   //       ),
   //       const SizedBox(width: 16),
@@ -901,7 +906,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
   //               style: TextStyle(
   //                 fontSize: 16,
   //                 fontWeight: FontWeight.w600,
-  //                 color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+  //                 color: Theme.of(context).colorScheme.onSurface,
   //               ),
   //             ),
   //             const SizedBox(height: 4),
@@ -909,7 +914,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
   //               description,
   //               style: TextStyle(
   //                 fontSize: 14,
-  //                 color: themeProvider.isDarkMode ? Colors.white70 : Colors.grey.shade600,
+  //                 color: themeProvider.isDarkMode ? Colors.white70 : Theme.of(context).colorScheme.surfaceContainerLow,
   //               ),
   //             ),
   //           ],
@@ -955,14 +960,14 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
     //   flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
     //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
     //   messageText: Center(
-    //       child: Text('Successfully imported contacts to ${group.name}!}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-    //           color: Colors.white, fontWeight: FontWeight.w400),)),
+    //       child: Text('Successfully imported contacts to ${group.name}!}', style: TextStyle(fontFamily: GoogleFonts.beVietnamPro().fontFamily, fontSize: 14,
+    //           color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w400),)),
     // ).show(context);
 
       TopMessageService().showMessage(
         context: context,
         message: 'Successfully imported contacts to ${group.name}!',
-        backgroundColor: Colors.green,
+        backgroundColor: AppColors.success,
         icon: Icons.check,
       );
       } else {
@@ -971,13 +976,13 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
     //   flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
     //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
     //   messageText: Center(
-    //       child: Text('Failed to import contacts: ${result['message']}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-    //           color: Colors.white, fontWeight: FontWeight.w400),)),
+    //       child: Text('Failed to import contacts: ${result['message']}', style: TextStyle(fontFamily: GoogleFonts.beVietnamPro().fontFamily, fontSize: 14,
+    //           color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w400),)),
     // ).show(context);
       TopMessageService().showMessage(
         context: context,
         message: 'Failed to import contacts: ${result['message']}',
-        backgroundColor: Colors.deepOrange,
+        backgroundColor: Theme.of(context).colorScheme.tertiary,
         icon: Icons.error,
       );
       }
@@ -988,13 +993,13 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
     //   flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
     //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
     //   messageText: Center(
-    //       child: Text('Error importing contacts: $e}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-    //           color: Colors.white, fontWeight: FontWeight.w400),)),
+    //       child: Text('Error importing contacts: $e}', style: TextStyle(fontFamily: GoogleFonts.beVietnamPro().fontFamily, fontSize: 14,
+    //           color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w400),)),
     // ).show(context);
      TopMessageService().showMessage(
         context: context,
         message: 'Error importing contacts: $e}',
-        backgroundColor: Colors.deepOrange,
+        backgroundColor: Theme.of(context).colorScheme.tertiary,
         icon: Icons.error,
       );
     }
@@ -1027,12 +1032,12 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
         const SizedBox(height: 20),
         Text(
           'Crop Your Profile Picture',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
         ),
         const SizedBox(height: 10),
         Text(
           'Adjust the square to frame your photo',
-          style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
         const SizedBox(height: 20),
         Expanded(
@@ -1080,8 +1085,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                 child: OutlinedButton(
                   onPressed: _cancelCrop,
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.red,
-                    side: const BorderSide(color: Colors.red),
+                    foregroundColor: Theme.of(context).colorScheme.error,
+                    side: BorderSide(color: Theme.of(context).colorScheme.error),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                   child: const Text('Cancel'),
@@ -1092,10 +1097,10 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                 child: ElevatedButton(
                   onPressed: _cropImage,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xff3CB3E9),
+                    backgroundColor: AppColors.lightPrimary,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                  child: const Text('Save Crop', style: TextStyle(color: Colors.white)),
+                  child: Text('Save Crop', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                 ),
               ),
             ],
@@ -1132,7 +1137,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
-                    color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 ),
@@ -1142,7 +1147,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                   'Start by telling us about yourself',
                   style: TextStyle(
                     fontSize: 16,
-                    color: themeProvider.isDarkMode ? Colors.white70 : Colors.grey.shade600,
+                    color: themeProvider.isDarkMode ? Colors.white70 : Theme.of(context).colorScheme.surfaceContainerLow,
                   ),
                 ),
                 )
@@ -1172,7 +1177,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                           color: theme.colorScheme.primary,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.edit, size: 16, color: Colors.white),
+                        child: Icon(Icons.edit, size: 16, color: Theme.of(context).colorScheme.onSurface),
                       ),
                     ),
                   ],
@@ -1182,33 +1187,33 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
             const SizedBox(height: 30),
             
             // Username
-            Text('USERNAME *', style: TextStyle(fontWeight: FontWeight.w600, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555), fontSize: 16)),
+            Text('USERNAME *', style: TextStyle(fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface, fontSize: 16)),
             const SizedBox(height: 8),
             TextFormField(
               controller: _usernameController,
               textCapitalization: TextCapitalization.words,
               onTap: () => _dismissKeyboard(),
-              style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
               decoration: InputDecoration(
                 hintText: 'Enter your username',
-                hintStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+                hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                 enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: themeProvider.isDarkMode ? Colors.grey.shade600 : Colors.grey, width: 1),
-                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurfaceVariant, width: 1),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 errorBorder: OutlineInputBorder(
-                  borderSide: const BorderSide(color: Colors.red, width: 1),
-                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 focusedErrorBorder: OutlineInputBorder(
-                  borderSide: const BorderSide(color: Colors.red, width: 2),
-                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                fillColor: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+                fillColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,
                 filled: true,
               ),
               validator: (value) => value == null || value.isEmpty ? 'Please enter a username' : null,
@@ -1217,7 +1222,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
             const SizedBox(height: 20),
             
             // Phone Number with Country Code
-            Text('PHONE NUMBER *', style: TextStyle(fontWeight: FontWeight.w600, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555), fontSize: 16)),
+            Text('PHONE NUMBER *', style: TextStyle(fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface, fontSize: 16)),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -1225,8 +1230,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                   padding: EdgeInsets.only(bottom: 0),
                   child: Container(
                     decoration: BoxDecoration(
-                      border: Border.all(color: themeProvider.isDarkMode ? Colors.grey.shade600 : Colors.grey, width: 1),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                     child: CountryCodePicker(
                       onChanged: (CountryCode country) {
@@ -1240,10 +1244,10 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                       showOnlyCountryWhenClosed: false,
                       alignLeft: false,
                       key: Key(_selectedCountry.code!),
-                      textStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
-                      searchStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
-                      dialogTextStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
-                      dialogBackgroundColor: themeProvider.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+                      textStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                      searchStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                      dialogTextStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                      dialogBackgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
                     ),
                   )
                 ),
@@ -1257,29 +1261,29 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                       FilteringTextInputFormatter.digitsOnly,
                     ],
                     onTap: () => _dismissKeyboard(),
-                    style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                     decoration: InputDecoration(
                       hintText: 'Phone number',
-                      hintStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+                      hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                       counterText: '',
                       enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: themeProvider.isDarkMode ? Colors.grey.shade600 : Colors.grey, width: 1),
-                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurfaceVariant, width: 1),
+                        borderRadius: BorderRadius.circular(14),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Color(0xff3CB3E9), width: 2),
-                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: AppColors.lightPrimary, width: 2),
+                        borderRadius: BorderRadius.circular(14),
                       ),
                       errorBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.red, width: 1),
-                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                        borderRadius: BorderRadius.circular(14),
                       ),
                       focusedErrorBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.red, width: 2),
-                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                        borderRadius: BorderRadius.circular(14),
                       ),
                       errorStyle: const TextStyle(fontSize: 12),
-                      fillColor: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+                      fillColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,
                       filled: true,
                     ),
                     validator: (value) {
@@ -1304,26 +1308,26 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
             const SizedBox(height: 20),
             
             // Bio
-            Text('BIO', style: TextStyle(fontWeight: FontWeight.w600, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555), fontSize: 16)),
+            Text('BIO', style: TextStyle(fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface, fontSize: 16)),
             const SizedBox(height: 8),
             TextFormField(
               controller: _bioController,
               textCapitalization: TextCapitalization.sentences,
               maxLines: 3,
               onTap: () => _dismissKeyboard(),
-              style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
               decoration: InputDecoration(
                 hintText: 'Tell us a bit about yourself...',
-                hintStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+                hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                 enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: themeProvider.isDarkMode ? Colors.grey.shade600 : Colors.grey, width: 1),
-                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurfaceVariant, width: 1),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                fillColor: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+                fillColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,
                 filled: true,
               ),
               onChanged: onBioChange,
@@ -1352,7 +1356,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
-                  color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 8),
@@ -1362,7 +1366,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                 'Create groups to categorize your relationships.\n1. Add, edit or remove groups\n2. Drag to reorder groups by priority',
                 style: TextStyle(
                   fontSize: 14,
-                  color: themeProvider.isDarkMode ? Colors.white70 : Colors.grey.shade600,
+                  color: themeProvider.isDarkMode ? Colors.white70 : Theme.of(context).colorScheme.surfaceContainerLow,
                 ),
               ),
               )
@@ -1375,14 +1379,14 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: _addNewGroup,
-              icon: const Icon(Icons.add, color: Colors.white, size: 18),
+              icon: Icon(Icons.add, color: Theme.of(context).colorScheme.onSurface, size: 18),
               label: const Text('Add New Group'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xff3CB3E9),
+                backgroundColor: AppColors.lightPrimary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(14),
                 ),
               ),
             ),
@@ -1392,7 +1396,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
           // Reorderable list of groups - now with smaller cards
           Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(14),
             ),
             child: ReorderableListView.builder(
               shrinkWrap: true,
@@ -1441,19 +1445,19 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
     try {
       groupColor = Color(int.parse(group.colorCode.replaceFirst('#', ''), radix: 16) + 0xFF000000);
     } catch (e) {
-      groupColor = const Color(0xff3CB3E9);
+      groupColor = AppColors.lightPrimary;
     }
     
     return Container(
       key: Key(group.id),
       margin: const EdgeInsets.only(bottom: 6), // Smaller margin
       decoration: BoxDecoration(
-        color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
-        borderRadius: BorderRadius.circular(10),
+        color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: themeProvider.isDarkMode 
-              ? Colors.grey.shade800 
-              : Colors.grey.shade200, 
+              ? Theme.of(context).colorScheme.surfaceContainerHigh 
+              : Theme.of(context).colorScheme.surfaceContainerLowest, 
           width: 1
         ),
       ),
@@ -1486,7 +1490,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                     ),
                     child: Icon(
                       _getGroupIcon(group.name),
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSurface,
                       size: 20,
                     ),
                   ),
@@ -1506,9 +1510,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                             children: [
                               Icon(
                                 Icons.drag_handle, 
-                                color: themeProvider.isDarkMode 
-                                    ? Colors.grey.shade400 
-                                    : Colors.grey,
+                                color: Theme.of(context).colorScheme.onSurface,
                                 size: 14,
                               ),
                               const SizedBox(width: 2),
@@ -1516,9 +1518,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                                 'Drag to reorder',
                                 style: TextStyle(
                                   fontSize: 9,
-                                  color: themeProvider.isDarkMode 
-                                      ? Colors.grey.shade500 
-                                      : Colors.grey.shade600,
+                                  color: Theme.of(context).colorScheme.onSurface,
                                   fontStyle: FontStyle.normal,
                                 ),
                               ),
@@ -1532,7 +1532,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -1549,7 +1549,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                     children: [
                       // Delete button at the top
                       GestureDetector(
-                        child: const Icon(Icons.delete, color: Colors.red, size: 16),
+                        child: Icon(Icons.delete, color: Theme.of(context).colorScheme.error, size: 16),
                         onTap: () => _deleteGroup(index),
                         ),
                       const SizedBox(height: 10),
@@ -1558,7 +1558,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: groupColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(14),
                         ),
                         child: Text(
                           FrequencyPeriodMapper.getConversationalChoice(group.frequency, group.period),
@@ -1589,29 +1589,27 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                       initialValue: group.name,
                       onTap: () => _dismissKeyboard(),
                       style: TextStyle(
-                        color: themeProvider.isDarkMode 
-                            ? Colors.white 
-                            : const Color(0xff555555),
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 14,
                       ),
                       decoration: InputDecoration(
                         labelText: 'GROUP NAME',
                         labelStyle: TextStyle(
                           color: themeProvider.isDarkMode 
-                              ? Colors.grey.shade400 
-                              : const Color(0xff555555),
+                              ? Theme.of(context).colorScheme.surfaceContainerLow 
+                              : AppColors.lightOnSurface,
                           fontSize: 13,
                           fontStyle: FontStyle.normal
                         ),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                         isDense: true,
                         filled: true,
                         fillColor: themeProvider.isDarkMode 
-                            ? Colors.grey.shade800 
-                            : Colors.grey.shade50,
+                            ? Theme.of(context).colorScheme.surfaceContainerHigh 
+                            : Theme.of(context).colorScheme.outline,
                       ),
                       onChanged: (value) {
                         setState(() {
@@ -1626,29 +1624,27 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                       value: _getCurrentFrequencyChoice(group),
                       onTap: () => _dismissKeyboard(),
                       style: TextStyle(
-                        color: themeProvider.isDarkMode 
-                            ? Colors.white 
-                            : const Color(0xff555555),
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 16,
                       ),
                       decoration: InputDecoration(
                         labelText: 'CONTACT FREQUENCY',
                         labelStyle: TextStyle(
                           color: themeProvider.isDarkMode 
-                              ? Colors.grey.shade400 
-                              : const Color(0xff555555),
+                              ? Theme.of(context).colorScheme.surfaceContainerLow 
+                              : AppColors.lightOnSurface,
                           fontSize: 13,
                           fontStyle: FontStyle.normal
                         ),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                         isDense: true,
                         filled: true,
                         fillColor: themeProvider.isDarkMode 
-                            ? Colors.grey.shade800 
-                            : Colors.grey.shade50,
+                            ? Theme.of(context).colorScheme.surfaceContainerHigh 
+                            : Theme.of(context).colorScheme.outline,
                       ),
                       items: FrequencyPeriodMapper.frequencyMapping.keys.map((String value) {
                         return DropdownMenuItem<String>(
@@ -1656,9 +1652,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                           child: Text(
                             value, 
                             style: TextStyle(
-                              color: themeProvider.isDarkMode 
-                                  ? Colors.white 
-                                  : const Color(0xff555555),
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontSize: 13,
                             ),
                           ),
@@ -1713,8 +1707,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
   //           'GROUP COLOR',
   //           style: TextStyle(
   //             color: themeProvider.isDarkMode 
-  //                 ? Colors.grey.shade400 
-  //                 : const Color(0xff555555),
+  //                 ? Theme.of(context).colorScheme.surfaceContainerLow 
+  //                 : AppColors.lightOnSurface,
   //             fontSize: 14,
   //             fontWeight: FontWeight.w600,
   //           ),
@@ -1738,7 +1732,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
   //                   shape: BoxShape.circle,
   //                   border: isSelected 
   //                       ? Border.all(
-  //                           color: themeProvider.getTextPrimaryColor(context), 
+  //                           color: Theme.of(context).colorScheme.onSurface, 
   //                           width: 2
   //                         ) 
   //                       : null,
@@ -1782,7 +1776,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: themeProvider.isDarkMode ? Colors.red.shade900.withOpacity(0.3) : const Color(0xFFFFF5F5),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.red.shade100),
         ),
         child: Row(
@@ -1810,8 +1804,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: themeProvider.isDarkMode ? const Color(0xFF0A3A62) : const Color(0xFFF0F9FF),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xff3CB3E9).withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.lightPrimary.withOpacity(0.3)),
       ),
       child: Row(
         children: [
@@ -1822,7 +1816,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
               'Valid phone number: ${_selectedCountry.dialCode} ${_phoneController.text}',
               style: const TextStyle(
                 fontSize: 12,
-                color: Color(0xff3CB3E9),
+                color: AppColors.lightPrimary,
               ),
             ),
           ),
@@ -1860,8 +1854,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
     //   flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
     //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
     //   messageText: Center(
-    //       child: Text('Added a new group at the top!}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-    //           color: Colors.white, fontWeight: FontWeight.w400),)),
+    //       child: Text('Added a new group at the top!}', style: TextStyle(fontFamily: GoogleFonts.beVietnamPro().fontFamily, fontSize: 14,
+    //           color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w400),)),
     // ).show(context);
      TopMessageService().showMessage(
         context: context,
@@ -1890,7 +1884,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
               });
               Navigator.pop(context);
             },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: Text('Delete', style: TextStyle(color: Theme.of(context).colorScheme.error)),
           ),
         ],
       ),
@@ -1914,7 +1908,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
-                  color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 20),
@@ -1922,17 +1916,17 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
               //   'Add contacts to start building your universe',
               //   style: TextStyle(
               //     fontSize: 16,
-              //     color: themeProvider.isDarkMode ? Colors.white70 : Colors.grey.shade600,
+              //     color: themeProvider.isDarkMode ? Colors.white70 : Theme.of(context).colorScheme.surfaceContainerLow,
               //   ),
               // ),
             ],
           ),
           const SizedBox(height: 30),
           
-          Text('ADD YOUR CONTACTS', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555))),
+          Text('ADD YOUR CONTACTS', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
           const SizedBox(height: 10),
           Text('Import your contacts or add them manually. You can skip this and do it later.', 
-            style: TextStyle(fontSize: 14, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey), textAlign: TextAlign.center),
+            style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant), textAlign: TextAlign.center),
           const SizedBox(height: 40),
           
           contactAddingWidget(themeProvider),
@@ -1949,7 +1943,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
           child: Card(
-            color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+            color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
@@ -1960,7 +1954,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                       Expanded(
                         child: Column(
                           children: [
-                            Icon(Icons.person_add_alt_1, size: 50, color: const Color(0xff3CB3E9)),
+                            Icon(Icons.person_add_alt_1, size: 50, color: AppColors.lightPrimary),
                             const SizedBox(height: 12),
                             ElevatedButton(
                               onPressed: () async {
@@ -1984,18 +1978,18 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                                 _showFlushbar();
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xff3CB3E9),
+                                backgroundColor: AppColors.lightPrimary,
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                 minimumSize: const Size.fromHeight(44),
                               ),
-                              child: const Text('Add New', style: TextStyle(color: Colors.white, fontSize: 14)),
+                              child: Text('Add New', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14)),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               'Create from scratch',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ],
@@ -2005,7 +1999,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                       Expanded(
                         child: Column(
                           children: [
-                            Icon(Icons.contacts, size: 50, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+                            Icon(Icons.contacts, size: 50, color: Theme.of(context).colorScheme.onSurfaceVariant),
                             const SizedBox(height: 12),
                             OutlinedButton(
                               onPressed: () {
@@ -2013,8 +2007,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                                 _pickContactsManually();
                               },
                               style: OutlinedButton.styleFrom(
-                                foregroundColor: const Color(0xff3CB3E9),
-                                side: const BorderSide(color: Color(0xff3CB3E9)),
+                                foregroundColor: AppColors.lightPrimary,
+                                side: BorderSide(color: AppColors.lightPrimary),
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                 minimumSize: const Size.fromHeight(44),
                               ),
@@ -2025,7 +2019,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                               'Select from device',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ],
@@ -2044,7 +2038,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
           children: [
             // Quick Import Card
             // Card(
-            //   color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+            //   color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,
             //   child: Padding(
             //     padding: const EdgeInsets.all(20),
             //     child: Column(
@@ -2055,14 +2049,14 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
             //           style: TextStyle(
             //             fontSize: 18,
             //             fontWeight: FontWeight.bold,
-            //             color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+            //             color: Theme.of(context).colorScheme.onSurface,
             //           ),
             //         ),
             //         const SizedBox(height: 8),
             //         Text(
             //           'Import your existing contacts from device',
             //           style: TextStyle(
-            //             color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey,
+            //             color: Theme.of(context).colorScheme.onSurfaceVariant,
             //           ),
             //         ),
             //         const SizedBox(height: 20),
@@ -2091,10 +2085,10 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
             //             // _showFlushbar();
             //           },
             //           style: ElevatedButton.styleFrom(
-            //             backgroundColor: const Color(0xff3CB3E9),
+            //             backgroundColor: AppColors.lightPrimary,
             //             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             //           ),
-            //           child: const Text('Import Contacts', style: TextStyle(color: Colors.white, fontSize: 14)),
+            //           child: Text('Import Contacts', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14)),
             //         ),
             //       ],
             //     ),
@@ -2103,7 +2097,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
             // const SizedBox(height: 20),
             // Add Contacts Card (same as iOS but for Android)
             Card(
-              color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+              color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,
               child: Padding(
                 padding: const EdgeInsets.all(20),
                 child: Column(
@@ -2114,7 +2108,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                         Expanded(
                           child: Column(
                             children: [
-                              Icon(Icons.person_add_alt_1, size: 50, color: const Color(0xff3CB3E9)),
+                              Icon(Icons.person_add_alt_1, size: 50, color: AppColors.lightPrimary),
                               const SizedBox(height: 12),
                               ElevatedButton(
                                 onPressed: () async {
@@ -2134,18 +2128,18 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                                   }
                                 },
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xff3CB3E9),
+                                  backgroundColor: AppColors.lightPrimary,
                                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                   minimumSize: const Size.fromHeight(44),
                                 ),
-                                child: const Text('Add New', style: TextStyle(color: Colors.white, fontSize: 14)),
+                                child: Text('Add New', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14)),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 'Create from scratch',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ],
@@ -2155,7 +2149,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                         Expanded(
                           child: Column(
                             children: [
-                              Icon(Icons.contacts, size: 50, color: Color(0xff3CB3E9)),
+                              Icon(Icons.contacts, size: 50, color: AppColors.lightPrimary),
                               const SizedBox(height: 12),
                               OutlinedButton(
                                 onPressed: () {
@@ -2163,8 +2157,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                                   _pickContactsManually();
                                 },
                                 style: OutlinedButton.styleFrom(
-                                  foregroundColor: const Color(0xff3CB3E9),
-                                  side: const BorderSide(color: Color(0xff3CB3E9)),
+                                  foregroundColor: AppColors.lightPrimary,
+                                  side: BorderSide(color: AppColors.lightPrimary),
                                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                   minimumSize: const Size.fromHeight(44),
                                 ),
@@ -2175,7 +2169,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                                 'Select from device',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ],
@@ -2207,7 +2201,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
             children: [
               const SizedBox(height: 20),
               Center(
-                child: Text('Identify Your Favourites', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
+                child: Text('Identify Your Favourites', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
               ),
               const SizedBox(height: 10),
               
@@ -2215,7 +2209,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -2228,7 +2222,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                     const SizedBox(height: 8),
                     Text(
                       'Your Favourites are people you naturally connect with often and those relationships may not need as much intentionality.',
-                      style: TextStyle(fontSize: 14, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+                      style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
                     ),
                   ],
                 ),
@@ -2237,18 +2231,18 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
               const SizedBox(height: 20),
               
               if (_selectedContacts.isNotEmpty) ...[
-                Text('Select your Favourites members:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
+                Text('Select your Favourites members:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
                 const SizedBox(height: 10),
                 
                 ..._selectedContacts.map((contact) => Card(
-                  color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+                  color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,
                   margin: const EdgeInsets.only(bottom: 8),
                   child: CheckboxListTile(
-                    title: Text(contact.name, style: TextStyle(fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
-                    subtitle: contact.phoneNumber.isNotEmpty ? Text(contact.phoneNumber, style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey)) : null,
+                    title: Text(contact.name, style: TextStyle(fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface)),
+                    subtitle: contact.phoneNumber.isNotEmpty ? Text(contact.phoneNumber, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)) : null,
                     secondary: CircleAvatar(
                       backgroundColor: theme.colorScheme.primary,
-                      child: Text(contact.name.isNotEmpty ? contact.name[0].toUpperCase() : '?', style: const TextStyle(color: Colors.white)),
+                      child: Text(contact.name.isNotEmpty ? contact.name[0].toUpperCase() : '?', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                     ),
                     value: _closeCircleContacts.contains(contact),
                     onChanged: (bool? value) => _toggleCloseCircleContact(contact),
@@ -2257,15 +2251,15 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                 )).toList(),
               ] else ...[
                 Card(
-                  color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+                  color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,
                   child: Padding(
                     padding: const EdgeInsets.all(20),
                     child: Column(children: [
-                      Icon(Icons.people_outline, size: 60, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+                      Icon(Icons.people_outline, size: 60, color: Theme.of(context).colorScheme.onSurfaceVariant),
                       const SizedBox(height: 16),
-                      Text('No Contacts Yet', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
+                      Text('No Contacts Yet', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                       const SizedBox(height: 8),
-                      Text('You haven\'t added any contacts yet. You can add them later from the dashboard.', textAlign: TextAlign.center, style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey)),
+                      Text('You haven\'t added any contacts yet. You can add them later from the dashboard.', textAlign: TextAlign.center, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                     ]),
                   ),
                 ),
@@ -2281,15 +2275,15 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
         //     padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
         //     flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
         //     forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
-        //     backgroundColor: Colors.green,
+        //     backgroundColor: AppColors.success,
         //     messageText: Center(
-        //         child: Text('Successfully Created Contact', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-        //             color: Colors.white, fontWeight: FontWeight.w400),)),
+        //         child: Text('Successfully Created Contact', style: TextStyle(fontFamily: GoogleFonts.beVietnamPro().fontFamily, fontSize: 14,
+        //             color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w400),)),
         //   ).show(context);
          TopMessageService().showMessage(
           context: context,
           message: 'Successfully Created Contact.',
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
           icon: Icons.check,
         );
       }
@@ -2317,18 +2311,18 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
       //               child: Icon(Icons.check, size: 50, color: theme.colorScheme.primary),
       //             ),
       //             const SizedBox(height: 20),
-      //             Text('Your Social Universe is Ready! 🎉', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black), textAlign: TextAlign.center,),
+      //             Text('Your Social Universe is Ready! 🎉', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface), textAlign: TextAlign.center,),
       //             const SizedBox(height: 16),
       //             Text(
       //               'We\'ve created your groups and scheduled your first nudges. You\'ll start seeing reminders soon — and get your first Weekly Digest this Sunday!',
       //               textAlign: TextAlign.center,
-      //               style: TextStyle(fontSize: 16, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey, height: 1.5),
+      //               style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurfaceVariant, height: 1.5),
       //             ),
       //           ]),
       //         ),
               
       //         const SizedBox(height: 40),
-      //         Text('Your Nudge Setup:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
+      //         Text('Your Nudge Setup:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
       //         const SizedBox(height: 20),
               
       //         _buildSummaryItem(Icons.person, 'Profile Complete', 'Username: ${_usernameController.text}'),
@@ -2344,7 +2338,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
       //           padding: const EdgeInsets.all(16),
       //           decoration: BoxDecoration(
       //             color: theme.colorScheme.primary.withOpacity(0.05),
-      //             borderRadius: BorderRadius.circular(12),
+      //             borderRadius: BorderRadius.circular(16),
       //             border: Border.all(color: theme.colorScheme.primary.withOpacity(0.2)),
       //           ),
       //           child: Column(
@@ -2358,7 +2352,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
       //                     'Explore Your Social Universe',
       //                     style: TextStyle(
       //                       fontWeight: FontWeight.bold,
-      //                       color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+      //                       color: Theme.of(context).colorScheme.onSurface,
       //                     ),
       //                   ),
       //                 ],
@@ -2367,7 +2361,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
       //               Text(
       //                 'Visit your dashboard to explore your personalized Social Universe visualization and manage your connections.',
       //                 style: TextStyle(
-      //                   color: themeProvider.isDarkMode ? Colors.white70 : Colors.grey.shade700,
+      //                   color: themeProvider.isDarkMode ? Colors.white70 : Theme.of(context).colorScheme.outline,
       //                 ),
       //               ),
       //             ],
@@ -2379,6 +2373,119 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
       //     ),
       //   );
       // }
+
+      // ── State for goals step ───────────────────────────────────────────────
+      // (declared as instance-level via inline logic — using a Set<String> tracked
+      //  in the parent class)
+
+      Widget _buildWhatMattersStep() {
+        final themeProvider = Provider.of<ThemeProvider>(context);
+        final isDark = themeProvider.isDarkMode;
+        final scaffoldBg = isDark ? AppColors.darkBackground : const Color(0xFFF2EEE8);
+        final cardBg = isDark ? AppColors.darkSurfaceContainerHigh : Colors.white;
+        final textP = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
+        final textS = isDark ? AppColors.darkOnSurfaceVariant : AppColors.lightOnSurfaceVariant;
+
+        final goals = [
+          "Stay connected with people I'm drifting from",
+          "Be more intentional about my relationships",
+          "Strengthen my close relationships",
+          "Grow and maintain my professional network",
+          "Stay close to long-distance family and friends",
+          "Reconnect with people from my past",
+        ];
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(height: 8),
+              Text(
+                'What matters most\nto you?',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 30, fontWeight: FontWeight.w800,
+                  color: textP, height: 1.15),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Select your focus to help us personalize\nyour nudges and reminders.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.beVietnamPro(
+                  fontSize: 14, color: textS, height: 1.55),
+              ),
+              const SizedBox(height: 28),
+
+              ...goals.map((goal) {
+                final isSelected = (_selectedGoals ?? <String>{}).contains(goal);
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedGoals ??= {};
+                      if (isSelected) {
+                        _selectedGoals!.remove(goal);
+                      } else {
+                        _selectedGoals!.add(goal);
+                      }
+                    });
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 18),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppColors.lightPrimary.withOpacity(
+                              isDark ? 0.15 : 0.06)
+                          : cardBg,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isSelected
+                            ? AppColors.lightPrimary
+                            : Colors.transparent,
+                        width: 1.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(
+                              isDark ? 0.15 : 0.05),
+                          blurRadius: 8, offset: const Offset(0, 2)),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(goal,
+                            style: GoogleFonts.beVietnamPro(
+                              fontSize: 15, fontWeight: FontWeight.w500,
+                              color: isSelected
+                                  ? (isDark ? AppColors.darkPrimary
+                                      : AppColors.lightPrimary)
+                                  : textP,
+                              height: 1.3)),
+                        ),
+                        const SizedBox(width: 12),
+                        isSelected
+                            ? Container(
+                                width: 24, height: 24,
+                                decoration: const BoxDecoration(
+                                  color: AppColors.lightPrimary,
+                                  shape: BoxShape.circle),
+                                child: const Icon(Icons.check_rounded,
+                                    color: Colors.white, size: 14))
+                            : Icon(Icons.chevron_right_rounded,
+                                color: textS, size: 20),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ],
+          ),
+        );
+      }
 
       Widget _buildRoadmapStep() {
         // final themeProvider = Provider.of<ThemeProvider>(context);
@@ -2398,8 +2505,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
         
       //   return ListTile(
       //     leading: Icon(icon, color: theme.colorScheme.primary),
-      //     title: Text(title, style: TextStyle(fontWeight: FontWeight.w500, color: themeProvider.isDarkMode ? Colors.white : Colors.black)),
-      //     subtitle: Text(subtitle, style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey)),
+      //     title: Text(title, style: TextStyle(fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface)),
+      //     subtitle: Text(subtitle, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
       //   );
       // }
 
@@ -2412,19 +2519,19 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
           onTap: _dismissKeyboard,
           behavior: HitTestBehavior.translucent,
           child: Scaffold(
-            backgroundColor: themeProvider.getBackgroundColor(context),
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             appBar: AppBar(
                   title: GradientText(
                     text: 'NUDGE',
                     style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
                     gradient: const LinearGradient(
-                      colors: [Color(0xFF5CDEE5), Color(0xFF2D85F6)],
+                      colors: [AppColors.lightSecondary, AppColors.lightPrimary],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                     ),
                   ),
                   centerTitle: true,
-                  backgroundColor: themeProvider.getSurfaceColor(context),
+                  backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
                   surfaceTintColor: Colors.transparent,
                   automaticallyImplyLeading: false,
                   elevation: 0,
@@ -2435,11 +2542,11 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
               if (!_isCropping) Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: themeProvider.getSurfaceColor(context),
+                  color: Theme.of(context).colorScheme.surfaceContainerLow,
                   boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, -2))],
                   border: Border(
                     top: BorderSide(
-                      color: themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade300,
+                      color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ),
@@ -2451,7 +2558,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                         foregroundColor: theme.colorScheme.primary,
                         side: BorderSide(color: theme.colorScheme.primary),
                         padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
                       child: Text('Back', style: TextStyle(fontSize: _currentStep == _steps.length - 1 ? 14 : 16,),),
                     ),
@@ -2480,8 +2587,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                           //   flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
                           //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
                           //   messageText: Center(
-                          //       child: Text('Please add at least one group!}', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-                          //           color: Colors.white, fontWeight: FontWeight.w400),)),
+                          //       child: Text('Please add at least one group!}', style: TextStyle(fontFamily: GoogleFonts.beVietnamPro().fontFamily, fontSize: 14,
+                          //           color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w400),)),
                           // ).show(context);
                            TopMessageService().showMessage(
                               context: context,
@@ -2498,10 +2605,10 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                     style: ElevatedButton.styleFrom(
                       backgroundColor: theme.colorScheme.primary,
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
                     child: _isLoading
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).colorScheme.onSurface))
                         : Text(
                             _currentStep == _steps.length - 1 
                               ? 'Launch Your Universe' 
@@ -2652,288 +2759,316 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
     @override
     Widget build(BuildContext context) {
       final themeProvider = Provider.of<ThemeProvider>(context);
-      final theme = Theme.of(context);
-      
+      final isDark = themeProvider.isDarkMode;
+      final scheme = Theme.of(context).colorScheme;
+
+      final scaffoldBg = isDark ? AppColors.darkBackground : const Color(0xFFF2EEE8);
+      final cardBg     = isDark ? AppColors.darkSurfaceContainerHigh : Colors.white;
+      final fieldBg    = isDark ? AppColors.darkSurfaceContainerHighest : const Color(0xFFECE7E2);
+      final textP      = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
+      final textS      = isDark ? AppColors.darkOnSurfaceVariant : AppColors.lightOnSurfaceVariant;
+
+      // Build alphabetical sections
+      final Map<String, List<fContacts.Contact>> alphaSections = {};
+      for (final c in _filteredContacts) {
+        final letter = c.displayName.isNotEmpty
+            ? c.displayName[0].toUpperCase() : '#';
+        alphaSections.putIfAbsent(letter, () => []).add(c);
+      }
+      final sortedLetters = alphaSections.keys.toList()..sort();
+
+      // Already-in-nudge at top as "frequently contacted"
+      final frequent = _filteredContacts
+          .where((c) => _isContactAlreadyExists(c))
+          .take(3).toList();
+
       return GestureDetector(
         onTap: _dismissKeyboard,
         behavior: HitTestBehavior.translucent,
         child: Scaffold(
-          backgroundColor: themeProvider.getBackgroundColor(context),
+          backgroundColor: scaffoldBg,
           appBar: AppBar(
-            title: Text(
-              'SELECT CONTACTS', 
-              style: TextStyle(
-                color: themeProvider.isDarkMode ? Colors.white : const Color(0xff555555),
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
+            backgroundColor: scaffoldBg,
+            surfaceTintColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
+              icon: Icon(Icons.close_rounded, color: textP, size: 22),
+              onPressed: () => Navigator.pop(context),
             ),
-            backgroundColor: themeProvider.getSurfaceColor(context),
+            centerTitle: true,
+            title: Text('SELECT CONTACTS',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 17, fontWeight: FontWeight.w800,
+                color: textP, letterSpacing: 0.5)),
             actions: [
               IconButton(
-                icon: Icon(Icons.select_all, color: themeProvider.getTextPrimaryColor(context)),
+                icon: Icon(Icons.select_all_rounded,
+                    color: AppColors.lightPrimary, size: 22),
                 tooltip: 'Select all',
                 onPressed: _selectAll,
               ),
               IconButton(
-                icon: Icon(Icons.clear, color: themeProvider.getTextPrimaryColor(context)),
+                icon: Icon(Icons.deselect_rounded, color: textS, size: 22),
                 tooltip: 'Clear selection',
                 onPressed: _clearSelection,
               ),
-              Padding(
-                padding: const EdgeInsets.only(right: 8.0),
-                child: Center(
-                  child: Text(
-                    '${_selectedContacts.length}',
-                    style: TextStyle(
-                      fontSize: 18, 
-                      fontWeight: FontWeight.bold, 
-                      color: themeProvider.isDarkMode ? Colors.white : Colors.black
-                    ),
-                  ),
-                ),
-              ),
             ],
           ),
-          body: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
+
+          body: Column(children: [
+            // Search bar
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: Container(
+                height: 48,
+                decoration: BoxDecoration(
+                  color: fieldBg,
+                  borderRadius: BorderRadius.circular(9999),
+                ),
                 child: TextField(
                   controller: _searchController,
-                  onTap: () => _dismissKeyboard(),
-                  style: TextStyle(color: themeProvider.isDarkMode ? Colors.white : Colors.black),
+                  style: GoogleFonts.beVietnamPro(fontSize: 14, color: textP),
                   decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.search),
-                    hintText: 'Search by name, phone, or email...',
-                    hintStyle: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
-                    border: const OutlineInputBorder(),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                    filled: true,
-                    fillColor: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+                    prefixIcon: Icon(Icons.search_rounded, color: textS, size: 20),
+                    hintText: 'Search by name or number...',
+                    hintStyle: GoogleFonts.beVietnamPro(fontSize: 14, color: textS),
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 14),
                   ),
                   onChanged: _applyFilter,
                 ),
               ),
-              
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '${_filteredContacts.length} contacts found',
-                      style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
-                    ),
-                    Text(
-                      '${widget.existingContacts.length} already in Nudge',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: themeProvider.isDarkMode ? Colors.grey.shade500 : Colors.grey.shade600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              
-              const SizedBox(height: 8),
-              
-              Expanded(
-                child: _filteredContacts.isEmpty
-                    ? Center(
-                        child: Text(
-                          'No contacts found',
-                          style: TextStyle(fontSize: 16, color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
-                        ),
-                      )
-                    : ListView.builder(
-                        itemCount: _filteredContacts.length,
-                        itemBuilder: (context, index) {
-                          final contact = _filteredContacts[index];
-                          final isSelected = _selectedContacts.contains(contact);
-                          final alreadyExists = _isContactAlreadyExists(contact);
-                          
-                          final primaryPhone = contact.phones.isNotEmpty
-                              ? contact.phones.first.number
-                              : '';
-                          final primaryEmail = contact.emails.isNotEmpty
-                              ? contact.emails.first.address
-                              : '';
-                          
-                          final avatarIndex = _getAvatarIndex(contact);
-                          
-                          // Determine text color based on contact state
-                          Color textColor;
-                          Color subtitleColor;
-                          
-                          if (alreadyExists) {
-                            textColor = themeProvider.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade500;
-                            subtitleColor = themeProvider.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade400;
-                          } else if (isSelected) {
-                            textColor = theme.colorScheme.primary;
-                            subtitleColor = theme.colorScheme.primary.withOpacity(0.8);
-                          } else {
-                            textColor = themeProvider.isDarkMode ? Colors.white : Colors.black;
-                            subtitleColor = themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey;
-                          }
+            ),
+            const SizedBox(height: 8),
 
-                          Widget avatar;
-                          if (contact.photoOrThumbnail != null) {
-                            avatar = CircleAvatar(
-                              backgroundImage: MemoryImage(contact.photoOrThumbnail!),
-                              radius: 24,
-                            );
-                          } else {
-                            avatar = CircleAvatar(
-                              radius: 24,
-                              backgroundColor: Colors.transparent,
-                              backgroundImage: AssetImage('assets/contact-icons/$avatarIndex.png'),
-                              child: Opacity(
-                                opacity: alreadyExists ? 0.5 : 1.0,
-                                child: Text(
-                                  contact.displayName.isNotEmpty ? _getContactInitials(contact.displayName).toUpperCase() : '',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-                            );
-                          }
-                          
-                          return Container(
-                            color: isSelected && !alreadyExists
-                                ? theme.colorScheme.primary.withOpacity(0.1)
-                                : Colors.transparent,
-                            child: ListTile(
-                              leading: Opacity(
-                                opacity: alreadyExists ? 0.5 : 1.0,
-                                child: avatar,
-                              ),
-                              title: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      contact.displayName,
-                                      style: TextStyle(
-                                        fontWeight: isSelected && !alreadyExists ? FontWeight.bold : FontWeight.normal,
-                                        color: textColor,
-                                        fontStyle: alreadyExists ? FontStyle.italic : FontStyle.normal,
-                                      ),
-                                    ),
-                                  ),
-                                  if (alreadyExists)
-                                    Container(
-                                      margin: const EdgeInsets.only(left: 8),
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: themeProvider.isDarkMode 
-                                            ? Colors.grey.shade800 
-                                            : Colors.grey.shade200,
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(
-                                        'Already in Nudge',
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          color: themeProvider.isDarkMode 
-                                              ? Colors.grey.shade400 
-                                              : Colors.grey.shade600,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  if (primaryPhone.isNotEmpty) 
-                                    Text(
-                                      primaryPhone, 
-                                      style: TextStyle(
-                                        color: subtitleColor,
-                                        fontStyle: alreadyExists ? FontStyle.italic : FontStyle.normal,
-                                      ),
-                                    ),
-                                  if (primaryEmail.isNotEmpty) 
-                                    Text(
-                                      primaryEmail, 
-                                      style: TextStyle(
-                                        color: subtitleColor,
-                                        fontStyle: alreadyExists ? FontStyle.italic : FontStyle.normal,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                              trailing: isSelected && !alreadyExists
-                                  ? Icon(Icons.check_circle, color: theme.colorScheme.primary)
-                                  : alreadyExists
-                                      ? Icon(Icons.check_circle_outline, color: themeProvider.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade400)
-                                      : null,
-                              onTap: alreadyExists
-                                  ? null // Make already existing contacts unselectable
-                                  : () {
-                                      setState(() {
-                                        if (isSelected) {
-                                          _selectedContacts.remove(contact);
-                                        } else {
-                                          _selectedContacts.add(contact);
-                                        }
-                                      });
-                                    },
-                            ),
-                          );
-                        },
-                      ),
-              ),
-            ],
-          ),
+            // Contact list
+            Expanded(
+              child: _filteredContacts.isEmpty
+                  ? Center(child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.search_off_rounded,
+                            size: 56, color: textS.withOpacity(0.4)),
+                        const SizedBox(height: 12),
+                        Text('No contacts found',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 16, fontWeight: FontWeight.w600,
+                            color: textP)),
+                      ]))
+                  : ListView(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                      children: [
+                        // Frequently contacted section
+                        if (frequent.isNotEmpty && _searchController.text.isEmpty) ...[
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(4, 4, 4, 8),
+                            child: Text('FREQUENTLY CONTACTED',
+                              style: GoogleFonts.beVietnamPro(
+                                fontSize: 11, fontWeight: FontWeight.w700,
+                                color: textS, letterSpacing: 0.8))),
+                          ...frequent.map((c) =>
+                              _buildContactCard(c, cardBg, textP, textS, isDark)),
+                          const SizedBox(height: 12),
+                        ],
+                        // Alphabetical sections
+                        ...sortedLetters.expand((letter) => [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(4, 8, 4, 6),
+                            child: Text(letter,
+                              style: GoogleFonts.beVietnamPro(
+                                fontSize: 11, fontWeight: FontWeight.w700,
+                                color: textS, letterSpacing: 0.5))),
+                          ...alphaSections[letter]!.map((c) =>
+                              _buildContactCard(c, cardBg, textP, textS, isDark)),
+                        ]),
+                      ],
+                    ),
+            ),
+          ]),
+
           bottomNavigationBar: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: themeProvider.getSurfaceColor(context),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 8,
-                  offset: const Offset(0, -2),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: theme.colorScheme.primary,
-                      side: BorderSide(color: theme.colorScheme.primary),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+            color: scaffoldBg,
+            padding: EdgeInsets.fromLTRB(
+                24, 12, 24, MediaQuery.of(context).padding.bottom + 12),
+            child: Row(children: [
+              GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Text('Cancel',
+                  style: GoogleFonts.beVietnamPro(
+                    fontSize: 16, fontWeight: FontWeight.w500, color: textS)),
+              ),
+              const Spacer(),
+              GestureDetector(
+                onTap: _selectedContacts.isEmpty
+                    ? null
+                    : () => Navigator.pop(context, _selectedContacts),
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 200),
+                  opacity: _selectedContacts.isEmpty ? 0.45 : 1.0,
+                  child: Container(
+                    height: 52,
+                    padding: const EdgeInsets.symmetric(horizontal: 28),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF751FE7), Color(0xFF9C4DFF)]),
+                      borderRadius: BorderRadius.circular(9999),
+                      boxShadow: _selectedContacts.isNotEmpty
+                          ? [BoxShadow(
+                              color: AppColors.lightPrimary.withOpacity(0.4),
+                              blurRadius: 16, offset: const Offset(0, 5))]
+                          : null,
                     ),
-                    child: const Text('Cancel'),
+                    child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                      Text('Import (${_selectedContacts.length})',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 16, fontWeight: FontWeight.w700,
+                          color: Colors.white)),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.arrow_forward_rounded,
+                          color: Colors.white, size: 18),
+                    ]),
                   ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _selectedContacts.isEmpty
-                        ? null
-                        : () => Navigator.pop(context, _selectedContacts),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.colorScheme.primary,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: Text(
-                      'Import (${_selectedContacts.length})',
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ]),
           ),
+        ),
+      );
+    }
+
+    // ── Contact card ─────────────────────────────────────────────────────────
+    Widget _buildContactCard(
+      fContacts.Contact contact,
+      Color cardBg, Color textP, Color textS, bool isDark,
+    ) {
+      final isSelected    = _selectedContacts.contains(contact);
+      final alreadyExists = _isContactAlreadyExists(contact);
+      final primaryPhone  = contact.phones.isNotEmpty
+          ? contact.phones.first.number : '';
+      final avatarIndex   = _getAvatarIndex(contact);
+      final initials      = contact.displayName.isNotEmpty
+          ? _getContactInitials(contact.displayName) : '?';
+
+      return GestureDetector(
+        onTap: alreadyExists ? null : () => setState(() {
+          if (isSelected) {
+            _selectedContacts.remove(contact);
+          } else {
+            _selectedContacts.add(contact);
+          }
+        }),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: cardBg,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.14 : 0.05),
+              blurRadius: 10, offset: const Offset(0, 2))],
+          ),
+          child: Row(children: [
+            // Avatar — asset + overlay + initials
+            Stack(clipBehavior: Clip.none, children: [
+              Opacity(
+                opacity: alreadyExists ? 0.65 : 1.0,
+                child: contact.photoOrThumbnail != null
+                    ? ClipOval(child: Image.memory(
+                        contact.photoOrThumbnail!, width: 48, height: 48,
+                        fit: BoxFit.cover))
+                    : ClipOval(
+                        child: SizedBox(width: 48, height: 48,
+                          child: Stack(fit: StackFit.expand, children: [
+                            Image.asset('assets/contact-icons/$avatarIndex.png',
+                                fit: BoxFit.cover),
+                            Container(color: Colors.black.withOpacity(
+                                isDark ? 0.38 : 0.18)),
+                            Center(child: Text(initials,
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 16, fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                shadows: [Shadow(
+                                  color: Colors.black.withOpacity(0.4),
+                                  blurRadius: 4)]))),
+                          ]))),
+              ),
+              if (alreadyExists)
+                Positioned(
+                  bottom: -2, right: -2,
+                  child: Container(
+                    width: 18, height: 18,
+                    decoration: BoxDecoration(
+                      color: AppColors.lightPrimary,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: cardBg, width: 1.5)),
+                    child: const Icon(Icons.check,
+                        color: Colors.white, size: 10))),
+            ]),
+            const SizedBox(width: 14),
+
+            // Name + phone
+            Expanded(child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  Expanded(
+                    child: Text(contact.displayName,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 16, fontWeight: FontWeight.w700,
+                        color: alreadyExists ? textS : textP),
+                      maxLines: 1, overflow: TextOverflow.ellipsis)),
+                  if (alreadyExists) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 7, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.lightPrimary.withOpacity(0.10),
+                        borderRadius: BorderRadius.circular(6)),
+                      child: Text('ALREADY IN NUDGE',
+                        style: GoogleFonts.beVietnamPro(
+                          fontSize: 9, fontWeight: FontWeight.w700,
+                          color: AppColors.lightPrimary,
+                          letterSpacing: 0.3))),
+                  ],
+                ]),
+                if (primaryPhone.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(primaryPhone,
+                    style: GoogleFonts.beVietnamPro(
+                        fontSize: 13, color: textS)),
+                ],
+              ],
+            )),
+            const SizedBox(width: 12),
+
+            // Checkbox
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              width: 28, height: 28,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isSelected ? AppColors.lightPrimary : Colors.transparent,
+                border: Border.all(
+                  color: isSelected
+                      ? AppColors.lightPrimary
+                      : alreadyExists
+                          ? AppColors.lightPrimary.withOpacity(0.4)
+                          : textS.withOpacity(0.35),
+                  width: 1.5)),
+              child: isSelected
+                  ? const Icon(Icons.check_rounded, color: Colors.white, size: 16)
+                  : alreadyExists
+                      ? Icon(Icons.check_rounded,
+                          color: AppColors.lightPrimary.withOpacity(0.6), size: 14)
+                      : null,
+            ),
+          ]),
         ),
       );
     }
@@ -2964,7 +3099,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
         onTap: _dismissKeyboard,
         behavior: HitTestBehavior.translucent,
         child: Dialog(
-          backgroundColor: themeProvider.isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+          backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
           child: Container(
             width: double.maxFinite,
             padding: const EdgeInsets.all(20),
@@ -2974,12 +3109,12 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
               children: [
                 Text(
                   'Assign to Group',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: themeProvider.isDarkMode ? Colors.white : Colors.black),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Select which group these contacts belong to:',
-                  style: TextStyle(color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
                 const SizedBox(height: 20),
                 
@@ -2993,7 +3128,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                       final isSelected = _selectedGroupId == group.id;
                       
                       return Card(
-                        color: themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white,
+                        color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,
                         margin: const EdgeInsets.only(bottom: 8),
                         child: ListTile(
                           leading: Container(
@@ -3008,13 +3143,13 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                             group.name,
                             style: TextStyle(
                               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                              color: isSelected ? theme.colorScheme.primary : (themeProvider.isDarkMode ? Colors.white : Colors.black),
+                              color: isSelected ? theme.colorScheme.primary : (Theme.of(context).colorScheme.onSurface),
                             ),
                           ),
                           subtitle: Text(
                             '${group.frequency} times ${group.period.toLowerCase()}',
                             style: TextStyle(
-                              color: isSelected ? theme.colorScheme.primary : (themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+                              color: isSelected ? theme.colorScheme.primary : (themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerLow : Theme.of(context).colorScheme.outline),
                             ),
                           ),
                           trailing: isSelected 
@@ -3061,9 +3196,9 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                           backgroundColor: theme.colorScheme.primary,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Import Contacts',
-                          style: TextStyle(color: Colors.white, fontSize: 14),
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14),
                         ),
                       ),
                     ),

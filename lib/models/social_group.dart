@@ -10,6 +10,7 @@ class SocialGroup {
   int memberCount;
   DateTime lastInteraction;
   String colorCode;
+  String emoji;
   bool birthdayNudgesEnabled = true;
   bool anniversaryNudgesEnabled = true;
   int orderIndex;
@@ -24,6 +25,7 @@ class SocialGroup {
     required this.memberCount,
     required this.lastInteraction,
     required this.colorCode,
+    this.emoji = '',
     required this.birthdayNudgesEnabled,
     required this.anniversaryNudgesEnabled,
     required this.orderIndex,
@@ -40,6 +42,7 @@ class SocialGroup {
       'memberCount': memberCount,
       'lastInteraction': lastInteraction.millisecondsSinceEpoch,
       'colorCode': colorCode,
+      'emoji': emoji,
       'createdAt': DateTime.now().millisecondsSinceEpoch,
       'birthdayNudgesEnabled': birthdayNudgesEnabled,
       'anniversaryNudgesEnabled': anniversaryNudgesEnabled,
@@ -59,6 +62,7 @@ class SocialGroup {
       memberCount: data['memberCount'] ?? 0,
       lastInteraction: DateTime.fromMillisecondsSinceEpoch(data['lastInteraction'] ?? 0),
       colorCode: data['colorCode'] ?? '#2596BE',
+      emoji: data['emoji'] ?? '',
       birthdayNudgesEnabled: data['birthdayNudgesEnabled'] ?? false,
       anniversaryNudgesEnabled: data['anniversaryNudgesEnabled'] ?? false,
       orderIndex: data['orderIndex'] ?? 0,
@@ -76,6 +80,7 @@ class SocialGroup {
       memberCount: data['memberCount'] ?? 0,
       lastInteraction: DateTime.fromMillisecondsSinceEpoch(data['lastInteraction'] ?? 0),
       colorCode: data['colorCode'] ?? '#2596BE',
+      emoji: data['emoji'] ?? '',
       birthdayNudgesEnabled: data['birthdayNudgesEnabled'] ?? false,
       anniversaryNudgesEnabled: data['anniversaryNudgesEnabled'] ?? false,
       orderIndex: data['orderIndex'] ?? 0,
@@ -93,6 +98,7 @@ class SocialGroup {
       memberCount: 0,
       lastInteraction: DateTime.now(),
       colorCode: '#2596BE',
+      emoji: '',
       birthdayNudgesEnabled: false,
       anniversaryNudgesEnabled: false,
       orderIndex: 0,
@@ -109,6 +115,7 @@ class SocialGroup {
     int? memberCount,
     DateTime? lastInteraction,
     String? colorCode,
+    String? emoji,
     bool? birthdayNudgesEnabled,
     bool? anniversaryNudgesEnabled,
     int? orderIndex,
@@ -123,6 +130,7 @@ class SocialGroup {
       memberCount: memberCount ?? this.memberCount,
       lastInteraction: lastInteraction ?? this.lastInteraction,
       colorCode: colorCode ?? this.colorCode,
+      emoji: emoji ?? this.emoji,
       birthdayNudgesEnabled: birthdayNudgesEnabled ?? this.birthdayNudgesEnabled,
       anniversaryNudgesEnabled: anniversaryNudgesEnabled?? this.anniversaryNudgesEnabled,
       orderIndex: orderIndex ?? this.orderIndex,

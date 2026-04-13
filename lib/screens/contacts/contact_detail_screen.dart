@@ -3,6 +3,8 @@ import 'dart:io';
 import 'dart:math';
 // import 'package:another_flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
+import 'package:nudge/theme/app_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:nudge/providers/feedback_provider.dart';
 import 'package:nudge/screens/contacts/edit_contact_screen.dart';
@@ -10,7 +12,6 @@ import 'package:nudge/screens/contacts/edit_contact_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/services/auth_service.dart';
 import 'package:nudge/services/message_service.dart';
-import 'package:nudge/theme/text_styles.dart';
 // import 'package:nudge/widgets/add_touchpoint_modal.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
 import 'package:nudge/widgets/log_interaction_modal.dart';
@@ -57,16 +58,16 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
         //   padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero, duration: Duration(seconds: 2),
         //   flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
         //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
-        //   backgroundColor: Colors.green,
+        //   backgroundColor: AppColors.success,
         //   messageText: Center(
-        //       child: Text('Successfully added contact', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-        //           color: Colors.white, fontWeight: FontWeight.w400),)),
+        //       child: Text('Successfully added contact', style: TextStyle(fontFamily: GoogleFonts.beVietnamPro().fontFamily, fontSize: 14,
+        //           color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w400),)),
         // ).show(context);
 
         TopMessageService().showMessage(
                   context: context,
                   message: 'Successfully added contact!',
-                  backgroundColor: Colors.green,
+                  backgroundColor: AppColors.success,
                   icon: Icons.check_circle,
                 );
         
@@ -113,7 +114,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
         TopMessageService().showMessage(
           context: context,
           message: isVIP ? 'Added to Favourites' : 'Removed from Favourites',
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
           icon: Icons.check,
         );
       }
@@ -124,7 +125,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
        TopMessageService().showMessage(
           context: context,
           message: 'Error updating Favourites status: $e',
-          backgroundColor: Colors.deepOrange,
+          backgroundColor: Theme.of(context).colorScheme.tertiary,
           icon: Icons.error,
         );
     } finally {
@@ -166,14 +167,14 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
         message: mark
             ? '${contact.name} added to Needs Attention'
             : 'Removed from Needs Attention',
-        backgroundColor: mark ? const Color(0xFF1D9E75) : Colors.grey.shade600,
+        backgroundColor: mark ? Color(0xFF1D9E75) : Theme.of(context).colorScheme.surfaceContainerLow,
         icon: mark ? Icons.flag_rounded : Icons.flag_outlined,
       );
     } catch (e) {
       TopMessageService().showMessage(
         context: context,
         message: 'Could not update Needs Attention: $e',
-        backgroundColor: AppTheme.errorColor,
+        backgroundColor: AppColors.lightError,
         icon: Icons.error,
       );
     } finally {
@@ -203,13 +204,13 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
   Color _getRingColor(String ring) {
     switch (ring) {
       case 'inner':
-        return Colors.amber;
+        return AppColors.vipGold;
       case 'middle':
-        return const Color(0xff3CB3E9);
+        return AppColors.lightPrimary;
       case 'outer':
         return const Color(0xff897ED6);
       default:
-        return Colors.grey;
+        return Theme.of(context).colorScheme.outline;
     }
   }
 
@@ -257,7 +258,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      backgroundColor: themeProvider.getSurfaceColor(context),
+      backgroundColor: Colors.white,
       builder: (context) {
         return Padding(
           padding: EdgeInsets.only(
@@ -293,13 +294,10 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                     appBar: AppBar(
                 title: Text(
                   'Contact Details', 
-                  style: AppTextStyles.title2.copyWith(
-                    color: themeProvider.getTextPrimaryColor(context), 
-                    fontSize: 22, 
-                    fontWeight: FontWeight.w800, 
-                    fontFamily: 'Inter'
-                  )
-                ),
+                  style: GoogleFonts.plusJakartaSans(
+                                      color: Theme.of(context).colorScheme.onSurface,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 22)),
                 centerTitle: true,
                 leading: IconButton(
                   onPressed: (){
@@ -308,14 +306,14 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                       widget.navigate!();
                     }
                   },
-                  icon: Icon(Icons.arrow_back, color: themeProvider.getTextPrimaryColor(context))),
-                iconTheme: IconThemeData(color: AppTheme.primaryColor),
-                backgroundColor: themeProvider.getSurfaceColor(context),
+                  icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface)),
+                iconTheme: IconThemeData(color: AppColors.lightPrimary),
+                backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
                 surfaceTintColor: Colors.transparent,
                 actions: [
                   MaterialButton(
                     padding: EdgeInsets.zero,
-                    child: Icon(Icons.edit, color: themeProvider.getTextPrimaryColor(context)),
+                    child: Icon(Icons.edit, color: Theme.of(context).colorScheme.onSurface),
                     onPressed: () {
                       Navigator.push(
                         context,
@@ -340,11 +338,11 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.error),
                   const SizedBox(height: 16),
                   Text(
                     'Error loading contact',
-                    style: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                   ),
                 ],
               ),
@@ -354,7 +352,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
           if (!snapshot.hasData) {
             return Center(
               child: CircularProgressIndicator(
-                color: AppTheme.primaryColor,
+                color: AppColors.lightPrimary,
               ),
             );
           }
@@ -377,7 +375,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                        _fabController.closeMenu();
                     },
                     child: Container(
-                      color: Colors.black.withOpacity(0.55),
+                      color: Colors.transparent,
                       width: MediaQuery.of(context).size.width,
                       height: MediaQuery.of(context).size.height,
                     ),
@@ -394,12 +392,12 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
               confettiController: _confettiController,
               blastDirectionality: BlastDirectionality.explosive,
               shouldLoop: false,
-              colors: const [
-                Colors.green,
-                Colors.blue,
-                Colors.pink,
-                Colors.orange,
-                Colors.purple
+              colors: [
+                AppColors.success,
+                Theme.of(context).colorScheme.secondary,
+                Theme.of(context).colorScheme.tertiary,
+                AppColors.warning,
+                Theme.of(context).colorScheme.primary
               ],
             ),
           ),
@@ -410,568 +408,567 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
 
   Widget _buildContactDetails(BuildContext context, ThemeProvider themeProvider, Contact contact) {
     final initials = _getContactInitials(contact.name);
-    
-    bool isLocalImage = contact.imageUrl.isNotEmpty && 
-        (contact.imageUrl.startsWith('/') || 
-         contact.imageUrl.startsWith('file://'));
+    final isDark   = themeProvider.isDarkMode;
+    final scheme   = Theme.of(context).colorScheme;
 
-    // bool hasNoInfo = contact.phoneNumber.isEmpty &&
-    //     contact.email.isEmpty &&
-    //     contact.notes.isEmpty &&
-    //     contact.birthday == null &&
-    //     contact.anniversary == null &&
-    //     contact.workAnniversary == null;
+    final bg     = isDark ? AppColors.darkBackground : const Color(0xFFF5F2EE);
+    final cardBg = isDark ? AppColors.darkSurfaceContainerHigh : Colors.white;
+    final textP  = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
+    final textS  = isDark ? AppColors.darkOnSurfaceVariant : AppColors.lightOnSurfaceVariant;
+    final fieldBg = isDark ? AppColors.darkSurfaceContainerHighest : const Color(0xFFF0EDE9);
+
+    bool isLocalImage = contact.imageUrl.isNotEmpty &&
+        (contact.imageUrl.startsWith('/') || contact.imageUrl.startsWith('file://'));
+
+    // CSS label & colour helpers (inline for context access)
+    final cssPercent = contact.css.clamp(0.0, 100.0);
+    final cssLabel   = _getCSSLabel(contact.css);
+    final cssColor   = _getCSSColor(contact.css, context);
+    final ringName   = _getFormattedRingName(contact.computedRing);
+    final ringColor  = _getRingColor(contact.computedRing);
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Profile Header
-          Center(
-            child: Column(
-              children: [
+
+          // ── Hero: avatar + name + ring pill ──────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+            child: Center(
+              child: Column(children: [
+                // Avatar
                 Container(
-                  width: 120,
-                  height: 120,
+                  width: 120, height: 120,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(themeProvider.isDarkMode ? 0.3 : 0.01),
-                        blurRadius: 8,
-                        spreadRadius: 2,
-                      ),
-                    ],
+                    boxShadow: [BoxShadow(
+                      color: Colors.black.withOpacity(isDark ? 0.30 : 0.10),
+                      blurRadius: 16, offset: const Offset(0, 4))],
                   ),
-                  child: CircleAvatar(
-                    radius: 80,
-                    backgroundColor: Colors.transparent,
-                    backgroundImage: contact.imageUrl.isNotEmpty
-                        ? isLocalImage
-                            ? FileImage(File(contact.imageUrl.replaceFirst('file://', '')))
-                            : NetworkImage(contact.imageUrl) as ImageProvider
-                        : AssetImage('assets/contact-icons/${getRandomIndex(contact.id)}.png') as ImageProvider,
-                    child: contact.imageUrl.isEmpty
-                        ? Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              image: DecorationImage(
-                                image: AssetImage('assets/contact-icons/${getRandomIndex(contact.id)}.png'),
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
+                  child: ClipOval(
+                    child: SizedBox(
+                      width: 120, height: 120,
+                      child: contact.imageUrl.isNotEmpty
+                          ? Image(
+                              image: isLocalImage
+                                  ? FileImage(File(contact.imageUrl.replaceFirst('file://', '')))
+                                  : NetworkImage(contact.imageUrl) as ImageProvider,
+                              fit: BoxFit.cover)
+                          : Stack(fit: StackFit.expand, children: [
+                              Image.asset(
+                                'assets/contact-icons/${getRandomIndex(contact.id)}.png',
+                                fit: BoxFit.cover),
+                              Container(color: Colors.black.withOpacity(
+                                  isDark ? 0.38 : 0.20)),
+                              Center(child: Text(
                                 contact.name.isNotEmpty ? initials.toUpperCase() : '?',
                                 style: TextStyle(
                                   fontSize: 30,
-                                  fontFamily: 'OpenSans',
-                                  fontWeight: FontWeight.bold,
+                                  fontFamily: GoogleFonts.plusJakartaSans().fontFamily,
+                                  fontWeight: FontWeight.w800,
                                   color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          )
-                        : null,
-                  ),
-                ),
-                const SizedBox(height: 15),
-                Text(
-                  contact.name,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontFamily: 'OpenSans',
-                    fontWeight: FontWeight.bold,
-                    color: themeProvider.getTextPrimaryColor(context)
-                  ),
-                ),
-                const SizedBox(height: 5),
-                if (contact.profession != null && contact.profession!.isNotEmpty)
-                  Text(
-                    contact.profession!,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontFamily: 'OpenSans',
-                      color: themeProvider.getTextSecondaryColor(context),
+                                  shadows: [Shadow(
+                                    color: Colors.black.withOpacity(0.45),
+                                    blurRadius: 4)]))),
+                            ]),
                     ),
                   ),
-                const SizedBox(height: 20),
+                ),
+                const SizedBox(height: 14),
+
+                // Name
+                Text(contact.name,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 26, fontWeight: FontWeight.w800, color: textP)),
+                if (contact.profession != null && contact.profession!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(contact.profession!,
+                    style: GoogleFonts.beVietnamPro(fontSize: 14, color: textS)),
+                ],
+                const SizedBox(height: 12),
+
+                // Ring pill
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Circle Health',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontFamily: 'OpenSans',
-                              fontWeight: FontWeight.w600,
-                              color: themeProvider.getTextSecondaryColor(context),
-                            ),
-                          ),
-                          Text(
-                            _getCSSLabel(contact.css),
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontFamily: 'OpenSans',
-                              fontWeight: FontWeight.bold,
-                              color: _getCSSColor(contact.css, context),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      LinearProgressIndicator(
-                        value: contact.css / 100,
-                        backgroundColor: Colors.grey.withOpacity(0.15),
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          _getCSSColor(contact.css, context)
-                        ),
-                        minHeight: 3,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ],
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: ringColor.withOpacity(isDark ? 0.18 : 0.10),
+                    borderRadius: BorderRadius.circular(9999),
+                    border: Border.all(
+                      color: ringColor.withOpacity(isDark ? 0.4 : 0.25)),
                   ),
+                  child: Text(ringName.toUpperCase(),
+                    style: GoogleFonts.beVietnamPro(
+                      fontSize: 11, fontWeight: FontWeight.w700,
+                      color: ringColor, letterSpacing: 0.8)),
                 ),
-                const SizedBox(height: 20),
-              ],
+              ]),
             ),
           ),
-          
-          // Favourites Toggle
-          Card(
-            color: themeProvider.getCardColor(context),
-            child: ListTile(
-              leading: Icon(Icons.star, color: contact.isVIP ? Colors.amber : themeProvider.getTextSecondaryColor(context)),
-              title: Text(
-                'Favourites', 
-                style: TextStyle(
-                  fontWeight: FontWeight.w600, 
-                  color: themeProvider.getTextPrimaryColor(context), 
-                  fontFamily: 'OpenSans'
-                )
-              ),
-              subtitle: Text(
-                contact.isVIP 
-                    ? 'This contact is in your Favourites' 
-                    : 'Add to your Favourites for special attention',
-                style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans')
-              ),
-              trailing: _isUpdatingVIP
-                  ? SizedBox(
-                      width: 20, 
-                      height: 20, 
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2, 
-                        color: AppTheme.primaryColor
-                      )
-                    )
-                  : Switch(
-                      value: contact.isVIP,
-                      onChanged: (value) => _toggleVIPStatus(value, contact),
-                      activeColor: AppTheme.primaryColor,
-                      inactiveThumbColor: themeProvider.getButtonColor(context),
-                    ),
-            ),
-          ),
-          
           const SizedBox(height: 20),
 
-          Card(
-            color: themeProvider.getCardColor(context),
-            child: ListTile(
-              leading: Icon(
-                contact.needsAttention
-                    ? Icons.flag_rounded
-                    : Icons.flag_outlined,
-                // Teal for auto-flagged (from Digest), orange for manual,
-                // grey when not flagged — matching the spec's colour cues.
-                color: contact.needsAttention
-                    ? (contact.attentionSource == 'digest'
-                        ? const Color(0xFF1D9E75)   // teal — digest-sourced
-                        : AppTheme.warningColor)     // orange — manually flagged
-                    : themeProvider.getTextSecondaryColor(context),
+          // ── Closeness card ────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: cardBg,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [BoxShadow(
+                  color: Colors.black.withOpacity(isDark ? 0.15 : 0.06),
+                  blurRadius: 12, offset: const Offset(0, 3))],
               ),
-              title: Text(
-                'Needs Attention',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: themeProvider.getTextPrimaryColor(context),
-                  fontFamily: 'OpenSans',
-                ),
-              ),
-              subtitle: Text(
-                _attentionSubtitle(contact),
-                style: TextStyle(
-                  color: themeProvider.getTextSecondaryColor(context),
-                  fontFamily: 'OpenSans',
-                ),
-              ),
-              trailing: _isUpdatingAttention
-                  ? SizedBox(
-                      width: 20,
-                      height: 20,
+              child: Row(children: [
+                // Circular progress
+                SizedBox(
+                  width: 72, height: 72,
+                  child: Stack(alignment: Alignment.center, children: [
+                    SizedBox(
+                      width: 72, height: 72,
                       child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppTheme.primaryColor,
+                        value: cssPercent / 100,
+                        strokeWidth: 6,
+                        backgroundColor: fieldBg,
+                        valueColor: AlwaysStoppedAnimation<Color>(cssColor),
+                        strokeCap: StrokeCap.round,
                       ),
-                    )
-                  : Switch(
-                      value: contact.needsAttention,
-                      onChanged: (value) =>
-                          _toggleNeedsAttention(value, contact),
-                      activeColor: AppTheme.primaryColor,
-                      inactiveThumbColor:
-                          themeProvider.getButtonColor(context),
                     ),
+                    Text(
+                      '${cssPercent.toStringAsFixed(0)}%',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 14, fontWeight: FontWeight.w800,
+                        color: textP)),
+                  ]),
+                ),
+                const SizedBox(width: 18),
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('CLOSENESS',
+                    style: GoogleFonts.beVietnamPro(
+                      fontSize: 10, fontWeight: FontWeight.w700,
+                      color: textS, letterSpacing: 0.8)),
+                  const SizedBox(height: 4),
+                  Text(cssLabel,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 20, fontWeight: FontWeight.w700,
+                      color: cssColor)),
+                ]),
+              ]),
             ),
           ),
+          const SizedBox(height: 14),
 
-          const SizedBox(height: 20),
-          
-          // CDI Ring Display
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-            decoration: BoxDecoration(
-              color: _getRingColor(contact.computedRing).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: _getRingColor(contact.computedRing).withOpacity(0.3),
+          // ── Favourites toggle ─────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              decoration: BoxDecoration(
+                color: cardBg,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [BoxShadow(
+                  color: Colors.black.withOpacity(isDark ? 0.12 : 0.05),
+                  blurRadius: 8, offset: const Offset(0, 2))],
               ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  _getRingIcon(contact.computedRing),
-                  size: 16,
-                  color: _getRingColor(contact.computedRing),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  _getFormattedRingName(contact.computedRing),
-                  style: TextStyle(
-                    color: _getRingColor(contact.computedRing),
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    fontFamily: 'OpenSans',
-                  ),
-                ),
-                // if (contact.cdi > 0) ...[
-                //   const SizedBox(width: 12),
-                //   Text(
-                //     'CDI: ${contact.cdi.toStringAsFixed(0)}',
-                //     style: TextStyle(
-                //       color: themeProvider.getTextSecondaryColor(context),
-                //       fontSize: 12,
-                //       fontFamily: 'OpenSans',
-                //     ),
-                //   ),
-                // ],
-              ],
+              child: Row(children: [
+                Icon(contact.isVIP ? Icons.star_rounded : Icons.star_outline_rounded,
+                  color: contact.isVIP
+                      ? AppColors.vipGold
+                      : textS,
+                  size: 22),
+                const SizedBox(width: 12),
+                Expanded(child: Text('Add to Favourites',
+                  style: GoogleFonts.beVietnamPro(
+                    fontSize: 15, fontWeight: FontWeight.w500, color: textP))),
+                _isUpdatingVIP
+                    ? SizedBox(width: 20, height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2, color: AppColors.lightPrimary))
+                    : Switch(
+                        value: contact.isVIP,
+                        onChanged: (v) => _toggleVIPStatus(v, contact),
+                        thumbColor: WidgetStateProperty.resolveWith((s) =>
+                            s.contains(WidgetState.selected)
+                                ? Colors.white
+                                : scheme.outline),
+                        trackColor: WidgetStateProperty.resolveWith((s) =>
+                            s.contains(WidgetState.selected)
+                                ? AppColors.lightPrimary
+                                : scheme.outline),
+                        trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+                      ),
+              ]),
             ),
           ),
-          
           const SizedBox(height: 20),
-          
-          // Contact Information Section
+
+          // ── Contact Information ───────────────────────────────────────
           if (contact.phoneNumber.isNotEmpty || contact.email.isNotEmpty) ...[
-            Text(
-              'CONTACT INFORMATION',
-              style: TextStyle(
-                fontSize: 18,
-                fontFamily: 'OpenSans',
-                fontWeight: FontWeight.bold,
-                color: themeProvider.getTextSecondaryColor(context),
-                letterSpacing: 1.0,
-              ),
+            _sectionHeader(
+              icon: Icons.contact_page_rounded,
+              label: 'Contact Information',
+              isDark: isDark, textP: textP,
             ),
             const SizedBox(height: 10),
-            
-            if (contact.phoneNumber.isNotEmpty)
-              ListTile(
-                leading: Icon(Icons.phone, color: themeProvider.getTextPrimaryColor(context)),
-                title: Text(
-                  'Phone', 
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600, 
-                    color: themeProvider.getTextPrimaryColor(context), 
-                    fontFamily: 'OpenSans'
-                  )
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [BoxShadow(
+                    color: Colors.black.withOpacity(isDark ? 0.14 : 0.05),
+                    blurRadius: 10, offset: const Offset(0, 2))],
                 ),
-                subtitle: Text(
-                  contact.phoneNumber, 
-                  style: TextStyle(
-                    color: themeProvider.getTextSecondaryColor(context), 
-                    fontFamily: 'OpenSans'
-                  )
-                ),
+                child: Column(children: [
+                  if (contact.phoneNumber.isNotEmpty)
+                    _infoRow(
+                      label: 'MOBILE',
+                      value: contact.phoneNumber,
+                      trailingIcon: Icons.phone_rounded,
+                      trailingColor: AppColors.lightSecondary,
+                      isDark: isDark, textP: textP, textS: textS,
+                      divider: contact.email.isNotEmpty,
+                    ),
+                  if (contact.email.isNotEmpty)
+                    _infoRow(
+                      label: 'EMAIL',
+                      value: contact.email,
+                      trailingIcon: Icons.email_rounded,
+                      trailingColor: AppColors.lightPrimary,
+                      isDark: isDark, textP: textP, textS: textS,
+                      divider: false,
+                    ),
+                ]),
               ),
-            
-            if (contact.email.isNotEmpty)
-              ListTile(
-                leading: Icon(Icons.email, color: themeProvider.getTextPrimaryColor(context)),
-                title: Text(
-                  'Email', 
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600, 
-                    color: themeProvider.getTextPrimaryColor(context), 
-                    fontFamily: 'OpenSans'
-                  )
-                ),
-                subtitle: Text(
-                  contact.email, 
-                  style: TextStyle(
-                    color: themeProvider.getTextSecondaryColor(context), 
-                    fontFamily: 'OpenSans'
-                  )
-                ),
-              ),
+            ),
             const SizedBox(height: 20),
           ],
-          
-          // Connection Details Section
-          Text(
-            'CONNECTION DETAILS',
-            style: TextStyle(
-              fontSize: 17,
-              fontFamily: 'OpenSans',
-              fontWeight: FontWeight.bold,
-              color: themeProvider.getTextSecondaryColor(context),
-            ),
+
+          // ── Connection Details ─────────────────────────────────────────
+          _sectionHeader(
+            icon: Icons.device_hub_rounded,
+            label: 'Connection Details',
+            isDark: isDark, textP: textP,
           ),
           const SizedBox(height: 10),
-          
-          ListTile(
-            leading: SvgPicture.asset(
-              'assets/contact-icons/connection-type.svg',
-              width: 22,
-              height: 22,
-              color: themeProvider.getTextPrimaryColor(context)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              decoration: BoxDecoration(
+                color: cardBg,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [BoxShadow(
+                  color: Colors.black.withOpacity(isDark ? 0.14 : 0.05),
+                  blurRadius: 10, offset: const Offset(0, 2))],
+              ),
+              child: Column(children: [
+                _detailRow(
+                  label: 'Connection Type',
+                  value: contact.connectionType.isNotEmpty
+                      ? contact.connectionType : '—',
+                  isDark: isDark, textP: textP, textS: textS,
+                  divider: true,
+                ),
+                _detailRow(
+                  label: 'Frequency',
+                  value: FrequencyPeriodMapper.getConversationalChoice(
+                      contact.frequency, contact.period),
+                  isDark: isDark, textP: textP, textS: textS,
+                  divider: contact.socialGroups.isNotEmpty,
+                ),
+                if (contact.socialGroups.isNotEmpty)
+                  _detailRow(
+                    label: 'Groups',
+                    value: contact.socialGroups.join(', '),
+                    isDark: isDark, textP: textP, textS: textS,
+                    divider: false,
+                  ),
+              ]),
             ),
-            title: Text(
-              'Connection Type', 
-              style: TextStyle(
-                fontWeight: FontWeight.w600, 
-                color: themeProvider.getTextPrimaryColor(context), 
-                fontFamily: 'OpenSans'
-              )
-            ),
-            subtitle: Text(
-              contact.connectionType, 
-              style: TextStyle(
-                color: themeProvider.getTextSecondaryColor(context), 
-                fontFamily: 'OpenSans'
-              )
+          ),
+          const SizedBox(height: 20),
+
+          // ── Needs Attention toggle ────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              decoration: BoxDecoration(
+                color: cardBg,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [BoxShadow(
+                  color: Colors.black.withOpacity(isDark ? 0.12 : 0.05),
+                  blurRadius: 8, offset: const Offset(0, 2))],
+              ),
+              child: Row(children: [
+                Icon(
+                  contact.needsAttention
+                      ? Icons.flag_rounded : Icons.flag_outlined,
+                  color: contact.needsAttention
+                      ? (contact.attentionSource == 'digest'
+                          ? const Color(0xFF1D9E75)
+                          : AppColors.warning)
+                      : textS,
+                  size: 22),
+                const SizedBox(width: 12),
+                Expanded(child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Needs Attention',
+                      style: GoogleFonts.beVietnamPro(
+                        fontSize: 15, fontWeight: FontWeight.w500, color: textP)),
+                    if (contact.needsAttention)
+                      Text(_attentionSubtitle(contact),
+                        style: GoogleFonts.beVietnamPro(
+                          fontSize: 12, color: textS)),
+                  ],
+                )),
+                _isUpdatingAttention
+                    ? SizedBox(width: 20, height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2, color: AppColors.lightPrimary))
+                    : Switch(
+                        value: contact.needsAttention,
+                        onChanged: (v) => _toggleNeedsAttention(v, contact),
+                        thumbColor: WidgetStateProperty.resolveWith((s) =>
+                            s.contains(WidgetState.selected)
+                                ? Colors.white
+                                : scheme.outline),
+                        trackColor: WidgetStateProperty.resolveWith((s) =>
+                            s.contains(WidgetState.selected)
+                                ? AppColors.lightPrimary
+                                : scheme.surfaceContainerHigh),
+                        trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+                      ),
+              ]),
             ),
           ),
 
-          ListTile(
-            leading: Icon(Icons.schedule, color: themeProvider.getTextPrimaryColor(context)),
-            title: Text(
-              'Contact Frequency', 
-              style: TextStyle(
-                fontWeight: FontWeight.w600, 
-                color: themeProvider.getTextPrimaryColor(context), 
-                fontFamily: 'OpenSans'
-              )
-            ),
-            subtitle: Text(
-              FrequencyPeriodMapper.getConversationalChoice(contact.frequency, contact.period),
-              style: TextStyle(
-                color: themeProvider.getTextSecondaryColor(context), 
-                fontFamily: 'OpenSans'
-              )
-            ),
-          ),
-          
-          if (contact.socialGroups.isNotEmpty)
-            ListTile(
-              leading: Icon(Icons.group, color: themeProvider.getTextPrimaryColor(context)),
-              title: Text(
-                'Social Groups', 
-                style: TextStyle(
-                  fontWeight: FontWeight.w600, 
-                  color: themeProvider.getTextPrimaryColor(context), 
-                  fontFamily: 'OpenSans'
-                )
-              ),
-              subtitle: Text(
-                contact.socialGroups.join(', '), 
-                style: TextStyle(
-                  color: themeProvider.getTextSecondaryColor(context), 
-                  fontFamily: 'OpenSans'
-                )
-              ),
-            ),
-          
-          // Important Dates Section
-          if (contact.birthday != null || contact.anniversary != null || contact.workAnniversary != null) ...[
+          // ── Important Dates ───────────────────────────────────────────
+          if (contact.birthday != null || contact.anniversary != null ||
+              contact.workAnniversary != null) ...[
             const SizedBox(height: 20),
-            Text(
-              'IMPORTANT DATES',
-              style: TextStyle(
-                fontSize: 18,
-                fontFamily: 'OpenSans',
-                fontWeight: FontWeight.bold,
-                color: themeProvider.getTextPrimaryColor(context),
-              ),
+            _sectionHeader(
+              icon: Icons.cake_rounded,
+              label: 'Important Dates',
+              isDark: isDark, textP: textP,
             ),
             const SizedBox(height: 10),
-            
-            if (contact.birthday != null)
-              ListTile(
-                leading: Icon(Icons.cake, color: themeProvider.getTextPrimaryColor(context)),
-                title: Text(
-                  'Birthday', 
-                  style: TextStyle(
-                    color: themeProvider.getTextPrimaryColor(context), 
-                    fontFamily: 'OpenSans'
-                  )
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [BoxShadow(
+                    color: Colors.black.withOpacity(isDark ? 0.14 : 0.05),
+                    blurRadius: 10, offset: const Offset(0, 2))],
                 ),
-                subtitle: Text(
-                  DateFormat('MMMM d, y').format(contact.birthday!), 
-                  style: TextStyle(
-                    color: themeProvider.getTextSecondaryColor(context), 
-                    fontFamily: 'OpenSans'
-                  )
-                ),
+                child: Column(children: [
+                  if (contact.birthday != null)
+                    _detailRow(
+                      label: 'Birthday',
+                      value: DateFormat('MMMM d, y').format(contact.birthday!),
+                      isDark: isDark, textP: textP, textS: textS,
+                      divider: contact.anniversary != null ||
+                          contact.workAnniversary != null,
+                    ),
+                  if (contact.anniversary != null)
+                    _detailRow(
+                      label: 'Anniversary',
+                      value: DateFormat('MMMM d, y').format(contact.anniversary!),
+                      isDark: isDark, textP: textP, textS: textS,
+                      divider: contact.workAnniversary != null,
+                    ),
+                  if (contact.workAnniversary != null)
+                    _detailRow(
+                      label: 'Work Anniversary',
+                      value: DateFormat('MMMM d, y').format(contact.workAnniversary!),
+                      isDark: isDark, textP: textP, textS: textS,
+                      divider: false,
+                    ),
+                ]),
               ),
-            
-            if (contact.anniversary != null)
-              ListTile(
-                leading: Icon(Icons.favorite, color: themeProvider.getTextPrimaryColor(context)),
-                title: Text(
-                  'Anniversary', 
-                  style: TextStyle(
-                    color: themeProvider.getTextPrimaryColor(context), 
-                    fontFamily: 'OpenSans'
-                  )
-                ),
-                subtitle: Text(
-                  DateFormat('MMMM d, y').format(contact.anniversary!), 
-                  style: TextStyle(
-                    color: themeProvider.getTextSecondaryColor(context), 
-                    fontFamily: 'OpenSans'
-                  )
-                ),
-              ),
-            
-            if (contact.workAnniversary != null)
-              ListTile(
-                leading: Icon(Icons.work, color: themeProvider.getTextPrimaryColor(context)),
-                title: Text(
-                  'Work Anniversary', 
-                  style: TextStyle(
-                    color: themeProvider.getTextPrimaryColor(context), 
-                    fontFamily: 'OpenSans'
-                  )
-                ),
-                subtitle: Text(
-                  DateFormat('MMMM d, y').format(contact.workAnniversary!), 
-                  style: TextStyle(
-                    color: themeProvider.getTextSecondaryColor(context), 
-                    fontFamily: 'OpenSans'
-                  )
-                ),
-              ),
+            ),
           ],
-          
-          // Notes Section
+
+          // ── Relationship Notes ────────────────────────────────────────
           if (contact.notes.isNotEmpty) ...[
             const SizedBox(height: 20),
-            Text(
-              'Notes',
-              style: TextStyle(
-                color: themeProvider.getTextPrimaryColor(context),
-                fontSize: 18,
-                fontFamily: 'OpenSans',
-                fontWeight: FontWeight.bold,
-              ),
+            _sectionHeader(
+              icon: Icons.sticky_note_2_rounded,
+              label: 'Relationship Notes',
+              isDark: isDark, textP: textP,
             ),
             const SizedBox(height: 10),
-            Text(
-              contact.notes, 
-              style: TextStyle(
-                color: themeProvider.getTextSecondaryColor(context), 
-                fontFamily: 'OpenSans'
-              )
-            ),
-          ],
-          
-          // Contextual message when no info
-          // if (hasNoInfo) ...[
-          //   const SizedBox(height: 30),
-          //   Container(
-          //     padding: const EdgeInsets.all(16),
-          //     decoration: BoxDecoration(
-          //       color: themeProvider.getCardColor(context),
-          //       borderRadius: BorderRadius.circular(10),
-          //       border: Border.all(color: themeProvider.getTextHintColor(context)),
-          //     ),
-          //     child: Column(
-          //       children: [
-          //         Icon(Icons.info, size: 40, color: themeProvider.getTextSecondaryColor(context)),
-          //         const SizedBox(height: 10),
-          //         Text(
-          //           'Add more details to this contact for better insights.',
-          //           style: TextStyle(
-          //             fontSize: 16,
-          //             fontFamily: 'OpenSans',
-          //             color: themeProvider.getTextSecondaryColor(context),
-          //             fontStyle: FontStyle.italic,
-          //           ),
-          //           textAlign: TextAlign.center,
-          //         ),
-          //       ],
-          //     ),
-          //   ),
-          // ],
-          
-          const SizedBox(height: 30),
-          
-          // Log Interaction Button
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                _showLogInteractionModal(context, themeProvider, contact);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppColors.lightPrimary.withOpacity(0.08)
+                      : const Color(0xFFEDE9FE),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: AppColors.lightPrimary.withOpacity(
+                        isDark ? 0.25 : 0.15)),
+                ),
+                child: Text(
+                  '"${contact.notes}"',
+                  style: GoogleFonts.beVietnamPro(
+                    fontSize: 14, color: textP, height: 1.6,
+                    fontStyle: FontStyle.italic),
                 ),
               ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.add, size: 20, color: Colors.white),
-                  SizedBox(width: 12),
-                  Text(
-                    'LOG INTERACTION',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontFamily: 'OpenSans',
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
+            ),
+          ],
+
+          const SizedBox(height: 30),
+
+          // ── Log Interaction button ────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: GestureDetector(
+              onTap: () => _showLogInteractionModal(context, themeProvider, contact),
+              child: Container(
+                width: double.infinity, height: 54,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF751FE7), Color(0xFF9C4DFF)]),
+                  borderRadius: BorderRadius.circular(9999),
+                  boxShadow: [BoxShadow(
+                    color: AppColors.lightPrimary.withOpacity(0.35),
+                    blurRadius: 16, offset: const Offset(0, 5))],
+                ),
+                child: Center(child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.add_rounded, color: Colors.white, size: 20),
+                    const SizedBox(width: 10),
+                    Text('LOG INTERACTION',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 15, fontWeight: FontWeight.w700,
+                        color: Colors.white)),
+                  ],
+                )),
               ),
             ),
           ),
-          
+
           const SizedBox(height: 36),
         ],
       ),
     );
+  }
+
+  // ── Section header helper ─────────────────────────────────────────────────
+  Widget _sectionHeader({
+    required IconData icon,
+    required String label,
+    required bool isDark,
+    required Color textP,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(children: [
+        Container(
+          width: 32, height: 32,
+          decoration: BoxDecoration(
+            color: AppColors.lightPrimary.withOpacity(isDark ? 0.18 : 0.10),
+            borderRadius: BorderRadius.circular(9)),
+          child: Icon(icon, size: 16, color: AppColors.lightPrimary)),
+        const SizedBox(width: 10),
+        Text(label,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 17, fontWeight: FontWeight.w700, color: textP)),
+      ]),
+    );
+  }
+
+  // ── Info row (phone/email with trailing action icon) ──────────────────────
+  Widget _infoRow({
+    required String label,
+    required String value,
+    required IconData trailingIcon,
+    required Color trailingColor,
+    required bool isDark,
+    required Color textP,
+    required Color textS,
+    required bool divider,
+  }) {
+    final fieldBg = isDark
+        ? AppColors.darkSurfaceContainerHighest
+        : const Color(0xFFF0EDE9);
+    return Column(children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(18, 14, 14, 14),
+        child: Row(children: [
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(label,
+              style: GoogleFonts.beVietnamPro(
+                fontSize: 10, fontWeight: FontWeight.w700,
+                color: textS, letterSpacing: 0.8)),
+            const SizedBox(height: 4),
+            Text(value,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 16, fontWeight: FontWeight.w600, color: textP)),
+          ])),
+          Container(
+            width: 36, height: 36,
+            decoration: BoxDecoration(
+              color: trailingColor.withOpacity(0.12),
+              shape: BoxShape.circle),
+            child: Icon(trailingIcon, size: 18, color: trailingColor)),
+        ]),
+      ),
+      if (divider)
+        Divider(height: 1, indent: 18, endIndent: 18,
+          color: (isDark
+              ? AppColors.darkSurfaceContainerHighest
+              : const Color(0xFFECE7E2))),
+    ]);
+  }
+
+  // ── Detail row (key-value with pill badge) ────────────────────────────────
+  Widget _detailRow({
+    required String label,
+    required String value,
+    required bool isDark,
+    required Color textP,
+    required Color textS,
+    required bool divider,
+  }) {
+    final pillBg = isDark
+        ? AppColors.darkSurfaceContainerHighest
+        : const Color(0xFFF0EDE9);
+    return Column(children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(18, 14, 14, 14),
+        child: Row(children: [
+          Expanded(child: Text(label,
+            style: GoogleFonts.beVietnamPro(
+              fontSize: 14, color: textS))),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            decoration: BoxDecoration(
+              color: pillBg,
+              borderRadius: BorderRadius.circular(9999)),
+            child: Text(value,
+              style: GoogleFonts.beVietnamPro(
+                fontSize: 13, fontWeight: FontWeight.w600, color: textP)),
+          ),
+        ]),
+      ),
+      if (divider)
+        Divider(height: 1, indent: 18, endIndent: 18,
+          color: (isDark
+              ? AppColors.darkSurfaceContainerHighest
+              : const Color(0xFFECE7E2))),
+    ]);
   }
 
     // Add these methods to _ContactDetailScreenState
@@ -1007,5 +1004,3 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     return '$sourceLabel · $daysAgo days ago';
   }
 }
-
-

@@ -23,7 +23,6 @@ import 'package:nudge/services/message_service.dart';
 import 'package:nudge/services/notification_service.dart';
 import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/theme/app_theme.dart';
-import 'package:nudge/theme/text_styles.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -384,13 +383,13 @@ Future<void> _handleRemindMeThenAction(Map<String, dynamic> data, BuildContext c
         .call({'notificationId': notificationId});
     
     if (result.data['success'] == true) {
-      _showFlushbar('Reminder scheduled!', Colors.green, Icons.check, context);
+      _showFlushbar('Reminder scheduled!', AppColors.success, Icons.check, context);
     } else {
-      _showFlushbar('Could not schedule reminder', Colors.deepOrange, Icons.error, context);
+      _showFlushbar('Could not schedule reminder', Theme.of(context).colorScheme.tertiary, Icons.error, context);
     }
   } catch (e) {
     //print('Error scheduling reminder: $e');
-    _showFlushbar('Error scheduling reminder', Colors.deepOrange, Icons.error, context);
+    _showFlushbar('Error scheduling reminder', Theme.of(context).colorScheme.tertiary, Icons.error, context);
   }
 }
 
@@ -408,13 +407,13 @@ Future<void> _handleDismissAction(Map<String, dynamic> data, BuildContext contex
         .call({'notificationId': notificationId});
     
     if (result.data['success'] == true) {
-      _showFlushbar('Notification dismissed', Colors.green, Icons.check, context);
+      _showFlushbar('Notification dismissed', AppColors.success, Icons.check, context);
     } else {
-      _showFlushbar('Could not dismiss notification',  Colors.deepOrange, Icons.error, context);
+      _showFlushbar('Could not dismiss notification',  Theme.of(context).colorScheme.tertiary, Icons.error, context);
     }
   } catch (e) {
     //print('Error dismissing notification: $e');
-    _showFlushbar('Error dismissing notification',  Colors.deepOrange, Icons.error, context);
+    _showFlushbar('Error dismissing notification',  Theme.of(context).colorScheme.tertiary, Icons.error, context);
   }
 }
 
@@ -682,34 +681,8 @@ class NudgeApp extends StatelessWidget {
             child: MaterialApp(
               title: 'NUDGE',
               navigatorKey: navigatorKey,
-              theme: AppTheme.lightTheme().copyWith(
-                // Add text theme to light theme
-                textTheme: const TextTheme(
-                  displayLarge: AppTextStyles.title1,
-                  displayMedium: AppTextStyles.title2,
-                  displaySmall: AppTextStyles.title3,
-                  bodyLarge: AppTextStyles.primary,
-                  bodyMedium: AppTextStyles.primary,
-                  bodySmall: AppTextStyles.secondary,
-                  labelLarge: AppTextStyles.button,
-                  labelMedium: AppTextStyles.buttonSecondary,
-                  labelSmall: AppTextStyles.caption,
-                ),
-              ),
-              darkTheme: AppTheme.darkTheme().copyWith(
-                // Add text theme to dark theme
-                textTheme: TextTheme(
-                  displayLarge: AppTextStyles.title1.copyWith(color: Colors.white),
-                  displayMedium: AppTextStyles.title2.copyWith(color: Colors.white),
-                  displaySmall: AppTextStyles.title3.copyWith(color: Colors.white),
-                  bodyLarge: AppTextStyles.primary.copyWith(color: Colors.white),
-                  bodyMedium: AppTextStyles.primary.copyWith(color: Colors.white),
-                  bodySmall: AppTextStyles.secondary.copyWith(color: Colors.grey),
-                  labelLarge: AppTextStyles.button,
-                  labelMedium: AppTextStyles.buttonSecondary,
-                  labelSmall: AppTextStyles.caption.copyWith(color: Colors.grey),
-                ),
-              ),
+              theme: AppTheme.lightTheme(),
+              darkTheme: AppTheme.darkTheme(),
               themeMode: themeProvider.themeMode,
               initialRoute: '/splash',
               routes: {
@@ -933,19 +906,19 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
   Widget _buildLoadingScreen() {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xff3CB3E9)),
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.lightPrimary),
             ),
             const SizedBox(height: 20),
             Text(
               _checkingStatus.isNotEmpty ? _checkingStatus : 'Loading...',
               style: const TextStyle(
-                color: Color(0xff3CB3E9),
+                color: AppColors.lightPrimary,
                 fontSize: 16,
               ),
             ),

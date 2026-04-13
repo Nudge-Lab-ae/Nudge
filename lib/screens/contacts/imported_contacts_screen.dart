@@ -1,5 +1,6 @@
 // lib/screens/contacts/imported_contacts_screen.dart
 import 'package:flutter/material.dart';
+import 'package:nudge/theme/app_theme.dart';
 // import 'package:provider/provider.dart';
 import '../../services/api_service.dart';
 // import '../../services/auth_service.dart';
@@ -63,7 +64,7 @@ class _ImportedContactsScreenState extends State<ImportedContactsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Imported Contacts'),
-        backgroundColor: const Color(0xff3CB3E9),
+        backgroundColor: AppColors.lightPrimary,
       ),
       body: _importedContacts.isEmpty
           ? const Center(

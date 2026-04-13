@@ -1,6 +1,8 @@
 // lib/widgets/contact_details_modal.dart
 // import 'package:another_flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
+import 'package:nudge/theme/app_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:nudge/services/message_service.dart';
 import '../models/contact.dart';
@@ -42,12 +44,10 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
     
     
     return Container(
-      height: MediaQuery.of(context).size.height * 0.65,
-      padding: const EdgeInsets.all(20),
+      height: MediaQuery.of(context).size.height * 0.7,
+      padding: const EdgeInsets.only(left: 20, right: 20),
       decoration: BoxDecoration(
-        color: isDarkMode 
-          ? const Color(0xFF1E1E1E) 
-          : Colors.white,
+        color: Theme.of(context).colorScheme.surfaceContainerHigh,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: ListView(
@@ -58,21 +58,17 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
             children: [
               Text(
                 'CONTACT DETAILS',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: isDarkMode 
-                    ? const Color(0xFFCCCCCC)
-                    : const Color(0xff555555),
-                  // letterSpacing: 1.2,
-                ),
+                 style: GoogleFonts.plusJakartaSans(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 20),
               ),
               IconButton(
                 icon: Icon(
                   Icons.close, 
                   color: isDarkMode 
                     ? const Color(0xFFCCCCCC)
-                    : const Color(0xff555555)
+                    : AppColors.lightOnSurface
                 ),
                 onPressed: () => Navigator.pop(context),
               ),
@@ -83,7 +79,7 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
           
           // Contact header
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
                 width: 80,
@@ -108,7 +104,7 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                   child: Text(
                     contact.name.substring(0, 1).toUpperCase(),
                     style: TextStyle(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 36,
                       fontWeight: FontWeight.bold,
                     ),
@@ -121,6 +117,7 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
                       contact.name,
@@ -129,22 +126,22 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                         fontWeight: FontWeight.w700,
                         color: isDarkMode 
                           ? Colors.white
-                          : const Color(0xff333333),
+                          : AppColors.darkSurfaceContainerHighest,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                     
-                    const SizedBox(height: 8),
+                    if (contact.isVIP) const SizedBox(height: 8),
                     
                     // VIP badge
                     if (contact.isVIP)
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFFD700).withOpacity(isDarkMode ? 0.2 : 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFFFFD700)),
+                          color: AppColors.vipGold.withOpacity(isDarkMode ? 0.2 : 0.1),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.vipGold),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -152,7 +149,7 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                             const Icon(
                               Icons.star,
                               size: 14,
-                              color: Color(0xFFFFD700),
+                              color: AppColors.vipGold,
                             ),
                             const SizedBox(width: 6),
                             Text(
@@ -161,8 +158,8 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: isDarkMode 
-                                  ? const Color(0xFFEEEEEE)
-                                  : const Color(0xff555555),
+                                  ? AppColors.lightSurfaceContainerHigh
+                                  : AppColors.lightOnSurface,
                               ),
                             ),
                           ],
@@ -186,7 +183,7 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                   value: contact.connectionType.isNotEmpty 
                       ? contact.connectionType 
                       : 'Not specified',
-                  color: const Color(0xFF3CB3E9),
+                  color: AppColors.lightPrimary,
                   isDarkMode: isDarkMode,
                 ),
               ),
@@ -222,7 +219,7 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                       ? Colors.redAccent 
                       : daysSinceLastContact > 7 
                           ? const Color(0xFFFFC107) 
-                          : Colors.green,
+                          : AppColors.success,
                   isDarkMode: isDarkMode,
                 ),
               ),
@@ -250,18 +247,18 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                 _logTouchpoint(context, contact);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF3CB3E9),
+                backgroundColor: AppColors.lightPrimary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 elevation: 2,
               ),
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.add, size: 20, color: Colors.white),
+                  const Icon(Icons.add, size: 20, color: Colors.white),
                   SizedBox(width: 12),
                   Text(
                     'LOG INTERACTION',
@@ -283,13 +280,13 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: isDarkMode 
-                ? const Color(0xFF2A2A2A)
-                : const Color(0xFFF9FAFB),
-              borderRadius: BorderRadius.circular(12),
+                ? AppColors.darkSurfaceContainer
+                : AppColors.lightBackground,
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: isDarkMode 
-                  ? const Color(0xFF444444)
-                  : const Color(0xFFEEEEEE),
+                  ? Color(0xFF444444)
+                  : AppColors.lightSurfaceContainerHigh,
               ),
             ),
             child: Column(
@@ -302,7 +299,7 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                     fontWeight: FontWeight.w600,
                     color: isDarkMode 
                       ? const Color(0xFFCCCCCC)
-                      : const Color(0xff555555),
+                      : AppColors.lightOnSurface,
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -367,9 +364,7 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
             builder: (context, scrollController) {
               return Container(
                 decoration: BoxDecoration(
-                  color: isDarkMode 
-                    ? const Color(0xFF1E1E1E)
-                    : Colors.white,
+                  color: Theme.of(context).colorScheme.surfaceContainerHigh,
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(20),
                   ),
@@ -397,14 +392,12 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDarkMode 
-          ? const Color(0xFF2A2A2A)
-          : Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: Theme.of(context).colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDarkMode 
-            ? const Color(0xFF444444)
-            : const Color(0xFFEEEEEE),
+            ? Color(0xFF444444)
+            : AppColors.lightSurfaceContainerHigh,
         ),
         boxShadow: [
           BoxShadow(
@@ -462,7 +455,7 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                     fontWeight: FontWeight.w600,
                     color: isDarkMode 
                       ? Colors.white
-                      : const Color(0xff333333),
+                      : AppColors.darkSurfaceContainerHighest,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -489,14 +482,14 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
           width: 32,
           height: 32,
           decoration: BoxDecoration(
-            color: const Color(0xFF3CB3E9).withOpacity(isDarkMode ? 0.2 : 0.1),
+            color: AppColors.lightPrimary.withOpacity(isDarkMode ? 0.2 : 0.1),
             shape: BoxShape.circle,
           ),
           child: Center(
             child: Icon(
               icon,
               size: 16,
-              color: const Color(0xFF3CB3E9),
+              color: AppColors.lightPrimary,
             ),
           ),
         ),
@@ -524,7 +517,7 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                   fontSize: 14,
                   color: isDarkMode 
                     ? Colors.white
-                    : const Color(0xff333333),
+                    : AppColors.darkSurfaceContainerHighest,
                 ),
                 maxLines: maxLines,
                 overflow: TextOverflow.ellipsis,
@@ -539,13 +532,13 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
   Color _getRingColor(String ring) {
     switch (ring) {
       case 'inner':
-        return Colors.yellow;
+        return AppColors.vipGold;
       case 'middle':
-        return const Color(0xff3CB3E9);
+        return AppColors.lightPrimary;
       case 'outer':
         return const Color(0xff897ED6);
       default:
-        return Colors.yellow;
+        return AppColors.vipGold;
     }
   }
 }
@@ -556,7 +549,7 @@ class _LogTouchpointModal extends StatefulWidget {
   final ApiService apiService;
   final Contact contact;
   final bool isDarkMode;
-  
+
   const _LogTouchpointModal({
     required this.apiService,
     required this.contact,
@@ -568,19 +561,27 @@ class _LogTouchpointModal extends StatefulWidget {
 }
 
 class __LogTouchpointModalState extends State<_LogTouchpointModal> {
-  TextEditingController _notesController = TextEditingController();
-  String? _selectedInteractionType;
-  bool _isLoading = false;
-  DateTime _selectedDate = DateTime.now();
+  final TextEditingController _notesController = TextEditingController();
+  String?   _selectedInteractionType;
+  bool      _isLoading    = false;
+  DateTime  _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
   bool _showConfetti = false;
   late ConfettiController _confettiController;
-  int _moodScore = 3; // default: neutral
-  final List<String> _moodEmojis = ['😔', '😐', '🙂', '😄', '💞'];
-  final List<String> _moodLabels = ['Draining', 'Okay', 'Good', 'Great', 'Amazing'];
+  int? _moodScore; // no default — user must choose
 
-  @override 
-  void initState(){
+  final List<String> _moodEmojis = ['😔', '😐', '🙂', '😄', '💞'];
+  final List<String> _moodLabels = ['DRAINING', 'OKAY', 'GOOD', 'GREAT', 'AMAZING'];
+
+  final List<Map<String, dynamic>> _interactionTypes = [
+    {'key': 'call',    'label': 'Call',    'icon': Icons.phone_rounded},
+    {'key': 'message', 'label': 'Message', 'icon': Icons.chat_bubble_rounded},
+    {'key': 'meet',    'label': 'Meet',    'icon': Icons.people_rounded},
+    {'key': 'other',   'label': 'Other',   'icon': Icons.more_horiz_rounded},
+  ];
+
+  @override
+  void initState() {
     super.initState();
     _confettiController = ConfettiController(duration: const Duration(seconds: 5));
   }
@@ -592,709 +593,425 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
     super.dispose();
   }
 
-  final List<String> _interactionTypes = [
-    'call',
-    'message',
-    'meet',
-    'other'
-  ];
+  void _dismissKeyboard() => FocusScope.of(context).unfocus();
 
- 
-    String _getRelativeDateDescription(DateTime date) {
-    final now = DateTime.now();
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
+  String _initials(String name) {
+    final p = name.trim().split(' ').where((s) => s.isNotEmpty).toList();
+    if (p.length >= 2) return '${p.first[0]}${p.last[0]}'.toUpperCase();
+    if (p.length == 1) return p.first[0].toUpperCase();
+    return '?';
+  }
+
+  String _relativeDateLabel(DateTime date) {
+    final now   = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final selectedDate = DateTime(date.year, date.month, date.day);
-    final difference = selectedDate.difference(today).inDays;
-
-    if (difference == 0) {
-      return 'Today';
-    } else if (difference == -1) {
-      return 'Yesterday';
-    } else if (difference == 1) {
-      return 'Tomorrow';
-    } else if (difference < 0) {
-      // Past dates
-      final absDays = difference.abs();
-      if (absDays <= 7) {
-        return '$absDays day${absDays > 1 ? 's' : ''} ago';
-      } else if (absDays <= 30) {
-        final weeks = (absDays / 7).floor();
-        return '$weeks week${weeks > 1 ? 's' : ''} ago';
-      } else if (absDays <= 365) {
-        final months = (absDays / 30).floor();
-        return '$months month${months > 1 ? 's' : ''} ago';
-      } else {
-        final years = (absDays / 365).floor();
-        return '$years year${years > 1 ? 's' : ''} ago';
-      }
-    } else {
-      // Future dates
-      if (difference <= 7) {
-        return 'in $difference day${difference > 1 ? 's' : ''}';
-      } else if (difference <= 30) {
-        final weeks = (difference / 7).ceil();
-        return 'in $weeks week${weeks > 1 ? 's' : ''}';
-      } else if (difference <= 365) {
-        final months = (difference / 30).ceil();
-        return 'in $months month${months > 1 ? 's' : ''}';
-      } else {
-        final years = (difference / 365).ceil();
-        return 'in $years year${years > 1 ? 's' : ''}';
-      }
+    final sel   = DateTime(date.year, date.month, date.day);
+    final diff  = sel.difference(today).inDays;
+    if (diff == 0)  return 'Today';
+    if (diff == -1) return 'Yesterday';
+    if (diff == 1)  return 'Tomorrow';
+    final d = diff.abs();
+    if (diff < 0) {
+      if (d <= 7)   return '$d day${d > 1 ? 's' : ''} ago';
+      if (d <= 30)  { final w = (d / 7).floor();  return '$w week${w > 1 ? 's' : ''} ago'; }
+      if (d <= 365) { final m = (d / 30).floor(); return '$m month${m > 1 ? 's' : ''} ago'; }
+      final y = (d / 365).floor(); return '$y year${y > 1 ? 's' : ''} ago';
     }
+    if (diff <= 7)   return 'in $diff day${diff > 1 ? 's' : ''}';
+    if (diff <= 30)  { final w = (diff / 7).ceil();  return 'in $w week${w > 1 ? 's' : ''}'; }
+    if (diff <= 365) { final m = (diff / 30).ceil(); return 'in $m month${m > 1 ? 's' : ''}'; }
+    final y = (diff / 365).ceil(); return 'in $y year${y > 1 ? 's' : ''}';
   }
 
-  String _getRelativeTimeDescription(DateTime date, TimeOfDay time) {
+  String _relativeTimeLabel(DateTime date, TimeOfDay time) {
     final now = DateTime.now();
-    final selectedDateTime = DateTime(
-      date.year, date.month, date.day,
-      time.hour, time.minute,
-    );
-    
-    final difference = now.difference(selectedDateTime);
-    
-    if (selectedDateTime.year == now.year &&
-        selectedDateTime.month == now.month &&
-        selectedDateTime.day == now.day) {
-      // Same day
-      if (difference.inMinutes < 1) {
-        return 'Just now';
-      } else if (difference.inMinutes < 60) {
-        return '${difference.inMinutes} minute${difference.inMinutes > 1 ? 's' : ''} ago';
-      } else {
-        final hours = difference.inHours;
-        return '$hours hour${hours > 1 ? 's' : ''} ago';
-      }
-    }
-    
-    return ''; // Return empty for non-today dates
+    final sel = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    if (sel.year != now.year || sel.month != now.month || sel.day != now.day) return '';
+    final diff = now.difference(sel);
+    if (diff.inMinutes < 1)  return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} min${diff.inMinutes > 1 ? 's' : ''} ago';
+    final h = diff.inHours;  return '$h hour${h > 1 ? 's' : ''} ago';
   }
+
+  String _formattedDate() {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${months[_selectedDate.month - 1]} ${_selectedDate.day}';
+  }
+
+  String _formattedTime() => _selectedTime.format(context);
 
   Future<void> _selectDate() async {
-    final DateTime? picked = await showDatePicker(
+    final p = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime(2000),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-    );
-    if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-      });
-    }
+      lastDate: DateTime.now().add(const Duration(days: 365)));
+    if (p != null) setState(() => _selectedDate = p);
   }
 
   Future<void> _selectTime() async {
-    final TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: _selectedTime,
-    );
-    if (picked != null && picked != _selectedTime) {
-      setState(() {
-        _selectedTime = picked;
-      });
-    }
+    final p = await showTimePicker(context: context, initialTime: _selectedTime);
+    if (p != null) setState(() => _selectedTime = p);
   }
 
   Future<void> _logInteraction() async {
     if (_selectedInteractionType == null) {
-      // Flushbar(
-      //   padding: EdgeInsets.all(10), borderRadius: BorderRadius.zero,
-      //   backgroundGradient: LinearGradient(
-      //     colors: [Color.fromARGB(255, 207, 82, 73), Color.fromARGB(255, 207, 82, 73)],
-      //     stops: [0.6, 1],
-      //   ), duration: Duration(seconds: 2),
-      //   dismissDirection: FlushbarDismissDirection.HORIZONTAL, forwardAnimationCurve: Curves.fastLinearToSlowEaseIn,
-      //   flushbarPosition: FlushbarPosition.TOP,
-      //   messageText: Center(
-      //       child: Text( 'Please select an interaction type', style: TextStyle(fontFamily: 'Inter',fontSize: 14,
-      //         color: Colors.white, fontWeight: FontWeight.w600), textAlign: TextAlign.center,)),).show(context);
       TopMessageService().showMessage(
-          context: context,
-          message: 'Please select an interaction type',
-          backgroundColor: Colors.blueGrey,
-          icon: Icons.info,
-        );
+        context: context,
+        message: 'Please select an interaction type.',
+        backgroundColor: Colors.blueGrey,
+        icon: Icons.info,
+      );
+      return;
+    }
+    if (_moodScore == null) {
+      TopMessageService().showMessage(
+        context: context,
+        message: 'Please select how this interaction felt.',
+        backgroundColor: Theme.of(context).colorScheme.tertiary,
+        icon: Icons.error,
+      );
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-      
-    });
-    
-    // try {
-     
+    setState(() { _showConfetti = true; _isLoading = true; });
 
-    // } catch (e) {
-    //   //print('Error logging touchpoint: $e');
-    //   // ScaffoldMessenger.of(context).showSnackBar(
-    //   //   SnackBar(
-    //   //     content: Text('Failed to log touchpoint: $e'),
-    //   //     backgroundColor: Colors.red,
-    //   //   ),
-    //   // );
-    //   TopMessageService().showMessage(
-    //       context: context,
-    //       message: 'Failed to log touchpoint: $e',
-    //       backgroundColor: Colors.deepOrange,
-    //       icon: Icons.error,
-    //     );
-    // } finally {
-    //   setState(() {
-    //     _isLoading = false;
-    //   });
-    // }
-
-     // Combine date and time
-      final interactionDateTime = DateTime(
-        _selectedDate.year,
-        _selectedDate.month,
-        _selectedDate.day,
-        _selectedTime.hour,
-        _selectedTime.minute,
-      );
-
-      // Log the interaction
-      widget.apiService.logInteraction(
-        contactId: widget.contact.id,
-        interactionType: _selectedInteractionType!,
-        notes: _notesController.text.isNotEmpty ? _notesController.text : null,
-        interactionDate: interactionDateTime.toIso8601String(), // Add this parameter
-        mood: _moodScore
-      );
-      
-      setState(() {
-         _showConfetti = true;
-      });
-
-       _confettiController.play();
-
-      TopMessageService().showMessage(
-          context: context,
-          message: 'Touchpoint logged for ${widget.contact.name}! Next nudge has been rescheduled.',
-          backgroundColor: Colors.green,
-          // icon: Icons.check,
-        );
-
-      // Close both modals after a brief delay
-      Future.delayed(const Duration(milliseconds: 2500), () {
-        Navigator.pop(context); // Close the log touchpoint modal
-        Navigator.pop(context); // Close the contact detail modal
-      });
-
-      setState(() {
-        _isLoading = false;
-      });
-  }
-
-  void _dismissKeyboard() {
-    FocusScope.of(context).unfocus();
-  }
-
-  Widget _buildMoodPicker(bool isDarkMode) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'How did this interaction feel?',
-          style: const TextStyle(
-            fontWeight: FontWeight.w600, 
-            fontSize: 14
-          ),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: List.generate(5, (i) {
-            final selected = _moodScore == i + 1;
-            final moodEmoji = _moodEmojis[i];
-            final moodLabel = _moodLabels[i];
-            
-            return GestureDetector(
-              onTap: () => setState(() => _moodScore = i + 1),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeInOut,
-                child: Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: selected
-                            ? LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  Theme.of(context).colorScheme.primary,
-                                  Theme.of(context).colorScheme.primary.withOpacity(0.7),
-                                ],
-                              )
-                            : null,
-                        color: selected
-                            ? Colors.black
-                            : isDarkMode
-                                ? const Color(0xFF2A2A2A)
-                                : Colors.grey.shade50,
-                        border: Border.all(
-                          color: selected
-                              ? Theme.of(context).colorScheme.primary
-                              : Colors.transparent
-                              /* widget.isDarkMode
-                                  ? const Color(0xFF444444)
-                                  : Colors.grey.shade300 */,
-                          width: selected ? 2 : 1,
-                        ),
-                        boxShadow: selected
-                            ? [
-                                BoxShadow(
-                                  color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                                  blurRadius: 12,
-                                  spreadRadius: 2,
-                                )
-                              ]
-                            : null,
-                      ),
-                      child: AnimatedScale(
-                        scale: selected ? 1.0 : 0.8,
-                        duration: const Duration(milliseconds: 200),
-                        child: Text(
-                          moodEmoji,
-                          style: TextStyle(
-                            fontSize: selected ? 32 : 28,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        color: selected
-                            ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
-                            : Colors.transparent,
-                      ),
-                      child: Text(
-                        moodLabel,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-                          color: selected
-                              ? Theme.of(context).colorScheme.primary
-                              : isDarkMode
-                                  ? Colors.grey.shade400
-                                  : Colors.grey.shade600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }),
-        ),
-      ],
+    final dt = DateTime(
+      _selectedDate.year, _selectedDate.month, _selectedDate.day,
+      _selectedTime.hour, _selectedTime.minute,
     );
+
+    widget.apiService.logInteraction(
+      contactId: widget.contact.id,
+      interactionType: _selectedInteractionType!,
+      notes: _notesController.text.isNotEmpty ? _notesController.text : null,
+      interactionDate: dt.toIso8601String(),
+      mood: _moodScore!,
+    );
+
+    _confettiController.play();
+    TopMessageService().showMessage(
+      context: context,
+      message: 'Touchpoint logged for ${widget.contact.name}! Next nudge has been rescheduled.',
+      backgroundColor: AppColors.success,
+    );
+
+    setState(() => _isLoading = false);
+
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) Navigator.pop(context, {
+        'success': true,
+        'interactionDateTime': dt,
+      });
+    });
   }
 
-
+  // ══════════════════════════════════════════════════════════════════════════
   @override
   Widget build(BuildContext context) {
-    // Format date and time for display
-    final formattedDate = '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}';
-    final formattedTime = _selectedTime.format(context);
-    
+    final isDark  = widget.isDarkMode;
+    final scheme  = Theme.of(context).colorScheme;
+    final bgColor = isDark ? AppColors.darkSurfaceContainerLow  : Colors.white;
+    final fieldBg = isDark ? AppColors.darkSurfaceContainerHigh : const Color(0xFFF0EDE9);
+    final textP   = isDark ? AppColors.darkOnSurface            : AppColors.lightOnSurface;
+    final textS   = isDark ? AppColors.darkOnSurfaceVariant     : AppColors.lightOnSurfaceVariant;
+
+    final dateLabel = _relativeDateLabel(_selectedDate);
+    final timeLabel = _relativeTimeLabel(_selectedDate, _selectedTime);
+    final inits     = _initials(widget.contact.name);
+
     return GestureDetector(
-              onTap: _dismissKeyboard,
-              child: Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.85,
-      ),
-      padding: const EdgeInsets.all(20),
-      child: Stack(
-        children: [
-          ListView(
-        // mainAxisSize: MainAxisSize.min,
-        // crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      onTap: _dismissKeyboard,
+      child: Stack(children: [
+        Container(
+          constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.90),
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24))),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'LOG TOUCHPOINT',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: widget.isDarkMode 
-                    ? const Color(0xFFCCCCCC)
-                    : const Color(0xff555555),
-                  letterSpacing: 1.2,
-                ),
-              ),
-              IconButton(
-                icon: Icon(
-                  Icons.close, 
-                  color: widget.isDarkMode 
-                    ? const Color(0xFFCCCCCC)
-                    : const Color(0xff555555)
-                ),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 20),
-          
-          // Selected Contact Display
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFF3CB3E9).withOpacity(widget.isDarkMode ? 0.2 : 0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: const Color(0xFF3CB3E9).withOpacity(widget.isDarkMode ? 0.4 : 0.3),
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Color(0xFF3CB3E9),
-                  ),
-                  child: Center(
-                    child: Text(
-                      widget.contact.name.substring(0, 1).toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+              // Drag handle
+              Center(child: Container(
+                margin: const EdgeInsets.only(top: 12, bottom: 4),
+                width: 36, height: 4,
+                decoration: BoxDecoration(
+                  color: scheme.outlineVariant,
+                  borderRadius: BorderRadius.circular(9999)))),
+
+              Expanded(child: ListView(
+                padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+                children: [
+
+                  // ── Header ────────────────────────────────────────────
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        widget.contact.name,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: widget.isDarkMode 
-                            ? Colors.white
-                            : const Color(0xff333333),
-                        ),
-                      ),
-                      Text(
-                        widget.contact.connectionType,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: widget.isDarkMode 
-                            ? const Color(0xFFAAAAAA)
-                            : const Color(0xff888888),
-                        ),
-                      ),
+                      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text('Log Touchpoint',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 24, fontWeight: FontWeight.w800, color: textP)),
+                        const SizedBox(height: 2),
+                        Text('Keep track of your meaningful connections.',
+                          style: GoogleFonts.beVietnamPro(
+                            fontSize: 13, color: textS, height: 1.4)),
+                      ]),
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          width: 32, height: 32,
+                          decoration: BoxDecoration(color: fieldBg, shape: BoxShape.circle),
+                          child: Icon(Icons.close_rounded, size: 16, color: textS))),
                     ],
                   ),
-                ),
-              ],
-            ),
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // Interaction Type Selection
-          Text(
-            'INTERACTION TYPE',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: widget.isDarkMode 
-                ? const Color(0xFFAAAAAA)
-                : const Color(0xff888888),
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: 8),
-          
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _interactionTypes.map((type) {
-              final isSelected = _selectedInteractionType == type;
-              return ChoiceChip(
-                label: Text(
-                  type.toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: isSelected 
-                      ? Colors.white
-                      : widget.isDarkMode 
-                          ? Colors.white
-                          : const Color(0xff333333),
-                  ),
-                ),
-                selected: isSelected,
-                selectedColor: const Color(0xFF3CB3E9),
-                backgroundColor: widget.isDarkMode 
-                  ? const Color(0xFF2A2A2A)
-                  : Colors.white,
-                side: BorderSide(
-                  color: isSelected 
-                    ? const Color(0xFF3CB3E9)
-                    : widget.isDarkMode 
-                        ? const Color(0xFF444444)
-                        : const Color(0xFFEEEEEE),
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                onSelected: (selected) {
-                  setState(() {
-                    _selectedInteractionType = selected ? type : null;
-                  });
-                },
-              );
-            }).toList(),
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // Date and Time Selection
-          Text(
-            'WHEN DID THIS INTERACTION HAPPEN?',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: widget.isDarkMode 
-                ? const Color(0xFFAAAAAA)
-                : const Color(0xff888888),
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-            decoration: BoxDecoration(
-              color: const Color(0xFF3CB3E9).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: const Color(0xFF3CB3E9).withOpacity(0.3),
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.info_outline,
-                  size: 16,
-                  color: const Color(0xFF3CB3E9),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    _getRelativeDateDescription(_selectedDate),
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF3CB3E9),
-                    ),
-                  ),
-                ),
-                if (_getRelativeTimeDescription(_selectedDate, _selectedTime).isNotEmpty)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      _getRelativeTimeDescription(_selectedDate, _selectedTime),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.green,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
+                  const SizedBox(height: 20),
 
-          Row(
-            children: [
-              Expanded(
-                child: GestureDetector(
-                  onTap: _selectDate,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  // ── Contact card ───────────────────────────────────────
+                  Container(
+                    padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
+                      color: AppColors.lightPrimary.withOpacity(isDark ? 0.12 : 0.06),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: AppColors.lightPrimary.withOpacity(isDark ? 0.35 : 0.2))),
+                    child: Row(children: [
+                      Container(
+                        width: 44, height: 44,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.lightPrimary),
+                        child: Center(child: Text(inits,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 18, fontWeight: FontWeight.w800,
+                            color: Colors.white)))),
+                      const SizedBox(width: 14),
+                      Expanded(child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(widget.contact.name,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 16, fontWeight: FontWeight.w700, color: textP)),
+                          if (widget.contact.connectionType.isNotEmpty)
+                            Text(widget.contact.connectionType,
+                              style: GoogleFonts.beVietnamPro(
+                                  fontSize: 12, color: textS)),
+                        ])),
+                    ])),
+                  const SizedBox(height: 22),
+
+                  // ── Interaction Type ───────────────────────────────────
+                  Text('Interaction Type',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 16, fontWeight: FontWeight.w700, color: textP)),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 10, runSpacing: 10,
+                    children: _interactionTypes.map((t) {
+                      final key   = t['key']   as String;
+                      final label = t['label'] as String;
+                      final icon  = t['icon']  as IconData;
+                      final isSel = _selectedInteractionType == key;
+                      return GestureDetector(
+                        onTap: () => setState(() =>
+                            _selectedInteractionType = isSel ? null : key),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 18, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: isSel ? AppColors.lightPrimary : fieldBg,
+                            borderRadius: BorderRadius.circular(9999)),
+                          child: Row(mainAxisSize: MainAxisSize.min, children: [
+                            Icon(icon, size: 16,
+                                color: isSel ? Colors.white : textS),
+                            const SizedBox(width: 6),
+                            Text(label, style: GoogleFonts.beVietnamPro(
+                              fontSize: 14, fontWeight: FontWeight.w600,
+                              color: isSel ? Colors.white : textP)),
+                          ])));
+                    }).toList()),
+                  const SizedBox(height: 22),
+
+                  // ── How did it feel? ───────────────────────────────────
+                  Text('How did it feel?',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 16, fontWeight: FontWeight.w700, color: textP)),
+                  const SizedBox(height: 14),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: List.generate(5, (i) {
+                      final sel = _moodScore != null && _moodScore == i + 1;
+                      return GestureDetector(
+                        onTap: () => setState(() => _moodScore = sel ? null : i + 1),
+                        child: Column(children: [
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            width: sel ? 58 : 52,
+                            height: sel ? 58 : 52,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: sel ? Colors.transparent : fieldBg,
+                              border: sel
+                                  ? Border.all(
+                                      color: AppColors.lightPrimary, width: 2.5)
+                                  : null),
+                            child: Center(child: Text(_moodEmojis[i],
+                              style: TextStyle(fontSize: sel ? 30 : 26)))),
+                          const SizedBox(height: 6),
+                          Text(_moodLabels[i],
+                            style: GoogleFonts.beVietnamPro(
+                              fontSize: 9,
+                              fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
+                              color: sel ? AppColors.lightPrimary : textS)),
+                        ]));
+                    })),
+                  const SizedBox(height: 22),
+
+                  // ── Date & Time ────────────────────────────────────────
+                  Row(children: [
+                    Expanded(child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Date', style: GoogleFonts.plusJakartaSans(
+                          fontSize: 16, fontWeight: FontWeight.w700, color: textP)),
+                        const SizedBox(height: 8),
+                        GestureDetector(
+                          onTap: _selectDate,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 14),
+                            decoration: BoxDecoration(
+                              color: fieldBg,
+                              borderRadius: BorderRadius.circular(14)),
+                            child: Row(children: [
+                              Icon(Icons.calendar_month_rounded,
+                                  size: 18, color: AppColors.lightPrimary),
+                              const SizedBox(width: 10),
+                              Text(_formattedDate(),
+                                style: GoogleFonts.beVietnamPro(
+                                  fontSize: 14, fontWeight: FontWeight.w600,
+                                  color: textP)),
+                            ]))),
+                      ])),
+                    const SizedBox(width: 14),
+                    Expanded(child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Time', style: GoogleFonts.plusJakartaSans(
+                          fontSize: 16, fontWeight: FontWeight.w700, color: textP)),
+                        const SizedBox(height: 8),
+                        GestureDetector(
+                          onTap: _selectTime,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 14),
+                            decoration: BoxDecoration(
+                              color: fieldBg,
+                              borderRadius: BorderRadius.circular(14)),
+                            child: Row(children: [
+                              Icon(Icons.access_time_rounded,
+                                  size: 18, color: AppColors.lightPrimary),
+                              const SizedBox(width: 10),
+                              Text(_formattedTime(),
+                                style: GoogleFonts.beVietnamPro(
+                                  fontSize: 14, fontWeight: FontWeight.w600,
+                                  color: textP)),
+                            ]))),
+                      ])),
+                  ]),
+                  const SizedBox(height: 10),
+
+                  // ── Relative date/time indicator ───────────────────────
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 8, horizontal: 14),
+                    decoration: BoxDecoration(
+                      color: AppColors.lightPrimary.withOpacity(0.08),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: widget.isDarkMode 
-                          ? const Color(0xFF444444)
-                          : const Color(0xFFEEEEEE),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.calendar_today, size: 20, color: const Color(0xFF3CB3E9)),
-                            const SizedBox(width: 12),
-                            ],
-                        ),
-                        Text(
-                          formattedDate,
-                          style: TextStyle(
-                            color: widget.isDarkMode ? Colors.white : const Color(0xff333333),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: GestureDetector(
-                  onTap: _selectTime,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: widget.isDarkMode ? const Color(0xFF2A2A2A) : Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: widget.isDarkMode 
-                          ? const Color(0xFF444444)
-                          : const Color(0xFFEEEEEE),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.access_time, size: 20, color: const Color(0xFF3CB3E9)),
-                            const SizedBox(width: 12),
-                            ],
-                        ),
-                        Text(
-                          formattedTime,
-                          style: TextStyle(
-                            color: widget.isDarkMode ? Colors.white : const Color(0xff333333),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 16),
-          _buildMoodPicker(widget.isDarkMode),
-          const SizedBox(height: 16),
-          // Notes Field
-          TextField(
-            controller: _notesController,
-            style: TextStyle(
-              color: widget.isDarkMode ? Colors.white : const Color(0xff333333),
-            ),
-            maxLines: 3,
-            decoration: InputDecoration(
-              labelText: 'Notes (optional)',
-              labelStyle: TextStyle(
-                color: widget.isDarkMode 
-                  ? const Color(0xFFAAAAAA)
-                  : const Color(0xff888888),
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: widget.isDarkMode 
-                    ? const Color(0xFF444444)
-                    : const Color(0xFFEEEEEE),
-                ),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: widget.isDarkMode 
-                    ? const Color(0xFF444444)
-                    : const Color(0xFFEEEEEE),
-                ),
-              ),
-              filled: true,
-              fillColor: widget.isDarkMode 
-                ? const Color(0xFF2A2A2A)
-                : Colors.white,
-            ),
-          ),
-          
-          const SizedBox(height: 20),
-          
-          // Log Button
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _isLoading ? null : _logInteraction,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF3CB3E9),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 2,
-              ),
-              child: _isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.add, size: 20, color: Colors.white),
-                        SizedBox(width: 8),
-                        Text(
-                          'LOG TOUCHPOINT',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-            ),
-          ),
-          
-          const SizedBox(height: 8),
-        ],
-      ),
-       if (_showConfetti)
+                          color: AppColors.lightPrimary.withOpacity(0.25))),
+                    child: Row(children: [
+                      const Icon(Icons.info_outline_rounded,
+                          size: 15, color: AppColors.lightPrimary),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(dateLabel,
+                        style: GoogleFonts.beVietnamPro(
+                          fontSize: 13, fontWeight: FontWeight.w600,
+                          color: AppColors.lightPrimary))),
+                      if (timeLabel.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.success.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(9999)),
+                          child: Text(timeLabel,
+                            style: GoogleFonts.beVietnamPro(
+                              fontSize: 11, fontWeight: FontWeight.w600,
+                              color: AppColors.success))),
+                    ])),
+                  const SizedBox(height: 22),
+
+                  // ── Notes ──────────────────────────────────────────────
+                  TextField(
+                    controller: _notesController,
+                    maxLines: 3,
+                    style: GoogleFonts.beVietnamPro(fontSize: 14, color: textP),
+                    decoration: InputDecoration(
+                      hintText: 'Notes (optional)...',
+                      hintStyle: GoogleFonts.beVietnamPro(fontSize: 14, color: textS),
+                      filled: true,
+                      fillColor: fieldBg,
+                      contentPadding: const EdgeInsets.all(16),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide.none),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide.none),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(
+                            color: AppColors.lightPrimary, width: 1.5)))),
+                  const SizedBox(height: 24),
+
+                  // ── Log Button ─────────────────────────────────────────
+                  GestureDetector(
+                    onTap: _isLoading ? null : _logInteraction,
+                    child: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 200),
+                      opacity: (_selectedInteractionType != null &&
+                              _moodScore != null)
+                          ? 1.0
+                          : 0.45,
+                      child: Container(
+                        width: double.infinity, height: 54,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF751FE7), Color(0xFF9C4DFF)]),
+                          borderRadius: BorderRadius.circular(9999),
+                          boxShadow: [BoxShadow(
+                            color: AppColors.lightPrimary.withOpacity(0.35),
+                            blurRadius: 16, offset: const Offset(0, 5))]),
+                        child: Center(child: _isLoading
+                            ? const SizedBox(width: 22, height: 22,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.white))
+                            : Text('Log Touchpoint',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 16, fontWeight: FontWeight.w700,
+                                  color: Colors.white)))))),
+                ],
+              )),
+            ]),
+        ),
+
+        if (_showConfetti)
           Align(
             alignment: Alignment.topCenter,
             child: ConfettiWidget(
@@ -1302,18 +1019,13 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
               numberOfParticles: 20,
               blastDirectionality: BlastDirectionality.explosive,
               shouldLoop: false,
-              colors: const [
-                Colors.green,
-                Colors.blue,
-                Colors.pink,
-                Colors.orange,
-                Colors.purple
-              ],
-            ),
-          ),
-      ])
-    ));
+              colors: [
+                AppColors.success,
+                Theme.of(context).colorScheme.secondary,
+                Theme.of(context).colorScheme.tertiary,
+                AppColors.warning,
+                Theme.of(context).colorScheme.primary,
+              ])),
+      ]));
   }
 }
-
-

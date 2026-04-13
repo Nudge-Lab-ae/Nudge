@@ -7,6 +7,8 @@ import 'package:confetti/confetti.dart';
 import 'package:crop_your_image/crop_your_image.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:nudge/theme/app_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:nudge/main.dart';
@@ -16,7 +18,6 @@ import 'package:nudge/screens/dashboard/dashboard_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/services/message_service.dart';
 // import 'package:nudge/services/nudge_service.dart';
-import 'package:nudge/theme/text_styles.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
 import 'package:country_code_picker/country_code_picker.dart';
 // import 'package:nudge/widgets/hi_five_animation.dart';
@@ -306,15 +307,15 @@ class _AddContactScreenState extends State<AddContactScreen> {
           data: themeProvider.isDarkMode
               ? ThemeData.dark().copyWith(
                   colorScheme: ColorScheme.dark(
-                    primary: AppTheme.primaryColor,
+                    primary: AppColors.lightPrimary,
                     onPrimary: Colors.white,
-                    surface: AppTheme.darkSurface,
+                    surface: AppColors.darkSurface,
                     onSurface: Colors.white,
                   ),
                 )
               : ThemeData.light().copyWith(
                   colorScheme: ColorScheme.light(
-                    primary: AppTheme.primaryColor,
+                    primary: AppColors.lightPrimary,
                     onPrimary: Colors.white,
                     surface: Colors.white,
                     onSurface: Colors.black,
@@ -344,14 +345,14 @@ class _AddContactScreenState extends State<AddContactScreen> {
     return Container(
       width: size.width,
       height: size.height,
-      color: themeProvider.getBackgroundColor(context),
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: Column(
       children: [
         const SizedBox(height: 100),
         Text(
           'CROP CONTACT PICTURE',
-          style: AppTextStyles.title2.copyWith(
-            color: themeProvider.getTextPrimaryColor(context),
+          style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w600, textBaseline: null,
             decorationColor: Colors.black, decorationThickness: 0
           ),
@@ -389,11 +390,11 @@ class _AddContactScreenState extends State<AddContactScreen> {
                       }
                     },
                     withCircleUi: true,
-                    baseColor: themeProvider.isDarkMode ? AppTheme.darkSurface : Colors.white,
-                    maskColor: themeProvider.isDarkMode ? AppTheme.darkSurface.withAlpha(150) : Colors.white.withAlpha(100),
-                    cornerDotBuilder: (size, edgeAlignment) => DotControl(color: themeProvider.isDarkMode ? AppTheme.primaryColor : Colors.blue),
+                    baseColor: themeProvider.isDarkMode ? AppColors.darkSurface : Colors.white,
+                    maskColor: themeProvider.isDarkMode ? AppColors.darkSurface.withAlpha(150) : Colors.white.withAlpha(100),
+                    cornerDotBuilder: (size, edgeAlignment) => DotControl(color: themeProvider.isDarkMode ? AppColors.lightPrimary : Theme.of(context).colorScheme.secondary),
                   )
-                : Center(child: CircularProgressIndicator(color: themeProvider.isDarkMode ? AppTheme.primaryColor : null)),
+                : Center(child: CircularProgressIndicator(color: themeProvider.isDarkMode ? AppColors.lightPrimary : null)),
           ),
         ),
         Container(
@@ -404,8 +405,8 @@ class _AddContactScreenState extends State<AddContactScreen> {
                 child: OutlinedButton(
                   onPressed: _cancelCrop,
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.red,
-                    side: const BorderSide(color: Colors.red),
+                    foregroundColor: Theme.of(context).colorScheme.error,
+                    side: BorderSide(color: Theme.of(context).colorScheme.error),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                   child: const Text('Cancel'),
@@ -416,10 +417,10 @@ class _AddContactScreenState extends State<AddContactScreen> {
                 child: ElevatedButton(
                   onPressed: _cropImage,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
+                    backgroundColor: AppColors.lightPrimary,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                  child: const Text('Save Crop', style: TextStyle(color: Colors.white)),
+                  child: Text('Save Crop', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                 ),
               ),
             ],
@@ -483,7 +484,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: themeProvider.isDarkMode ? Colors.red.shade900.withOpacity(0.3) : const Color(0xFFFFF5F5),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.red.shade100),
         ),
         child: Row(
@@ -511,8 +512,8 @@ class _AddContactScreenState extends State<AddContactScreen> {
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: themeProvider.isDarkMode ? const Color(0xFF0A3A62) : const Color(0xFFF0F9FF),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.lightPrimary.withOpacity(0.3)),
       ),
       child: Row(
         children: [
@@ -521,9 +522,9 @@ class _AddContactScreenState extends State<AddContactScreen> {
           Expanded(
             child: Text(
               'Valid phone number: ${_selectedCountry.dialCode} ${_phoneController.text}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: AppTheme.primaryColor,
+                color: themeProvider.isDarkMode ? Color.fromARGB(255, 192, 165, 226): AppColors.lightPrimary,
               ),
             ),
           ),
@@ -544,8 +545,8 @@ class _AddContactScreenState extends State<AddContactScreen> {
             const SizedBox(width: 8),
             Text(
               'Cannot Save Contact',
-              style: AppTextStyles.title2.copyWith(
-                color: themeProvider.isDarkMode ? Colors.white : Colors.black87,
+              style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                 fontSize: 18,
               ),
             ),
@@ -648,7 +649,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
               ),
           ],
         ),
-        backgroundColor: themeProvider.getSurfaceColor(context),
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
@@ -656,7 +657,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
           TextButton(
             onPressed: () => Navigator.pop(context),
             style: TextButton.styleFrom(
-              foregroundColor: AppTheme.primaryColor,
+              foregroundColor: AppColors.lightPrimary,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             ),
             child: const Text(
@@ -716,11 +717,11 @@ class _AddContactScreenState extends State<AddContactScreen> {
                   children: [
                     Scaffold(
                   appBar: AppBar(
-                  title: Text('Add Contact', style: AppTextStyles.title2.copyWith(color: themeProvider.getTextPrimaryColor(context), fontSize: 22, fontWeight: FontWeight.w800)),
+                  title: Text('Add Contact', style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.onSurface, fontSize: 22, fontWeight: FontWeight.w800)),
                   centerTitle: true,
-                  iconTheme: IconThemeData(color: AppTheme.primaryColor),
+                  iconTheme: IconThemeData(color: themeProvider.isDarkMode?const Color.fromARGB(255, 192, 165, 226):AppColors.lightPrimary),
                   surfaceTintColor: Colors.transparent,
-                  backgroundColor: themeProvider.getSurfaceColor(context),
+                  backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
                 ),
                 
                   body: SingleChildScrollView(
@@ -771,10 +772,10 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                                  _nameController.text[0].toUpperCase(),
                                                 style: TextStyle(
                                                   fontSize: 40,
-                                                  color: Colors.white,
+                                                  color: Theme.of(context).colorScheme.onSurface,
                                                   fontWeight: FontWeight.bold,
                                                 ),
-                                              ):Icon(Icons.person, size: 50, color: Colors.white),
+                                              ):Icon(Icons.person, size: 50, color: Theme.of(context).colorScheme.onSurface),
                                             ),
                                           )
                                         : null,
@@ -787,11 +788,11 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                   right: 0,
                                   child: Container(
                                     decoration: BoxDecoration(
-                                      color: Colors.red,
+                                      color: Theme.of(context).colorScheme.error,
                                       shape: BoxShape.circle,
                                     ),
                                     child: IconButton(
-                                      icon: Icon(Icons.delete, color: Colors.white, size: 20),
+                                      icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.onSurface, size: 20),
                                       onPressed: _deleteImage,
                                     ),
                                   ),
@@ -805,7 +806,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                         //   'Add details below',
                         //   style: TextStyle(
                         //     fontSize: 16,
-                        //     color: themeProvider.getTextSecondaryColor(context),
+                        //     color: Theme.of(context).colorScheme.onSurfaceVariant,
                         //   ),
                         // ),
                         // const SizedBox(height: 30),
@@ -813,7 +814,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                         // Name field
                         Text(
                           'NAME *',
-                          style: TextStyle(fontWeight: FontWeight.bold, color: themeProvider.getTextPrimaryColor(context)),
+                          style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
@@ -824,28 +825,28 @@ class _AddContactScreenState extends State<AddContactScreen> {
                             }
                             return null;
                           },
-                          style: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                           decoration: InputDecoration(
                             hintText: 'Enter full name',
-                            hintStyle: TextStyle(color: themeProvider.getTextHintColor(context)),
+                            hintStyle: TextStyle(color: Theme.of(context).colorScheme.outline),
                             enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: themeProvider.getTextHintColor(context), width: 1),
-                              borderRadius: BorderRadius.circular(10)
+                              borderSide: BorderSide(color: Theme.of(context).colorScheme.outline, width: 1),
+                              borderRadius: BorderRadius.circular(14)
                             ),
                             focusedBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
-                              borderRadius: BorderRadius.circular(10)
+                              borderSide: BorderSide(color: AppColors.lightPrimary, width: 2),
+                              borderRadius: BorderRadius.circular(14)
                             ),
                             errorBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.red, width: 1),
-                              borderRadius: BorderRadius.circular(10)
+                              borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                              borderRadius: BorderRadius.circular(14)
                             ),
                             focusedErrorBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.red, width: 2),
-                              borderRadius: BorderRadius.circular(10)
+                              borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                              borderRadius: BorderRadius.circular(14)
                             ),
                             filled: true,
-                            fillColor: themeProvider.getCardColor(context),
+                            fillColor: Theme.of(context).colorScheme.surfaceContainerLowest,
                           ),
                         ),
                         
@@ -854,11 +855,11 @@ class _AddContactScreenState extends State<AddContactScreen> {
                         // Connection Type - Now dynamically loaded from user groups
                         Text(
                           'CONNECTION TYPE *',
-                          style: TextStyle(fontWeight: FontWeight.bold, color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'),
+                          style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily),
                         ),
                         const SizedBox(height: 8),
                         _userGroups.isEmpty
-                            ? Text('No groups available. Create groups first.', style: TextStyle(color: themeProvider.getTextSecondaryColor(context), fontFamily: 'OpenSans'))
+                            ? Text('No groups available. Create groups first.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontFamily: GoogleFonts.beVietnamPro().fontFamily))
                             : Wrap(
                                 spacing: 8,
                                 runSpacing: 10,
@@ -884,7 +885,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                   fillColor: MaterialStateProperty.resolveWith<Color?>(
                                     (Set<MaterialState> states) {
                                       if (states.contains(MaterialState.selected)) {
-                                        return AppTheme.primaryColor;
+                                        return AppColors.lightPrimary;
                                       }
                                       return null;
                                     },
@@ -898,7 +899,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                 },
                               ),
                             ),
-                            Text('Favourites', style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans')),
+                            Text('Favourites', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
                           ],
                         ),
                         
@@ -907,33 +908,33 @@ class _AddContactScreenState extends State<AddContactScreen> {
                         // Profession
                         Text(
                           'PROFESSION',
-                          style: TextStyle(fontWeight: FontWeight.bold, color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'),
+                          style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily),
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _professionController,
-                          style: TextStyle(color: themeProvider.getTextPrimaryColor(context), fontFamily: 'OpenSans'),
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily),
                           decoration: InputDecoration(
                             hintText: 'Enter profession',
-                            hintStyle: TextStyle(color: themeProvider.getTextHintColor(context), fontFamily: 'OpenSans'),
+                            hintStyle: TextStyle(color: Theme.of(context).colorScheme.outline, fontFamily: GoogleFonts.beVietnamPro().fontFamily),
                             enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: themeProvider.getTextHintColor(context), width: 1),
-                              borderRadius: BorderRadius.circular(10)
+                              borderSide: BorderSide(color: Theme.of(context).colorScheme.outline, width: 1),
+                              borderRadius: BorderRadius.circular(14)
                             ),
                             focusedBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
-                              borderRadius: BorderRadius.circular(10)
+                              borderSide: BorderSide(color: AppColors.lightPrimary, width: 2),
+                              borderRadius: BorderRadius.circular(14)
                             ),
                             errorBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.red, width: 1),
-                              borderRadius: BorderRadius.circular(10)
+                              borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                              borderRadius: BorderRadius.circular(14)
                             ),
                             focusedErrorBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.red, width: 2),
-                              borderRadius: BorderRadius.circular(10)
+                              borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                              borderRadius: BorderRadius.circular(14)
                             ),
                             filled: true,
-                            fillColor: themeProvider.getCardColor(context),
+                            fillColor: Theme.of(context).colorScheme.surfaceContainerLowest,
                           ),
                         ),
                         
@@ -945,52 +946,52 @@ class _AddContactScreenState extends State<AddContactScreen> {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: themeProvider.getTextPrimaryColor(context),
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                         const SizedBox(height: 10),
                         
                         // Birthday
                         ListTile(
-                          leading: Icon(Icons.cake, color: themeProvider.getTextPrimaryColor(context)),
+                          leading: Icon(Icons.cake, color: Theme.of(context).colorScheme.onSurface),
                           title: Text(
                             _birthday != null
                                 ? 'Birthday: ${DateFormat('MMM d, y').format(_birthday!)}'
                                 : 'Add Birthday',
-                            style: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                           ),
                           trailing: IconButton(
-                            icon: Icon(Icons.calendar_today, color: themeProvider.getTextPrimaryColor(context)),
+                            icon: Icon(Icons.calendar_today, color: Theme.of(context).colorScheme.onSurface),
                             onPressed: () => _selectDate(context, isBirthday: true),
                           ),
                         ),
                         
                         // Anniversary
                         ListTile(
-                          leading: Icon(Icons.favorite, color: themeProvider.getTextPrimaryColor(context)),
+                          leading: Icon(Icons.favorite, color: Theme.of(context).colorScheme.onSurface),
                           title: Text(
                             _anniversary != null
                                 ? 'Anniversary: ${DateFormat('MMM d, y').format(_anniversary!)}'
                                 : 'Add Anniversary',
-                            style: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                           ),
                           trailing: IconButton(
-                            icon: Icon(Icons.calendar_today, color: themeProvider.getTextPrimaryColor(context)),
+                            icon: Icon(Icons.calendar_today, color: Theme.of(context).colorScheme.onSurface),
                             onPressed: () => _selectDate(context, isAnniversary: true),
                           ),
                         ),
                         
                         // Work Anniversary
                         ListTile(
-                          leading: Icon(Icons.work, color: themeProvider.getTextPrimaryColor(context)),
+                          leading: Icon(Icons.work, color: Theme.of(context).colorScheme.onSurface),
                           title: Text(
                             _workAnniversary != null
                                 ? 'Work Anniversary: ${DateFormat('MMM d, y').format(_workAnniversary!)}'
                                 : 'Add Work Anniversary',
-                            style: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                           ),
                           trailing: IconButton(
-                            icon: Icon(Icons.calendar_today, color: themeProvider.getTextPrimaryColor(context)),
+                            icon: Icon(Icons.calendar_today, color: Theme.of(context).colorScheme.onSurface),
                             onPressed: () => _selectDate(context, isWorkAnniversary: true),
                           ),
                         ),
@@ -1000,7 +1001,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                         // Tags
                         Text(
                           'SOCIAL GROUPS',
-                          style: TextStyle(fontWeight: FontWeight.bold, color: themeProvider.getTextPrimaryColor(context)),
+                          style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
                         ),
                         const SizedBox(height: 8),
                         
@@ -1010,10 +1011,10 @@ class _AddContactScreenState extends State<AddContactScreen> {
                             spacing: 8,
                             children: _tagSuggestions.map((tag) {
                               return FilterChip(
-                                label: Text(tag, style: TextStyle(color: themeProvider.getTextPrimaryColor(context))),
+                                label: Text(tag, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                                 selected: _tags.contains(tag),
-                                selectedColor: AppTheme.primaryColor.withOpacity(0.3),
-                                backgroundColor: themeProvider.getCardColor(context),
+                                selectedColor: AppColors.lightPrimary.withOpacity(0.3),
+                                backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
                                 onSelected: (selected) {
                                   setState(() {
                                     if (selected) {
@@ -1035,33 +1036,33 @@ class _AddContactScreenState extends State<AddContactScreen> {
                         //     Expanded(
                         //       child: TextFormField(
                         //         controller: _tagsController,
-                        //         style: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
+                        //         style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                         //         decoration: InputDecoration(
                         //           hintText: 'Add new Social Group',
-                        //           hintStyle: TextStyle(color: themeProvider.getTextHintColor(context)),
+                        //           hintStyle: TextStyle(color: Theme.of(context).colorScheme.outline),
                         //           enabledBorder: OutlineInputBorder(
-                        //             borderSide: BorderSide(color: themeProvider.getTextHintColor(context), width: 1),
-                        //             borderRadius: BorderRadius.circular(10)
+                        //             borderSide: BorderSide(color: Theme.of(context).colorScheme.outline, width: 1),
+                        //             borderRadius: BorderRadius.circular(14)
                         //           ),
                         //           focusedBorder: OutlineInputBorder(
-                        //             borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
-                        //             borderRadius: BorderRadius.circular(10)
+                        //             borderSide: BorderSide(color: AppColors.lightPrimary, width: 2),
+                        //             borderRadius: BorderRadius.circular(14)
                         //           ),
                         //           errorBorder: OutlineInputBorder(
-                        //             borderSide: BorderSide(color: Colors.red, width: 1),
-                        //             borderRadius: BorderRadius.circular(10)
+                        //             borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                        //             borderRadius: BorderRadius.circular(14)
                         //           ),
                         //           focusedErrorBorder: OutlineInputBorder(
-                        //             borderSide: BorderSide(color: Colors.red, width: 2),
-                        //             borderRadius: BorderRadius.circular(10)
+                        //             borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                        //             borderRadius: BorderRadius.circular(14)
                         //           ),
                         //           filled: true,
-                        //           fillColor: themeProvider.getCardColor(context),
+                        //           fillColor: Theme.of(context).colorScheme.surfaceContainerLowest,
                         //         ),
                         //       ),
                         //     ),
                         //     IconButton(
-                        //       icon: Icon(Icons.add, color: AppTheme.primaryColor),
+                        //       icon: Icon(Icons.add, color: AppColors.lightPrimary),
                         //       onPressed: () {
                         //         if (_tagsController.text.isNotEmpty) {
                         //           setState(() {
@@ -1079,9 +1080,9 @@ class _AddContactScreenState extends State<AddContactScreen> {
                         //   spacing: 8,
                         //   children: _tags.map((tag) {
                         //     return Chip(
-                        //       label: Text(tag, style: TextStyle(color: themeProvider.getTextPrimaryColor(context))),
-                        //       backgroundColor: themeProvider.getCardColor(context),
-                        //       deleteIconColor: Colors.red,
+                        //       label: Text(tag, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                        //       backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
+                        //       deleteIconColor: Theme.of(context).colorScheme.error,
                         //       onDeleted: () {
                         //         setState(() => _tags.remove(tag));
                         //       },
@@ -1095,15 +1096,15 @@ class _AddContactScreenState extends State<AddContactScreen> {
                        // Phone Number
                         Text(
                           'PHONE NUMBER',
-                          style: TextStyle(fontWeight: FontWeight.bold, color: themeProvider.getTextPrimaryColor(context)),
+                          style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
                         ),
                         const SizedBox(height: 8),
                         Row(
                           children: [
                             Container(
                               decoration: BoxDecoration(
-                                border: Border.all(color: themeProvider.getTextHintColor(context), width: 1),
-                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: Theme.of(context).colorScheme.outline, width: 1),
+                                borderRadius: BorderRadius.circular(14),
                               ),
                               child: CountryCodePicker(
                                 onChanged: (CountryCode country) {
@@ -1117,17 +1118,17 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                 showOnlyCountryWhenClosed: false,
                                 alignLeft: false,
                                 key: Key(_selectedCountry.code!),
-                                textStyle: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
-                                searchStyle: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
-                                dialogTextStyle: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
-                                dialogBackgroundColor: themeProvider.getCardColor(context),
+                                textStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                                searchStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                                dialogTextStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                                dialogBackgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
                               ),
                             ),
                             const SizedBox(width: 10),
                             Expanded(
                               child: TextFormField(
                                 controller: _phoneController,
-                                style: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
+                                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                                 keyboardType: TextInputType.phone,
                                 maxLength: 12,
                                 inputFormatters: [
@@ -1135,26 +1136,26 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                 ],
                                 decoration: InputDecoration(
                                   hintText: 'Enter phone number',
-                                  hintStyle: TextStyle(color: themeProvider.getTextHintColor(context)),
+                                  hintStyle: TextStyle(color: Theme.of(context).colorScheme.outline),
                                   counterText: '',
                                   enabledBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: themeProvider.getTextHintColor(context), width: 1),
-                                    borderRadius: BorderRadius.circular(10)
+                                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline, width: 1),
+                                    borderRadius: BorderRadius.circular(14)
                                   ),
                                   focusedBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
-                                    borderRadius: BorderRadius.circular(10)
+                                    borderSide: BorderSide(color: AppColors.lightPrimary, width: 2),
+                                    borderRadius: BorderRadius.circular(14)
                                   ),
                                   errorBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: Colors.red, width: 1),
-                                    borderRadius: BorderRadius.circular(10)
+                                    borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                                    borderRadius: BorderRadius.circular(14)
                                   ),
                                   focusedErrorBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: Colors.red, width: 2),
-                                    borderRadius: BorderRadius.circular(10)
+                                    borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                                    borderRadius: BorderRadius.circular(14)
                                   ),
                                   filled: true,
-                                  fillColor: themeProvider.getCardColor(context),
+                                  fillColor: Theme.of(context).colorScheme.surfaceContainerLowest,
                                 ),
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
@@ -1179,34 +1180,34 @@ class _AddContactScreenState extends State<AddContactScreen> {
                         // Email
                         Text(
                           'EMAIL',
-                          style: TextStyle(fontWeight: FontWeight.bold, color: themeProvider.getTextPrimaryColor(context)),
+                          style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _emailController,
-                          style: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                           keyboardType: TextInputType.emailAddress,
                           decoration: InputDecoration(
                             hintText: 'Enter email address',
-                            hintStyle: TextStyle(color: themeProvider.getTextHintColor(context)),
+                            hintStyle: TextStyle(color: Theme.of(context).colorScheme.outline),
                             enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: themeProvider.getTextHintColor(context), width: 1),
-                              borderRadius: BorderRadius.circular(10)
+                              borderSide: BorderSide(color: Theme.of(context).colorScheme.outline, width: 1),
+                              borderRadius: BorderRadius.circular(14)
                             ),
                             focusedBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
-                              borderRadius: BorderRadius.circular(10)
+                              borderSide: BorderSide(color: AppColors.lightPrimary, width: 2),
+                              borderRadius: BorderRadius.circular(14)
                             ),
                             errorBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.red, width: 1),
-                              borderRadius: BorderRadius.circular(10)
+                              borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                              borderRadius: BorderRadius.circular(14)
                             ),
                             focusedErrorBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.red, width: 2),
-                              borderRadius: BorderRadius.circular(10)
+                              borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                              borderRadius: BorderRadius.circular(14)
                             ),
                             filled: true,
-                            fillColor: themeProvider.getCardColor(context),
+                            fillColor: Theme.of(context).colorScheme.surfaceContainerLowest,
                           ),
                         ),
                         
@@ -1215,34 +1216,34 @@ class _AddContactScreenState extends State<AddContactScreen> {
                         // Notes
                         Text(
                           'NOTES',
-                          style: TextStyle(fontWeight: FontWeight.bold, color: themeProvider.getTextPrimaryColor(context)),
+                          style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _notesController,
-                          style: TextStyle(color: themeProvider.getTextPrimaryColor(context)),
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                           maxLines: 3,
                           decoration: InputDecoration(
                             hintText: 'Add any notes about this contact',
-                            hintStyle: TextStyle(color: themeProvider.getTextHintColor(context)),
+                            hintStyle: TextStyle(color: Theme.of(context).colorScheme.outline),
                             enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: themeProvider.getTextHintColor(context), width: 1),
-                              borderRadius: BorderRadius.circular(10)
+                              borderSide: BorderSide(color: Theme.of(context).colorScheme.outline, width: 1),
+                              borderRadius: BorderRadius.circular(14)
                             ),
                             focusedBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
-                              borderRadius: BorderRadius.circular(10)
+                              borderSide: BorderSide(color: AppColors.lightPrimary, width: 2),
+                              borderRadius: BorderRadius.circular(14)
                             ),
                             errorBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.red, width: 1),
-                              borderRadius: BorderRadius.circular(10)
+                              borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                              borderRadius: BorderRadius.circular(14)
                             ),
                             focusedErrorBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.red, width: 2),
-                              borderRadius: BorderRadius.circular(10)
+                              borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                              borderRadius: BorderRadius.circular(14)
                             ),
                             filled: true,
-                            fillColor: themeProvider.getCardColor(context),
+                            fillColor: Theme.of(context).colorScheme.surfaceContainerLowest,
                           ),
                         ),
                         
@@ -1277,14 +1278,14 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                     //   flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
                                     //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
                                     //   messageText: Center(
-                                    //       child: Text('Failed to upload image: $e', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-                                    //           color: Colors.white, fontWeight: FontWeight.w400),)),
+                                    //       child: Text('Failed to upload image: $e', style: TextStyle(fontFamily: GoogleFonts.beVietnamPro().fontFamily, fontSize: 14,
+                                    //           color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w400),)),
                                     // ).show(context);
 
                                      TopMessageService().showMessage(
                                         context: context,
                                         message: 'Failed to upload image: $e!}',
-                                        backgroundColor: Colors.deepOrange,
+                                        backgroundColor: Theme.of(context).colorScheme.tertiary,
                                         icon: Icons.error,
                                       );
                                     return;
@@ -1362,13 +1363,13 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                 //   flushbarPosition: FlushbarPosition.TOP, dismissDirection: FlushbarDismissDirection.HORIZONTAL,
                                 //   forwardAnimationCurve: Curves.fastLinearToSlowEaseIn, 
                                 //   messageText: Center(
-                                //       child: Text('Successfully Created Contact', style: TextStyle(fontFamily: 'OpenSans', fontSize: 14,
-                                //           color: Colors.white, fontWeight: FontWeight.w400),)),
+                                //       child: Text('Successfully Created Contact', style: TextStyle(fontFamily: GoogleFonts.beVietnamPro().fontFamily, fontSize: 14,
+                                //           color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w400),)),
                                 // ).show(context);
                                  TopMessageService().showMessage(
                                     context: context,
                                     message: 'Successfully Created Contact}',
-                                    backgroundColor: Colors.green,
+                                    backgroundColor: AppColors.success,
                                     icon: Icons.check,
                                   );
                                 }
@@ -1411,9 +1412,9 @@ class _AddContactScreenState extends State<AddContactScreen> {
                               }
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: saving?const Color.fromARGB(255, 119, 119, 119):AppTheme.primaryColor,
+                              backgroundColor: saving?const Color.fromARGB(255, 119, 119, 119):AppColors.lightPrimary,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(14),
                               ),
                             ),
                             child: Text(
@@ -1421,7 +1422,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white
+                                color: Theme.of(context).colorScheme.onSurface
                               ),
                             ),
                           ),
@@ -1439,7 +1440,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                        _fabController.closeMenu();
                     },
                     child: Container(
-                      color: Colors.black.withOpacity(0.55),
+                      color: Colors.transparent,
                       width: MediaQuery.of(context).size.width,
                       height: MediaQuery.of(context).size.height,
                     ),
@@ -1451,13 +1452,13 @@ class _AddContactScreenState extends State<AddContactScreen> {
                         numberOfParticles: 20,
                         blastDirectionality: BlastDirectionality.explosive,
                         shouldLoop: false,
-                        colors: const [
-                          Colors.green,
-                          Colors.blue,
-                          Colors.pink,
-                          Colors.orange,
-                          Colors.purple,
-                          Color(0xFF3CB3E9), // Your app's primary color
+                        colors: [
+                          AppColors.success,
+                          Theme.of(context).colorScheme.secondary,
+                          Theme.of(context).colorScheme.tertiary,
+                          AppColors.warning,
+                          Theme.of(context).colorScheme.primary,
+                          AppColors.lightPrimary, // Your app's primary color
                         ],
                         // createParticlePath: _drawStar, // Optional: for star-shaped confetti
                       ),

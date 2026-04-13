@@ -1115,7 +1115,7 @@ class _NudgeScheduleDialogState extends State<NudgeScheduleDialog> {
        TopMessageService().showMessage(
           context: context,
           message: 'Please select at least one contact.',
-          backgroundColor: Colors.deepOrange,
+          backgroundColor: Theme.of(context).colorScheme.tertiary,
           icon: Icons.error,
         );
       return;

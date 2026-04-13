@@ -1,7 +1,7 @@
 // lib/widgets/smart_tagging_suggestions.dart
 import 'package:flutter/material.dart';
+import 'package:nudge/theme/app_theme.dart';
 // import 'package:intl/intl.dart';
-import 'package:nudge/theme/text_styles.dart';
 import 'package:provider/provider.dart';
 import '../models/contact.dart';
 import '../services/tagging_service.dart';
@@ -76,14 +76,14 @@ Future<void> _loadSuggestions() async {
             padding: const EdgeInsets.only(bottom: 16.0),
             child: Row(
               children: [
-                const Icon(Icons.info, color: Colors.blue, size: 16),
+                Icon(Icons.info, color: Theme.of(context).colorScheme.secondary, size: 16),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Enable call log access for smarter suggestions',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey[600],
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ),
@@ -184,7 +184,7 @@ Future<void> _loadSuggestions() async {
         const Text(
           'Relationship Insight',
           style: TextStyle(
-            color: Color(0xff555555),
+            color: AppColors.lightOnSurface,
             fontWeight: FontWeight.bold,
             fontSize: 16,
           ),
@@ -202,15 +202,15 @@ Future<void> _loadSuggestions() async {
                     const SizedBox(width: 8),
                    Text(
                       'Suggested Tag: $_suggestedRelationship',
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xff555555)),
+                      style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.lightOnSurface),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'Based on your interaction patterns, we suggest this relationship level.',
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                  style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.outline),
                 ),
                 const SizedBox(height: 12),
                 ElevatedButton(
@@ -232,9 +232,9 @@ Future<void> _loadSuggestions() async {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xff3CB3E9),
+                    backgroundColor: AppColors.lightPrimary,
                   ),
-                  child:  Text('Apply Suggestion', style: AppTextStyles.button.copyWith(color: Colors.white),),
+                  child:  Text('Apply Suggestion', style: Theme.of(context).textTheme.labelLarge!.copyWith(color: Theme.of(context).colorScheme.onSurface),),
                 ),
               ],
             ),
@@ -251,7 +251,7 @@ Future<void> _loadSuggestions() async {
         const Text(
           'TAG SUGGESTIONS',
           style: TextStyle(
-            color: Color(0xff6e6e6e),
+            color: AppColors.lightOnSurfaceVariant,
             fontWeight: FontWeight.bold,
             fontSize: 16,
           ),
@@ -262,7 +262,7 @@ Future<void> _loadSuggestions() async {
           runSpacing: 8,
           children: _suggestedTags.map((tag) {
             return FilterChip(
-              label: Text(tag, style: TextStyle(color: Color(0xff555555)),),
+              label: Text(tag, style: TextStyle(color: AppColors.lightOnSurface),),
               onSelected: (selected) async {
                 if (selected) {
                   // Add tag to contact

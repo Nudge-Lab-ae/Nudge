@@ -1,5 +1,6 @@
 // complete_profile_screen.dart - Enhanced with Social Universe Preview
 import 'package:flutter/material.dart';
+import 'package:nudge/theme/app_theme.dart';
 import 'package:nudge/providers/theme_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -131,7 +132,7 @@ class _RoadmapStepWidgetState extends State<RoadmapStepWidget> with SingleTicker
         children: [
           // Header Section - Fixed at top
           Container(
-            color: themeProvider.getBackgroundColor(context),
+            color: Theme.of(context).scaffoldBackgroundColor,
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -161,7 +162,7 @@ class _RoadmapStepWidgetState extends State<RoadmapStepWidget> with SingleTicker
                   child: ShaderMask(
                     shaderCallback: (bounds) => LinearGradient(
                       colors: [
-                        themeProvider.isDarkMode ? Colors.white : const Color(0xFF1A1A2E),
+                        themeProvider.isDarkMode ? Colors.white : AppColors.darkBackground,
                         phaseColor,
                       ],
                       begin: Alignment.topLeft,
@@ -169,11 +170,11 @@ class _RoadmapStepWidgetState extends State<RoadmapStepWidget> with SingleTicker
                     ).createShader(bounds),
                     child: Text(
                       "What's Coming\nto NUDGE",
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.w700,
                         height: 1.15,
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -188,7 +189,7 @@ class _RoadmapStepWidgetState extends State<RoadmapStepWidget> with SingleTicker
                     'Your relationships are about to get a whole lot stronger. Here\'s what we\'re building for you.',
                     style: TextStyle(
                       fontSize: 14,
-                      color: themeProvider.isDarkMode ? Colors.white70 : Colors.grey.shade600,
+                      color: themeProvider.isDarkMode ? AppColors.darkOnSurfaceVariant : AppColors.lightOnSurfaceVariant,
                       height: 1.5,
                     ),
                     textAlign: TextAlign.center,
@@ -200,7 +201,7 @@ class _RoadmapStepWidgetState extends State<RoadmapStepWidget> with SingleTicker
           
           // Tab Bar - FIXED VERSION with dynamic width based on content
           Container(
-            color: themeProvider.getBackgroundColor(context),
+            color: Theme.of(context).scaffoldBackgroundColor,
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
               children: [
@@ -209,8 +210,8 @@ class _RoadmapStepWidgetState extends State<RoadmapStepWidget> with SingleTicker
                     height: 44,
                     decoration: BoxDecoration(
                       color: themeProvider.isDarkMode 
-                          ? Colors.grey.shade900 
-                          : Colors.grey.shade50,
+                          ? Theme.of(context).colorScheme.surfaceContainerHigh 
+                          : Theme.of(context).colorScheme.outline,
                       borderRadius: BorderRadius.circular(30),
                     ),
                     child: ListView.builder(
@@ -250,8 +251,8 @@ class _RoadmapStepWidgetState extends State<RoadmapStepWidget> with SingleTicker
                                     color: isSelected
                                         ? Colors.white
                                         : (themeProvider.isDarkMode 
-                                            ? Colors.grey.shade500 
-                                            : Colors.grey.shade600),
+                                            ? AppColors.darkOnSurfaceVariant
+                                            : AppColors.lightOnSurfaceVariant),
                                   ),
                                 ),
                               ],
@@ -268,7 +269,7 @@ class _RoadmapStepWidgetState extends State<RoadmapStepWidget> with SingleTicker
           
           // Phase Title
           // Container(
-          //   color: themeProvider.getBackgroundColor(context),
+          //   color: Theme.of(context).scaffoldBackgroundColor,
           //   padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
           //   child: Align(
           //     alignment: Alignment.centerLeft,
@@ -277,7 +278,7 @@ class _RoadmapStepWidgetState extends State<RoadmapStepWidget> with SingleTicker
           //       style: TextStyle(
           //         fontSize: 22,
           //         fontWeight: FontWeight.w700,
-          //         color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+          //         color: Theme.of(context).colorScheme.onSurface,
           //       ),
           //     ),
           //   ),
@@ -288,7 +289,7 @@ class _RoadmapStepWidgetState extends State<RoadmapStepWidget> with SingleTicker
           // Scrollable Features List
           Expanded(
             child: Container(
-              color: themeProvider.getBackgroundColor(context),
+              color: Theme.of(context).scaffoldBackgroundColor,
               child: ListView.builder(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 80),
                 itemCount: (currentPhase['features'] as List).length,
@@ -309,12 +310,12 @@ class _RoadmapStepWidgetState extends State<RoadmapStepWidget> with SingleTicker
                       decoration: BoxDecoration(
                         color: isExpanded 
                             ? phaseColor.withOpacity(0.05)
-                            : (themeProvider.isDarkMode ? Colors.grey.shade900 : Colors.white),
+                            : (themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: isExpanded
                               ? phaseColor.withOpacity(0.3)
-                              : (themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200),
+                              : (themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Theme.of(context).colorScheme.surfaceContainerLowest),
                           width: 1,
                         ),
                       ),
@@ -339,15 +340,15 @@ class _RoadmapStepWidgetState extends State<RoadmapStepWidget> with SingleTicker
                                     fontSize: 15,
                                     fontWeight: isExpanded ? FontWeight.w600 : FontWeight.w500,
                                     color: isExpanded
-                                        ? (themeProvider.isDarkMode ? Colors.white : Colors.black)
-                                        : (themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade700),
+                                        ? (Theme.of(context).colorScheme.onSurface)
+                                        : (themeProvider.isDarkMode ? AppColors.darkOnSurface : AppColors.lightOnSurface),
                                   ),
                                 ),
                               ),
                               Icon(
                                 isExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
                                 size: 20,
-                                color: themeProvider.isDarkMode ? Colors.grey.shade500 : Colors.grey.shade400,
+                                color: themeProvider.isDarkMode ? AppColors.darkOnSurfaceVariant : AppColors.lightOnSurfaceVariant,
                               ),
                             ],
                           ),
@@ -359,7 +360,7 @@ class _RoadmapStepWidgetState extends State<RoadmapStepWidget> with SingleTicker
                                 feature['desc'],
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: themeProvider.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                                  color: themeProvider.isDarkMode ? AppColors.darkOnSurfaceVariant : AppColors.lightOnSurfaceVariant,
                                   height: 1.5,
                                 ),
                               ),
