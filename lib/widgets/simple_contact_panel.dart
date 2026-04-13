@@ -240,7 +240,7 @@ class _SimpleContactPanelState extends State<SimpleContactPanel> {
           color: isSelected ? AppColors.lightPrimary : Theme.of(context).colorScheme.onSurface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? AppColors.lightPrimary : Theme.of(context).colorScheme.surfaceContainerHigh!,
+            color: isSelected ? AppColors.lightPrimary : Theme.of(context).colorScheme.surfaceContainerHigh,
             width: isSelected ? 2 : 1,
           ),
           boxShadow: isSelected ? [

@@ -2381,7 +2381,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
       Widget _buildWhatMattersStep() {
         final themeProvider = Provider.of<ThemeProvider>(context);
         final isDark = themeProvider.isDarkMode;
-        final scaffoldBg = isDark ? AppColors.darkBackground : const Color(0xFFF2EEE8);
+        // final scaffoldBg = isDark ? AppColors.darkBackground : const Color(0xFFF2EEE8);
         final cardBg = isDark ? AppColors.darkSurfaceContainerHigh : Colors.white;
         final textP = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
         final textS = isDark ? AppColors.darkOnSurfaceVariant : AppColors.lightOnSurfaceVariant;
@@ -2760,7 +2760,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
     Widget build(BuildContext context) {
       final themeProvider = Provider.of<ThemeProvider>(context);
       final isDark = themeProvider.isDarkMode;
-      final scheme = Theme.of(context).colorScheme;
+      // final scheme = Theme.of(context).colorScheme;
 
       final scaffoldBg = isDark ? AppColors.darkBackground : const Color(0xFFF2EEE8);
       final cardBg     = isDark ? AppColors.darkSurfaceContainerHigh : Colors.white;

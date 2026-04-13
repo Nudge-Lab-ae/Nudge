@@ -149,7 +149,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   // Method to show email availability indicator
   Widget _buildEmailAvailabilityIndicator() {
-    final themeProvider = Provider.of<ThemeProvider>(context);
+    // final themeProvider = Provider.of<ThemeProvider>(context);
     
     if (_isCheckingEmail) {
       return Container(

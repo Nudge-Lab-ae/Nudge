@@ -159,7 +159,7 @@ class LogInteractionModalState extends State<LogInteractionModal> {
   @override
   Widget build(BuildContext context) {
     final isDark  = widget.isDarkMode;
-    final scheme  = Theme.of(context).colorScheme;
+    // final scheme  = Theme.of(context).colorScheme;
     final bgColor = isDark ? AppColors.darkSurfaceContainerLow  : Colors.white;
     final fieldBg = isDark ? AppColors.darkSurfaceContainerHigh : const Color(0xFFF0EDE9);
     final textP   = isDark ? AppColors.darkOnSurface            : AppColors.lightOnSurface;

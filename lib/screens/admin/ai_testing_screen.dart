@@ -478,9 +478,9 @@ class _AITestingScreenState extends State<AITestingScreen>
 
   // ── Tab 2: Greeting Card ───────────────────────────────────────────────────
   Widget _buildCardTab(bool isDark, Color cardBg, Color textP, Color textS) {
-    final fieldBg = isDark
-        ? AppColors.darkSurfaceContainerHighest
-        : const Color(0xFFF0EDE9);
+    // final fieldBg = isDark
+    //     ? AppColors.darkSurfaceContainerHighest
+    //     : const Color(0xFFF0EDE9);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

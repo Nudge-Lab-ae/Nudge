@@ -378,7 +378,7 @@ class _ContactQuickPanelState extends State<ContactQuickPanel> {
           border: Border.all(
             color: isSelected
                 ? AppColors.lightPrimary
-                : Theme.of(context).colorScheme.surfaceContainerHigh!,
+                : Theme.of(context).colorScheme.surfaceContainerHigh,
             width: isSelected ? 2 : 1,
           ),
         ),

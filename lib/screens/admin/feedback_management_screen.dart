@@ -297,7 +297,7 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
   }
 
   Widget _buildFeedbackList() {
-    final themeProvider = Provider.of<ThemeProvider>(context);
+    // final themeProvider = Provider.of<ThemeProvider>(context);
     final theme = Theme.of(context);
     
     return StreamBuilder<List<Map<String, dynamic>>>(
@@ -846,7 +846,7 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
   }
 
   Widget _buildInfoRow(String label, String value) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
+    // final themeProvider = Provider.of<ThemeProvider>(context);
     
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),

@@ -2,7 +2,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:nudge/main.dart';
+// import 'package:nudge/main.dart';
 import 'package:nudge/theme/app_theme.dart';
 
 class SocialUniverseGuide extends StatefulWidget {
@@ -466,18 +466,18 @@ class _SocialUniverseGuideState extends State<SocialUniverseGuide>
     );
   }
 
-  Widget _floatingBadge(IconData icon, Color bg, Color iconColor) {
-    return Container(
-      width: 46, height: 46,
-      decoration: BoxDecoration(
-        color: bg,
-        shape: BoxShape.circle,
-        boxShadow: [BoxShadow(
-          color: iconColor.withOpacity(0.18), blurRadius: 8)],
-      ),
-      child: Icon(icon, color: iconColor, size: 22),
-    );
-  }
+  // Widget _floatingBadge(IconData icon, Color bg, Color iconColor) {
+  //   return Container(
+  //     width: 46, height: 46,
+  //     decoration: BoxDecoration(
+  //       color: bg,
+  //       shape: BoxShape.circle,
+  //       boxShadow: [BoxShadow(
+  //         color: iconColor.withOpacity(0.18), blurRadius: 8)],
+  //     ),
+  //     child: Icon(icon, color: iconColor, size: 22),
+  //   );
+  // }
 
   // Smaller badge used between rings
   Widget _smallBadge(IconData icon, Color accentColor) {
@@ -925,9 +925,9 @@ class _SocialUniverseGuideState extends State<SocialUniverseGuide>
   Widget _instructionRow(
       IconData icon, Color bgColor, Color iconColor, String text) {
     // Outer row pill (warm tinted background)
-    final outerBg = widget.isDarkMode
-        ? AppColors.darkSurfaceContainerHigh
-        : const Color(0xFFF0EDE9);
+    // final outerBg = widget.isDarkMode
+    //     ? AppColors.darkSurfaceContainerHigh
+    //     : const Color(0xFFF0EDE9);
     // White enclosure wrapping the text
     final innerBg = widget.isDarkMode
         ? AppColors.darkSurfaceContainerHighest
