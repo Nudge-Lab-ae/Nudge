@@ -3,6 +3,7 @@
 // Admin-only screen. Accessible from Settings when adminProvider.isAdmin == true.
 // Lets admins configure the Anthropic API key and run live tests of all 4 integrations.
 
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -111,10 +112,16 @@ class _AITestingScreenState extends State<AITestingScreen>
     setState(() => _keySaving = true);
     try {
       await ClaudeService.saveApiKey(raw);
-      setState(() { _keyLoaded = true; _keyController.text = '${raw.substring(0, 8)}••••••••'; });
-      _showSnack('API key saved successfully ✓');
+      final visible = raw.length > 12 ? 12 : raw.length;
+      setState(() {
+        _keyLoaded = true;
+        _keyController.text = '${raw.substring(0, visible)}••••••••';
+      });
+      _showSnack('API key saved ✓');
+    } on FirebaseFunctionsException catch (e) {
+      _showSnack('Save failed: ${e.message}', error: true);
     } catch (e) {
-      _showSnack('Failed to save key: $e', error: true);
+      _showSnack('Save failed: $e', error: true);
     } finally {
       if (mounted) setState(() => _keySaving = false);
     }
@@ -241,6 +248,8 @@ class _AITestingScreenState extends State<AITestingScreen>
         bottom: TabBar(
           controller: _tabController,
           labelColor: AppColors.lightPrimary,
+          padding: EdgeInsets.zero,
+          isScrollable: true,
           unselectedLabelColor: textS,
           indicatorColor: AppColors.lightPrimary,
           labelStyle: GoogleFonts.beVietnamPro(

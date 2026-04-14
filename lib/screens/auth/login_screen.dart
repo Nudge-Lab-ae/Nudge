@@ -100,11 +100,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     borderRadius: BorderRadius.circular(14)
                   ),
                   errorBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                    borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 1),
                     borderRadius: BorderRadius.circular(14)
                   ),
                   focusedErrorBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                    borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 2),
                     borderRadius: BorderRadius.circular(14)
                   ),
                   fillColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,
@@ -138,11 +138,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     borderRadius: BorderRadius.circular(14)
                   ),
                   errorBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                    borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 1),
                     borderRadius: BorderRadius.circular(14)
                   ),
                   focusedErrorBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                    borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 2),
                     borderRadius: BorderRadius.circular(14)
                   ),
                   fillColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,

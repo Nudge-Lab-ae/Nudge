@@ -338,7 +338,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.error),
+                  Icon(Icons.error_outline, size: 48, color: Color.fromARGB(255, 206, 37, 85)),
                   const SizedBox(height: 16),
                   Text(
                     'Error loading contact',
@@ -578,7 +578,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                       : textS,
                   size: 22),
                 const SizedBox(width: 12),
-                Expanded(child: Text('Add to Favourites',
+                Expanded(child: Text('Favourite contact',
                   style: GoogleFonts.beVietnamPro(
                     fontSize: 15, fontWeight: FontWeight.w500, color: textP))),
                 _isUpdatingVIP

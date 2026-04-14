@@ -377,7 +377,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
             decoration: InputDecoration(
               hintText: 'Please share your feedback, suggestions, or issues...',
-              hintStyle: TextStyle(color: themeProvider.isDarkMode? Color(0xff666666):Color(0xff999999)),
+              hintStyle: TextStyle(color: themeProvider.isDarkMode? Color(0xff666666):Color(0xff999999), fontFamily: 'Inter'),
               enabledBorder: OutlineInputBorder(
                 borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurfaceVariant, width: 1),
                 borderRadius: BorderRadius.circular(14)
@@ -387,11 +387,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 borderRadius: BorderRadius.circular(14)
               ),
               errorBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 1),
                 borderRadius: BorderRadius.circular(14)
               ),
               focusedErrorBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 2),
                 borderRadius: BorderRadius.circular(14)
               ),
             ),
@@ -500,7 +500,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               deleteUser(authService);
             },
             style: TextButton.styleFrom(
-              foregroundColor: deleting ? Theme.of(context).colorScheme.outline : Theme.of(context).colorScheme.error,
+              foregroundColor: deleting ? Theme.of(context).colorScheme.outline : Color.fromARGB(255, 206, 37, 85),
             ),
             child: Text(deleting ? 'Deleting...' : 'Delete Account'),
           ),
@@ -828,7 +828,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // ── Danger Zone card ─────────────────────────────────────────────────────
   Widget _buildDangerZoneCard(AuthService authService, ThemeProvider themeProvider) {
     final isDark = themeProvider.isDarkMode;
-    final errorColor = Theme.of(context).colorScheme.error;
+    final errorColor = Color.fromARGB(255, 206, 37, 85);
 
     // Subtle tinted background — not pure red, just a warm blush
     final cardBg = isDark
@@ -858,6 +858,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             'This action cannot be undone.',
             style: TextStyle(
               fontSize: 13,
+              fontFamily: 'Inter',
               color: isDark
                   ? AppColors.darkOnSurfaceVariant
                   : AppColors.lightOnSurfaceVariant,
@@ -917,7 +918,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 height: 50,
                 child: CircularProgressIndicator(
                   strokeWidth: 4,
-                  valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.error),
+                  valueColor: AlwaysStoppedAnimation<Color>(Color.fromARGB(255, 206, 37, 85)),
                 ),
               ),
               const SizedBox(height: 20),
@@ -926,7 +927,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.error,
+                  color: Color.fromARGB(255, 206, 37, 85),
                 ),
               ),
               const SizedBox(height: 10),
@@ -1010,8 +1011,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: OutlinedButton(
                     onPressed: _cancelCrop,
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Theme.of(context).colorScheme.error,
-                      side: BorderSide(color: Theme.of(context).colorScheme.error),
+                      foregroundColor: Color.fromARGB(255, 206, 37, 85),
+                      side: BorderSide(color: Color.fromARGB(255, 206, 37, 85)),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: const Text('Cancel'),
@@ -1100,7 +1101,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 (route) => false
               );
             },
-            style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
+            style: TextButton.styleFrom(foregroundColor: Color.fromARGB(255, 206, 37, 85)),
             child: const Text('Confirm'),
           ),
         ],
@@ -1340,7 +1341,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final adminProvider = Provider.of<AdminProvider>(context);
     final theme = Theme.of(context);
     
-    if (_isLoading || adminProvider.isLoading) {
+    if (_isLoading /* || adminProvider.isLoading */) {
       return Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: Center(child: CircularProgressIndicator(color: theme.colorScheme.primary)),
@@ -1420,11 +1421,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   borderRadius: BorderRadius.circular(14)
                                 ),
                                 errorBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                                  borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 1),
                                   borderRadius: BorderRadius.circular(14)
                                 ),
                                 focusedErrorBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                                  borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 2),
                                   borderRadius: BorderRadius.circular(14)
                                 ),
                               ),
@@ -1502,11 +1503,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     borderRadius: BorderRadius.circular(14)
                                   ),
                                   errorBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                                    borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 1),
                                     borderRadius: BorderRadius.circular(14)
                                   ),
                                   focusedErrorBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                                    borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 2),
                                     borderRadius: BorderRadius.circular(14)
                                   ),
                                 ),
@@ -1544,11 +1545,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     borderRadius: BorderRadius.circular(14)
                                   ),
                                   errorBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                                    borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 1),
                                     borderRadius: BorderRadius.circular(14)
                                   ),
                                   focusedErrorBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                                    borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 2),
                                     borderRadius: BorderRadius.circular(14)
                                   ),
                                 ),

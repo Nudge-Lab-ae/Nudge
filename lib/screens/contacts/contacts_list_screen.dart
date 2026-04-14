@@ -604,9 +604,56 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     final isDark = themeProvider.isDarkMode;
 
     // Sort by most recently contacted, take up to 8
-    final recent = [...contacts]
-      ..sort((a, b) => b.lastContacted.compareTo(a.lastContacted));
-    final shown = recent.take(8).toList();
+    // ── Score each contact by logged interaction activity ─────────────────
+    // Primary: interactions in the last 90 days (interactionCountInWindow)
+    // Secondary: timestamp of the most recent logged interaction
+    // Tiebreaker: inner-circle / VIP contacts are lifted when scores are close
+    DateTime _mostRecentInteraction(Contact c) {
+      if (c.interactionHistory.isEmpty) return DateTime(2000);
+      final timestamps = c.interactionHistory.values
+          .whereType<Map>()
+          .map((e) => e['timestamp'])
+          .whereType<int>()
+          .toList();
+      if (timestamps.isEmpty) return DateTime(2000);
+      return DateTime.fromMillisecondsSinceEpoch(
+          timestamps.reduce((a, b) => a > b ? a : b));
+    }
+
+    // Build a numeric score for each contact:
+    //   base  = interactions in the 90-day window  (0-n)
+    //   bonus = +2 for inner-circle, +1 for VIP/middle-circle
+    // When the top scores are all identical (everyone has 0 or 1 interactions)
+    // the bonus ensures inner/VIP contacts surface first.
+    final maxWindow = contacts.isEmpty
+        ? 1
+        : contacts
+            .map((c) => c.interactionCountInWindow)
+            .reduce((a, b) => a > b ? a : b)
+            .clamp(1, 999);
+
+    double _score(Contact c) {
+      final base = c.interactionCountInWindow.toDouble();
+      double bonus = 0;
+      if (c.computedRing == 'inner') bonus += 2;
+      if (c.isVIP) bonus += 1;
+      if (c.computedRing == 'middle') bonus += 0.5;
+      // Only apply the bonus as a tiebreaker when activity scores are low
+      // (i.e. when the max window count is ≤ 2, which means most contacts
+      // have similar or zero interaction counts).
+      final bonusWeight = maxWindow <= 2 ? 1.0 : 0.3;
+      return base + bonus * bonusWeight;
+    }
+
+    final scored = [...contacts]
+      ..sort((a, b) {
+        final scoreDiff = _score(b).compareTo(_score(a));
+        if (scoreDiff != 0) return scoreDiff;
+        // Same composite score → sort by most-recent interaction timestamp
+        return _mostRecentInteraction(b)
+            .compareTo(_mostRecentInteraction(a));
+      });
+    final shown = scored.take(8).toList();
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 0, 20),

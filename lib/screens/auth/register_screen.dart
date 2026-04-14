@@ -179,11 +179,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
         margin: const EdgeInsets.only(top: 4),
         child: Row(
           children: [
-            Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error, size: 16),
+            Icon(Icons.error_outline, color: Color.fromARGB(255, 206, 37, 85), size: 16),
             const SizedBox(width: 8),
             Text(
               _emailError,
-              style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.error),
+              style: TextStyle(fontSize: 12, color: Color.fromARGB(255, 206, 37, 85)),
             ),
           ],
         ),
@@ -333,11 +333,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       borderRadius: BorderRadius.circular(14),
                     ),
                     errorBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                      borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 1),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     focusedErrorBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                      borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 2),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     fillColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,
@@ -389,11 +389,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       borderRadius: BorderRadius.circular(14),
                     ),
                     errorBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                      borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 1),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     focusedErrorBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                      borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 2),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     fillColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,
@@ -439,11 +439,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       borderRadius: BorderRadius.circular(14),
                     ),
                     errorBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                      borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 1),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     focusedErrorBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                      borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 2),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     fillColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,
@@ -560,7 +560,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 // ScaffoldMessenger.of(context).showSnackBar(
                                 //   SnackBar(
                                 //     content: Text(e.toString()),
-                                //     backgroundColor: Theme.of(context).colorScheme.error,
+                                //     backgroundColor: Color.fromARGB(255, 206, 37, 85),
                                 //   ),
                                 // );
                                 TopMessageService().showMessage(
@@ -574,7 +574,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 // ScaffoldMessenger.of(context).showSnackBar(
                                 //   SnackBar(
                                 //     content: Text('Error: ${e.toString()}'),
-                                //     backgroundColor: Theme.of(context).colorScheme.error,
+                                //     backgroundColor: Color.fromARGB(255, 206, 37, 85),
                                 //   ),
                                 // );
                                 TopMessageService().showMessage(
@@ -647,7 +647,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               // ScaffoldMessenger.of(context).showSnackBar(
                               //   SnackBar(
                               //     content: Text('The email ${user.email} is already registered. Please log in.'),
-                              //     backgroundColor: Theme.of(context).colorScheme.error,
+                              //     backgroundColor: Color.fromARGB(255, 206, 37, 85),
                               //   ),
                               // );
                               TopMessageService().showMessage(
@@ -702,7 +702,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         // ScaffoldMessenger.of(context).showSnackBar(
                         //   SnackBar(
                         //     content: Text(errorMessage),
-                        //     backgroundColor: Theme.of(context).colorScheme.error,
+                        //     backgroundColor: Color.fromARGB(255, 206, 37, 85),
                         //   ),
                         // );
                         TopMessageService().showMessage(
@@ -715,7 +715,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         // ScaffoldMessenger.of(context).showSnackBar(
                         //   SnackBar(
                         //     content: Text('Error: ${e.toString()}'),
-                        //     backgroundColor: Theme.of(context).colorScheme.error,
+                        //     backgroundColor: Color.fromARGB(255, 206, 37, 85),
                         //   ),
                         // );
                         TopMessageService().showMessage(
@@ -765,7 +765,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               // ScaffoldMessenger.of(context).showSnackBar(
                               //   SnackBar(
                               //     content: Text('The email ${user.email} is already registered. Please log in.'),
-                              //     backgroundColor: Theme.of(context).colorScheme.error,
+                              //     backgroundColor: Color.fromARGB(255, 206, 37, 85),
                               //   ),
                               // );
                               TopMessageService().showMessage(
@@ -816,7 +816,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         // ScaffoldMessenger.of(context).showSnackBar(
                         //   SnackBar(
                         //     content: Text(errorMessage),
-                        //     backgroundColor: Theme.of(context).colorScheme.error,
+                        //     backgroundColor: Color.fromARGB(255, 206, 37, 85),
                         //   ),
                         // );
                         TopMessageService().showMessage(
@@ -829,7 +829,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         // ScaffoldMessenger.of(context).showSnackBar(
                         //   SnackBar(
                         //     content: Text('Error: ${e.toString()}'),
-                        //     backgroundColor: Theme.of(context).colorScheme.error,
+                        //     backgroundColor: Color.fromARGB(255, 206, 37, 85),
                         //   ),
                         // );
                         TopMessageService().showMessage(

@@ -1085,8 +1085,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                 child: OutlinedButton(
                   onPressed: _cancelCrop,
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Theme.of(context).colorScheme.error,
-                    side: BorderSide(color: Theme.of(context).colorScheme.error),
+                    foregroundColor: Color.fromARGB(255, 206, 37, 85),
+                    side: BorderSide(color: Color.fromARGB(255, 206, 37, 85)),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                   child: const Text('Cancel'),
@@ -1206,11 +1206,11 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                   borderRadius: BorderRadius.circular(14),
                 ),
                 errorBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                  borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 1),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 focusedErrorBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                  borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 2),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 fillColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHigh : Colors.white,
@@ -1275,11 +1275,11 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                         borderRadius: BorderRadius.circular(14),
                       ),
                       errorBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                        borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 1),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       focusedErrorBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                        borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 2),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       errorStyle: const TextStyle(fontSize: 12),
@@ -1549,7 +1549,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
                     children: [
                       // Delete button at the top
                       GestureDetector(
-                        child: Icon(Icons.delete, color: Theme.of(context).colorScheme.error, size: 16),
+                        child: Icon(Icons.delete, color: Color.fromARGB(255, 206, 37, 85), size: 16),
                         onTap: () => _deleteGroup(index),
                         ),
                       const SizedBox(height: 10),
@@ -1884,7 +1884,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
               });
               Navigator.pop(context);
             },
-            child: Text('Delete', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            child: Text('Delete', style: TextStyle(color: Color.fromARGB(255, 206, 37, 85))),
           ),
         ],
       ),

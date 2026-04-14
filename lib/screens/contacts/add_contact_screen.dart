@@ -405,8 +405,8 @@ class _AddContactScreenState extends State<AddContactScreen> {
                 child: OutlinedButton(
                   onPressed: _cancelCrop,
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Theme.of(context).colorScheme.error,
-                    side: BorderSide(color: Theme.of(context).colorScheme.error),
+                    foregroundColor: Color.fromARGB(255, 206, 37, 85),
+                    side: BorderSide(color: Color.fromARGB(255, 206, 37, 85)),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                   child: const Text('Cancel'),
@@ -788,7 +788,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                   right: 0,
                                   child: Container(
                                     decoration: BoxDecoration(
-                                      color: Theme.of(context).colorScheme.error,
+                                      color: Color.fromARGB(255, 206, 37, 85),
                                       shape: BoxShape.circle,
                                     ),
                                     child: IconButton(
@@ -838,11 +838,11 @@ class _AddContactScreenState extends State<AddContactScreen> {
                               borderRadius: BorderRadius.circular(14)
                             ),
                             errorBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                              borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 1),
                               borderRadius: BorderRadius.circular(14)
                             ),
                             focusedErrorBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                              borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 2),
                               borderRadius: BorderRadius.circular(14)
                             ),
                             filled: true,
@@ -926,11 +926,11 @@ class _AddContactScreenState extends State<AddContactScreen> {
                               borderRadius: BorderRadius.circular(14)
                             ),
                             errorBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                              borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 1),
                               borderRadius: BorderRadius.circular(14)
                             ),
                             focusedErrorBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                              borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 2),
                               borderRadius: BorderRadius.circular(14)
                             ),
                             filled: true,
@@ -1049,11 +1049,11 @@ class _AddContactScreenState extends State<AddContactScreen> {
                         //             borderRadius: BorderRadius.circular(14)
                         //           ),
                         //           errorBorder: OutlineInputBorder(
-                        //             borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                        //             borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 1),
                         //             borderRadius: BorderRadius.circular(14)
                         //           ),
                         //           focusedErrorBorder: OutlineInputBorder(
-                        //             borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                        //             borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 2),
                         //             borderRadius: BorderRadius.circular(14)
                         //           ),
                         //           filled: true,
@@ -1082,7 +1082,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                         //     return Chip(
                         //       label: Text(tag, style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
                         //       backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
-                        //       deleteIconColor: Theme.of(context).colorScheme.error,
+                        //       deleteIconColor: Color.fromARGB(255, 206, 37, 85),
                         //       onDeleted: () {
                         //         setState(() => _tags.remove(tag));
                         //       },
@@ -1147,11 +1147,11 @@ class _AddContactScreenState extends State<AddContactScreen> {
                                     borderRadius: BorderRadius.circular(14)
                                   ),
                                   errorBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                                    borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 1),
                                     borderRadius: BorderRadius.circular(14)
                                   ),
                                   focusedErrorBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                                    borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 2),
                                     borderRadius: BorderRadius.circular(14)
                                   ),
                                   filled: true,
@@ -1199,11 +1199,11 @@ class _AddContactScreenState extends State<AddContactScreen> {
                               borderRadius: BorderRadius.circular(14)
                             ),
                             errorBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                              borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 1),
                               borderRadius: BorderRadius.circular(14)
                             ),
                             focusedErrorBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                              borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 2),
                               borderRadius: BorderRadius.circular(14)
                             ),
                             filled: true,
@@ -1235,11 +1235,11 @@ class _AddContactScreenState extends State<AddContactScreen> {
                               borderRadius: BorderRadius.circular(14)
                             ),
                             errorBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                              borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 1),
                               borderRadius: BorderRadius.circular(14)
                             ),
                             focusedErrorBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                              borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 2),
                               borderRadius: BorderRadius.circular(14)
                             ),
                             filled: true,

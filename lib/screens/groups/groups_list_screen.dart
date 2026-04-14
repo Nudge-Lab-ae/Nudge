@@ -1263,7 +1263,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline, size: 64, color: Theme.of(context).colorScheme.error),
+          Icon(Icons.error_outline, size: 64, color: Color.fromARGB(255, 206, 37, 85)),
           const SizedBox(height: 16),
           Text('Oops! Something went wrong', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
           const SizedBox(height: 8),
@@ -1769,11 +1769,11 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                         borderRadius: BorderRadius.circular(14)
                       ),
                       errorBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                        borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 1),
                         borderRadius: BorderRadius.circular(14)
                       ),
                       focusedErrorBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                        borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 2),
                         borderRadius: BorderRadius.circular(14)
                       ),
                       fillColor: Theme.of(context).colorScheme.surfaceContainerLow,
@@ -1800,11 +1800,11 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                         borderRadius: BorderRadius.circular(14)
                       ),
                       errorBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                        borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 1),
                         borderRadius: BorderRadius.circular(14)
                       ),
                       focusedErrorBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                        borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 2),
                         borderRadius: BorderRadius.circular(14)
                       ),
                       fillColor: Theme.of(context).colorScheme.surfaceContainerLow,
@@ -1846,11 +1846,11 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                         borderRadius: BorderRadius.circular(14)
                       ),
                       errorBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                        borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 1),
                         borderRadius: BorderRadius.circular(14)
                       ),
                       focusedErrorBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                        borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 2),
                         borderRadius: BorderRadius.circular(14)
                       ),
                       fillColor: Theme.of(context).colorScheme.surfaceContainerLow,
@@ -2146,7 +2146,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                       ),
                       const SizedBox(width: 10),
                       IconButton(
-                        icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
+                        icon: Icon(Icons.delete, color: Color.fromARGB(255, 206, 37, 85)),
                         onPressed: () {
                           Navigator.pop(context);
                           _showDeleteConfirmation(context, group, apiService, themeProvider, false);
@@ -2364,7 +2364,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                                 title: Text((contact.name), style: TextStyle(fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
                                 subtitle: Text(contact.connectionType, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
                                 trailing: IconButton(
-                                  icon: Icon(Icons.remove_circle, color: Theme.of(context).colorScheme.error),
+                                  icon: Icon(Icons.remove_circle, color: Color.fromARGB(255, 206, 37, 85)),
                                   onPressed: () {
                                     // Close the bottom sheet first
                                     Navigator.pop(modalContext);

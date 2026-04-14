@@ -22,14 +22,16 @@ class AdminProvider extends ChangeNotifier {
     }
     
     try {
+      print(_isAdmin); print(' is the current admin statujs');
       final doc = await _firestore
           .collection('admins')
           .doc(user.uid)
           .get();
       
       _isAdmin = doc.exists;
+      print(_isAdmin); print(' is the admin statujs');
     } catch (e) {
-      //print('Error checking admin status: $e');
+      print('Error checking admin status: $e');
       _isAdmin = false;
     } finally {
       _isLoading = false;

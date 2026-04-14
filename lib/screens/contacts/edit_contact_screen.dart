@@ -371,8 +371,8 @@ class _EditContactScreenState extends State<EditContactScreen> {
                   child: OutlinedButton(
                     onPressed: _cancelCrop,
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Theme.of(context).colorScheme.error,
-                      side: BorderSide(color: Theme.of(context).colorScheme.error),
+                      foregroundColor: Color.fromARGB(255, 206, 37, 85),
+                      side: BorderSide(color: Color.fromARGB(255, 206, 37, 85)),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: const Text('Cancel'),
@@ -860,7 +860,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
                               right: 0,
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.error,
+                                  color: Color.fromARGB(255, 206, 37, 85),
                                   shape: BoxShape.circle,
                                 ),
                                 child: IconButton(
@@ -898,11 +898,11 @@ class _EditContactScreenState extends State<EditContactScreen> {
                           borderRadius: BorderRadius.circular(14)
                         ),
                         errorBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                          borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 1),
                           borderRadius: BorderRadius.circular(14)
                         ),
                         focusedErrorBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                          borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 2),
                           borderRadius: BorderRadius.circular(14)
                         ),
                         filled: true,
@@ -1010,11 +1010,11 @@ class _EditContactScreenState extends State<EditContactScreen> {
                                 borderRadius: BorderRadius.circular(14)
                               ),
                               errorBorder: OutlineInputBorder(
-                                borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                                borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 1),
                                 borderRadius: BorderRadius.circular(14)
                               ),
                               focusedErrorBorder: OutlineInputBorder(
-                                borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                                borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 2),
                                 borderRadius: BorderRadius.circular(14)
                               ),
                               filled: true,
@@ -1059,11 +1059,11 @@ class _EditContactScreenState extends State<EditContactScreen> {
                           borderRadius: BorderRadius.circular(14)
                         ),
                         errorBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                          borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 1),
                           borderRadius: BorderRadius.circular(14)
                         ),
                         focusedErrorBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                          borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 2),
                           borderRadius: BorderRadius.circular(14)
                         ),
                         filled: true,
@@ -1090,11 +1090,11 @@ class _EditContactScreenState extends State<EditContactScreen> {
                           borderRadius: BorderRadius.circular(14)
                         ),
                         errorBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                          borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 1),
                           borderRadius: BorderRadius.circular(14)
                         ),
                         focusedErrorBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                          borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 2),
                           borderRadius: BorderRadius.circular(14)
                         ),
                         filled: true,
@@ -1121,11 +1121,11 @@ class _EditContactScreenState extends State<EditContactScreen> {
                           borderRadius: BorderRadius.circular(14)
                         ),
                         errorBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                          borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 1),
                           borderRadius: BorderRadius.circular(14)
                         ),
                         focusedErrorBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                          borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 2),
                           borderRadius: BorderRadius.circular(14)
                         ),
                         filled: true,
@@ -1203,11 +1203,11 @@ class _EditContactScreenState extends State<EditContactScreen> {
                           borderRadius: BorderRadius.circular(14)
                         ),
                         errorBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1),
+                          borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 1),
                           borderRadius: BorderRadius.circular(14)
                         ),
                         focusedErrorBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+                          borderSide: BorderSide(color: Color.fromARGB(255, 206, 37, 85), width: 2),
                           borderRadius: BorderRadius.circular(14)
                         ),
                         filled: true,
@@ -1241,13 +1241,13 @@ class _EditContactScreenState extends State<EditContactScreen> {
                         child: OutlinedButton(
                           onPressed: _deleteContact,
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: Theme.of(context).colorScheme.error,
-                            side: BorderSide(color: Theme.of(context).colorScheme.error),
+                            foregroundColor: Color.fromARGB(255, 206, 37, 85),
+                            side: BorderSide(color: Color.fromARGB(255, 206, 37, 85)),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),
                             ),
                           ),
-                          child: Text('DELETE CONTACT', style: GoogleFonts.beVietnamPro(fontSize: 13, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.error)),
+                          child: Text('DELETE CONTACT', style: GoogleFonts.beVietnamPro(fontSize: 13, fontWeight: FontWeight.w700, color: Color.fromARGB(255, 206, 37, 85))),
                         ),
                       ),
                   ],
@@ -1457,7 +1457,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: Text('Delete', style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.error)),
+            child: Text('Delete', style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Color.fromARGB(255, 206, 37, 85))),
           ),
         ],
       ),

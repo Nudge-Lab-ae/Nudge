@@ -756,7 +756,7 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
               onPressed: () => _deleteFeedback(feedback),
               icon: Icon(
                 Icons.delete,
-                color: themeProvider.isDarkMode ? Colors.red.shade300 : Theme.of(context).colorScheme.error,
+                color: themeProvider.isDarkMode ? Colors.red.shade300 : Color.fromARGB(255, 206, 37, 85),
               ),
               tooltip: 'Delete',
             ),
@@ -944,7 +944,7 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
             child: Text(
               'Delete',
               style: TextStyle(
-                color: themeProvider.isDarkMode ? Colors.red.shade300 : Theme.of(context).colorScheme.error,
+                color: themeProvider.isDarkMode ? Colors.red.shade300 : Color.fromARGB(255, 206, 37, 85),
               ),
             ),
           ),

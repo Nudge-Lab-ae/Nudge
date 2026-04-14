@@ -279,7 +279,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.error),
+          Icon(Icons.error_outline, size: 48, color: Color.fromARGB(255, 206, 37, 85)),
           const SizedBox(height: 16),
           Text(
             'Failed to load nudges',
@@ -535,7 +535,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       floatingActionButton: _selectedNudgeIds.isNotEmpty
         ? FloatingActionButton.extended(
             onPressed: () => _cancelSelectedNudges(context, themeProvider),
-            backgroundColor: Theme.of(context).colorScheme.error,
+            backgroundColor: Color.fromARGB(255, 206, 37, 85),
             icon: const Icon(Icons.cancel, color: Colors.white),
             label: Text(
               'CANCEL ${_selectedNudgeIds.length} NUDGE${_selectedNudgeIds.length == 1 ? '' : 'S'}',
@@ -822,7 +822,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   fontFamily: GoogleFonts.beVietnamPro().fontFamily,
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.error,
+                  color: Color.fromARGB(255, 206, 37, 85),
                 ),
               ),
               const SizedBox(height: 12),
@@ -831,7 +831,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     ? _cancellationSuccessCount / _cancellationTotalCount 
                     : 0,
                 backgroundColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHighest : Theme.of(context).colorScheme.surfaceContainerLowest,
-                valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.error),
+                valueColor: AlwaysStoppedAnimation<Color>(Color.fromARGB(255, 206, 37, 85)),
               ),
               const SizedBox(height: 8),
               Text(
@@ -864,7 +864,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: Text('Cancel Nudges', style: TextStyle(color: Theme.of(context).colorScheme.error, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
+            child: Text('Cancel Nudges', style: TextStyle(color: Color.fromARGB(255, 206, 37, 85), fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
           ),
         ],
       ),
@@ -1854,7 +1854,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const SizedBox(height: 20),
+              // const SizedBox(height: 20),
               ListTile(
                 leading: Icon(Icons.person, color: Theme.of(context).colorScheme.onSurface),
                 title: Text('View Contact', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
@@ -2102,7 +2102,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 );
               }
             },
-            child: Text('Cancel Nudge', style: TextStyle(color: Theme.of(context).colorScheme.error, fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
+            child: Text('Cancel Nudge', style: TextStyle(color: Color.fromARGB(255, 206, 37, 85), fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
           ),
         ],
       ),

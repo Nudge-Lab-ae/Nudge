@@ -7,6 +7,7 @@
 
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -31,6 +32,9 @@ class ClaudeService {
           .collection('config')
           .doc('claude')
           .get();
+      print('got the key'); 
+      print(uid);
+      if (doc.exists) print(doc.data()?['apiKey'] as String);
       if (doc.exists) return doc.data()?['apiKey'] as String?;
       return null;
     } catch (e) {
@@ -263,16 +267,15 @@ ${_buildContactsSnapshot(contacts)}''';
   // ADMIN: save / read API key
   // ══════════════════════════════════════════════════════════════════════════
 
+  // Key is written server-side via a Cloud Function because the admins
+  // collection has "allow write: if false" in Firestore rules.
   static Future<void> saveApiKey(String key) async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) throw Exception('Not authenticated');
-    await FirebaseFirestore.instance
-        .collection('admins')
-        .doc(uid)
-        .collection('config')
-        .doc('claude')
-        .set({'apiKey': key, 'updatedAt': FieldValue.serverTimestamp()},
-            SetOptions(merge: true));
+    if (FirebaseAuth.instance.currentUser == null) {
+      throw Exception('Not authenticated');
+    }
+    final callable = FirebaseFunctions.instance
+        .httpsCallable('saveClaudeApiKey');
+    await callable.call({'apiKey': key});
   }
 
   static Future<String?> readApiKey() => _resolveApiKey();
