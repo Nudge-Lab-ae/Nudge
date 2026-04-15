@@ -18,8 +18,8 @@ import 'package:nudge/widgets/log_interaction_modal.dart';
 import 'package:provider/provider.dart';
 import '../../models/contact.dart';
 import '../../providers/theme_provider.dart';
-import '../../theme/app_theme.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+// import '../../theme/app_theme.dart';
+// import 'package:flutter_svg/flutter_svg.dart';
 import 'package:confetti/confetti.dart';
 
 class ContactDetailScreen extends StatefulWidget {
@@ -114,7 +114,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
         TopMessageService().showMessage(
           context: context,
           message: isVIP ? 'Added to Favourites' : 'Removed from Favourites',
-          backgroundColor: AppColors.success,
+          backgroundColor: isVIP?AppColors.success:Colors.blueGrey,
           icon: Icons.check,
         );
       }
@@ -167,7 +167,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
         message: mark
             ? '${contact.name} added to Needs Attention'
             : 'Removed from Needs Attention',
-        backgroundColor: mark ? Color(0xFF1D9E75) : Theme.of(context).colorScheme.surfaceContainerLow,
+        backgroundColor: mark ? Color(0xFF1D9E75) : Colors.blueGrey,
         icon: mark ? Icons.flag_rounded : Icons.flag_outlined,
       );
     } catch (e) {
@@ -214,18 +214,18 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     }
   }
 
-  IconData _getRingIcon(String ring) {
-    switch (ring) {
-      case 'inner':
-        return Icons.star;
-      case 'middle':
-        return Icons.circle;
-      case 'outer':
-        return Icons.circle_outlined;
-      default:
-        return Icons.circle;
-    }
-  }
+  // IconData _getRingIcon(String ring) {
+  //   switch (ring) {
+  //     case 'inner':
+  //       return Icons.star;
+  //     case 'middle':
+  //       return Icons.circle;
+  //     case 'outer':
+  //       return Icons.circle_outlined;
+  //     default:
+  //       return Icons.circle;
+  //   }
+  // }
 
   String _getFormattedRingName(String ring) {
     switch (ring) {
@@ -258,7 +258,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      backgroundColor: Colors.white,
+      backgroundColor: themeProvider.isDarkMode?AppColors.darkSurfaceContainerLow:Colors.white,
       builder: (context) {
         return Padding(
           padding: EdgeInsets.only(
@@ -411,7 +411,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     final isDark   = themeProvider.isDarkMode;
     final scheme   = Theme.of(context).colorScheme;
 
-    final bg     = isDark ? AppColors.darkBackground : const Color(0xFFF5F2EE);
+    // final bg     = isDark ? AppColors.darkBackground : const Color(0xFFF5F2EE);
     final cardBg = isDark ? AppColors.darkSurfaceContainerHigh : Colors.white;
     final textP  = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
     final textS  = isDark ? AppColors.darkOnSurfaceVariant : AppColors.lightOnSurfaceVariant;
@@ -591,12 +591,12 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                         thumbColor: WidgetStateProperty.resolveWith((s) =>
                             s.contains(WidgetState.selected)
                                 ? Colors.white
-                                : scheme.outline),
+                                : themeProvider.isDarkMode?Colors.white:Colors.blueGrey),
                         trackColor: WidgetStateProperty.resolveWith((s) =>
                             s.contains(WidgetState.selected)
                                 ? AppColors.lightPrimary
-                                : scheme.outline),
-                        trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+                                : scheme.surfaceContainerHigh),
+                        trackOutlineColor: WidgetStateProperty.all(themeProvider.isDarkMode?Colors.white:Colors.black),
                       ),
               ]),
             ),
@@ -732,15 +732,15 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                     : Switch(
                         value: contact.needsAttention,
                         onChanged: (v) => _toggleNeedsAttention(v, contact),
-                        thumbColor: WidgetStateProperty.resolveWith((s) =>
+                         thumbColor: WidgetStateProperty.resolveWith((s) =>
                             s.contains(WidgetState.selected)
                                 ? Colors.white
-                                : scheme.outline),
+                                : themeProvider.isDarkMode?Colors.white:Colors.blueGrey),
                         trackColor: WidgetStateProperty.resolveWith((s) =>
                             s.contains(WidgetState.selected)
                                 ? AppColors.lightPrimary
                                 : scheme.surfaceContainerHigh),
-                        trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+                        trackOutlineColor: WidgetStateProperty.all(themeProvider.isDarkMode?Colors.white:Colors.black),
                       ),
               ]),
             ),
@@ -900,9 +900,9 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     required Color textS,
     required bool divider,
   }) {
-    final fieldBg = isDark
-        ? AppColors.darkSurfaceContainerHighest
-        : const Color(0xFFF0EDE9);
+    // final fieldBg = isDark
+    //     ? AppColors.darkSurfaceContainerHighest
+    //     : const Color(0xFFF0EDE9);
     return Column(children: [
       Padding(
         padding: const EdgeInsets.fromLTRB(18, 14, 14, 14),

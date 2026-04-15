@@ -582,7 +582,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showRetryPrompt() {
-    final themeProvider = Provider.of<ThemeProvider>(context);
+    // final themeProvider = Provider.of<ThemeProvider>(context);
     
     showDialog(
       context: context,
@@ -675,7 +675,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // ── Subscription card (purple gradient) ─────────────────────────────────
   Widget _buildSubscriptionCard() {
-    final isDark = Provider.of<ThemeProvider>(context, listen: false).isDarkMode;
+    // final isDark = Provider.of<ThemeProvider>(context, listen: false).isDarkMode;
 
     return Container(
       decoration: BoxDecoration(
@@ -896,7 +896,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildDeletionOverlay() {
-    final themeProvider = Provider.of<ThemeProvider>(context);
+    // final themeProvider = Provider.of<ThemeProvider>(context);
     
     if (!deleting) return const SizedBox.shrink();
     
@@ -1112,7 +1112,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildThemeToggleSection() {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
-    final scheme = Theme.of(context).colorScheme;
+    // final scheme = Theme.of(context).colorScheme;
 
     final cardBg   = isDark ? AppColors.darkSurfaceContainerHigh : Colors.white;
     final textP    = isDark ? AppColors.darkOnSurface             : AppColors.lightOnSurface;

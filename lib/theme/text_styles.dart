@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:nudge/theme/app_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'app_theme.dart';
+// import 'app_theme.dart';
 
 class AppTextStyles {
   // ── Headlines (Plus Jakarta Sans) ──────────────────────────

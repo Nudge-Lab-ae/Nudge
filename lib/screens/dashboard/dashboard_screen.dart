@@ -1,5 +1,7 @@
 // dashboard_screen.dart - Updated for theme support
 // import 'dart:math';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -60,6 +62,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final Map<String, int> _cachedAvatarIndices = {};
   List<Nudge> allNudges = [];
   List<Nudge> overDueNudges = [];
+  StreamSubscription<List<Nudge>>? _nudgesSubscription;
   final ScrollController _scrollController = ScrollController();
   bool _showAppBar = true;
   double _lastOffset = 0.0;
@@ -80,7 +83,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    getNudges();
+    _subscribeToNudges();
     _checkDeletionRetry();
     _currentIndex = widget.initialTab;
     _initializeNotifications();
@@ -109,6 +112,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     @override
   void dispose() {
     _confettiController.dispose();
+    _nudgesSubscription?.cancel();
     _fabController = FeedbackFloatingButtonController(); // Add this
     super.dispose();
   }
@@ -211,12 +215,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
     await nudgeService.initialize();
   }
 
-  Future<void> getNudges () async {
-    ApiService apiService = ApiService();
-    var allOfNudges =  await apiService.getAllNudges();
-    //print('all nudges are'); //print(allOfNudges);
-    setState(() {
-      allNudges = allOfNudges;
+  void _subscribeToNudges() {
+    final uid = Provider.of<AuthService>(context, listen: false)
+        .currentUser
+        ?.uid;
+    if (uid == null) return;
+    _nudgesSubscription?.cancel();
+    _nudgesSubscription =
+        NudgeService().getNudgesStream(uid).listen((nudges) {
+      if (mounted) {
+        setState(() {
+          allNudges = nudges;
+        });
+      }
     });
   }
 
@@ -724,13 +735,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
             : AppColors.lightSurfaceContainerLowest.withOpacity(0.92),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: themeProvider.isDarkMode?Colors.white.withOpacity(0.3):Colors.black.withOpacity(0.2),
             blurRadius: 24,
             spreadRadius: 0,
             offset: const Offset(0, 4),
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: themeProvider.isDarkMode?Colors.white.withOpacity(0.3):Colors.black.withOpacity(0.2),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1319,7 +1330,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      backgroundColor: Colors.white,
+      backgroundColor: themeProvider.isDarkMode?AppColors.darkSurfaceContainerLow:Colors.white,
       builder: (context) {
         return Padding(
           padding: EdgeInsets.only(
@@ -1549,7 +1560,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildSegmentDetails(Map<String, dynamic> segmentData, int totalContacts, BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
+    // final themeProvider = Provider.of<ThemeProvider>(context);
     final count = segmentData['count'] as int;
     final percentage = ((count / totalContacts) * 100).toStringAsFixed(2);
     final category = segmentData['category'];
@@ -1682,7 +1693,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildContactCard(Contact contact, ApiService apiService, {bool showConnectionType = false, required BuildContext context}) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
+    // final themeProvider = Provider.of<ThemeProvider>(context);
     final theme = Theme.of(context);
     final cachedIndex = _getCachedRandomIndex(contact.id);
     final fallbackAsset = 'assets/contact-icons/$cachedIndex.png';

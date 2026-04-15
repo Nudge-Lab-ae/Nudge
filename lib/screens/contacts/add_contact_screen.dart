@@ -14,7 +14,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:nudge/main.dart';
 import 'package:nudge/providers/feedback_provider.dart';
 import 'package:nudge/screens/contacts/contact_detail_screen.dart';
-import 'package:nudge/screens/dashboard/dashboard_screen.dart';
+// import 'package:nudge/screens/dashboard/dashboard_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/services/message_service.dart';
 // import 'package:nudge/services/nudge_service.dart';
@@ -34,7 +34,7 @@ import 'dart:io';
 // import '../../services/storage_service.dart';
 import 'package:intl/intl.dart';
 import '../../providers/theme_provider.dart';
-import '../../theme/app_theme.dart';
+// import '../../theme/app_theme.dart';
 
 class AddContactScreen extends StatefulWidget {
   final String? groupName;

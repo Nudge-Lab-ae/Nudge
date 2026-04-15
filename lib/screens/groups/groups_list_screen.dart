@@ -1293,8 +1293,8 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: Shimmer.fromColors(
-            baseColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.onSurfaceVariant! : Theme.of(context).colorScheme.surfaceContainerHigh!,
-            highlightColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.onSurfaceVariant! : Theme.of(context).colorScheme.surfaceContainerLowest!,
+            baseColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.onSurfaceVariant : Theme.of(context).colorScheme.surfaceContainerHigh,
+            highlightColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.onSurfaceVariant : Theme.of(context).colorScheme.surfaceContainerLowest,
             child: Container(
               height: 100,
               decoration: BoxDecoration(

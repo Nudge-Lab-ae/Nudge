@@ -12,7 +12,7 @@ import 'package:nudge/models/contact.dart';
 import 'package:nudge/models/social_group.dart';
 import 'package:nudge/models/user.dart';
 import 'package:nudge/providers/feedback_provider.dart';
-import 'package:nudge/screens/dashboard/dashboard_screen.dart';
+// import 'package:nudge/screens/dashboard/dashboard_screen.dart';
 import 'package:nudge/services/message_service.dart';
 // import 'package:nudge/services/nudge_service.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
@@ -22,7 +22,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_contacts/flutter_contacts.dart' as fContacts;
 // import 'package:flutter_contacts_stack/flutter_contacts_stack.dart' as contacts_stack;
 import '../../providers/theme_provider.dart';
-import '../../theme/app_theme.dart';
+// import '../../theme/app_theme.dart';
 import '../../services/contact_sync_service.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
@@ -1817,7 +1817,7 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
     Widget build(BuildContext context) {
       final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
       final isDark = themeProvider.isDarkMode;
-      final scheme = Theme.of(context).colorScheme;
+      // final scheme = Theme.of(context).colorScheme;
 
       final scaffoldBg = isDark ? AppColors.darkBackground : const Color(0xFFF2EEE8);
       final cardBg     = isDark ? AppColors.darkSurfaceContainerHigh : Colors.white;

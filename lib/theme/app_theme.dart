@@ -4,7 +4,7 @@
 // Color palette: warm charcoal-tobacco dark / warm off-white light
 
 import 'package:flutter/material.dart';
-import 'package:nudge/theme/app_theme.dart';
+// import 'package:nudge/theme/app_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
@@ -51,7 +51,7 @@ class AppColors {
   static const Color darkSurface = Color(0xFF151311);
   static const Color darkSurfaceBright = Color(0xFF3B3936);
   static const Color darkSurfaceContainerLowest = Color(0xFF100E0C);
-  static const Color darkSurfaceContainerLow = Color(0xFF1D1B19);
+  static const Color darkSurfaceContainerLow = Color.fromARGB(255, 59, 56, 52);
   static const Color darkSurfaceContainer = Color(0xFF211F1D);
   static const Color darkSurfaceContainerHigh = Color(0xFF2C2927);
   static const Color darkSurfaceContainerHighest = Color(0xFF373432);

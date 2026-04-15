@@ -10,7 +10,7 @@ import 'package:nudge/theme/app_theme.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:nudge/providers/feedback_provider.dart';
-import 'package:nudge/screens/dashboard/dashboard_screen.dart';
+// import 'package:nudge/screens/dashboard/dashboard_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/services/message_service.dart';
 import 'package:nudge/widgets/feedback_floating_button.dart';
@@ -21,13 +21,13 @@ import 'package:intl/intl.dart';
 import '../../services/auth_service.dart';
 import '../../models/contact.dart';
 import '../../models/social_group.dart';
-import '../../theme/text_styles.dart';
+// import '../../theme/text_styles.dart';
 import '../../widgets/connection_type_chip.dart';
 import 'dart:io';
 import '../../services/storage_service.dart';
 import '../../providers/theme_provider.dart';
 import 'package:country_code_picker/country_code_picker.dart';
-import '../../theme/app_theme.dart';
+// import '../../theme/app_theme.dart';
 import 'package:phone_number/phone_number.dart';
 
 class EditContactScreen extends StatefulWidget {
@@ -580,7 +580,7 @@ class _EditContactScreenState extends State<EditContactScreen> {
   }
 
     void _showValidationAlert() {
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    // final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     
     showDialog(
       context: context,

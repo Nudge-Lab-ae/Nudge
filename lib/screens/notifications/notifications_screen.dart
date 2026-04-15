@@ -258,8 +258,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: Shimmer.fromColors(
-            baseColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHighest! : Theme.of(context).colorScheme.surfaceContainerHigh!,
-            highlightColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.onSurfaceVariant! : Theme.of(context).colorScheme.surfaceContainerLowest!,
+            baseColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.surfaceContainerHighest : Theme.of(context).colorScheme.surfaceContainerHigh,
+            highlightColor: themeProvider.isDarkMode ? Theme.of(context).colorScheme.onSurfaceVariant : Theme.of(context).colorScheme.surfaceContainerLowest,
             child: Container(
               height: 100,
               decoration: BoxDecoration(
@@ -1551,8 +1551,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Widget _buildNormalNudgeItem(Nudge nudge, bool isOverdue, BuildContext context, {required ThemeProvider themeProvider}) {
     final theme = Theme.of(context);
-    final initials = _getContactInitials(nudge.contactName);
-    final iconIndex = getRandomIndex(nudge.contactId);
+    // final initials = _getContactInitials(nudge.contactName);
+    // final iconIndex = getRandomIndex(nudge.contactId);
     String message = 'Time to reconnect.';
     
     final bool isBirthday = nudge.message.toLowerCase().contains('birthday');
@@ -1803,7 +1803,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Widget _buildSwipeBackground(String action, BuildContext context, {required ThemeProvider themeProvider}) {
-    final theme = Theme.of(context);
+    // final theme = Theme.of(context);
     Color color;
     IconData icon;
 
@@ -1822,11 +1822,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         child: Row(
           mainAxisAlignment: action == 'complete' ? MainAxisAlignment.start : MainAxisAlignment.end,
           children: [
-            Icon(icon, color: Theme.of(context).colorScheme.onSurface),
+            Icon(icon, color: Colors.white),
             const SizedBox(width: 10),
             Text(
               action == 'complete' ? 'Complete' : 'Snooze',
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontFamily: GoogleFonts.beVietnamPro().fontFamily),
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontFamily: GoogleFonts.beVietnamPro().fontFamily),
             ),
           ],
         ),
@@ -2432,7 +2432,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                     ? theme.colorScheme.primary.withOpacity(0.1)
                                     : themeProvider.isDarkMode 
                                         ? Theme.of(context).colorScheme.surfaceContainerHighest 
-                                        : Theme.of(context).colorScheme.outline,
+                                        : Theme.of(context).colorScheme.surfaceDim,
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
                                   color: isSelected
@@ -2489,7 +2489,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                                 child: Text(
                                                   'Current',
                                                   style: TextStyle(
-                                                    color: Theme.of(context).colorScheme.onSurface,
+                                                    color: Colors.white,
                                                     fontSize: 10,
                                                     fontWeight: FontWeight.w600,
                                                     fontFamily: GoogleFonts.beVietnamPro().fontFamily,

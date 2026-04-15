@@ -786,9 +786,9 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
   }) {
     final scheme = Theme.of(context).colorScheme;
     final isDark = themeProvider.isDarkMode;
-    final initials = _getContactInitials(contact.name);
-    final (bgColor, textColor) =
-        isDark ? _getAvatarColorsDark(contact.id) : _getAvatarColors(contact.id);
+    // final initials = _getContactInitials(contact.name);
+    // final (bgColor, textColor) =
+    //     isDark ? _getAvatarColorsDark(contact.id) : _getAvatarColors(contact.id);
     final ringColor = _getRingColor(contact.computedRing);
     final ringLabel = _getRingLabel(contact.computedRing);
 
