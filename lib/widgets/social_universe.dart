@@ -2990,20 +2990,20 @@ class UniversePainter extends CustomPainter {
     // }
   }
   
-  void _drawFallbackLightBackground(Canvas canvas, Size size) {
-    _backgroundPaint
-      ..shader = RadialGradient(
-        center: Alignment.center,
-        colors: [
-          AppColors.lightPrimaryContainer.withOpacity(0.9),
-          AppColors.lightPrimary.withOpacity(0.95),
-          AppColors.lightPrimary,
-        ],
-        radius: 1.2,
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+  // void _drawFallbackLightBackground(Canvas canvas, Size size) {
+  //   _backgroundPaint
+  //     ..shader = RadialGradient(
+  //       center: Alignment.center,
+  //       colors: [
+  //         AppColors.lightPrimaryContainer.withOpacity(0.9),
+  //         AppColors.lightPrimary.withOpacity(0.95),
+  //         AppColors.lightPrimary,
+  //       ],
+  //       radius: 1.2,
+  //     ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
     
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), _backgroundPaint);
-  }
+  //   canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), _backgroundPaint);
+  // }
 
   // void _drawNebula(Canvas canvas, Size size, double immersionLevel, bool isDarkMode) {
   //   final center = Offset(size.width / 2, size.height / 2);

@@ -33,7 +33,7 @@ class _FeedbackManagementScreenState extends State<FeedbackManagementScreen> {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
-    final isDark = themeProvider.isDarkMode;
+    // final isDark = themeProvider.isDarkMode;
     final scheme = Theme.of(context).colorScheme;
 
     return GestureDetector(

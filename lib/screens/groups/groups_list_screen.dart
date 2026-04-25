@@ -1420,7 +1420,7 @@ void _showCreateGroupDialog(BuildContext context, ApiService apiService, {requir
     '#00AEAE', // cyan
   ];
 
-  var width = MediaQuery.of(context).size.width;
+  // var width = MediaQuery.of(context).size.width;
 
   showDialog(
     context: context,
