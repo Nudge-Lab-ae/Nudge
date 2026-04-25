@@ -183,7 +183,7 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
                   value: contact.connectionType.isNotEmpty 
                       ? contact.connectionType 
                       : 'Not specified',
-                  color: AppColors.lightPrimary,
+                  color: themeProvider.isDarkMode?const Color.fromARGB(255, 152, 125, 199):AppColors.lightPrimary,
                   isDarkMode: isDarkMode,
                 ),
               ),
@@ -534,11 +534,11 @@ class _ContactDetailsModalState extends State<ContactDetailsModal> {
       case 'inner':
         return AppColors.vipGold;
       case 'middle':
-        return AppColors.lightPrimary;
+        return Colors.lightBlue;
       case 'outer':
-        return const Color(0xff897ED6);
+        return AppColors.lightPrimary;
       default:
-        return AppColors.vipGold;
+        return Theme.of(context).colorScheme.outline;
     }
   }
 }
@@ -775,10 +775,10 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: AppColors.lightPrimary.withOpacity(isDark ? 0.12 : 0.06),
+                      color: isDark?const Color.fromARGB(255, 152, 125, 199).withOpacity(0.3):AppColors.lightPrimary.withOpacity(isDark ? 0.12 : 0.06),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: AppColors.lightPrimary.withOpacity(isDark ? 0.35 : 0.2))),
+                        color: isDark?const Color.fromARGB(255, 152, 125, 199).withOpacity(0.3):AppColors.lightPrimary.withOpacity(isDark ? 0.35 : 0.2))),
                     child: Row(children: [
                       Container(
                         width: 44, height: 44,
@@ -890,7 +890,7 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
                               borderRadius: BorderRadius.circular(14)),
                             child: Row(children: [
                               Icon(Icons.calendar_month_rounded,
-                                  size: 18, color: AppColors.lightPrimary),
+                                  size: 18, color: isDark?const Color.fromARGB(255, 152, 125, 199):AppColors.lightPrimary),
                               const SizedBox(width: 10),
                               Text(_formattedDate(),
                                 style: GoogleFonts.beVietnamPro(
@@ -915,7 +915,7 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
                               borderRadius: BorderRadius.circular(14)),
                             child: Row(children: [
                               Icon(Icons.access_time_rounded,
-                                  size: 18, color: AppColors.lightPrimary),
+                                  size: 18, color: isDark?const Color.fromARGB(255, 152, 125, 199): AppColors.lightPrimary),
                               const SizedBox(width: 10),
                               Text(_formattedTime(),
                                 style: GoogleFonts.beVietnamPro(
@@ -931,18 +931,18 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
                     padding: const EdgeInsets.symmetric(
                         vertical: 8, horizontal: 14),
                     decoration: BoxDecoration(
-                      color: AppColors.lightPrimary.withOpacity(0.08),
+                      color: isDark?const Color.fromARGB(255, 152, 125, 199).withOpacity(0.2):AppColors.lightPrimary.withOpacity(0.08),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                          color: AppColors.lightPrimary.withOpacity(0.25))),
+                          color: isDark?const Color.fromARGB(255, 152, 125, 199).withOpacity(0.2):AppColors.lightPrimary.withOpacity(0.25))),
                     child: Row(children: [
-                      const Icon(Icons.info_outline_rounded,
-                          size: 15, color: AppColors.lightPrimary),
+                       Icon(Icons.info_outline_rounded,
+                          size: 15, color: isDark?const Color.fromARGB(255, 152, 125, 199):AppColors.lightPrimary),
                       const SizedBox(width: 8),
                       Expanded(child: Text(dateLabel,
                         style: GoogleFonts.beVietnamPro(
                           fontSize: 13, fontWeight: FontWeight.w600,
-                          color: AppColors.lightPrimary))),
+                          color: isDark?const Color.fromARGB(255, 152, 125, 199): AppColors.lightPrimary))),
                       if (timeLabel.isNotEmpty)
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -953,7 +953,7 @@ class __LogTouchpointModalState extends State<_LogTouchpointModal> {
                           child: Text(timeLabel,
                             style: GoogleFonts.beVietnamPro(
                               fontSize: 11, fontWeight: FontWeight.w600,
-                              color: AppColors.success))),
+                              color: isDark?AppColors.darkOnSurface:AppColors.success))),
                     ])),
                   const SizedBox(height: 22),
 

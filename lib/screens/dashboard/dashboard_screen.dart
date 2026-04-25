@@ -304,11 +304,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
           // Floating Navigation Bar
-          Positioned(
+         Positioned(
             bottom: 20,
             left: 16,
             right: 16,
-            child: _buildFloatingNavigationBar(context, themeProvider),
+            child: StreamBuilder<List<Nudge>>(
+              stream: NudgeService().getNudgesStream(user.uid),
+              builder: (context, snap) {
+                final liveNudges = snap.data ?? allNudges;
+                return _buildFloatingNavigationBar(
+                    context, themeProvider, liveNudges);
+              },
+            ),
           ),
           
           Consumer<FeedbackProvider>(
@@ -722,89 +729,72 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
-  Widget _buildFloatingNavigationBar(BuildContext context, ThemeProvider themeProvider) {
-    final overdueNudges = _getOverdueNudges(allNudges);
+  Widget _buildFloatingNavigationBar(
+      BuildContext context, ThemeProvider themeProvider,
+      [List<Nudge>? nudgeOverride]) {
+    final overdueNudges = _getOverdueNudges(nudgeOverride ?? allNudges);
     final hasOverdue = overdueNudges.isNotEmpty;
-    
+    final isDark = themeProvider.isDarkMode;
+
     return Container(
-      height: 56,
+      height: 72,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        color: themeProvider.isDarkMode
-            ? AppColors.darkSurfaceContainerLow.withOpacity(0.85)
-            : AppColors.lightSurfaceContainerLowest.withOpacity(0.92),
+        borderRadius: BorderRadius.circular(36),
+        color: isDark
+            ? AppColors.darkSurfaceContainerLow.withOpacity(0.92)
+            : Colors.white.withOpacity(0.96),
         boxShadow: [
           BoxShadow(
-            color: themeProvider.isDarkMode?Colors.white.withOpacity(0.3):Colors.black.withOpacity(0.2),
+            color: Colors.black.withOpacity(isDark ? 0.35 : 0.12),
             blurRadius: 24,
             spreadRadius: 0,
             offset: const Offset(0, 4),
           ),
-          BoxShadow(
-            color: themeProvider.isDarkMode?Colors.white.withOpacity(0.3):Colors.black.withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
         ],
-        ),
-       
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          // Home
-          // _buildNavItem(
-          //   index: 0,
-          //   icon: SvgPicture.asset(
-          //     'assets/navbar-icons/home-icon.svg',
-          //     width: 22,
-          //     height: 22,
-          //     colorFilter: ColorFilter.mode(
-          //       _currentIndex == 0 
-          //         ? Theme.of(context).colorScheme.primary 
-          //         : Theme.of(context).colorScheme.outline,
-          //       BlendMode.srcIn,
-          //     ),
-          //   ),
-          //   themeProvider: themeProvider,
-          // ),
-          
           // Social Universe
           _buildNavItem(
             index: 1,
+            label: 'UNIVERSE',
             icon: SvgPicture.asset(
-                  'assets/navbar-icons/star.svg',
-                  width: 30,
-                  height: 30,
-                  colorFilter: ColorFilter.mode(
-                    _currentIndex == 1 
-                      ? Theme.of(context).colorScheme.primary 
-                      : Theme.of(context).colorScheme.outline,
-                    BlendMode.srcIn,
-                  ),
-                ),
+              'assets/navbar-icons/nav_universe.svg',
+              width: 24,
+              height: 24,
+              colorFilter: ColorFilter.mode(
+                _currentIndex == 1
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.outline,
+                BlendMode.srcIn,
+              ),
+            ),
             themeProvider: themeProvider,
           ),
-          
-         // Notifications
+
+          // Nudges
           _buildNavItem(
             index: 2,
+            label: 'NUDGES',
             icon: Stack(
+              clipBehavior: Clip.none,
               children: [
                 SvgPicture.asset(
-                  'assets/navbar-icons/nudges.svg',
-                  width: 22,
-                  height: 22,
+                  'assets/navbar-icons/nav_nudges.svg',
+                  width: 24,
+                  height: 24,
                   colorFilter: ColorFilter.mode(
-                    _currentIndex == 2 
-                      ? Theme.of(context).colorScheme.primary 
-                      : Theme.of(context).colorScheme.outline,
+                    _currentIndex == 2
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.outline,
                     BlendMode.srcIn,
                   ),
                 ),
                 if (hasOverdue)
                   Positioned(
-                    right: -1,
-                    top: -1,
+                    right: -2,
+                    top: -2,
                     child: Container(
                       width: 8,
                       height: 8,
@@ -813,7 +803,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: themeProvider.isDarkMode ? Colors.black : Colors.white,
+                            color: isDark ? Colors.black : Colors.white,
                             blurRadius: 1,
                             spreadRadius: 1,
                           ),
@@ -825,35 +815,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             themeProvider: themeProvider,
           ),
-          
+
           // Groups
           _buildNavItem(
             index: 3,
+            label: 'GROUPS',
             icon: SvgPicture.asset(
-              'assets/navbar-icons/groups-icon.svg',
-              width: 25,
-              height: 25,
+              'assets/navbar-icons/nav_groups.svg',
+              width: 24,
+              height: 24,
               colorFilter: ColorFilter.mode(
-                _currentIndex == 3 
-                  ? Theme.of(context).colorScheme.primary 
-                  : Theme.of(context).colorScheme.outline,
+                _currentIndex == 3
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.outline,
                 BlendMode.srcIn,
               ),
             ),
             themeProvider: themeProvider,
           ),
-          
+
           // Contacts
-           _buildNavItem(
+          _buildNavItem(
             index: 4,
+            label: 'CONTACTS',
             icon: SvgPicture.asset(
-              'assets/navbar-icons/contacts.svg',
-              width: 22,
-              height: 22,
+              'assets/navbar-icons/nav_contacts.svg',
+              width: 24,
+              height: 24,
               colorFilter: ColorFilter.mode(
-                _currentIndex == 4 
-                  ? Theme.of(context).colorScheme.primary 
-                  : Theme.of(context).colorScheme.outline,
+                _currentIndex == 4
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.outline,
                 BlendMode.srcIn,
               ),
             ),
@@ -863,13 +855,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
-
+  
   Widget _buildNavItem({
     required int index,
     required Widget icon,
+    required String label,
     required ThemeProvider themeProvider,
   }) {
-    final theme = Theme.of(context);
+    final isSelected = _currentIndex == index;
+    final isDark = themeProvider.isDarkMode;
+    final primary = Theme.of(context).colorScheme.primary;
+    final labelColor = isSelected
+        ? primary
+        : isDark
+            ? AppColors.darkOnSurfaceVariant
+            : AppColors.lightOnSurfaceVariant;
+
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -879,16 +880,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
           vipFilter = false;
         });
       },
-      child: Container(
-        width: 40,
-        height: 40,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: _currentIndex == index 
-              ? theme.colorScheme.primary.withOpacity(0.1)
+          color: isSelected
+              ? primary.withOpacity(isDark ? 0.18 : 0.10)
               : Colors.transparent,
+          borderRadius: BorderRadius.circular(40),
         ),
-        child: Center(child: icon),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            icon,
+            const SizedBox(height: 3),
+            Text(
+              label,
+              style: GoogleFonts.beVietnamPro(
+                fontSize: 9,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: labelColor,
+                letterSpacing: 0.4,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

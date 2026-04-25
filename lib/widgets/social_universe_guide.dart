@@ -115,7 +115,7 @@ class _SocialUniverseGuideState extends State<SocialUniverseGuide>
                   Text('Social Universe',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 16, fontWeight: FontWeight.w700,
-                      color: AppColors.lightPrimary)),
+                      color: widget.isDarkMode?Color.fromARGB(255, 161, 124, 209):AppColors.lightPrimary)),
                 ]),
                 const Spacer(),
                 const SizedBox(width: 34), // balance

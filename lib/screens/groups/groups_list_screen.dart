@@ -1182,8 +1182,14 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                   ),
                   child: Center(
                     child: group.emoji.isNotEmpty
-                        ? Text(group.emoji,
-                            style: const TextStyle(fontSize: 24))
+                        ? group.emoji.startsWith('__icon_')
+                            ? Icon(
+                                _getGroupIconByKey(group.emoji.substring(7)),
+                                color: Theme.of(context).colorScheme.onSurface,
+                                size: 24,
+                              )
+                            : Text(group.emoji,
+                                style: const TextStyle(fontSize: 24))
                         : Icon(
                             _getGroupIcon(group.name),
                             color: Theme.of(context).colorScheme.onSurface,
@@ -1353,6 +1359,19 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
     return Icons.group;
   }
 
+  IconData _getGroupIconByKey(String key) {
+    switch (key) {
+      case 'family':  return Icons.home;
+      case 'friend':  return Icons.people;
+      case 'work':    return Icons.work;
+      case 'client':  return Icons.business_center;
+      case 'mentor':  return Icons.school;
+      case 'sports':  return Icons.sports_soccer;
+      case 'music':   return Icons.music_note;
+      default:        return Icons.group;
+    }
+  }
+
   externalRefresh() async {
     setState(() => _initializeStreams());
     await Future.delayed(const Duration(seconds: 1));
@@ -1365,7 +1384,27 @@ void _showCreateGroupDialog(BuildContext context, ApiService apiService, {requir
   String period    = 'Monthly';
   int    frequency = 1;
   String selectedColor = '#751FE7';   // default: brand purple
-  String selectedEmoji = '🏠';        // default first emoji
+  String selectedEmoji = '';          // empty = use icon picker
+  IconData? selectedIconData;         // null = use emoji
+
+  // Built-in icon options with display labels
+  final List<Map<String, dynamic>> iconOptions = [
+    {'icon': Icons.home,             'label': 'Home',      'key': 'family'},
+    {'icon': Icons.people,           'label': 'Friends',   'key': 'friend'},
+    {'icon': Icons.work,             'label': 'Work',      'key': 'work'},
+    {'icon': Icons.business_center,  'label': 'Client',    'key': 'client'},
+    {'icon': Icons.school,           'label': 'Mentor',    'key': 'mentor'},
+    {'icon': Icons.group,            'label': 'Group',     'key': 'group'},
+    {'icon': Icons.sports_soccer,    'label': 'Sports',    'key': 'sports'},
+    {'icon': Icons.music_note,       'label': 'Music',     'key': 'music'},
+  ];
+
+  // Emoji options matching the mockup
+  final List<String> emojiOptions = [
+    '🏠', '🎓', '💼', '👟', '🍕', '✈️',
+    '🎵', '⚽', '🌿', '📚', '💡', '🎯',
+    '🏋️', '🎮', '🐾', '🌍',
+  ];
 
   // Palette matching the mockup
   final List<String> colorOptions = [
@@ -1379,13 +1418,6 @@ void _showCreateGroupDialog(BuildContext context, ApiService apiService, {requir
     '#E05A7A', // pink
     '#D4A017', // amber
     '#00AEAE', // cyan
-  ];
-
-  // Emoji options matching the mockup
-  final List<String> emojiOptions = [
-    '🏠', '🎓', '💼', '👟', '🍕', '✈️',
-    '🎵', '⚽', '🌿', '📚', '💡', '🎯',
-    '🏋️', '🎮', '🐾', '🌍',
   ];
 
   var width = MediaQuery.of(context).size.width;
@@ -1515,49 +1547,134 @@ void _showCreateGroupDialog(BuildContext context, ApiService apiService, {requir
                     ),
                     const SizedBox(height: 18),
 
-                    // ── Group Emoji ───────────────────────────────────────
-                    Text('Group Emoji',
+                    // ── Group Icon / Emoji ────────────────────────────────
+                    Text('Group Icon',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 14, fontWeight: FontWeight.w700, color: labelCol)),
                     const SizedBox(height: 8),
                     Container(
-                      width: width,
-                      child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: fieldBg,
                         borderRadius: BorderRadius.circular(14),
                       ),
-                      child: Wrap(
-                        spacing: 5,
-                        runSpacing: 5,
-                        children: emojiOptions.map((emoji) {
-                          final isSelected = selectedEmoji == emoji;
-                          return GestureDetector(
-                            onTap: () => setState(() => selectedEmoji = emoji),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 150),
-                              width: 42, height: 42,
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? selectedColorValue.withOpacity(0.18)
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(10),
-                                border: isSelected
-                                    ? Border.all(
-                                        color: selectedColorValue,
-                                        width: 2)
-                                    : null,
-                              ),
-                              child: Center(
-                                child: Text(emoji,
-                                    style: const TextStyle(fontSize: 22)),
-                              ),
-                            ),
-                          );
-                        }).toList(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // ── Built-in icons ──
+                          Text('Icons',
+                            style: GoogleFonts.beVietnamPro(
+                              fontSize: 11, fontWeight: FontWeight.w600,
+                              color: hintCol)),
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: iconOptions.map((opt) {
+                              final icon   = opt['icon'] as IconData;
+                              final key    = opt['key']  as String;
+                              final label  = opt['label'] as String;
+                              // Taken if any existing group name matches key
+                              final isTaken = allGroups.any((g) =>
+                                g.name.toLowerCase().contains(key));
+                              final isSelected = selectedIconData == icon && selectedEmoji.isEmpty;
+                              return GestureDetector(
+                                onTap: isTaken ? null : () => setState(() {
+                                  selectedIconData = icon;
+                                  selectedEmoji    = '';
+                                }),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 150),
+                                  width: 52, height: 52,
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? selectedColorValue.withOpacity(0.18)
+                                        : isTaken
+                                            ? (isDark ? Colors.white10 : Colors.black.withOpacity(0.05))
+                                            : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: isSelected
+                                        ? Border.all(color: selectedColorValue, width: 2)
+                                        : Border.all(color: Colors.transparent),
+                                  ),
+                                  child: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(icon,
+                                            size: 22,
+                                            color: isTaken
+                                                ? hintCol.withOpacity(0.35)
+                                                : isSelected
+                                                    ? selectedColorValue
+                                                    : labelCol),
+                                          const SizedBox(height: 2),
+                                          Text(label,
+                                            style: GoogleFonts.beVietnamPro(
+                                              fontSize: 8,
+                                              color: isTaken
+                                                  ? hintCol.withOpacity(0.35)
+                                                  : isSelected
+                                                      ? selectedColorValue
+                                                      : hintCol)),
+                                        ],
+                                      ),
+                                      if (isTaken)
+                                        Icon(Icons.block,
+                                          size: 14,
+                                          color: hintCol.withOpacity(0.4)),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+
+                          const SizedBox(height: 10),
+                          Divider(color: hintCol.withOpacity(0.15), height: 1),
+                          const SizedBox(height: 10),
+
+                          // ── Emoji ──
+                          Text('Emoji',
+                            style: GoogleFonts.beVietnamPro(
+                              fontSize: 11, fontWeight: FontWeight.w600,
+                              color: hintCol)),
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 5,
+                            runSpacing: 5,
+                            children: emojiOptions.map((emoji) {
+                              final isSelected = selectedEmoji == emoji;
+                              return GestureDetector(
+                                onTap: () => setState(() {
+                                  selectedEmoji    = emoji;
+                                  selectedIconData = null;
+                                }),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 150),
+                                  width: 42, height: 42,
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? selectedColorValue.withOpacity(0.18)
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: isSelected
+                                        ? Border.all(color: selectedColorValue, width: 2)
+                                        : null,
+                                  ),
+                                  child: Center(
+                                    child: Text(emoji,
+                                        style: const TextStyle(fontSize: 22)),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
                       ),
-                    )),
+                    ),
                     const SizedBox(height: 18),
 
                     // ── Group Color ───────────────────────────────────────
@@ -1639,7 +1756,12 @@ void _showCreateGroupDialog(BuildContext context, ApiService apiService, {requir
                           memberCount: 0,
                           lastInteraction: DateTime.now(),
                           colorCode: selectedColor,
-                          emoji: selectedEmoji,
+                          // Store emoji if chosen, otherwise encode the icon key
+                          emoji: selectedEmoji.isNotEmpty
+                              ? selectedEmoji
+                              : selectedIconData != null
+                                  ? '__icon_${iconOptions.firstWhere((o) => o['icon'] == selectedIconData, orElse: () => {'key': 'group'})['key']}'
+                                  : '',
                           birthdayNudgesEnabled: true,
                           anniversaryNudgesEnabled: true,
                           orderIndex: 0,
@@ -1724,7 +1846,36 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
   String period = group.period;
   int frequency = group.frequency;
   String selectedColor = group.colorCode;
-  String selectedEmoji = group.emoji.isNotEmpty ? group.emoji : '🏠';
+  // Pre-select: decode __icon_ key → IconData, plain emoji stays as emoji.
+  // If neither is set, infer from the group name (same logic as _getGroupIcon).
+  String selectedEmoji = group.emoji.startsWith('__icon_') ? '' : group.emoji;
+
+  // Built-in icon options — only the original 5 that _getGroupIcon recognises
+  final List<Map<String, dynamic>> iconOptions = [
+    {'icon': Icons.family_restroom, 'label': 'Family',  'key': 'family'},
+    {'icon': Icons.people,          'label': 'Friends', 'key': 'friend'},
+    {'icon': Icons.work,            'label': 'Colleague',    'key': 'colleague'},
+    {'icon': Icons.business_center, 'label': 'Client',  'key': 'client'},
+    {'icon': Icons.school,          'label': 'Mentor',  'key': 'mentor'},
+  ];
+
+  IconData? selectedIconData;
+  if (group.emoji.startsWith('__icon_')) {
+    // Explicitly stored icon key — restore it
+    final key = group.emoji.substring(7);
+    final match = iconOptions.where((o) => o['key'] == key).toList();
+    if (match.isNotEmpty) selectedIconData = match.first['icon'] as IconData;
+  } else if (group.emoji.isEmpty) {
+    // No emoji — infer from group name the same way _getGroupIcon does
+    final n = group.name.toLowerCase();
+    if (n.contains('family'))                               selectedIconData = Icons.family_restroom;
+    else if (n.contains('friend'))                          selectedIconData = Icons.people;
+    else if (n.contains('work') || n.contains('colleague')) selectedIconData = Icons.work;
+    else if (n.contains('client'))                          selectedIconData = Icons.business_center;
+    else if (n.contains('mentor'))                          selectedIconData = Icons.school;
+    // else: group uses the generic Icons.group fallback — leave selectedIconData null
+  }
+
   bool birthdayNudgesEnabled = group.birthdayNudgesEnabled;
   bool anniversaryNudgesEnabled = group.anniversaryNudgesEnabled;
   String _selectedFrequencyChoice = FrequencyPeriodMapper.getConversationalChoice(group.frequency, group.period);
@@ -1858,11 +2009,9 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                     ),
                   ),
                   const SizedBox(height: 16),
-                  
-                  const SizedBox(height: 16),
 
-                  // ── Emoji Picker ──────────────────────────────────────
-                  Text('Group Emoji',
+                  // ── Icon / Emoji Picker ───────────────────────────────
+                  Text('Group Icon',
                     style: TextStyle(fontWeight: FontWeight.bold,
                       color: Theme.of(context).colorScheme.onSurface,
                       fontFamily: GoogleFonts.beVietnamPro().fontFamily)),
@@ -1876,27 +2025,102 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                     child: Wrap(
                       spacing: 6,
                       runSpacing: 6,
-                      children: ['🏠','🎓','💼','👟','🍕','✈️','🎵','⚽','🌿','📚','💡','🎯','🏋️','🎮','🐾','🌍']
-                          .map((emoji) {
-                        final isSel = selectedEmoji == emoji;
-                        final selCol = Color(
-                          int.parse(selectedColor.substring(1), radix: 16) + 0xFF000000,
-                        );
-                        return GestureDetector(
-                          onTap: () => setState(() => selectedEmoji = emoji),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 150),
-                            width: 40, height: 40,
-                            decoration: BoxDecoration(
-                              color: isSel ? selCol.withOpacity(0.18) : Colors.transparent,
-                              borderRadius: BorderRadius.circular(10),
-                              border: isSel ? Border.all(color: selCol, width: 2) : null,
+                      children: [
+                        // ── 5 built-in icons ──────────────────────────
+                        ...iconOptions.map((opt) {
+                          final icon   = opt['icon']  as IconData;
+                          final key    = opt['key']   as String;
+                          final label  = opt['label'] as String;
+                          final selCol = Color(
+                            int.parse(selectedColor.substring(1), radix: 16) + 0xFF000000);
+                          // Blocked if another group (not this one) uses this key
+                          final isTaken = allGroups.any((g) =>
+                            g.id != group.id &&
+                            g.name.toLowerCase().contains(key));
+                          final isSelected = selectedIconData == icon && selectedEmoji.isEmpty;
+                          return GestureDetector(
+                            onTap: isTaken ? null : () => setState(() {
+                              selectedIconData = icon;
+                              selectedEmoji    = '';
+                            }),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              width: 52, height: 52,
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? selCol.withOpacity(0.18)
+                                    : isTaken
+                                        ? (themeProvider.isDarkMode
+                                            ? Colors.white10
+                                            : Colors.black.withOpacity(0.05))
+                                        : Colors.transparent,
+                                borderRadius: BorderRadius.circular(12),
+                                border: isSelected
+                                    ? Border.all(color: selCol, width: 2)
+                                    : Border.all(color: Colors.transparent),
+                              ),
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(icon,
+                                        size: 22,
+                                        color: isTaken
+                                            ? Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.3)
+                                            : isSelected
+                                                ? selCol
+                                                : Theme.of(context).colorScheme.onSurface),
+                                      const SizedBox(height: 2),
+                                      Text(label,
+                                        style: GoogleFonts.beVietnamPro(
+                                          fontSize: 8,
+                                          color: isTaken
+                                              ? Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.3)
+                                              : isSelected
+                                                  ? selCol
+                                                  : Theme.of(context).colorScheme.onSurfaceVariant)),
+                                    ],
+                                  ),
+                                  if (isTaken)
+                                    Positioned(
+                                      top: 4, right: 4,
+                                      child: Icon(Icons.block,
+                                        size: 12,
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.45)),
+                                    ),
+                                ],
+                              ),
                             ),
-                            child: Center(child: Text(emoji,
-                                style: const TextStyle(fontSize: 20))),
-                          ),
-                        );
-                      }).toList(),
+                          );
+                        }),
+
+                        // ── Emoji options ─────────────────────────────
+                        ...['🏠','👟','🍕','✈️','🎵','⚽','🌿','📚','💡','🎯','🏋️','🎮','🐾','🌍']
+                            .map((emoji) {
+                          final isSel = selectedEmoji == emoji;
+                          final selCol = Color(
+                            int.parse(selectedColor.substring(1), radix: 16) + 0xFF000000);
+                          return GestureDetector(
+                            onTap: () => setState(() {
+                              selectedEmoji    = emoji;
+                              selectedIconData = null;
+                            }),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              width: 44, height: 44,
+                              decoration: BoxDecoration(
+                                color: isSel ? selCol.withOpacity(0.18) : Colors.transparent,
+                                borderRadius: BorderRadius.circular(10),
+                                border: isSel ? Border.all(color: selCol, width: 2) : null,
+                              ),
+                              child: Center(child: Text(emoji,
+                                  style: const TextStyle(fontSize: 22))),
+                            ),
+                          );
+                        }),
+                      ],
                     ),
                   ),
 
@@ -1992,7 +2216,11 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
                       period: period,
                       frequency: frequency,
                       colorCode: selectedColor,
-                      emoji: selectedEmoji,
+                      emoji: selectedEmoji.isNotEmpty
+                          ? selectedEmoji
+                          : selectedIconData != null
+                              ? '__icon_${iconOptions.firstWhere((o) => o['icon'] == selectedIconData, orElse: () => {'key': 'group'})['key']}'
+                              : '',
                       birthdayNudgesEnabled: birthdayNudgesEnabled,
                       anniversaryNudgesEnabled: anniversaryNudgesEnabled,
                     );
@@ -2417,7 +2645,7 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
     });
   }
     
-  void _showRemoveContactOptions({
+void _showRemoveContactOptions({
     required BuildContext context,
     required Contact contact,
     required SocialGroup currentGroup,
@@ -2429,88 +2657,306 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
   }) {
     final theme = Theme.of(context);
     final otherGroups = allGroups.where((g) => g.id != currentGroup.id).toList();
-    
+    SocialGroup? selectedGroup;
+
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
-        title: Text(
-          'Remove from Group',
-          style: TextStyle(color: theme.colorScheme.primary, fontFamily: GoogleFonts.beVietnamPro().fontFamily),
-        ),
-        content: Container(
-          width: double.maxFinite,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Choose a group to move ${contact.name} to.',
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily, fontSize: 16, fontWeight: FontWeight.w600), textAlign: TextAlign.center,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            return AlertDialog(
+              backgroundColor: theme.colorScheme.surfaceContainerLow,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
+              title: Text(
+                'Move to Another Group',
+                style: TextStyle(
+                  color: theme.colorScheme.primary,
+                  fontFamily: GoogleFonts.beVietnamPro().fontFamily,
+                  fontWeight: FontWeight.w700,
+                ),
+                textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 16),
-              if (otherGroups.isNotEmpty) ...[
-                ...otherGroups.map((g) {
-                  return ListTile(
-                    leading: Container(
-                      width: 20,
-                      height: 20,
+              content: Container(
+                width: double.maxFinite,
+               constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(dialogContext).size.height * 0.5,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+
+                    // Contact identity card
+                    Container(
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Color(int.parse(g.colorCode.substring(1, 7), radix: 16) + 0xFF000000),
-                        shape: BoxShape.circle,
+                        color: theme.colorScheme.primary.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 20,
+                            backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                            backgroundImage: contact.imageUrl.isNotEmpty
+                                ? NetworkImage(contact.imageUrl)
+                                : null,
+                            child: contact.imageUrl.isEmpty
+                                ? Text(
+                                    _getContactInitials(contact.name)
+                                        .toUpperCase(),
+                                    style: TextStyle(
+                                      color: theme.colorScheme.onSurface,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  )
+                                : null,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  contact.name,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: theme.colorScheme.onSurface,
+                                    fontFamily:
+                                        GoogleFonts.beVietnamPro().fontFamily,
+                                  ),
+                                ),
+                                Text(
+                                  'Currently in: ${currentGroup.name}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                    fontFamily:
+                                        GoogleFonts.beVietnamPro().fontFamily,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    title: Text(g.name, style: TextStyle(fontFamily: GoogleFonts.beVietnamPro().fontFamily, fontSize: 16, fontWeight: FontWeight.w500),),
-                    onTap: () async {
-                      // Close the dialog
-                      Navigator.pop(dialogContext);
-                      
-                      try {
-                        // Update contact with new group
-                        final updatedContact = contact.copyWith(
-                          connectionType: g.name,
-                          period: g.period,
-                          frequency: g.frequency,
-                        );
-                        await apiService.updateContact(updatedContact);
-                        
-                        // Update group member counts
-                        final updatedOldGroup = currentGroup.copyWith(
-                          memberIds: List.from(currentGroup.memberIds)..remove(contact.id),
-                          memberCount: currentGroup.memberCount - 1,
-                        );
-                        await apiService.updateGroup(updatedOldGroup);
-                        
-                        final updatedNewGroup = g.copyWith(
-                          memberIds: [...g.memberIds, contact.id],
-                          memberCount: g.memberCount + 1,
-                        );
-                        await apiService.updateGroup(updatedNewGroup);
-                        
-                        // Call success callback
-                        onSuccess('${contact.name} moved to ${g.name}');
-                        
-                        // Refresh the UI
-                        setState(() {});
-                        
-                      } catch (e) {
-                        onError(e.toString());
-                      }
-                    },
-                  );
-                }).toList(),
-                const SizedBox(height: 8),
+
+                    const SizedBox(height: 16),
+
+                    Text(
+                      'Select a group to move them to:',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSurface,
+                        fontFamily: GoogleFonts.beVietnamPro().fontFamily,
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    // Groups list
+                    if (otherGroups.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Text(
+                          'No other groups available.',
+                          style: TextStyle(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontFamily: GoogleFonts.beVietnamPro().fontFamily,
+                          ),
+                        ),
+                      )
+                    else
+                      Flexible(
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: otherGroups.length,
+                          itemBuilder: (_, index) {
+                            final group = otherGroups[index];
+                            final isSelected = selectedGroup?.id == group.id;
+                            final groupColor = Color(
+                                int.parse(
+                                    group.colorCode.substring(1, 7),
+                                    radix: 16) +
+                                    0xFF000000);
+
+                            return GestureDetector(
+                              onTap: () =>
+                                  setDialogState(() => selectedGroup = group),
+                              child: Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? theme.colorScheme.primary
+                                          .withOpacity(0.10)
+                                      : themeProvider.isDarkMode
+                                          ? theme.colorScheme
+                                              .surfaceContainerHighest
+                                          : theme.colorScheme.surfaceContainerHigh,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? theme.colorScheme.primary
+                                        : themeProvider.isDarkMode
+                                            ? AppColors
+                                                .darkSurfaceContainerHighest
+                                            : theme.colorScheme
+                                                .surfaceContainerLowest,
+                                    width: isSelected ? 2 : 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    // Group colour + icon
+                                    Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        color: groupColor,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        _getGroupIcon(group.name),
+                                        color: Colors.white,
+                                        size: 20,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    // Group name + frequency
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            group.name,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              color: theme.colorScheme.onSurface,
+                                              fontFamily: GoogleFonts
+                                                  .beVietnamPro()
+                                                  .fontFamily,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 3),
+                                          Text(
+                                            FrequencyPeriodMapper
+                                                .getConversationalChoice(
+                                                    group.frequency,
+                                                    group.period),
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: groupColor,
+                                              fontFamily: GoogleFonts
+                                                  .beVietnamPro()
+                                                  .fontFamily,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    // Check icon when selected
+                                    if (isSelected)
+                                      Icon(
+                                        Icons.check_circle_rounded,
+                                        color: theme.colorScheme.primary,
+                                        size: 22,
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+
+                    const SizedBox(height: 8),
+                    Text(
+                      '${contact.name} will inherit the frequency settings of the new group.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontFamily: GoogleFonts.beVietnamPro().fontFamily,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(
+                      color: theme.colorScheme.primary,
+                      fontFamily: GoogleFonts.beVietnamPro().fontFamily,
+                    ),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: selectedGroup == null
+                      ? null
+                      : () async {
+                          Navigator.pop(dialogContext);
+                          try {
+                            final updatedContact = contact.copyWith(
+                              connectionType: selectedGroup!.name,
+                              period: selectedGroup!.period,
+                              frequency: selectedGroup!.frequency,
+                            );
+                            await apiService.updateContact(updatedContact);
+
+                            final updatedOldGroup = currentGroup.copyWith(
+                              memberIds: List.from(currentGroup.memberIds)
+                                ..remove(contact.id),
+                              memberCount: currentGroup.memberCount - 1,
+                            );
+                            await apiService.updateGroup(updatedOldGroup);
+
+                            final updatedNewGroup = selectedGroup!.copyWith(
+                              memberIds: [
+                                ...selectedGroup!.memberIds,
+                                contact.id
+                              ],
+                              memberCount: selectedGroup!.memberCount + 1,
+                            );
+                            await apiService.updateGroup(updatedNewGroup);
+
+                            onSuccess(
+                                '${contact.name} moved to ${selectedGroup!.name}');
+                            setState(() {});
+                          } catch (e) {
+                            onError(e.toString());
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor:
+                        theme.colorScheme.surfaceContainerHigh,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 10),
+                  ),
+                  child: Text(
+                    'Move',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontFamily: GoogleFonts.beVietnamPro().fontFamily,
+                    ),
+                  ),
+                ),
               ],
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text('Cancel', style: TextStyle(color: theme.colorScheme.primary)),
-          ),
-        ],
-      ),
+            );
+          },
+        );
+      },
     );
   }
     

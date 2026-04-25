@@ -1422,7 +1422,7 @@ class _AddContactScreenState extends State<AddContactScreen> {
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.onSurface
+                                color: Colors.white
                               ),
                             ),
                           ),

@@ -296,9 +296,9 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
                                             decoration: BoxDecoration(
                                               shape:BoxShape.circle, color:bgC,
                                               border: isSel ? Border.all(
-                                                  color:AppColors.lightPrimary, width:2.5) : null,
+                                                  color:themeProvider.isDarkMode?const Color.fromARGB(255, 152, 125, 199):AppColors.lightPrimary, width:2.5) : null,
                                               boxShadow: isSel ? [BoxShadow(
-                                                color:AppColors.lightPrimary.withOpacity(0.3),
+                                                color:themeProvider.isDarkMode?const Color.fromARGB(255, 152, 125, 199):AppColors.lightPrimary.withOpacity(0.3),
                                                 blurRadius:10)] : null),
                                             child: c.imageUrl.isNotEmpty
                                                 ? ClipOval(child: Image.network(c.imageUrl,
@@ -340,7 +340,7 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
                                               maxLines:2, overflow:TextOverflow.ellipsis,
                                               style:GoogleFonts.beVietnamPro(
                                                 fontSize:11, fontWeight:FontWeight.w700,
-                                                color:AppColors.lightPrimary))),
+                                                color:themeProvider.isDarkMode?const Color.fromARGB(255, 152, 125, 199):AppColors.lightPrimary))),
                                       ]));
                                   })),
                   ),
@@ -446,18 +446,18 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
                   Container(
                     padding: const EdgeInsets.symmetric(vertical:8, horizontal:14),
                     decoration: BoxDecoration(
-                      color: AppColors.lightPrimary.withOpacity(0.08),
+                      color: themeProvider.isDarkMode?const Color.fromARGB(255, 152, 125, 199).withOpacity(0.1):AppColors.lightPrimary.withOpacity(0.08),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                           color: AppColors.lightPrimary.withOpacity(0.25))),
                     child: Row(children:[
-                      const Icon(Icons.info_outline_rounded,
-                          size:15, color:AppColors.lightPrimary),
+                       Icon(Icons.info_outline_rounded,
+                          size:15, color: themeProvider.isDarkMode?const Color.fromARGB(255, 152, 125, 199):AppColors.lightPrimary),
                       const SizedBox(width:8),
                       Expanded(child: Text(dateLabel,
                         style:GoogleFonts.beVietnamPro(
                           fontSize:13, fontWeight:FontWeight.w600,
-                          color:AppColors.lightPrimary))),
+                          color: themeProvider.isDarkMode?const Color.fromARGB(255, 152, 125, 199):AppColors.lightPrimary))),
                       if (timeLabel.isNotEmpty)
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal:8, vertical:2),
@@ -467,7 +467,7 @@ class _AddTouchpointModalState extends State<AddTouchpointModal> {
                           child: Text(timeLabel,
                             style:GoogleFonts.beVietnamPro(
                               fontSize:11, fontWeight:FontWeight.w600,
-                              color:AppColors.success))),
+                              color:isDark?AppColors.darkOnSurface:AppColors.success))),
                     ])),
                   const SizedBox(height:24),
 

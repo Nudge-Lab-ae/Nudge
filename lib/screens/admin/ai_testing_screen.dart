@@ -579,12 +579,12 @@ class _AITestingScreenState extends State<AITestingScreen>
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
         color: cardBg, borderRadius: BorderRadius.circular(12)),
-      child: Column(children: [
+      child: Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
         Text(s.$2, style: GoogleFonts.plusJakartaSans(
           fontSize: 18, fontWeight: FontWeight.w800,
-          color: AppColors.lightPrimary)),
+          color: AppColors.lightPrimary), textAlign: TextAlign.center,),
         Text(s.$1, style: GoogleFonts.beVietnamPro(
-          fontSize: 10, color: textS)),
+          fontSize: 10, color: textS,), textAlign: TextAlign.center,),
       ]),
     ))).toList());
   }

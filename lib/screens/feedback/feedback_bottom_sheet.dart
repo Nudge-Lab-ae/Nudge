@@ -148,9 +148,9 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet>
           // Tabs
           TabBar(
             controller: _tabController,
-            labelColor: AppColors.lightPrimary,
+            labelColor: themeProvider.isDarkMode?const Color.fromARGB(255, 153, 101, 221):AppColors.lightPrimary,
             unselectedLabelColor: textS,
-            indicatorColor: AppColors.lightPrimary,
+            indicatorColor:themeProvider.isDarkMode?const Color.fromARGB(255, 153, 101, 221):AppColors.lightPrimary,
             indicatorWeight: 2,
             labelPadding: EdgeInsets.zero,
             labelStyle: GoogleFonts.beVietnamPro(fontSize: 12, fontWeight: FontWeight.w700),
@@ -195,7 +195,7 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet>
                 const TextSpan(text: 'Share your '),
                 TextSpan(
                   text: 'thoughts',
-                  style: TextStyle(color: AppColors.lightPrimary),
+                  style: TextStyle(color: isDark?Color.fromARGB(255, 161, 124, 209):AppColors.lightPrimary),
                 ),
                 const TextSpan(text: '.'),
               ],

@@ -208,10 +208,10 @@ class LogInteractionModalState extends State<LogInteractionModal> {
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: AppColors.lightPrimary.withOpacity(isDark ? 0.12 : 0.06),
+                    color: isDark?const Color.fromARGB(255, 152, 125, 199).withOpacity(0.3):AppColors.lightPrimary.withOpacity(0.16),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: AppColors.lightPrimary.withOpacity(isDark ? 0.35 : 0.2))),
+                      color: isDark?const Color.fromARGB(255, 152, 125, 199).withOpacity(0.3):AppColors.lightPrimary.withOpacity(0.2))),
                   child: Row(children:[
                     // Avatar: initials on purple circle
                     Container(width:44, height:44,
@@ -302,7 +302,7 @@ class LogInteractionModalState extends State<LogInteractionModal> {
                           borderRadius:BorderRadius.circular(14)),
                         child:Row(children:[
                           Icon(Icons.calendar_month_rounded, size:18,
-                            color:AppColors.lightPrimary),
+                            color:isDark?const Color.fromARGB(255, 152, 125, 199):AppColors.lightPrimary),
                           const SizedBox(width:10),
                           Text(_formattedDate(), style:GoogleFonts.beVietnamPro(
                             fontSize:14, fontWeight:FontWeight.w600, color:textP)),
@@ -320,7 +320,7 @@ class LogInteractionModalState extends State<LogInteractionModal> {
                           borderRadius:BorderRadius.circular(14)),
                         child:Row(children:[
                           Icon(Icons.access_time_rounded, size:18,
-                            color:AppColors.lightPrimary),
+                            color:isDark?const Color.fromARGB(255, 152, 125, 199):AppColors.lightPrimary),
                           const SizedBox(width:10),
                           Text(_formattedTime(), style:GoogleFonts.beVietnamPro(
                             fontSize:14, fontWeight:FontWeight.w600, color:textP)),
@@ -333,16 +333,16 @@ class LogInteractionModalState extends State<LogInteractionModal> {
                 Container(
                   padding:const EdgeInsets.symmetric(vertical:8, horizontal:14),
                   decoration:BoxDecoration(
-                    color:AppColors.lightPrimary.withOpacity(0.08),
+                    color:isDark?const Color.fromARGB(255, 152, 125, 199).withOpacity(0.1): AppColors.lightPrimary.withOpacity(0.08),
                     borderRadius:BorderRadius.circular(12),
-                    border:Border.all(color:AppColors.lightPrimary.withOpacity(0.25))),
+                    border:Border.all(color: isDark?const Color.fromARGB(255, 152, 125, 199): AppColors.lightPrimary.withOpacity(0.25))),
                   child:Row(children:[
-                    const Icon(Icons.info_outline_rounded,
-                      size:15, color:AppColors.lightPrimary),
+                    Icon(Icons.info_outline_rounded,
+                      size:15, color: isDark?const Color.fromARGB(255, 152, 125, 199):AppColors.lightPrimary),
                     const SizedBox(width:8),
                     Expanded(child:Text(dateLabel,
                       style:GoogleFonts.beVietnamPro(fontSize:13,
-                        fontWeight:FontWeight.w600, color:AppColors.lightPrimary))),
+                        fontWeight:FontWeight.w600, color:isDark?const Color.fromARGB(255, 152, 125, 199): AppColors.lightPrimary))),
                     if (timeLabel.isNotEmpty)
                       Container(
                         padding:const EdgeInsets.symmetric(horizontal:8, vertical:2),
@@ -351,7 +351,7 @@ class LogInteractionModalState extends State<LogInteractionModal> {
                           borderRadius:BorderRadius.circular(9999)),
                         child:Text(timeLabel, style:GoogleFonts.beVietnamPro(
                           fontSize:11, fontWeight:FontWeight.w600,
-                          color:AppColors.success))),
+                          color:isDark?AppColors.darkOnSurface:AppColors.success))),
                   ])),
                 const SizedBox(height:22),
 

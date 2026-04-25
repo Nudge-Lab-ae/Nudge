@@ -206,9 +206,9 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
       case 'inner':
         return AppColors.vipGold;
       case 'middle':
-        return AppColors.lightPrimary;
+        return Colors.lightBlue;
       case 'outer':
-        return const Color(0xff897ED6);
+        return AppColors.lightPrimary;
       default:
         return Theme.of(context).colorScheme.outline;
     }
@@ -295,9 +295,9 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                 title: Text(
                   'Contact Details', 
                   style: GoogleFonts.plusJakartaSans(
-                                      color: Theme.of(context).colorScheme.onSurface,
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 22)),
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 22)),
                 centerTitle: true,
                 leading: IconButton(
                   onPressed: (){

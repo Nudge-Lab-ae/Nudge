@@ -1,6 +1,8 @@
 // social_universe.dart - HYBRID CACHED VERSION (Stars only)
 import 'dart:async';
+import 'dart:io';
 import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
@@ -74,9 +76,10 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
   ui.Image? _lightBackgroundImage;
   ui.Image? _lightImmersiveBackgroundImage;
   bool _isBackgroundCachingComplete = false;
-  ui.Image? _userProfileImage;
   List<SocialGroup> _socialGroups = [];
   bool darkModeControlled = false;
+  String _userPhotoUrl = '';
+  ui.Image? _userPhotoImage;
   // bool _groupsLoaded = false;
 
 
@@ -112,7 +115,12 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
         setState(() {
           _immersionLevel = userData.immersionLevel;
           _sliderValue = userData.immersionLevel;
+          _userPhotoUrl = userData.photoUrl;
         });
+        // Load profile photo as a ui.Image for the canvas painter
+        if (userData.photoUrl.isNotEmpty) {
+          _loadUserPhotoImage(userData.photoUrl);
+        }
         //print('Loaded immersion level: ${userData.immersionLevel}');
       }
     } catch (e) {
@@ -127,25 +135,21 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
     }
   }
 
-  Future<void> _loadUserProfileImage() async {
+  Future<void> _loadUserPhotoImage(String url) async {
     try {
-      final apiService = ApiService();
-      final userData = await apiService.getUser();
-      if (userData.photoUrl.isNotEmpty && mounted) {
-        final networkImage = NetworkImage(userData.photoUrl);
-        final imageStream = networkImage.resolve(ImageConfiguration.empty);
-        imageStream.addListener(ImageStreamListener((info, _) async {
-          final byteData = await info.image.toByteData(format: ui.ImageByteFormat.png);
-          if (byteData == null) return;
-          final codec = await ui.instantiateImageCodec(byteData.buffer.asUint8List());
-          final frame = await codec.getNextFrame();
-          if (mounted) {
-            setState(() => _userProfileImage = frame.image);
-          }
-        }));
+      final httpClient = HttpClient();
+      final request = await httpClient.getUrl(Uri.parse(url));
+      final response = await request.close();
+      final bytes = await consolidateHttpClientResponseBytes(response);
+      final codec = await ui.instantiateImageCodec(bytes, targetWidth: 88, targetHeight: 88);
+      final frame = await codec.getNextFrame();
+      if (mounted) {
+        setState(() {
+          _userPhotoImage = frame.image;
+        });
       }
     } catch (_) {
-      // Keep null — will show generic icon
+      // If loading fails, painter falls back to circle+icon
     }
   }
 
@@ -202,7 +206,6 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
     
     _sliderValue = _immersionLevel;
      _loadSavedImmersionLevel();
-    _loadUserProfileImage();
     
     // Start caching star shapes only
     _startStarCaching(widget.isDarkMode!);
@@ -242,7 +245,6 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
     _disposeCachedImages();
     _lightBackgroundImage?.dispose();
     _lightImmersiveBackgroundImage?.dispose();
-    _userProfileImage?.dispose();
     _debounceTimer?.cancel();
     super.dispose();
   }
@@ -267,8 +269,8 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
         // Cache star types with proper ring names (no _vip suffix in base keys)
         await _cacheStarTypeWithGlow('inner', AppColors.vipGold, isDarkMode);
         await _cacheStarTypeWithGlow('inner_vip', AppColors.vipGold, isDarkMode);
-        await _cacheStarTypeWithGlow('middle', const Color(0xFF1A80C4), isDarkMode);
-        await _cacheStarTypeWithGlow('middle_vip', const Color(0xFF1A80C4), isDarkMode);
+        await _cacheStarTypeWithGlow('middle', Colors.lightBlue, isDarkMode);
+        await _cacheStarTypeWithGlow('middle_vip', Colors.lightBlue, isDarkMode);
         await _cacheStarTypeWithGlow('outer', AppColors.lightPrimary, isDarkMode);
         await _cacheStarTypeWithGlow('outer_vip', AppColors.lightPrimary, isDarkMode);
         
@@ -544,7 +546,8 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         // Remove the solid background color - let universe show through
-        color: isDarkMode?Colors.transparent: ui.Color.fromARGB(234, 4, 11, 62),
+        // color: isDarkMode?Colors.transparent: ui.Color.fromARGB(234, 4, 11, 62), // previous
+        color: isDarkMode ? const Color(0xFF13101F) : const Color(0xFF13101F),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(isDarkMode ? 0.5 : 0.15),
@@ -600,14 +603,15 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                         lightBackgroundImage: _lightBackgroundImage,
                         lightImmersiveBackgroundImage: _lightImmersiveBackgroundImage,
                         isBackgroundCachingComplete: _isBackgroundCachingComplete,
-                        userProfileImage: _userProfileImage,
+                        userPhotoUrl: _userPhotoUrl,
+                        userPhotoImage: _userPhotoImage,
                       ),
                     );
                   },
                 ),
             ))),
           ),
-          
+
           // Content Overlay - Semi-transparent to show universe behind
           widget.showTitle
           ?Positioned.fill(
@@ -722,10 +726,14 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                             child: Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.15),
+                                color: isDarkMode 
+                                  ? Colors.white.withOpacity(0.15) 
+                                  :  AppColors.lightPrimary.withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
-                                  color: Colors.white.withOpacity(0.2),
+                                  color: isDarkMode 
+                                    ? Colors.white.withOpacity(0.2)
+                                    : AppColors.lightPrimary.withOpacity(0.4),
                                 ),
                               ),
                               child: Icon(
@@ -806,8 +814,8 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
                           _buildLegendItem('Inner Circle', AppColors.vipGold, Icons.star, isDarkMode),
-                          _buildLegendItem('Middle Circle', const Color(0xFF1A80C4), Icons.circle, isDarkMode),
-                          _buildLegendItem('Outer Circle', AppColors.lightPrimary, Icons.circle_outlined, isDarkMode),
+                          _buildLegendItem('Middle Circle', AppColors.lightPrimary, Icons.circle, isDarkMode),
+                          _buildLegendItem('Outer Circle', const Color(0xff897ED6), Icons.circle_outlined, isDarkMode),
                         ],
                       ),
                     ),
@@ -876,7 +884,8 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
     var size = MediaQuery.of(context).size;
     
     return Container(
-      color: /* isDarkMode ? ui.Color.fromARGB(255, 21, 25, 46) : */ const ui.Color.fromARGB(255, 6, 13, 76),
+      // color: /* isDarkMode ? ui.Color.fromARGB(255, 21, 25, 46) : */ const ui.Color.fromARGB(255, 6, 13, 76), // previous
+      color: const Color(0xFF13101F),
       child: Stack(
         children: [
           Positioned.fill(
@@ -935,7 +944,8 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                         lightBackgroundImage: _lightBackgroundImage,
                         lightImmersiveBackgroundImage: _lightImmersiveBackgroundImage,
                         isBackgroundCachingComplete: _isBackgroundCachingComplete,
-                        userProfileImage: _userProfileImage,
+                        userPhotoUrl: _userPhotoUrl,
+                        userPhotoImage: _userPhotoImage,
                       ),
                     ));
                   },
@@ -943,7 +953,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
               ),
             ),
           ),
-          
+
           AnimatedPositioned(
             duration: const Duration(milliseconds: 300),
             top: _showTitle ? -10 : -100,
@@ -961,14 +971,10 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                         Colors.transparent,
                       ]
                     : [
-                        Colors.black.withOpacity(0.95),
-                        Colors.black.withOpacity(0.7),
-                        Colors.transparent,
-                      ]/* [
                         const Color(0xFFC2D9F7).withOpacity(0.95),
                         const Color(0xFFC2D9F7).withOpacity(0.7),
                         Colors.transparent,
-                      ] */,
+                      ],
                   stops: const [0.0, 0.3, 1.0],
                 ),
               ),
@@ -984,7 +990,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                         decoration: BoxDecoration(
                           color: isDarkMode 
                             ? Colors.black.withOpacity(0.5) 
-                            : Colors.white.withOpacity(0.15),
+                            : Colors.white.withOpacity(0.6),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                             color: isDarkMode 
@@ -1005,22 +1011,16 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                                     Text(
                                       'Social Universe',
                                        style: GoogleFonts.plusJakartaSans(
-                                      color: isDarkMode ? Colors.white : Colors.white,
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 22),
-                                      // style: TextStyle(
-                                      //   fontSize: 22,
-                                      //   fontFamily: GoogleFonts.plusJakartaSans().fontFamily,
-                                      //   fontWeight: FontWeight.w800,
-                                      //   color: isDarkMode ? Colors.white : AppColors.darkSurfaceContainerHighest,
-                                      // ),
+                                        color: Theme.of(context).colorScheme.onSurface,
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 22),
                                       textAlign: TextAlign.center,
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
                                       'Explore your ${_displayContacts.length} connections${_useMockData ? ' (TEST MODE)' : ''}',
                                       style: TextStyle(
-                                        color: isDarkMode ? Colors.white70 :  Colors.white70,
+                                        color: isDarkMode ? Colors.white70 :  AppColors.darkSurfaceContainerHighest,
                                         fontSize: 14,
                                       ),
                                       textAlign: TextAlign.center,
@@ -2091,7 +2091,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: contact.computedRing == 'inner'?Colors.white.withOpacity(0.15): contact.computedRing == 'middle'?Colors.black.withOpacity(0.4):Colors.white.withOpacity(0.7),
+                            color: Colors.white.withOpacity(ringColor==AppColors.lightPrimary?0.45:0.15),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(color: Colors.white.withOpacity(0.3)),
                           ),
@@ -2336,11 +2336,11 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
       case 'inner':
         return AppColors.vipGold;
       case 'middle':
-        return const Color(0xFF1A80C4);
+        return Colors.lightBlue;
       case 'outer':
         return AppColors.lightPrimary;
       default:
-        return AppColors.vipGold;
+        return Theme.of(context).colorScheme.outline;
     }
   }
 
@@ -2371,7 +2371,8 @@ class UniversePainter extends CustomPainter {
   final bool isBackgroundCachingComplete;
   final Map<String, SocialGroup> socialGroups;
   final List<SocialGroup>? groupsList;
-  final ui.Image? userProfileImage; // Profile picture for central circle
+  final String userPhotoUrl;
+  final ui.Image? userPhotoImage;
   
   // Performance optimization: Use pre-allocated Paint objects
   final Paint _backgroundPaint = Paint();
@@ -2411,7 +2412,8 @@ class UniversePainter extends CustomPainter {
     required this.socialGroups, 
     this.lightImmersiveBackgroundImage,
     required this.isBackgroundCachingComplete,
-    this.userProfileImage,
+    this.userPhotoUrl = '',
+    this.userPhotoImage,
   }) {
     // Pre-calculate ring radii once during construction
     _innerInnerRadius = 0.15;
@@ -2524,10 +2526,10 @@ class UniversePainter extends CustomPainter {
         color = AppColors.vipGold;
         break;
       case 'middle':
-        color = const Color(0xFF1A80C4); // Vivid blue
+        color = Colors.lightBlue; // Blue
         break;
       case 'outer':
-        color = AppColors.lightPrimary; // Deep purple
+        color = AppColors.lightPrimary; // Purple
         break;
       default:
         color = Theme.of(navigatorKey.currentContext!).colorScheme.outline;
@@ -2960,38 +2962,31 @@ class UniversePainter extends CustomPainter {
     //   _drawBackgroundStars(canvas, size, clampedImmersionLevel, isDarkMode);
       
     // } else {
-      // LIGHT MODE: Use background image if available
-      if (isBackgroundCachingComplete) {
-        final backgroundImage = isImmersive ? lightImmersiveBackgroundImage : lightBackgroundImage;
-        
-        if (backgroundImage != null) {
-          // Draw the background image
-          final srcRect = Rect.fromLTWH(0, 0, backgroundImage.width.toDouble(), backgroundImage.height.toDouble());
-          final dstRect = Rect.fromLTWH(0, 0, size.width, size.height);
-          
-          _imagePaint
-            ..colorFilter = null
-            ..filterQuality = FilterQuality.high;
-          
-          canvas.drawImageRect(backgroundImage, srcRect, dstRect, _imagePaint);
-        } else {
-          // Fallback to gradient if image not available
-          _drawFallbackLightBackground(canvas, size);
-        }
-      } else {
-        // Fallback to gradient while images are loading
-        _drawFallbackLightBackground(canvas, size);
-      }
-      
-      // Add some light mode nebula/cloud effects - ORIGINAL
-      
-      // Still draw some background stars but fewer
-      _drawBackgroundStars(canvas, size, clampedImmersionLevel, isDarkMode);
+      // PREVIOUS: Use background image if available
+      // if (isBackgroundCachingComplete) {
+      //   final backgroundImage = isImmersive ? lightImmersiveBackgroundImage : lightBackgroundImage;
+      //   if (backgroundImage != null) {
+      //     final srcRect = Rect.fromLTWH(0, 0, backgroundImage.width.toDouble(), backgroundImage.height.toDouble());
+      //     final dstRect = Rect.fromLTWH(0, 0, size.width, size.height);
+      //     _imagePaint
+      //       ..colorFilter = null
+      //       ..filterQuality = FilterQuality.high;
+      //     canvas.drawImageRect(backgroundImage, srcRect, dstRect, _imagePaint);
+      //   } else {
+      //     _drawFallbackLightBackground(canvas, size);
+      //   }
+      // } else {
+      //   _drawFallbackLightBackground(canvas, size);
+      // }
 
-      // Dark shadow overlay to deepen the background
-      final _shadowOverlayPaint = Paint()
-        ..color = Colors.black.withOpacity(isDarkMode ? 0.40 : 0.28);
-      canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), _shadowOverlayPaint);
+      // NEW: Solid background colour matching design reference
+      _backgroundPaint
+        ..shader = null
+        ..color = const Color(0xFF13101F);
+      canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), _backgroundPaint);
+
+      // Background stars drawn on top of solid colour
+      _drawBackgroundStars(canvas, size, clampedImmersionLevel, isDarkMode);
     // }
   }
   
@@ -3099,158 +3094,115 @@ class UniversePainter extends CustomPainter {
     }
   
   void _drawCentralUser(Canvas canvas, Offset center, double immersionLevel, bool isDarkMode) {
-    final time = DateTime.now().millisecondsSinceEpoch / 1000.0;
-    final pulse = (sin(time * 2.0) + 1.0) / 2.0;
+    final time = DateTime.now().millisecondsSinceEpoch / 1000;
+    final pulse = (sin(time * 2) + 1) / 2;
 
-    // Two separate radii — avatar sits inside, enclosure wraps outside with a gap
-    const double avatarRadius    = 24.0;
-    const double enclosureRadius = 32.0;   // 12 px gap from avatar edge
+    // Unified avatar radius — matches the old profile-pic widget size (radius 22 → 44px diameter)
+    const double avatarRadius = 22.0;
 
-    // ── Soft outer glow (diffuse, behind everything) ───────────────────────
-    final glowRadius = enclosureRadius + 10.0 + pulse * 5.0;
+    // ── 1. Purple glow ring (always present, for both photo and fallback) ────
+    final glowRadius = avatarRadius + 10 + pulse * 4;
     final glowPaint = Paint()
       ..shader = RadialGradient(
+        center: Alignment.center,
         colors: [
-          const Color(0xFF751FE7).withOpacity(0.35 * immersionLevel),
-          const Color(0xFFB58BFF).withOpacity(0.18 * immersionLevel),
+          Colors.deepPurpleAccent.withOpacity(0.85),
+          Colors.deepPurpleAccent.withOpacity(0.45),
           Colors.transparent,
         ],
-        stops: const [0.0, 0.5, 1.0],
-      ).createShader(Rect.fromCircle(center: center, radius: glowRadius + 8))
+        stops: const [0.0, 0.55, 1.0],
+      ).createShader(Rect.fromCircle(center: center, radius: glowRadius))
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 16);
-    canvas.drawCircle(center, glowRadius + 8, glowPaint);
+    canvas.drawCircle(center, glowRadius, glowPaint);
 
-    // ── Thick purple enclosure ring ────────────────────────────────────────
-    // Outer soft halo of the ring
-    // final haloRingPaint = Paint()
-    //   ..color = const Color(0xFF9C6FE4).withOpacity(0.30 + 0.20 * pulse)
-    //   ..style = PaintingStyle.stroke
-    //   ..strokeWidth = 2.0
-    //   ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
-    // canvas.drawCircle(center, enclosureRadius, haloRingPaint);
-
-    // Solid enclosure ring (thick & visible)
-    final enclosurePaint = Paint()
-      ..color = const Color(0xFFD4BBFF).withOpacity(0.82 + 0.12 * pulse)
+    // Solid purple border ring
+    final borderPaint = Paint()
+      ..color = Colors.deepPurpleAccent.withOpacity(0.9)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 4.0;
-    canvas.drawCircle(center, enclosureRadius, enclosurePaint);
+      ..strokeWidth = 2.5;
+    canvas.drawCircle(center, avatarRadius + 3, borderPaint);
 
-    // Inner edge highlight of ring
-    // final innerHighlight = Paint()
-    //   ..color = Colors.white.withOpacity(0.28 + 0.14 * pulse)
-    //   ..style = PaintingStyle.stroke
-    //   ..strokeWidth = 1.2;
-    // canvas.drawCircle(center, enclosureRadius - 3.0, innerHighlight);
-
-    // ── Avatar circle ──────────────────────────────────────────────────────
-    final circlePath = Path()..addOval(Rect.fromCircle(center: center, radius: avatarRadius));
-
-    if (userProfileImage != null) {
+    if (userPhotoImage != null) {
+      // ── 2a. Profile photo path ──────────────────────────────────────────────
+      // Clip to circle then draw the image scaled to fill
       canvas.save();
-      canvas.clipPath(circlePath);
-      final src = Rect.fromLTWH(
-        0, 0,
-        userProfileImage!.width.toDouble(),
-        userProfileImage!.height.toDouble(),
-      );
+      final clipPath = Path()
+        ..addOval(Rect.fromCircle(center: center, radius: avatarRadius));
+      canvas.clipPath(clipPath);
+
+      final img = userPhotoImage!;
+      final src = Rect.fromLTWH(0, 0, img.width.toDouble(), img.height.toDouble());
       final dst = Rect.fromCircle(center: center, radius: avatarRadius);
-      canvas.drawImageRect(userProfileImage!, src, dst, Paint()..filterQuality = FilterQuality.high);
-      // Vignette
-      canvas.drawRect(dst, Paint()
-        ..shader = RadialGradient(
-          colors: [Colors.transparent, Colors.black.withOpacity(0.18)],
-          stops: const [0.6, 1.0],
-        ).createShader(dst));
+      final imgPaint = Paint()..filterQuality = FilterQuality.medium;
+      canvas.drawImageRect(img, src, dst, imgPaint);
       canvas.restore();
     } else {
-      // ── Fun smiley "you" icon ────────────────────────────────────────────
-      // Background gradient
-      final bgPaint = Paint()
+      // ── 2b. Fallback: circle with person icon ───────────────────────────────
+      // Background fill
+      final fillPaint = Paint()
         ..shader = RadialGradient(
-          center: const Alignment(-0.3, -0.3),
-          colors: isDarkMode
-              ? [const Color(0xFF5B2A9E), const Color(0xFF2D1B5A)]
-              : [const Color(0xFF9C6FE4), const Color(0xFF751FE7)],
+          center: Alignment.center,
+          colors: [
+            Colors.deepPurple.shade700.withOpacity(0.9),
+            Colors.deepPurple.shade900.withOpacity(0.95),
+          ],
         ).createShader(Rect.fromCircle(center: center, radius: avatarRadius));
-      canvas.save();
-      canvas.clipPath(circlePath);
-      canvas.drawCircle(center, avatarRadius, bgPaint);
-      // Highlight sheen
-      canvas.drawCircle(center, avatarRadius, Paint()
-        ..shader = RadialGradient(
-          center: const Alignment(-0.4, -0.5),
-          colors: [Colors.white.withOpacity(0.28), Colors.transparent],
-          radius: 0.7,
-        ).createShader(Rect.fromCircle(center: center, radius: avatarRadius)));
-      canvas.restore();
+      canvas.drawCircle(center, avatarRadius, fillPaint);
 
-      final facePaint = Paint()..color = Colors.white.withOpacity(0.95);
-
-      // Eyes
-      final eyeY   = center.dy - avatarRadius * 0.18;
-      final eyeOffX = avatarRadius * 0.28;
-      final eyeR    = avatarRadius * 0.13;
-      canvas.drawCircle(Offset(center.dx - eyeOffX, eyeY), eyeR, facePaint);
-      canvas.drawCircle(Offset(center.dx + eyeOffX, eyeY), eyeR, facePaint);
-      // Pupils
-      final pupilPaint = Paint()
-        ..color = isDarkMode ? const Color(0xFF2D1B5A) : const Color(0xFF4A1099);
-      canvas.drawCircle(Offset(center.dx - eyeOffX + 0.8, eyeY + 0.5), eyeR * 0.45, pupilPaint);
-      canvas.drawCircle(Offset(center.dx + eyeOffX + 0.8, eyeY + 0.5), eyeR * 0.45, pupilPaint);
-
-      // Smile arc
-      canvas.drawArc(
-        Rect.fromCenter(
-          center: Offset(center.dx, center.dy + avatarRadius * 0.08),
-          width: avatarRadius * 0.72,
-          height: avatarRadius * 0.44,
+      // Draw person icon via TextPainter (using Material Icons font)
+      final iconPainter = TextPainter(
+        text: const TextSpan(
+          text: '\ue7fd', // Icons.person codepoint
+          style: TextStyle(
+            fontFamily: 'MaterialIcons',
+            fontSize: 24,
+            color: Colors.white70,
+          ),
         ),
-        0.2, 2.74, false,
-        Paint()
-          ..color = Colors.white.withOpacity(0.95)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = avatarRadius * 0.11
-          ..strokeCap = StrokeCap.round,
+        textDirection: TextDirection.ltr,
       );
-
-      // Gold star sparkle (top-right)
-      final sx = center.dx + avatarRadius * 0.42;
-      final sy = center.dy - avatarRadius * 0.50;
-      final sp = avatarRadius * 0.12;
-      final starPath = Path()
-        ..moveTo(sx,       sy - sp)
-        ..lineTo(sx + sp * 0.3, sy - sp * 0.3)
-        ..lineTo(sx + sp,  sy)
-        ..lineTo(sx + sp * 0.3, sy + sp * 0.3)
-        ..lineTo(sx,       sy + sp)
-        ..lineTo(sx - sp * 0.3, sy + sp * 0.3)
-        ..lineTo(sx - sp,  sy)
-        ..lineTo(sx - sp * 0.3, sy - sp * 0.3)
-        ..close();
-      canvas.drawPath(starPath, Paint()..color = const Color(0xFFFFD700).withOpacity(0.9));
+      iconPainter.layout();
+      iconPainter.paint(
+        canvas,
+        center.translate(-iconPainter.width / 2, -iconPainter.height / 2),
+      );
     }
 
-    // ── Avatar border (crisp edge) ─────────────────────────────────────────
-    canvas.drawCircle(center, avatarRadius, Paint()
-      ..color = const Color(0xFFD4BBFF).withOpacity(0.80)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5);
+    // ── 3. Shine / immersion glow overlay (kept from original) ───────────────
+    final shineIntensity = ((immersionLevel - 0.4) / 0.5).clamp(0.0, 1.0);
+    if (shineIntensity > 0) {
+      final haloRadius = avatarRadius + 14 + shineIntensity * 12;
+      final haloPaint = Paint()
+        ..shader = RadialGradient(
+          center: Alignment.center,
+          colors: [
+            Colors.white.withOpacity(0.08 * shineIntensity),
+            Colors.transparent,
+          ],
+          stops: const [0.0, 1.0],
+        ).createShader(Rect.fromCircle(center: center, radius: haloRadius))
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 10 + shineIntensity * 18);
+      canvas.drawCircle(center, haloRadius, haloPaint);
 
-     final textColor = isDarkMode ? Colors.white : Colors.white;
-    final shadowColor = isDarkMode ? Colors.black.withOpacity(0.8) : Colors.black.withOpacity(0.5);
-    
+      // Pulsing inner brightening on the avatar edge
+      final pulsePaint = Paint()
+        ..color = Colors.white.withOpacity(0.12 * shineIntensity * pulse)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+      canvas.drawCircle(center, avatarRadius, pulsePaint);
+    }
+
+    // ── 4. "YOU" label below the avatar ──────────────────────────────────────
     final textPainter = TextPainter(
       text: TextSpan(
         text: 'YOU',
         style: TextStyle(
-          color: textColor,
-          fontSize: 14,
+          color: Colors.white,
+          fontSize: 11,
           fontWeight: FontWeight.bold,
           shadows: [
             Shadow(
               blurRadius: 6,
-              color: shadowColor,
+              color: Colors.black.withOpacity(0.7),
               offset: const Offset(1, 1),
             ),
           ],
@@ -3259,7 +3211,7 @@ class UniversePainter extends CustomPainter {
       textDirection: TextDirection.ltr,
     );
     textPainter.layout();
-    textPainter.paint(canvas, center.translate(-18, 36));
+    textPainter.paint(canvas, center.translate(-textPainter.width / 2, avatarRadius + 6));
   }
 
   int _stringToHash(String str) {
@@ -3271,19 +3223,17 @@ class UniversePainter extends CustomPainter {
   }
 
   void _drawRing(Canvas canvas, Offset center, double innerRadius, double outerRadius, Color color, bool isDarkMode, bool isInnerRing) {
-    // Thin at 50% intensity, normal at 100%.
-    final t = ((immersionLevel - 0.5) / 0.5).clamp(0.4, 1.0);
-    final maxWidth = isDarkMode ? 2.2 : 2.8;
-    final borderWidth = 0.3 + t * maxWidth;
-    // final ringOpacity = t * 0.3; // also fade fill with the same remap
+    // Make ALL borders thicker and more vivid - ORIGINAL
+    final borderWidth = isDarkMode ? (1 + immersionLevel * 1.0) : (1 + immersionLevel * 1.5);
+    final ringOpacity = immersionLevel * 0.3;
     
     if (isInnerRing) {
       // Inner ring - only draw the outer circle - ORIGINAL
       _ringPaint
         ..shader = RadialGradient(
           colors: [
-            color.withOpacity(0.1 + t * 0.45),
-            color.withOpacity(0.05 + t * 0.22),
+            color.withOpacity(0.5 + ringOpacity*0.4),
+            color.withOpacity(0.25 + ringOpacity * 0.2),
             Colors.transparent,
           ],
           stops: const [0.0, 0.6, 1.0],
@@ -3299,7 +3249,7 @@ class UniversePainter extends CustomPainter {
       // Only draw glow border in dark mode
       
         _glowPaint
-          ..color = color.withOpacity(0.2 + t * 0.6)
+          ..color = color.withOpacity((isDarkMode ? 0.7 : 0.7) + ringOpacity)
           ..style = PaintingStyle.stroke
           ..strokeWidth = borderWidth;
         
@@ -3310,8 +3260,8 @@ class UniversePainter extends CustomPainter {
       _ringPaint
         ..shader = RadialGradient(
           colors: [
-            color.withOpacity(0.08 + t * 0.28),
-            color.withOpacity(0.04 + t * 0.14),
+            color.withOpacity(0.3 + ringOpacity * 0.4),
+            color.withOpacity(0.15 + ringOpacity * 0.2),
             Colors.transparent,
           ],
           stops: const [0.0, 0.7, 1.0],
@@ -3326,7 +3276,7 @@ class UniversePainter extends CustomPainter {
       
       // Only draw glow border in dark mode
       _glowPaint
-          ..color = color.withOpacity(0.12 + t * 0.45)
+          ..color = color.withOpacity((isDarkMode ? 0.35 : 0.45) + ringOpacity * 0.7)
           ..style = PaintingStyle.stroke
           ..strokeWidth = borderWidth * 0.9;
         
@@ -3354,7 +3304,7 @@ class UniversePainter extends CustomPainter {
       case 'inner':
         return AppColors.vipGold;
       case 'middle':
-        return const Color(0xFF1A80C4);
+        return Colors.lightBlue;
       case 'outer':
         return AppColors.lightPrimary;
       default:
@@ -3373,7 +3323,8 @@ class UniversePainter extends CustomPainter {
           oldDelegate.isDarkMode != isDarkMode ||
           oldDelegate.isBackgroundCachingComplete != isBackgroundCachingComplete ||
           oldDelegate.lightBackgroundImage != lightBackgroundImage ||
-          oldDelegate.lightImmersiveBackgroundImage != lightImmersiveBackgroundImage;
+          oldDelegate.lightImmersiveBackgroundImage != lightImmersiveBackgroundImage ||
+          oldDelegate.userPhotoImage != userPhotoImage;
   }
   
   // @override
