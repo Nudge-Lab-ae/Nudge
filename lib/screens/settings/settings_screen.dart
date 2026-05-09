@@ -18,6 +18,7 @@ import 'package:nudge/services/message_service.dart';
 import 'package:nudge/widgets/screen_tracker.dart';
 import 'package:provider/provider.dart';
 import '../../services/api_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 // import 'package:nudge/models/user.dart' as user; 
 
 
@@ -770,6 +771,76 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ],
         ),
       ]),
+    );
+  }
+
+  // ── Privacy Policy card ───────────────────────────────────────────────────
+  Widget _buildPrivacyPolicyCard(ThemeProvider themeProvider) {
+    final isDark = themeProvider.isDarkMode;
+    final cardBg = isDark ? AppColors.darkSurfaceContainerHigh : Colors.white;
+    final textP  = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
+    final textS  = isDark ? AppColors.darkOnSurfaceVariant : AppColors.lightOnSurfaceVariant;
+    const brandPurple = Color(0xFF751FE7);
+
+    return GestureDetector(
+      onTap: () async {
+        final uri = Uri.parse(
+            'https://www.freeprivacypolicy.com/live/25cee199-538c-4c40-8fae-dbc5f4a128a0');
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          color: cardBg,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.15 : 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: brandPurple.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.privacy_tip_outlined,
+                size: 18, color: brandPurple),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Privacy Policy',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: textP,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'How we collect and use your data',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: textS,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.open_in_new_rounded, color: textS, size: 18),
+        ]),
+      ),
     );
   }
 
@@ -1589,6 +1660,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       
                       // Log Out + Danger Zone (separated per new design)
                       const SizedBox(height: 30),
+                      _buildPrivacyPolicyCard(themeProvider),
+                      const SizedBox(height: 12),
                       _buildLogOutCard(authService, themeProvider),
                       const SizedBox(height: 16),
                       _buildDangerZoneCard(authService, themeProvider),

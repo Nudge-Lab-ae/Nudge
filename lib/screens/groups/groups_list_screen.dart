@@ -1361,14 +1361,13 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
 
   IconData _getGroupIconByKey(String key) {
     switch (key) {
-      case 'family':  return Icons.home;
-      case 'friend':  return Icons.people;
-      case 'work':    return Icons.work;
-      case 'client':  return Icons.business_center;
-      case 'mentor':  return Icons.school;
-      case 'sports':  return Icons.sports_soccer;
-      case 'music':   return Icons.music_note;
-      default:        return Icons.group;
+      case 'family':    return Icons.family_restroom;
+      case 'friend':    return Icons.people;
+      case 'colleague': return Icons.work;
+      case 'work':      return Icons.work;
+      case 'client':    return Icons.business_center;
+      case 'mentor':    return Icons.school;
+      default:          return Icons.group;
     }
   }
 
@@ -1389,19 +1388,16 @@ void _showCreateGroupDialog(BuildContext context, ApiService apiService, {requir
 
   // Built-in icon options with display labels
   final List<Map<String, dynamic>> iconOptions = [
-    {'icon': Icons.home,             'label': 'Home',      'key': 'family'},
-    {'icon': Icons.people,           'label': 'Friends',   'key': 'friend'},
-    {'icon': Icons.work,             'label': 'Work',      'key': 'work'},
-    {'icon': Icons.business_center,  'label': 'Client',    'key': 'client'},
-    {'icon': Icons.school,           'label': 'Mentor',    'key': 'mentor'},
-    {'icon': Icons.group,            'label': 'Group',     'key': 'group'},
-    {'icon': Icons.sports_soccer,    'label': 'Sports',    'key': 'sports'},
-    {'icon': Icons.music_note,       'label': 'Music',     'key': 'music'},
+    {'icon': Icons.family_restroom, 'label': 'Family',    'key': 'family'},
+    {'icon': Icons.people,          'label': 'Friends',   'key': 'friend'},
+    {'icon': Icons.work,            'label': 'Colleague', 'key': 'colleague'},
+    {'icon': Icons.business_center, 'label': 'Client',    'key': 'client'},
+    {'icon': Icons.school,          'label': 'Mentor',    'key': 'mentor'},
   ];
 
   // Emoji options matching the mockup
   final List<String> emojiOptions = [
-    '🏠', '🎓', '💼', '👟', '🍕', '✈️',
+    '🏠', '👟', '🍕', '✈️',
     '🎵', '⚽', '🌿', '📚', '💡', '🎯',
     '🏋️', '🎮', '🐾', '🌍',
   ];
@@ -2336,17 +2332,17 @@ void _showEditGroupDialog(BuildContext context, SocialGroup group, ApiService ap
               body: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(
-                    child: Container(
-                      width: 60,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
+                  // Center(
+                  //   child: Container(
+                  //     width: 60,
+                  //     height: 5,
+                  //     decoration: BoxDecoration(
+                  //       color: Colors.transparent,
+                  //       borderRadius: BorderRadius.circular(14),
+                  //     ),
+                  //   ),
+                  // ),
+                  // const SizedBox(height: 16),
                   Row(
                     children: [
                       CircleAvatar(

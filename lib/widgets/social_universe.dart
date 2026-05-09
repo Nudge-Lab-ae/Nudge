@@ -80,6 +80,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
   bool darkModeControlled = false;
   String _userPhotoUrl = '';
   ui.Image? _userPhotoImage;
+  bool _isPhotoLoading = false;
   // bool _groupsLoaded = false;
 
 
@@ -136,6 +137,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
   }
 
   Future<void> _loadUserPhotoImage(String url) async {
+    if (mounted) setState(() => _isPhotoLoading = true);
     try {
       final httpClient = HttpClient();
       final request = await httpClient.getUrl(Uri.parse(url));
@@ -146,10 +148,12 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
       if (mounted) {
         setState(() {
           _userPhotoImage = frame.image;
+          _isPhotoLoading = false;
         });
       }
     } catch (_) {
-      // If loading fails, painter falls back to circle+icon
+      // Loading failed — stay on fallback circle+icon
+      if (mounted) setState(() => _isPhotoLoading = false);
     }
   }
 
@@ -604,7 +608,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                         lightImmersiveBackgroundImage: _lightImmersiveBackgroundImage,
                         isBackgroundCachingComplete: _isBackgroundCachingComplete,
                         userPhotoUrl: _userPhotoUrl,
-                        userPhotoImage: _userPhotoImage,
+                        userPhotoImage: _isPhotoLoading ? null : _userPhotoImage,
                       ),
                     );
                   },
@@ -945,7 +949,7 @@ class _SocialUniverseWidgetState extends State<SocialUniverseWidget>
                         lightImmersiveBackgroundImage: _lightImmersiveBackgroundImage,
                         isBackgroundCachingComplete: _isBackgroundCachingComplete,
                         userPhotoUrl: _userPhotoUrl,
-                        userPhotoImage: _userPhotoImage,
+                        userPhotoImage: _isPhotoLoading ? null : _userPhotoImage,
                       ),
                     ));
                   },

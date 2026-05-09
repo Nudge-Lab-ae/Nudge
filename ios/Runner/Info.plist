@@ -49,7 +49,7 @@
 	<key>NSCalendarsUsageDescription</key>
 	<string>Nudge needs access to your calendar to analyze meeting frequency and suggest important contacts</string>
 	<key>NSContactsUsageDescription</key>
-	<string>This app needs access to your contacts to help you manage your relationships</string>
+	<string>Nudge imports your contacts to help you manage and nurture your relationships. Your contact information will be securely uploaded to Nudge servers solely to power your Social Universe and nudge reminders. You can delete your data at any time from within the app.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>

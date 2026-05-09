@@ -19,6 +19,7 @@ import 'package:nudge/widgets/feedback_floating_button.dart';
 import 'package:nudge/widgets/gradient_text.dart';
 import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:nudge/widgets/contact_data_consent_dialog.dart';
 import 'package:flutter_contacts/flutter_contacts.dart' as fContacts;
 // import 'package:flutter_contacts_stack/flutter_contacts_stack.dart' as contacts_stack;
 import '../../providers/theme_provider.dart';
@@ -394,18 +395,8 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
                             decoration: BoxDecoration(
                               color: groupColor.withOpacity(0.15),
                               shape: BoxShape.circle),
-                            child: Center(
-                              child: group.emoji.isNotEmpty
-                                  ? Text(group.emoji,
-                                      style: const TextStyle(fontSize: 20))
-                                  : Text(
-                                      group.name.isNotEmpty
-                                          ? group.name[0].toUpperCase()
-                                          : '?',
-                                      style: GoogleFonts.plusJakartaSans(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w700,
-                                        color: groupColor)),
+                          child: Center(
+                              child: _buildGroupAvatar(group, groupColor),
                             ),
                           ),
                           const SizedBox(width: 14),
@@ -457,6 +448,12 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
 
   // Updated _pickContactsAndImport method using flutter_contacts for both platforms
   Future<void> _pickContactsAndImport(ThemeProvider themeProvider) async {
+    // ── Apple Guideline 5.1.2: obtain explicit consent before uploading ──────
+    final consentGiven =
+        await requestContactUploadConsentIfNeeded(context);
+    if (!consentGiven) return;
+    // ────────────────────────────────────────────────────────────────────────
+
     // First, get the group selection
     final apiService = Provider.of<ApiService>(context, listen: false);
     final authService = Provider.of<AuthService>(context, listen: false);
@@ -751,6 +748,52 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
     }
   }
   
+  // ── Group icon helpers (mirrors groups_list_screen logic) ──────────────
+
+  IconData _getGroupIcon(String groupName) {
+    final n = groupName.toLowerCase();
+    if (n.contains('family'))                                       return Icons.family_restroom;
+    if (n.contains('friend'))                                       return Icons.people;
+    if (n.contains('colleague') || n.contains('work') || n.contains('coworker')) return Icons.work;
+    if (n.contains('client'))                                       return Icons.business_center;
+    if (n.contains('mentor'))                                       return Icons.school;
+    return Icons.group;
+  }
+
+  IconData _getGroupIconByKey(String key) {
+    switch (key) {
+      case 'family':    return Icons.family_restroom;
+      case 'friend':    return Icons.people;
+      case 'colleague': return Icons.work;
+      case 'work':      return Icons.work;
+      case 'client':    return Icons.business_center;
+      case 'mentor':    return Icons.school;
+      default:          return Icons.group;
+    }
+  }
+
+  Widget _buildGroupAvatar(SocialGroup group, Color groupColor) {
+    if (group.emoji.isNotEmpty) {
+      if (group.emoji.startsWith('__icon_')) {
+        // Explicitly stored icon key
+        return Icon(
+          _getGroupIconByKey(group.emoji.substring(7)),
+          color: groupColor,
+          size: 22,
+        );
+      } else {
+        // Real emoji
+        return Text(group.emoji, style: const TextStyle(fontSize: 20));
+      }
+    }
+    // No emoji set — use the default icon derived from group name
+    return Icon(
+      _getGroupIcon(group.name),
+      color: groupColor,
+      size: 22,
+    );
+  }
+
   String normalizePhoneNumber(String phoneNumber) {
     // Remove all non-digit characters
     String digits = phoneNumber.replaceAll(RegExp(r'[^0-9]'), '');
