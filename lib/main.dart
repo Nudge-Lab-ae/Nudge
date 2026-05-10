@@ -18,6 +18,8 @@ import 'package:nudge/screens/auth/complete_profile_screen.dart';
 import 'package:nudge/screens/contacts/edit_contact_screen.dart';
 import 'package:nudge/screens/feedback/feedback_forum_screen.dart';
 import 'package:nudge/screens/splash_screen.dart';
+import 'package:nudge/screens/walkthrough/walkthrough_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/services/message_service.dart';
 import 'package:nudge/services/notification_service.dart';
@@ -37,7 +39,6 @@ import 'screens/notifications/notifications_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'screens/groups/groups_list_screen.dart';
 import 'services/auth_service.dart';
-import 'models/user.dart' as user;
 
 // Create a GlobalKey for navigator to handle notifications when app is in background
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -689,6 +690,7 @@ class NudgeApp extends StatelessWidget {
                 '/splash': (context) => const SplashScreen(),
                 '/': (context) => const AuthWrapper(),
                 '/welcome': (context) => const WelcomeScreen(),
+                '/walkthrough': (context) => const WalkthroughScreen(),
                 '/login': (context) => const LoginScreen(),
                 '/register': (context) => const RegisterScreen(),
                 '/complete_profile': (context) => const CompleteProfileScreen(),
@@ -864,13 +866,13 @@ class _AuthWrapperState extends State<AuthWrapper> {
       }
     });
     
-    return FutureBuilder<user.User>(
-      future: _getUserProfile(firebaseUser.uid),
+    return FutureBuilder<_AuthRouteDecision>(
+      future: _resolveAuthRoute(firebaseUser.uid),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return _buildLoadingScreen();
         }
-        
+
         if (snapshot.hasError) {
           return Scaffold(
             body: Center(
@@ -891,16 +893,28 @@ class _AuthWrapperState extends State<AuthWrapper> {
             ),
           );
         }
-        
-        final userData = snapshot.data;
-        
-        // Check if profile is completed
-        if (userData == null || !userData.profileCompleted) {
+
+        final decision = snapshot.data;
+        if (decision == null || !decision.profileCompleted) {
           return const CompleteProfileScreen();
-        } else {
-          return const DashboardScreen();
         }
+        if (!decision.walkthroughCompleted) {
+          return const WalkthroughScreen();
+        }
+        return const DashboardScreen();
       },
+    );
+  }
+
+  Future<_AuthRouteDecision> _resolveAuthRoute(String userId) async {
+    final apiService = ApiService();
+    final userData = await apiService.getUser();
+    final prefs = await SharedPreferences.getInstance();
+    final walkthroughCompleted =
+        prefs.getBool(walkthroughCompletedKey) ?? false;
+    return _AuthRouteDecision(
+      profileCompleted: userData.profileCompleted,
+      walkthroughCompleted: walkthroughCompleted,
     );
   }
 
@@ -928,8 +942,13 @@ class _AuthWrapperState extends State<AuthWrapper> {
     );
   }
 
-  Future<user.User> _getUserProfile(String userId) async {
-    final apiService = ApiService();
-    return await apiService.getUser();
-  }
+}
+
+class _AuthRouteDecision {
+  final bool profileCompleted;
+  final bool walkthroughCompleted;
+  const _AuthRouteDecision({
+    required this.profileCompleted,
+    required this.walkthroughCompleted,
+  });
 }
