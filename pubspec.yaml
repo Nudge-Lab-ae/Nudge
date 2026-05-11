@@ -68,7 +68,6 @@ dependencies:
   restart_app: 1.7.3
   shared_preferences: 2.5.3
   workmanager: 0.7.0
-  vector_math: ^2.2.0
   fl_chart: 0.71.0
   device_calendar: 4.3.3
   phone_number: 2.1.0
