@@ -332,26 +332,47 @@ class _ContinueButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Mockup uses a primary -> primary-dim horizontal gradient with a
+    // generous purple drop-shadow.
+    const Color primary = Color(0xFF751FE7);
+    const Color primaryDim = Color(0xFF6800D8);
     return Opacity(
-      opacity: enabled ? 1.0 : 0.5,
-      child: ElevatedButton(
-        onPressed: enabled ? onTap : null,
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 18),
-          backgroundColor: scheme.primary,
-          foregroundColor: scheme.onPrimary,
-          disabledBackgroundColor: scheme.primary,
-          disabledForegroundColor: scheme.onPrimary,
-          elevation: enabled ? 6 : 0,
-          shadowColor: scheme.primary.withOpacity(0.35),
-          shape: const StadiumBorder(),
-          textStyle: GoogleFonts.plusJakartaSans(
-            fontSize: 16,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.2,
+      opacity: enabled ? 1.0 : 0.55,
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(Radii.pill),
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [primary, primaryDim],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
+            borderRadius: BorderRadius.circular(Radii.pill),
+            boxShadow: enabled
+                ? [
+                    BoxShadow(
+                      color: primary.withOpacity(0.32),
+                      blurRadius: 22,
+                      offset: const Offset(0, 10),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 18),
+            alignment: Alignment.center,
+            child: Text(
+              'Continue',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.2,
+                color: scheme.onPrimary,
+              ),
+            ),
           ),
         ),
-        child: const Text('Continue'),
       ),
     );
   }

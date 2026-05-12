@@ -1,92 +1,586 @@
 // lib/screens/social_universe/social_universe_immersive.dart
 //
-// Wrapper for the immersive Social Universe view. Per
-// `social_universe_brighter_glow_2` mockup: top app bar with the NUDGE
-// wordmark (near-black gradient) plus a strategic info button at the
-// right that surfaces the 5-page walkthrough. The underlying
-// SocialUniverseWidget visualization is unchanged — re-styling the
-// widget itself is scoped for a separate phase.
+// Full immersive Social Universe view rebuilt from scratch to match
+// the canonical Stitch mockup `social_universe_brighter_glow_2`:
+//
+//   • Dark starfield background (#1A1816) with subtle white dots
+//   • Three concentric orbit rings (purple-tinted) at fixed sizes
+//   • Central "YOU" avatar with primary→primary-container gradient ring
+//   • Contacts plotted as stars on their `computedRing` at their
+//     `angleDeg`, color-coded (primary / secondary / tertiary) and
+//     pulse-animated. Names sit below each star.
+//   • Top app bar: NUDGE wordmark (light gradient) + glowing info icon
+//     that opens the walkthrough.
+//   • FAB bottom-right with the N logo and a purple glow ring,
+//     positioned per mockup. Tapping it dismisses the immersive view.
+//
+// Tapping a star surfaces the existing ContactDetailsModal so we don't
+// lose any of the wired-up interaction logic. The widget used on the
+// dashboard (lib/widgets/social_universe.dart) is intentionally left
+// alone — this is a wholly new screen-level implementation.
 
+import 'dart:math' as math;
+
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:nudge/models/contact.dart';
-import 'package:nudge/providers/theme_provider.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/widgets/contact_detail_modal.dart';
-import 'package:nudge/widgets/social_universe.dart';
 import 'package:provider/provider.dart';
 
-class SocialUniverseImmersiveScreen extends StatelessWidget {
+class SocialUniverseImmersiveScreen extends StatefulWidget {
   const SocialUniverseImmersiveScreen({super.key});
 
-  // Near-black background per Stitch brighter-glow mockup (#1A1816).
+  @override
+  State<SocialUniverseImmersiveScreen> createState() =>
+      _SocialUniverseImmersiveScreenState();
+}
+
+class _SocialUniverseImmersiveScreenState
+    extends State<SocialUniverseImmersiveScreen>
+    with SingleTickerProviderStateMixin {
+  // Canonical palette + sizes pulled directly from the brighter-glow mockup.
   static const Color _spaceBackground = Color(0xFF1A1816);
+  static const Color _ringColor = Color(0x1AA775FF); // rgba(167,117,255,0.10)
+  static const Color _primary = Color(0xFF751FE7);
+  static const Color _primaryContainer = Color(0xFFB58BFF);
+  static const Color _secondary = Color(0xFF006288);
+  static const Color _tertiary = Color(0xFF9E3654);
+  static const Color _secondaryFixedDim = Color(0xFF78CDFF);
+  static const Color _onPrimary = Color(0xFFF9EFFF);
+
+  // Orbit diameters in logical pixels — mockup uses 280/480/680.
+  static const double _innerRingDiameter = 280;
+  static const double _middleRingDiameter = 480;
+  static const double _outerRingDiameter = 680;
+
+  late final AnimationController _pulseController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final apiService = Provider.of<ApiService>(context);
+    final apiService = Provider.of<ApiService>(context, listen: false);
 
     return Scaffold(
       backgroundColor: _spaceBackground,
-      body: Stack(
-        children: [
-          // Universe visualization (unchanged).
-          StreamProvider<List<Contact>>.value(
-            value: apiService.getContactsStream(),
-            initialData: const [],
-            child: Consumer<List<Contact>>(
-              builder: (context, contacts, child) {
-                return SocialUniverseWidget(
-                  contacts: contacts,
-                  showTitle: true,
-                  onContactView: (contact, ringToUse) {
-                    showModalBottomSheet(
-                      context: context,
-                      shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.vertical(
-                          top: Radius.circular(20),
-                        ),
+      body: StreamProvider<List<Contact>>.value(
+        value: apiService.getContactsStream(),
+        initialData: const [],
+        child: Consumer<List<Contact>>(
+          builder: (context, contacts, _) {
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                // Starfield background painted on a single CustomPaint.
+                const Positioned.fill(
+                  child: CustomPaint(painter: _StarfieldPainter()),
+                ),
+
+                // Soft radial purple glow layered on top of the field.
+                const Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: RadialGradient(
+                        radius: 0.7,
+                        colors: [
+                          Color(0x14751FE7), // 8% primary
+                          Color(0x00751FE7),
+                        ],
                       ),
-                      isScrollControlled: true,
-                      backgroundColor:
-                          Theme.of(context).colorScheme.surfaceContainerHigh,
-                      builder: (context) {
-                        return ContactDetailsModal(
-                          contact: contact,
-                          apiService: apiService,
-                          displayRing: ringToUse,
-                        );
-                      },
-                    );
-                  },
-                  isImmersive: true,
-                  isDarkMode: themeProvider.isDarkMode,
-                  onExitImmersive: () {
-                    Navigator.pop(context);
-                  },
-                );
-              },
+                    ),
+                  ),
+                ),
+
+                // Concentric orbit rings + central avatar + stars.
+                _UniverseCanvas(
+                  contacts: contacts,
+                  pulseController: _pulseController,
+                  innerDiameter: _innerRingDiameter,
+                  middleDiameter: _middleRingDiameter,
+                  outerDiameter: _outerRingDiameter,
+                  ringColor: _ringColor,
+                  primary: _primary,
+                  primaryContainer: _primaryContainer,
+                  secondary: _secondary,
+                  tertiary: _tertiary,
+                  secondaryFixedDim: _secondaryFixedDim,
+                  onPrimary: _onPrimary,
+                  onStarTap: (contact, ring) =>
+                      _openContact(context, apiService, contact, ring),
+                ),
+
+                // Top app bar overlay (gradient fade out so the universe
+                // peeks through, NUDGE wordmark, info button).
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: SafeArea(
+                    bottom: false,
+                    child: _UniverseTopBar(
+                      onInfoTap: () =>
+                          Navigator.pushNamed(context, '/walkthrough'),
+                    ),
+                  ),
+                ),
+
+                // FAB bottom-right per mockup.
+                Positioned(
+                  right: 16,
+                  bottom: 32,
+                  child: SafeArea(
+                    top: false,
+                    child: _UniverseFab(onTap: () => Navigator.pop(context)),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  void _openContact(
+    BuildContext context,
+    ApiService apiService,
+    Contact contact,
+    String ring,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => ContactDetailsModal(
+        contact: contact,
+        apiService: apiService,
+        displayRing: ring,
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Starfield background
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _StarfieldPainter extends CustomPainter {
+  const _StarfieldPainter();
+
+  // Pre-seeded star positions for stable, non-jittery rendering.
+  // Density and sizes mirror the mockup's tiled radial-gradient.
+  static const int _seed = 42;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = Colors.white;
+    final rng = math.Random(_seed);
+    final count = (size.width * size.height / 8000).round().clamp(40, 240);
+    for (int i = 0; i < count; i++) {
+      final x = rng.nextDouble() * size.width;
+      final y = rng.nextDouble() * size.height;
+      final r = rng.nextDouble() < 0.18 ? 1.6 : 0.8;
+      final opacity = rng.nextDouble() * 0.55 + 0.15;
+      paint.color = Colors.white.withOpacity(opacity);
+      canvas.drawCircle(Offset(x, y), r, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Universe canvas — rings + avatar + plotted contacts
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _UniverseCanvas extends StatelessWidget {
+  final List<Contact> contacts;
+  final AnimationController pulseController;
+  final double innerDiameter;
+  final double middleDiameter;
+  final double outerDiameter;
+  final Color ringColor;
+  final Color primary;
+  final Color primaryContainer;
+  final Color secondary;
+  final Color tertiary;
+  final Color secondaryFixedDim;
+  final Color onPrimary;
+  final void Function(Contact contact, String ring) onStarTap;
+
+  const _UniverseCanvas({
+    required this.contacts,
+    required this.pulseController,
+    required this.innerDiameter,
+    required this.middleDiameter,
+    required this.outerDiameter,
+    required this.ringColor,
+    required this.primary,
+    required this.primaryContainer,
+    required this.secondary,
+    required this.tertiary,
+    required this.secondaryFixedDim,
+    required this.onPrimary,
+    required this.onStarTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final w = constraints.maxWidth;
+        final h = constraints.maxHeight;
+        final cx = w / 2;
+        final cy = h / 2;
+
+        // Bucket contacts by computedRing so we can paint each ring's
+        // stars in their own loop with the right color.
+        final innerStars =
+            contacts.where((c) => c.computedRing == 'inner').toList();
+        final middleStars =
+            contacts.where((c) => c.computedRing == 'middle').toList();
+        final outerStars =
+            contacts.where((c) => c.computedRing == 'outer').toList();
+
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            // Orbit rings (outer, middle, inner).
+            _ring(cx, cy, outerDiameter),
+            _ring(cx, cy, middleDiameter),
+            _ring(cx, cy, innerDiameter),
+
+            // Central YOU avatar.
+            Positioned(
+              left: cx - 48,
+              top: cy - 64,
+              child: _CentralYou(
+                primary: primary,
+                primaryContainer: primaryContainer,
+                spaceBackground: const Color(0xFF1A1816),
+              ),
+            ),
+
+            // Plot stars on each ring.
+            for (final star in _plotStars(
+              innerStars,
+              cx,
+              cy,
+              innerDiameter / 2,
+              primary,
+              ring: 'inner',
+            ))
+              star,
+            for (final star in _plotStars(
+              middleStars,
+              cx,
+              cy,
+              middleDiameter / 2,
+              secondaryFixedDim,
+              ring: 'middle',
+            ))
+              star,
+            for (final star in _plotStars(
+              outerStars,
+              cx,
+              cy,
+              outerDiameter / 2,
+              tertiary,
+              ring: 'outer',
+            ))
+              star,
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _ring(double cx, double cy, double diameter) {
+    return Positioned(
+      left: cx - diameter / 2,
+      top: cy - diameter / 2,
+      child: IgnorePointer(
+        child: Container(
+          width: diameter,
+          height: diameter,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: ringColor, width: 1),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Iterable<Widget> _plotStars(
+    List<Contact> stars,
+    double cx,
+    double cy,
+    double radius,
+    Color color, {
+    required String ring,
+  }) sync* {
+    if (stars.isEmpty) return;
+
+    for (int i = 0; i < stars.length; i++) {
+      final c = stars[i];
+      // Honour the contact's saved angleDeg when set; otherwise distribute
+      // evenly so first-time users still see something coherent.
+      final angleDeg =
+          c.angleDeg != 0 ? c.angleDeg : (i * 360.0 / stars.length);
+      final angleRad = angleDeg * math.pi / 180.0;
+
+      final dotX = cx + radius * math.cos(angleRad);
+      final dotY = cy + radius * math.sin(angleRad);
+
+      // VIPs get a slightly larger dot. CDI nudges size within band.
+      final cdiBoost = ((c.cdi - 50.0) / 50.0).clamp(-1.0, 1.0);
+      final baseSize = c.isVIP ? 12.0 : 9.0;
+      final size = baseSize + cdiBoost * 2.0;
+
+      yield Positioned(
+        left: dotX - 56, // 112px label slot centered on the dot
+        top: dotY - size / 2,
+        child: SizedBox(
+          width: 112,
+          child: _StarMarker(
+            contact: c,
+            ring: ring,
+            color: color,
+            size: size,
+            pulseController: pulseController,
+            phaseSeed: i,
+            onTap: () => onStarTap(c, ring),
+          ),
+        ),
+      );
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Central avatar
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _CentralYou extends StatelessWidget {
+  final Color primary;
+  final Color primaryContainer;
+  final Color spaceBackground;
+  const _CentralYou({
+    required this.primary,
+    required this.primaryContainer,
+    required this.spaceBackground,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    final photoUrl = user?.photoURL;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 96,
+          height: 96,
+          padding: const EdgeInsets.all(3),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              colors: [primary, primaryContainer],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: primary.withOpacity(0.4),
+                blurRadius: 50,
+              ),
+            ],
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: spaceBackground, width: 4),
+            ),
+            child: ClipOval(
+              child: photoUrl != null && photoUrl.isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: photoUrl,
+                      fit: BoxFit.cover,
+                      errorWidget: (context, url, error) => _avatarFallback(),
+                    )
+                  : _avatarFallback(),
             ),
           ),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          'YOU',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 2.4,
+            color: primaryContainer,
+          ),
+        ),
+      ],
+    );
+  }
 
-          // Top app bar overlay (NUDGE wordmark + info button).
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: SafeArea(
-              bottom: false,
-              child: _UniverseTopBar(
-                onInfoTap: () => Navigator.pushNamed(context, '/walkthrough'),
-              ),
+  Widget _avatarFallback() {
+    return Container(
+      color: const Color(0xFF2C2927),
+      alignment: Alignment.center,
+      child: Icon(
+        Icons.person_rounded,
+        color: Colors.white.withOpacity(0.7),
+        size: 40,
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Individual star marker (dot + pulse glow + name label)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _StarMarker extends StatelessWidget {
+  final Contact contact;
+  final String ring;
+  final Color color;
+  final double size;
+  final AnimationController pulseController;
+  final int phaseSeed;
+  final VoidCallback onTap;
+
+  const _StarMarker({
+    required this.contact,
+    required this.ring,
+    required this.color,
+    required this.size,
+    required this.pulseController,
+    required this.phaseSeed,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final phase = (phaseSeed * 0.137) % 1.0;
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AnimatedBuilder(
+            animation: pulseController,
+            builder: (context, _) {
+              final t = (pulseController.value + phase) % 1.0;
+              final pulseScale = 1.0 + 0.6 * math.sin(t * 2 * math.pi).abs();
+              final glowOpacity =
+                  (0.65 - 0.35 * math.sin(t * 2 * math.pi).abs())
+                      .clamp(0.25, 0.9);
+              return SizedBox(
+                width: size + 18,
+                height: size + 18,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Outer pulse halo.
+                    Transform.scale(
+                      scale: pulseScale,
+                      child: Container(
+                        width: size,
+                        height: size,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: color.withOpacity(glowOpacity * 0.25),
+                        ),
+                      ),
+                    ),
+                    // Solid star dot with bloom shadow.
+                    Container(
+                      width: size,
+                      height: size,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: color,
+                        boxShadow: [
+                          BoxShadow(
+                            color: color.withOpacity(glowOpacity),
+                            blurRadius: 18,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (contact.isVIP)
+                      Positioned(
+                        right: -2,
+                        top: -2,
+                        child: Container(
+                          width: 6,
+                          height: 6,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFFFB300),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 6),
+          Text(
+            _firstName(contact.name),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.beVietnamPro(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: Colors.white.withOpacity(0.75),
+              letterSpacing: 0.2,
             ),
           ),
         ],
       ),
     );
   }
+
+  String _firstName(String full) {
+    final trimmed = full.trim();
+    if (trimmed.isEmpty) return '';
+    return trimmed.split(RegExp(r'\s+')).first;
+  }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Top app bar
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _UniverseTopBar extends StatelessWidget {
   final VoidCallback onInfoTap;
@@ -98,19 +592,14 @@ class _UniverseTopBar extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 8, 12, 12),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            Color(0xFF1A1816),
-            Color(0x001A1816),
-          ],
+          colors: [Color(0xFF1A1816), Color(0x001A1816)],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
       ),
       child: Row(
         children: [
-          // NUDGE wordmark — light gradient against dark canvas
-          // (mirrors the near-black gradient used elsewhere, inverted
-          // for legibility on the dark Social Universe background).
+          // NUDGE wordmark — light gradient against the dark canvas.
           ShaderMask(
             shaderCallback: (bounds) => const LinearGradient(
               colors: [Color(0xFFE7E1DE), Color(0xFF968DA1)],
@@ -142,7 +631,7 @@ class _InfoButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white.withOpacity(0.08),
+      color: Colors.white.withOpacity(0.06),
       shape: const CircleBorder(),
       child: InkWell(
         onTap: onTap,
@@ -170,6 +659,63 @@ class _InfoButton extends StatelessWidget {
               Icons.info_outline_rounded,
               color: Color(0xFFD4BBFF),
               size: 22,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Floating action button (bottom-right per mockup)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _UniverseFab extends StatelessWidget {
+  final VoidCallback onTap;
+  const _UniverseFab({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white.withOpacity(0.05),
+      shape: const CircleBorder(),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: const Color(0xFFA775FF).withOpacity(0.55),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF751FE7).withOpacity(0.35),
+                blurRadius: 20,
+                spreadRadius: 1,
+              ),
+            ],
+          ),
+          child: Center(
+            child: ShaderMask(
+              shaderCallback: (bounds) => const LinearGradient(
+                colors: [Color(0xFFE7E1DE), Color(0xFFD4BBFF)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ).createShader(bounds),
+              child: Text(
+                'N',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                  letterSpacing: -1.5,
+                ),
+              ),
             ),
           ),
         ),
