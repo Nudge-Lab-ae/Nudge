@@ -40,7 +40,7 @@ class SocialUniverseImmersiveScreen extends StatefulWidget {
 
 class _SocialUniverseImmersiveScreenState
     extends State<SocialUniverseImmersiveScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   // Canonical palette + sizes pulled directly from the brighter-glow mockup.
   static const Color _spaceBackground = Color(0xFF1A1816);
   static const Color _ringColor = Color(0x1AA775FF); // rgba(167,117,255,0.10)
@@ -56,7 +56,14 @@ class _SocialUniverseImmersiveScreenState
   static const double _middleRingDiameter = 480;
   static const double _outerRingDiameter = 680;
 
+  // Pulse glow on stars + slow orbital rotation are driven by separate
+  // controllers so their cadence is independent.
   late final AnimationController _pulseController;
+  late final AnimationController _orbitController;
+
+  // InteractiveViewer scale/pan state — lets the user pinch to inspect
+  // the outer ring which extends beyond a typical phone viewport.
+  final TransformationController _viewport = TransformationController();
 
   @override
   void initState() {
@@ -65,11 +72,17 @@ class _SocialUniverseImmersiveScreenState
       vsync: this,
       duration: const Duration(seconds: 3),
     )..repeat();
+    _orbitController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 90), // one full revolution / 1.5 min
+    )..repeat();
   }
 
   @override
   void dispose() {
     _pulseController.dispose();
+    _orbitController.dispose();
+    _viewport.dispose();
     super.dispose();
   }
 
@@ -107,26 +120,66 @@ class _SocialUniverseImmersiveScreenState
                   ),
                 ),
 
-                // Concentric orbit rings + central avatar + stars.
-                _UniverseCanvas(
-                  contacts: contacts,
-                  pulseController: _pulseController,
-                  innerDiameter: _innerRingDiameter,
-                  middleDiameter: _middleRingDiameter,
-                  outerDiameter: _outerRingDiameter,
-                  ringColor: _ringColor,
-                  primary: _primary,
-                  primaryContainer: _primaryContainer,
-                  secondary: _secondary,
-                  tertiary: _tertiary,
-                  secondaryFixedDim: _secondaryFixedDim,
-                  onPrimary: _onPrimary,
-                  onStarTap: (contact, ring) =>
-                      _openContact(context, apiService, contact, ring),
+                // Pinch-zoomable universe layer.
+                // - Rings + stars rotate slowly via _orbitController so the
+                //   universe feels alive.
+                // - YOU avatar lives outside the rotating layer so the
+                //   photo doesn't spin in place.
+                // - InteractiveViewer with generous boundaryMargin lets the
+                //   user pinch in/out and pan to inspect the outer 680px
+                //   ring even on small viewports.
+                Positioned.fill(
+                  child: InteractiveViewer(
+                    transformationController: _viewport,
+                    minScale: 0.5,
+                    maxScale: 3.0,
+                    boundaryMargin: const EdgeInsets.all(400),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        AnimatedBuilder(
+                          animation: _orbitController,
+                          builder: (context, child) {
+                            final angle =
+                                _orbitController.value * 2 * math.pi;
+                            return Transform.rotate(
+                              angle: angle,
+                              child: child,
+                            );
+                          },
+                          child: _UniverseCanvas(
+                            contacts: contacts,
+                            pulseController: _pulseController,
+                            innerDiameter: _innerRingDiameter,
+                            middleDiameter: _middleRingDiameter,
+                            outerDiameter: _outerRingDiameter,
+                            ringColor: _ringColor,
+                            primary: _primary,
+                            primaryContainer: _primaryContainer,
+                            secondary: _secondary,
+                            tertiary: _tertiary,
+                            secondaryFixedDim: _secondaryFixedDim,
+                            onPrimary: _onPrimary,
+                            onStarTap: (contact, ring) => _openContact(
+                                context, apiService, contact, ring),
+                          ),
+                        ),
+
+                        // Static YOU avatar — counter-rotated so it stays
+                        // upright while the rings rotate around it.
+                        Center(
+                          child: _CentralYou(
+                            primary: _primary,
+                            primaryContainer: _primaryContainer,
+                            spaceBackground: _spaceBackground,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
 
-                // Top app bar overlay (gradient fade out so the universe
-                // peeks through, NUDGE wordmark, info button).
+                // Top app bar overlay (NUDGE wordmark + info button).
                 Positioned(
                   top: 0,
                   left: 0,
@@ -140,20 +193,42 @@ class _SocialUniverseImmersiveScreenState
                   ),
                 ),
 
-                // FAB bottom-right per mockup.
+                // Dark bottom nav per mockup (Universe active, Nudges,
+                // Groups, Contacts). Sits above the FAB.
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: _UniverseBottomNav(
+                    onTapNudges: () =>
+                        _navigateToTab(context, 2 /* notifications */),
+                    onTapGroups: () =>
+                        Navigator.pushReplacementNamed(context, '/groups'),
+                    onTapContacts: () =>
+                        Navigator.pushReplacementNamed(context, '/contacts'),
+                  ),
+                ),
+
+                // FAB bottom-right, lifted to sit above the nav band.
                 Positioned(
                   right: 16,
-                  bottom: 32,
-                  child: SafeArea(
-                    top: false,
-                    child: _UniverseFab(onTap: () => Navigator.pop(context)),
-                  ),
+                  bottom: 96,
+                  child: _UniverseFab(onTap: () => Navigator.pop(context)),
                 ),
               ],
             );
           },
         ),
       ),
+    );
+  }
+
+  void _navigateToTab(BuildContext context, int tab) {
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      '/dashboard',
+      (route) => false,
+      arguments: {'initialTab': tab},
     );
   }
 
@@ -270,18 +345,8 @@ class _UniverseCanvas extends StatelessWidget {
             _ring(cx, cy, middleDiameter),
             _ring(cx, cy, innerDiameter),
 
-            // Central YOU avatar.
-            Positioned(
-              left: cx - 48,
-              top: cy - 64,
-              child: _CentralYou(
-                primary: primary,
-                primaryContainer: primaryContainer,
-                spaceBackground: const Color(0xFF1A1816),
-              ),
-            ),
-
-            // Plot stars on each ring.
+            // Plot stars on each ring. Stars must counter-rotate so the
+            // labels stay upright while the orbit layer rotates.
             for (final star in _plotStars(
               innerStars,
               cx,
@@ -670,6 +735,122 @@ class _InfoButton extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // Floating action button (bottom-right per mockup)
 // ─────────────────────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Bottom navigation bar (dark mode per Stitch sample)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _UniverseBottomNav extends StatelessWidget {
+  final VoidCallback onTapNudges;
+  final VoidCallback onTapGroups;
+  final VoidCallback onTapContacts;
+  const _UniverseBottomNav({
+    required this.onTapNudges,
+    required this.onTapGroups,
+    required this.onTapContacts,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1816).withOpacity(0.92),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF751FE7).withOpacity(0.06),
+            blurRadius: 40,
+            offset: const Offset(0, -10),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _NavItem(
+                icon: Icons.auto_awesome_rounded,
+                label: 'UNIVERSE',
+                active: true,
+              ),
+              _NavItem(
+                icon: Icons.notifications_active_rounded,
+                label: 'NUDGES',
+                active: false,
+                onTap: onTapNudges,
+              ),
+              _NavItem(
+                icon: Icons.group_rounded,
+                label: 'GROUPS',
+                active: false,
+                onTap: onTapGroups,
+              ),
+              _NavItem(
+                icon: Icons.person_search_rounded,
+                label: 'CONTACTS',
+                active: false,
+                onTap: onTapContacts,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool active;
+  final VoidCallback? onTap;
+  const _NavItem({
+    required this.icon,
+    required this.label,
+    required this.active,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const Color activeBg = Color(0x33751FE7);
+    const Color activeFg = Color(0xFFD1B3FF);
+    const Color inactiveFg = Color(0xFF6E6A66);
+    final fg = active ? activeFg : inactiveFg;
+
+    return Material(
+      color: active ? activeBg : Colors.transparent,
+      borderRadius: BorderRadius.circular(9999),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(9999),
+        child: Padding(
+          padding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 22, color: fg),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.5,
+                  color: fg,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class _UniverseFab extends StatelessWidget {
   final VoidCallback onTap;

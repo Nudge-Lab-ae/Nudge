@@ -1,24 +1,32 @@
 // lib/screens/onboarding/onboarding_goals_screen.dart
-// Step 1 of the onboarding sequence — "What matters most to you?"
-// Mirrors stitch_nudge_mock_up_v4/onboarding_updated_goals/code.html.
+// "What matters most to you?" — shown AFTER the user completes their
+// profile (i.e. between CompleteProfileScreen and the Dashboard).
+// Mirrors stitch_nudge_mock_up_v4/onboarding_updated_goals/code.html
+// with the tightened 4-option list.
 //
-// Sits between WelcomeScreen ("Get Started") and the
-// register/complete-profile screens. Selected goals are held in
-// memory and passed forward via OnboardingState (see main.dart
-// routing), so the user can change their mind without an account.
+// Picks are persisted to SharedPreferences for now (single source of
+// truth for whether onboarding is "done"); a follow-up will write
+// them to the User document in Firestore alongside the existing
+// priority/tags fields.
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:nudge/theme/app_theme.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-/// Canonical onboarding goal options, in the order shown in the mockup.
+/// SharedPreferences keys used by AuthWrapper to decide whether to
+/// show the goals screen between profile-complete and dashboard.
+const String onboardingGoalsCompletedKey = 'onboarding_goals_completed_v1';
+const String onboardingGoalsPickedKey = 'onboarding_goals_picked_v1';
+
+/// Onboarding goal options. Tightened from the 6-option mockup to a
+/// 4-option set per user direction so each choice maps to a clear,
+/// non-overlapping intent (audience or behaviour).
 const List<String> kOnboardingGoals = [
-  'Stay connected with people I\'m drifting from',
+  'Stay close to family & friends',
+  'Reconnect with people I\'ve drifted from',
+  'Build my professional network',
   'Be more intentional about my relationships',
-  'Strengthen my close relationships',
-  'Grow and maintain my professional network',
-  'Stay close to long-distance family and friends',
-  'Reconnect with people from my past',
 ];
 
 class OnboardingGoalsScreen extends StatefulWidget {
@@ -41,23 +49,31 @@ class _OnboardingGoalsScreenState extends State<OnboardingGoalsScreen> {
     });
   }
 
-  void _continue() {
+  Future<void> _continue() async {
     final picked = _selected
         .map((i) => kOnboardingGoals[i])
         .toList(growable: false);
-    Navigator.pushNamed(
-      context,
-      '/register',
-      arguments: {'onboardingGoals': picked},
+    await _markGoalsCompleted(picked);
+    if (!mounted) return;
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      '/dashboard',
+      (route) => false,
     );
   }
 
-  void _skip() {
-    Navigator.pushNamed(
-      context,
-      '/register',
-      arguments: const {'onboardingGoals': <String>[]},
+  Future<void> _skip() async {
+    await _markGoalsCompleted(const <String>[]);
+    if (!mounted) return;
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      '/dashboard',
+      (route) => false,
     );
+  }
+
+  Future<void> _markGoalsCompleted(List<String> picked) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(onboardingGoalsCompletedKey, true);
+    await prefs.setStringList(onboardingGoalsPickedKey, picked);
   }
 
   @override

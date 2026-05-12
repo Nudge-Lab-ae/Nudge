@@ -71,23 +71,11 @@ class WelcomeScreen extends StatelessWidget {
 
                         const Spacer(),
 
-                        // Logo — no background, just the image with a glow
+                        // Logo — flat, no purple glow halo.
                         Center(
-                          child: Container(
+                          child: SizedBox(
                             width: size.width * 0.62,
                             height: size.width * 0.62,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(36),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.lightPrimary.withOpacity(
-                                      isDark ? 0.28 : 0.16),
-                                  blurRadius: 56,
-                                  spreadRadius: 6,
-                                  offset: const Offset(0, 10),
-                                ),
-                              ],
-                            ),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(36),
                               child: Image.asset(
@@ -141,14 +129,17 @@ class WelcomeScreen extends StatelessWidget {
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 34, fontWeight: FontWeight.w800,
                             color: textP, height: 1.1, letterSpacing: -0.5)),
-                        // Second line with accent — solid primary so the
-                        // banned purple/blue gradient doesn't appear here.
+                        // Second line — italic serif-style accent in the
+                        // same near-black palette as the wordmark, so it
+                        // reads as emphasis without using the banned
+                        // purple/blue gradient.
                         Text('nourished.',
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 34, fontWeight: FontWeight.w800,
+                            fontStyle: FontStyle.italic,
                             color: isDark
-                                ? AppColors.darkPrimary
-                                : AppColors.lightPrimary,
+                                ? const Color(0xFFE7E1DE)
+                                : const Color(0xFF1A1A1A),
                             height: 1.1,
                             letterSpacing: -0.5)),
                         const SizedBox(height: 14),
@@ -162,10 +153,12 @@ class WelcomeScreen extends StatelessWidget {
 
                         const Spacer(),
 
-                        // Get Started button — routes through the onboarding
-                        // goals step before account creation.
+                        // Get Started — straight to account creation.
+                        // Goals are now shown AFTER complete-profile (per
+                        // user redirect), so welcome no longer side-routes
+                        // through onboarding here.
                         GestureDetector(
-                          onTap: () => Navigator.pushNamed(context, '/onboarding/goals'),
+                          onTap: () => Navigator.pushNamed(context, '/register'),
                           child: Container(
                             width: double.infinity, height: 56,
                             decoration: BoxDecoration(

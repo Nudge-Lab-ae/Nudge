@@ -20,6 +20,7 @@ import 'package:nudge/screens/feedback/feedback_forum_screen.dart';
 import 'package:nudge/screens/splash_screen.dart';
 import 'package:nudge/screens/walkthrough/walkthrough_screen.dart';
 import 'package:nudge/screens/onboarding/onboarding_goals_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/services/message_service.dart';
 import 'package:nudge/services/notification_service.dart';
@@ -899,6 +900,9 @@ class _AuthWrapperState extends State<AuthWrapper> {
         if (decision == null || !decision.profileCompleted) {
           return const CompleteProfileScreen();
         }
+        if (!decision.goalsCompleted) {
+          return const OnboardingGoalsScreen();
+        }
         return const DashboardScreen();
       },
     );
@@ -907,8 +911,11 @@ class _AuthWrapperState extends State<AuthWrapper> {
   Future<_AuthRouteDecision> _resolveAuthRoute(String userId) async {
     final apiService = ApiService();
     final userData = await apiService.getUser();
+    final prefs = await SharedPreferences.getInstance();
+    final goalsDone = prefs.getBool(onboardingGoalsCompletedKey) ?? false;
     return _AuthRouteDecision(
       profileCompleted: userData.profileCompleted,
+      goalsCompleted: goalsDone,
     );
   }
 
@@ -940,7 +947,9 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
 class _AuthRouteDecision {
   final bool profileCompleted;
+  final bool goalsCompleted;
   const _AuthRouteDecision({
     required this.profileCompleted,
+    required this.goalsCompleted,
   });
 }

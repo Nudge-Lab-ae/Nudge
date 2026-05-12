@@ -154,7 +154,10 @@ class _TopMessageWidgetState extends State<TopMessageWidget>
   @override
   Widget build(BuildContext context) {
     final statusBarHeight = MediaQuery.of(context).padding.top;
-    
+
+    // Default style banners now grow to fit the message instead of
+    // clipping at 80 / 120 px. Custom-content callers still honour the
+    // explicit `height` they pass in.
     return Positioned(
       top: 0,
       left: 0,
@@ -164,13 +167,15 @@ class _TopMessageWidgetState extends State<TopMessageWidget>
         child: Material(
           color: Colors.transparent,
           child: Container(
-            height: widget.height !=null?widget.height:widget.message!=null && widget.message!.length>100?120:80,
             width: double.infinity,
+            constraints: BoxConstraints(
+              minHeight: widget.height ?? (statusBarHeight + 64),
+            ),
             padding: EdgeInsets.only(top: statusBarHeight),
             color: widget.backgroundColor,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: widget.useDefaultContent 
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              child: widget.useDefaultContent
                   ? _buildDefaultContent()
                   : widget.customContent!,
             ),
