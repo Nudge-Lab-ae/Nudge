@@ -99,10 +99,12 @@ class _NudgeWordmarkPill extends StatelessWidget {
         border: Border.all(color: scheme.outlineVariant.withOpacity(0.2)),
       ),
       child: ShaderMask(
-        shaderCallback: (bounds) => LinearGradient(
-          colors: [scheme.primary, scheme.secondary],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
+        shaderCallback: (bounds) => const LinearGradient(
+          // Near-black logo gradient per Stitch mockups
+          // (`linear-gradient(to top, #1a1a1a, #666666)`).
+          colors: [Color(0xFF1A1A1A), Color(0xFF666666)],
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
         ).createShader(bounds),
         child: Text(
           'NUDGE',

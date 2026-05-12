@@ -66,36 +66,60 @@ class _WalkthroughScreenState extends State<WalkthroughScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final scheme = Theme.of(context).colorScheme;
-
-    return Scaffold(
-      backgroundColor: scheme.surface,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _WalkthroughHeader(onClose: _finish, isDark: isDark),
-            Expanded(
-              child: PageView(
-                controller: _controller,
-                onPageChanged: (i) => setState(() => _index = i),
+    // Walkthrough is always rendered in the light "Illuminated Scholar"
+    // palette regardless of system theme — the Stitch mockups for these
+    // screens are all `html class="light"`, and user feedback was that
+    // the dark version felt too murky.
+    return Theme(
+      data: AppTheme.lightTheme(),
+      child: Builder(
+        builder: (themedContext) {
+          final scheme = Theme.of(themedContext).colorScheme;
+          return Scaffold(
+            backgroundColor: const Color(0xFFFAF9F6),
+            body: SafeArea(
+              child: Column(
                 children: [
-                  const WelcomePage(),
-                  const ThreeCirclesPage(),
-                  const StarSizesPage(),
-                  const MovementPage(),
-                  HowToUsePage(onFinish: _finish),
+                  _WalkthroughHeader(onClose: _finish, isDark: false),
+                  Expanded(
+                    child: PageView(
+                      controller: _controller,
+                      onPageChanged: (i) => setState(() => _index = i),
+                      children: const [
+                        WelcomePage(),
+                        ThreeCirclesPage(),
+                        StarSizesPage(),
+                        MovementPage(),
+                        HowToUsePage(),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: scheme.surfaceContainerLowest.withOpacity(0.92),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(32),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.06),
+                          blurRadius: 24,
+                          offset: const Offset(0, -8),
+                        ),
+                      ],
+                    ),
+                    child: _WalkthroughFooter(
+                      index: _index,
+                      total: _pageCount,
+                      onBack: _onBack,
+                      onNext: _onNext,
+                    ),
+                  ),
                 ],
               ),
             ),
-            _WalkthroughFooter(
-              index: _index,
-              total: _pageCount,
-              onBack: _onBack,
-              onNext: _onNext,
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

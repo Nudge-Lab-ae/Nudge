@@ -1,6 +1,7 @@
 // lib/screens/walkthrough/pages/how_to_use_page.dart
 // Page 5 — How to Use. Mirrors walkthrough_how_to_use_final.
-// Final page: 3 instruction rows + "Got It!" CTA that completes the walkthrough.
+// Final page: 3 instruction rows. Completion is via the round
+// check button in the shared footer (no redundant in-page CTA).
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,8 +9,7 @@ import 'package:nudge/theme/app_theme.dart';
 import 'package:nudge/screens/walkthrough/walkthrough_screen.dart';
 
 class HowToUsePage extends StatefulWidget {
-  final VoidCallback onFinish;
-  const HowToUsePage({super.key, required this.onFinish});
+  const HowToUsePage({super.key});
 
   @override
   State<HowToUsePage> createState() => _HowToUsePageState();
@@ -124,27 +124,6 @@ class _HowToUsePageState extends State<HowToUsePage>
                 accent: scheme.tertiary,
                 text: 'The system updates automatically',
                 scheme: scheme,
-              ),
-              const SizedBox(height: 28),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: widget.onFinish,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    backgroundColor: scheme.primary,
-                    foregroundColor: scheme.onPrimary,
-                    elevation: 6,
-                    shadowColor: scheme.primary.withOpacity(0.3),
-                    shape: const StadiumBorder(),
-                    textStyle: GoogleFonts.plusJakartaSans(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.2,
-                    ),
-                  ),
-                  child: const Text('Got It!'),
-                ),
               ),
             ],
           ),

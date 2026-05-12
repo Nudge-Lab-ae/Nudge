@@ -196,47 +196,50 @@ class _RingLegend extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _LegendCard(
-            label: 'Inner',
-            sub: 'Daily Vibes',
-            color: scheme.primary,
-            scheme: scheme,
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: _LegendCard(
+              label: 'Inner',
+              subLines: const ['Daily', 'Vibes'],
+              color: scheme.primary,
+              scheme: scheme,
+            ),
           ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _LegendCard(
-            label: 'Middle',
-            sub: 'Casual Chat',
-            color: scheme.secondary,
-            scheme: scheme,
+          const SizedBox(width: 12),
+          Expanded(
+            child: _LegendCard(
+              label: 'Middle',
+              subLines: const ['Casual', 'Chat'],
+              color: scheme.secondary,
+              scheme: scheme,
+            ),
           ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _LegendCard(
-            label: 'Outer',
-            sub: 'Networking',
-            color: scheme.tertiary,
-            scheme: scheme,
+          const SizedBox(width: 12),
+          Expanded(
+            child: _LegendCard(
+              label: 'Outer',
+              subLines: const ['Networking'],
+              color: scheme.tertiary,
+              scheme: scheme,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
 
 class _LegendCard extends StatelessWidget {
   final String label;
-  final String sub;
+  final List<String> subLines;
   final Color color;
   final ColorScheme scheme;
   const _LegendCard({
     required this.label,
-    required this.sub,
+    required this.subLines,
     required this.color,
     required this.scheme,
   });
@@ -244,7 +247,7 @@ class _LegendCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 20),
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(Radii.md),
@@ -258,26 +261,31 @@ class _LegendCard extends StatelessWidget {
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
             label.toUpperCase(),
             style: GoogleFonts.plusJakartaSans(
-              fontSize: 11,
+              fontSize: 12,
               fontWeight: FontWeight.w800,
               color: color,
-              letterSpacing: 1.2,
+              letterSpacing: 1.4,
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            sub,
-            style: GoogleFonts.beVietnamPro(
-              fontSize: 10.5,
-              fontWeight: FontWeight.w500,
-              color: scheme.onSurfaceVariant,
+          const SizedBox(height: 10),
+          for (final line in subLines) ...[
+            Text(
+              line,
+              style: GoogleFonts.beVietnamPro(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: scheme.onSurfaceVariant,
+                height: 1.25,
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
+          ],
         ],
       ),
     );

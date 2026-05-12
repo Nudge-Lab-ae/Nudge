@@ -40,8 +40,6 @@ class _MovementPageState extends State<MovementPage>
     return WalkthroughBody(
       children: [
         const SizedBox(height: 24),
-        _NudgeWordmarkGradient(scheme: scheme),
-        const SizedBox(height: 28),
         _ProgressVisual(
           scheme: scheme,
           pulseController: _pulseController,
@@ -70,35 +68,6 @@ class _MovementPageState extends State<MovementPage>
         ),
         const SizedBox(height: 24),
       ],
-    );
-  }
-}
-
-class _NudgeWordmarkGradient extends StatelessWidget {
-  final ColorScheme scheme;
-  const _NudgeWordmarkGradient({required this.scheme});
-
-  @override
-  Widget build(BuildContext context) {
-    return ShaderMask(
-      shaderCallback: (bounds) => LinearGradient(
-        colors: [
-          scheme.primary,
-          scheme.primaryContainer,
-          scheme.secondary,
-        ],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ).createShader(bounds),
-      child: Text(
-        'NUDGE',
-        style: GoogleFonts.plusJakartaSans(
-          fontSize: 56,
-          fontWeight: FontWeight.w900,
-          color: Colors.white,
-          letterSpacing: -2.5,
-        ),
-      ),
     );
   }
 }

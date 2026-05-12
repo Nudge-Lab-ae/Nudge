@@ -99,15 +99,17 @@ class WelcomeScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 20),
 
-                        // "NUDGE" wordmark — below the logo
+                        // "NUDGE" wordmark — near-black gradient per
+                        // Stitch mockups (`logo-gradient` class). Inverted
+                        // for legibility in dark mode.
                         Center(
                           child: ShaderMask(
                             shaderCallback: (bounds) => LinearGradient(
                               colors: isDark
-                                  ? AppColors.primaryGradientDark
-                                  : AppColors.primaryGradientLight,
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
+                                  ? const [Color(0xFFE7E1DE), Color(0xFF968DA1)]
+                                  : const [Color(0xFF1A1A1A), Color(0xFF666666)],
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
                             ).createShader(bounds),
                             child: Text('NUDGE',
                               style: GoogleFonts.plusJakartaSans(
@@ -139,21 +141,16 @@ class WelcomeScreen extends StatelessWidget {
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 34, fontWeight: FontWeight.w800,
                             color: textP, height: 1.1, letterSpacing: -0.5)),
-                        // Second line with accent
-                        ShaderMask(
-                          shaderCallback: (bounds) => LinearGradient(
-                            colors: isDark
-                                ? AppColors.primaryGradientDark
-                                : AppColors.primaryGradientLight,
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                          ).createShader(bounds),
-                          child: Text('nourished.',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 34, fontWeight: FontWeight.w800,
-                              color: Colors.white, height: 1.1,
-                              letterSpacing: -0.5)),
-                        ),
+                        // Second line with accent — solid primary so the
+                        // banned purple/blue gradient doesn't appear here.
+                        Text('nourished.',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 34, fontWeight: FontWeight.w800,
+                            color: isDark
+                                ? AppColors.darkPrimary
+                                : AppColors.lightPrimary,
+                            height: 1.1,
+                            letterSpacing: -0.5)),
                         const SizedBox(height: 14),
 
                         Text(
@@ -165,9 +162,10 @@ class WelcomeScreen extends StatelessWidget {
 
                         const Spacer(),
 
-                        // Get Started button
+                        // Get Started button — routes through the onboarding
+                        // goals step before account creation.
                         GestureDetector(
-                          onTap: () => Navigator.pushNamed(context, '/register'),
+                          onTap: () => Navigator.pushNamed(context, '/onboarding/goals'),
                           child: Container(
                             width: double.infinity, height: 56,
                             decoration: BoxDecoration(
