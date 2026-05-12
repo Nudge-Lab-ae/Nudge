@@ -37,15 +37,19 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     
     return Scaffold(
       appBar: AppBar(
-        title: GradientText( text: 'NUDGE', style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
-                gradient: LinearGradient(
-                  colors: [
-                    AppColors.lightSecondary, // #5CDEE5
-                    AppColors.lightPrimary, // #2D85F6
-                    Color(0xFF7A4BFF), // #7A4BFF
-                  ], stops: [0.0, 0.6, 1.0], begin: Alignment.topCenter, end: Alignment.bottomCenter,
-            ),
+        title: GradientText(
+          text: 'NUDGE',
+          style: GoogleFonts.plusJakartaSans(
+              fontSize: 25, fontWeight: FontWeight.w800),
+          // Near-black wordmark per Stitch mockups (no banned gradient).
+          gradient: LinearGradient(
+            colors: Theme.of(context).brightness == Brightness.dark
+                ? const [Color(0xFFE7E1DE), Color(0xFF968DA1)]
+                : const [Color(0xFF1A1A1A), Color(0xFF666666)],
+            begin: Alignment.bottomCenter,
+            end: Alignment.topCenter,
           ),
+        ),
         // Text('NUDGE', style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: AppColors.lightPrimary, fontFamily: 'RobotoMono')),
         centerTitle: true,
         surfaceTintColor: Colors.transparent,

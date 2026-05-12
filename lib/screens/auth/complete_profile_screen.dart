@@ -2523,11 +2523,16 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> with Sing
             appBar: AppBar(
                   title: GradientText(
                     text: 'NUDGE',
-                    style: TextStyle(fontSize: 25, fontFamily: 'RobotoMono', fontWeight: FontWeight.bold),
-                    gradient: const LinearGradient(
-                      colors: [AppColors.lightSecondary, AppColors.lightPrimary],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
+                    style: GoogleFonts.plusJakartaSans(
+                        fontSize: 25, fontWeight: FontWeight.w800),
+                    // Near-black wordmark per Stitch mockups
+                    // (no purple/blue gradient anywhere in the app).
+                    gradient: LinearGradient(
+                      colors: themeProvider.isDarkMode
+                          ? const [Color(0xFFE7E1DE), Color(0xFF968DA1)]
+                          : const [Color(0xFF1A1A1A), Color(0xFF666666)],
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
                     ),
                   ),
                   centerTitle: true,
