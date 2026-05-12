@@ -97,6 +97,11 @@ class _SocialUniverseImmersiveScreenState
         initialData: const [],
         child: Consumer<List<Contact>>(
           builder: (context, contacts, _) {
+            // Filter to contacts with valid ring placement so we don't
+            // pile unplaced stars at the dead-centre point.
+            final placedContacts = contacts
+                .where((c) => c.computedRing.isNotEmpty)
+                .toList(growable: false);
             return Stack(
               fit: StackFit.expand,
               children: [
@@ -148,8 +153,9 @@ class _SocialUniverseImmersiveScreenState
                             );
                           },
                           child: _UniverseCanvas(
-                            contacts: contacts,
+                            contacts: placedContacts,
                             pulseController: _pulseController,
+                            orbitController: _orbitController,
                             innerDiameter: _innerRingDiameter,
                             middleDiameter: _middleRingDiameter,
                             outerDiameter: _outerRingDiameter,
@@ -291,6 +297,7 @@ class _StarfieldPainter extends CustomPainter {
 class _UniverseCanvas extends StatelessWidget {
   final List<Contact> contacts;
   final AnimationController pulseController;
+  final AnimationController orbitController;
   final double innerDiameter;
   final double middleDiameter;
   final double outerDiameter;
@@ -306,6 +313,7 @@ class _UniverseCanvas extends StatelessWidget {
   const _UniverseCanvas({
     required this.contacts,
     required this.pulseController,
+    required this.orbitController,
     required this.innerDiameter,
     required this.middleDiameter,
     required this.outerDiameter,
@@ -418,10 +426,10 @@ class _UniverseCanvas extends StatelessWidget {
       final dotX = cx + radius * math.cos(angleRad);
       final dotY = cy + radius * math.sin(angleRad);
 
-      // VIPs get a slightly larger dot. CDI nudges size within band.
-      final cdiBoost = ((c.cdi - 50.0) / 50.0).clamp(-1.0, 1.0);
-      final baseSize = c.isVIP ? 12.0 : 9.0;
-      final size = baseSize + cdiBoost * 2.0;
+      // Size matters per Stitch "Star Sizes" walkthrough.
+      // Priority is the dominant signal (1 = largest, 5 = smallest);
+      // VIPs get a +2 boost; CDI modulates ±2 within the priority tier.
+      final size = _starSizeFor(c);
 
       yield Positioned(
         left: dotX - 56, // 112px label slot centered on the dot
@@ -434,12 +442,25 @@ class _UniverseCanvas extends StatelessWidget {
             color: color,
             size: size,
             pulseController: pulseController,
+            orbitController: orbitController,
             phaseSeed: i,
             onTap: () => onStarTap(c, ring),
           ),
         ),
       );
     }
+  }
+
+  /// Priority-driven base size with VIP boost and CDI modulation.
+  /// Mirrors the "Large / Medium / Small" walkthrough copy:
+  ///   priority 1 -> ~24px, 2 -> 20, 3 -> 16, 4 -> 12, 5 -> 8.
+  static double _starSizeFor(Contact c) {
+    final priority = c.priority.clamp(1, 5);
+    final base = 24.0 - (priority - 1) * 4.0;
+    final vipBoost = c.isVIP ? 2.0 : 0.0;
+    final cdiBoost =
+        (((c.cdi - 50.0) / 50.0).clamp(-1.0, 1.0)) * 2.0;
+    return (base + vipBoost + cdiBoost).clamp(6.0, 28.0);
   }
 }
 
@@ -536,6 +557,7 @@ class _StarMarker extends StatelessWidget {
   final Color color;
   final double size;
   final AnimationController pulseController;
+  final AnimationController orbitController;
   final int phaseSeed;
   final VoidCallback onTap;
 
@@ -545,6 +567,7 @@ class _StarMarker extends StatelessWidget {
     required this.color,
     required this.size,
     required this.pulseController,
+    required this.orbitController,
     required this.phaseSeed,
     required this.onTap,
   });
@@ -555,7 +578,21 @@ class _StarMarker extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: Column(
+      // Counter-rotate the whole marker by the inverse of the orbit
+      // angle so the dot and name label stay visually upright while the
+      // parent canvas rotates. Position still moves along the orbit
+      // (the rotation is applied at the parent's centre of rotation,
+      // which translates this widget's origin around the canvas).
+      child: AnimatedBuilder(
+        animation: orbitController,
+        builder: (context, child) {
+          final orbitAngle = orbitController.value * 2 * math.pi;
+          return Transform.rotate(
+            angle: -orbitAngle,
+            child: child,
+          );
+        },
+        child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           AnimatedBuilder(
@@ -632,6 +669,7 @@ class _StarMarker extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }
@@ -752,51 +790,51 @@ class _UniverseBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Pull the bottom-safe-area inset (home indicator on iOS) so the
+    // dark bar extends ALL the way to the screen bottom and the inset
+    // is filled with the dark colour rather than leaving a light strip.
+    final bottomInset = MediaQuery.of(context).padding.bottom;
     return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1816).withOpacity(0.92),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+      decoration: const BoxDecoration(
+        // Fully opaque to remove any "feels light" bleed-through.
+        color: Color(0xFF1A1816),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF751FE7).withOpacity(0.06),
+            color: Color(0x10751FE7),
             blurRadius: 40,
-            offset: const Offset(0, -10),
+            offset: Offset(0, -10),
           ),
         ],
       ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _NavItem(
-                icon: Icons.auto_awesome_rounded,
-                label: 'UNIVERSE',
-                active: true,
-              ),
-              _NavItem(
-                icon: Icons.notifications_active_rounded,
-                label: 'NUDGES',
-                active: false,
-                onTap: onTapNudges,
-              ),
-              _NavItem(
-                icon: Icons.group_rounded,
-                label: 'GROUPS',
-                active: false,
-                onTap: onTapGroups,
-              ),
-              _NavItem(
-                icon: Icons.person_search_rounded,
-                label: 'CONTACTS',
-                active: false,
-                onTap: onTapContacts,
-              ),
-            ],
+      padding: EdgeInsets.fromLTRB(16, 14, 16, 14 + bottomInset),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _NavItem(
+            icon: Icons.auto_awesome_rounded,
+            label: 'UNIVERSE',
+            active: true,
           ),
-        ),
+          _NavItem(
+            icon: Icons.notifications_active_rounded,
+            label: 'NUDGES',
+            active: false,
+            onTap: onTapNudges,
+          ),
+          _NavItem(
+            icon: Icons.group_rounded,
+            label: 'GROUPS',
+            active: false,
+            onTap: onTapGroups,
+          ),
+          _NavItem(
+            icon: Icons.person_search_rounded,
+            label: 'CONTACTS',
+            active: false,
+            onTap: onTapContacts,
+          ),
+        ],
       ),
     );
   }
@@ -858,44 +896,28 @@ class _UniverseFab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // White circular pill with a solid purple N, matching the
+    // dashboard_consistent_titles pill button reference. No gradient
+    // on the N (logo-gradient rule), and no dark glass-card halo.
     return Material(
-      color: Colors.white.withOpacity(0.05),
+      color: Colors.white,
       shape: const CircleBorder(),
+      elevation: 6,
+      shadowColor: const Color(0x55751FE7),
       child: InkWell(
         onTap: onTap,
         customBorder: const CircleBorder(),
-        child: Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: const Color(0xFFA775FF).withOpacity(0.55),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF751FE7).withOpacity(0.35),
-                blurRadius: 20,
-                spreadRadius: 1,
-              ),
-            ],
-          ),
+        child: SizedBox(
+          width: 48,
+          height: 48,
           child: Center(
-            child: ShaderMask(
-              shaderCallback: (bounds) => const LinearGradient(
-                colors: [Color(0xFFE7E1DE), Color(0xFFD4BBFF)],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ).createShader(bounds),
-              child: Text(
-                'N',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                  letterSpacing: -1.5,
-                ),
+            child: Text(
+              'N',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+                color: const Color(0xFF751FE7),
+                letterSpacing: -1.2,
               ),
             ),
           ),
