@@ -187,18 +187,17 @@ class StitchCard extends StatelessWidget {
     return Container(
       padding: padding,
       decoration: BoxDecoration(
+        // Cards are pure white (no border) per Stitch v4 spec.
+        // Dark theme keeps the darker surface tone.
         color: color ??
-            (isDark
-                ? scheme.surfaceContainerHigh
-                : const Color(0xFFFFFCF9)),
+            (isDark ? scheme.surfaceContainerHigh : Colors.white),
         borderRadius: BorderRadius.circular(Radii.lg),
-        border: border ??
-            Border.all(color: scheme.outlineVariant.withOpacity(0.15)),
+        border: border,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.30 : 0.06),
-            blurRadius: 30,
-            offset: const Offset(0, 14),
+            color: Colors.black.withOpacity(isDark ? 0.30 : 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
           ),
         ],
       ),

@@ -1810,14 +1810,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       decoration: BoxDecoration(
         color: isDark
             ? theme.colorScheme.surfaceContainerHigh
-            : const Color(0xFFFFFCF9),
+            : Colors.white,
         borderRadius: BorderRadius.circular(Radii.lg),
-        border: Border.all(color: theme.colorScheme.outlineVariant.withOpacity(0.15)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.30 : 0.06),
-            blurRadius: 30,
-            offset: const Offset(0, 14),
+            color: Colors.black.withOpacity(isDark ? 0.30 : 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -2022,14 +2021,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       decoration: BoxDecoration(
         color: isDark
             ? theme.colorScheme.surfaceContainerHigh
-            : const Color(0xFFFFFCF9),
+            : Colors.white,
         borderRadius: BorderRadius.circular(Radii.lg),
-        border: Border.all(color: theme.colorScheme.outlineVariant.withOpacity(0.15)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.30 : 0.06),
-            blurRadius: 30,
-            offset: const Offset(0, 14),
+            color: Colors.black.withOpacity(isDark ? 0.30 : 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
