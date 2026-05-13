@@ -303,11 +303,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
           ),
-          // Floating Navigation Bar
-         Positioned(
-            bottom: 20,
-            left: 16,
-            right: 16,
+          // Bottom Navigation Bar (full-width, anchored to bottom; dark
+          // variant on Universe per social_universe_brighter_glow_2).
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
             child: StreamBuilder<List<Nudge>>(
               stream: NudgeService().getNudgesStream(user.uid),
               builder: (context, snap) {
@@ -337,8 +338,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
           
           Consumer<FeedbackProvider>(
             builder: (context, feedbackProvider, child) {
+              // Lifted to clear the new full-width nav bar (Section 4).
+              // Mockup uses bottom-32 (128px); 116 gives a tighter sit
+              // against the nav with safe-area inset accounted for.
               return Positioned(
-                bottom: 70,
+                bottom: 116,
                 right: 20,
                 child: FeedbackFloatingButton(
                   currentSection: getCurrentSection(),
@@ -737,142 +741,85 @@ class _DashboardScreenState extends State<DashboardScreen> {
       [List<Nudge>? nudgeOverride]) {
     final overdueNudges = _getOverdueNudges(nudgeOverride ?? allNudges);
     final hasOverdue = overdueNudges.isNotEmpty;
-    final isDark = themeProvider.isDarkMode;
+    // Dark variant only on Universe tab (per social_universe_brighter_glow_2);
+    // every other tab gets the light variant per contacts_final_alignment.
+    final isUniverse = _currentIndex == 1;
+    final bottomInset = MediaQuery.of(context).padding.bottom;
 
     return Container(
-      height: 72,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(36),
-        color: isDark
-            ? AppColors.darkSurfaceContainerLow.withOpacity(0.92)
-            : Colors.white.withOpacity(0.96),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        color: isUniverse
+            ? const Color(0xE61A1816)
+            : Colors.white.withOpacity(0.92),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.35 : 0.12),
-            blurRadius: 24,
-            spreadRadius: 0,
-            offset: const Offset(0, 4),
+            color: isUniverse
+                ? const Color(0x10751FE7)
+                : Colors.black.withOpacity(0.08),
+            blurRadius: 40,
+            offset: const Offset(0, -10),
           ),
         ],
       ),
+      padding: EdgeInsets.fromLTRB(16, 12, 16, 12 + bottomInset),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          // Social Universe
           _buildNavItem(
             index: 1,
             label: 'UNIVERSE',
-            icon: SvgPicture.asset(
-              'assets/navbar-icons/nav_universe.svg',
-              width: 24,
-              height: 24,
-              colorFilter: ColorFilter.mode(
-                _currentIndex == 1
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.outline,
-                BlendMode.srcIn,
-              ),
-            ),
+            iconAsset: 'assets/navbar-icons/nav_universe.svg',
+            isUniverse: isUniverse,
             themeProvider: themeProvider,
           ),
-
-          // Nudges
           _buildNavItem(
             index: 2,
             label: 'NUDGES',
-            icon: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                SvgPicture.asset(
-                  'assets/navbar-icons/nav_nudges.svg',
-                  width: 24,
-                  height: 24,
-                  colorFilter: ColorFilter.mode(
-                    _currentIndex == 2
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.outline,
-                    BlendMode.srcIn,
-                  ),
-                ),
-                if (hasOverdue)
-                  Positioned(
-                    right: -2,
-                    top: -2,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.error,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: isDark ? Colors.black : Colors.white,
-                            blurRadius: 1,
-                            spreadRadius: 1,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+            iconAsset: 'assets/navbar-icons/nav_nudges.svg',
+            isUniverse: isUniverse,
             themeProvider: themeProvider,
+            badge: hasOverdue,
           ),
-
-          // Groups
           _buildNavItem(
             index: 3,
             label: 'GROUPS',
-            icon: SvgPicture.asset(
-              'assets/navbar-icons/nav_groups.svg',
-              width: 24,
-              height: 24,
-              colorFilter: ColorFilter.mode(
-                _currentIndex == 3
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.outline,
-                BlendMode.srcIn,
-              ),
-            ),
+            iconAsset: 'assets/navbar-icons/nav_groups.svg',
+            isUniverse: isUniverse,
             themeProvider: themeProvider,
           ),
-
-          // Contacts
           _buildNavItem(
             index: 4,
             label: 'CONTACTS',
-            icon: SvgPicture.asset(
-              'assets/navbar-icons/nav_contacts.svg',
-              width: 24,
-              height: 24,
-              colorFilter: ColorFilter.mode(
-                _currentIndex == 4
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.outline,
-                BlendMode.srcIn,
-              ),
-            ),
+            iconAsset: 'assets/navbar-icons/nav_contacts.svg',
+            isUniverse: isUniverse,
             themeProvider: themeProvider,
           ),
         ],
       ),
     );
   }
-  
+
   Widget _buildNavItem({
     required int index,
-    required Widget icon,
+    required String iconAsset,
     required String label,
     required ThemeProvider themeProvider,
+    required bool isUniverse,
+    bool badge = false,
   }) {
     final isSelected = _currentIndex == index;
     final isDark = themeProvider.isDarkMode;
-    final primary = Theme.of(context).colorScheme.primary;
-    final labelColor = isSelected
-        ? primary
-        : isDark
-            ? AppColors.darkOnSurfaceVariant
-            : AppColors.lightOnSurfaceVariant;
+    final scheme = Theme.of(context).colorScheme;
+    // Active/inactive colors per Stitch v4 — light variant uses brand primary,
+    // dark variant uses the muted-purple/stone-500 palette from
+    // social_universe_brighter_glow_2.
+    final activeFg = isUniverse ? const Color(0xFFD1B3FF) : scheme.primary;
+    final inactiveFg = isUniverse ? const Color(0xFF6E6A66) : scheme.outline;
+    final fg = isSelected ? activeFg : inactiveFg;
+    final activeBg = isUniverse
+        ? const Color(0x33751FE7)
+        : scheme.primary.withOpacity(isDark ? 0.18 : 0.10);
 
     return GestureDetector(
       onTap: () {
@@ -888,23 +835,53 @@ class _DashboardScreenState extends State<DashboardScreen> {
         curve: Curves.easeInOut,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected
-              ? primary.withOpacity(isDark ? 0.18 : 0.10)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(40),
+          color: isSelected ? activeBg : Colors.transparent,
+          borderRadius: BorderRadius.circular(9999),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            icon,
-            const SizedBox(height: 3),
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                SvgPicture.asset(
+                  iconAsset,
+                  width: 22,
+                  height: 22,
+                  colorFilter: ColorFilter.mode(fg, BlendMode.srcIn),
+                ),
+                if (badge)
+                  Positioned(
+                    right: -2,
+                    top: -2,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.error,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: isUniverse
+                                ? const Color(0xFF1A1816)
+                                : (isDark ? Colors.black : Colors.white),
+                            blurRadius: 1,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 4),
             Text(
               label,
-              style: GoogleFonts.beVietnamPro(
-                fontSize: 9,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: labelColor,
-                letterSpacing: 0.4,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 10,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                color: fg,
+                letterSpacing: 1.2,
               ),
             ),
           ],

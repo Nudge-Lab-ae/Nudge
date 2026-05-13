@@ -199,41 +199,17 @@ class _SocialUniverseImmersiveScreenState
                   ),
                 ),
 
-                // Dark bottom nav per mockup (Universe active, Nudges,
-                // Groups, Contacts). Sits above the FAB.
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: _UniverseBottomNav(
-                    onTapNudges: () =>
-                        _navigateToTab(context, 2 /* notifications */),
-                    onTapGroups: () =>
-                        Navigator.pushReplacementNamed(context, '/groups'),
-                    onTapContacts: () =>
-                        Navigator.pushReplacementNamed(context, '/contacts'),
-                  ),
-                ),
-
-                // Note: the floating action button is provided by the
-                // dashboard wrapper (FeedbackFloatingButton). Universe no
-                // longer renders its own FAB — it created a duplicate "n"
-                // button under the main Nudge button and clicked to a
-                // dead black-screen Navigator.pop.
+                // Note: bottom nav and floating action button are both
+                // provided by the dashboard wrapper. The dashboard's nav
+                // detects the Universe tab and switches to its dark
+                // variant; the FAB does the same. Universe no longer
+                // renders its own — it created a duplicate "n" button and
+                // a duplicate nav stacked on top of the dashboard's.
               ],
             );
           },
         ),
       ),
-    );
-  }
-
-  void _navigateToTab(BuildContext context, int tab) {
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      '/dashboard',
-      (route) => false,
-      arguments: {'initialTab': tab},
     );
   }
 
@@ -777,117 +753,6 @@ class _InfoButton extends StatelessWidget {
 // Bottom navigation bar (dark mode per Stitch sample)
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _UniverseBottomNav extends StatelessWidget {
-  final VoidCallback onTapNudges;
-  final VoidCallback onTapGroups;
-  final VoidCallback onTapContacts;
-  const _UniverseBottomNav({
-    required this.onTapNudges,
-    required this.onTapGroups,
-    required this.onTapContacts,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    // Pull the bottom-safe-area inset (home indicator on iOS) so the
-    // dark bar extends ALL the way to the screen bottom and the inset
-    // is filled with the dark colour rather than leaving a light strip.
-    final bottomInset = MediaQuery.of(context).padding.bottom;
-    return Container(
-      decoration: const BoxDecoration(
-        // Fully opaque to remove any "feels light" bleed-through.
-        color: Color(0xFF1A1816),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x10751FE7),
-            blurRadius: 40,
-            offset: Offset(0, -10),
-          ),
-        ],
-      ),
-      padding: EdgeInsets.fromLTRB(16, 14, 16, 14 + bottomInset),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _NavItem(
-            icon: Icons.auto_awesome_rounded,
-            label: 'UNIVERSE',
-            active: true,
-          ),
-          _NavItem(
-            icon: Icons.notifications_active_rounded,
-            label: 'NUDGES',
-            active: false,
-            onTap: onTapNudges,
-          ),
-          _NavItem(
-            icon: Icons.group_rounded,
-            label: 'GROUPS',
-            active: false,
-            onTap: onTapGroups,
-          ),
-          _NavItem(
-            icon: Icons.person_search_rounded,
-            label: 'CONTACTS',
-            active: false,
-            onTap: onTapContacts,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool active;
-  final VoidCallback? onTap;
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    required this.active,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    const Color activeBg = Color(0x33751FE7);
-    const Color activeFg = Color(0xFFD1B3FF);
-    const Color inactiveFg = Color(0xFF6E6A66);
-    final fg = active ? activeFg : inactiveFg;
-
-    return Material(
-      color: active ? activeBg : Colors.transparent,
-      borderRadius: BorderRadius.circular(9999),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(9999),
-        child: Padding(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 22, color: fg),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.5,
-                  color: fg,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// _UniverseFab removed — dashboard's FeedbackFloatingButton is the sole
-// action button on every tab.
+// _UniverseBottomNav and _UniverseFab removed — the dashboard wrapper
+// renders both, and switches to dark variants automatically when the
+// Universe tab is active.
