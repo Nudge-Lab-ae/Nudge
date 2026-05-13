@@ -12,6 +12,7 @@ import 'package:nudge/providers/admin_provider.dart';
 import 'package:nudge/providers/theme_provider.dart';
 import 'package:nudge/screens/admin/feedback_management_screen.dart';
 import 'package:nudge/screens/admin/ai_testing_screen.dart';
+import 'package:nudge/screens/feedback/feedback_bottom_sheet.dart';
 import 'package:nudge/screens/feedback/feedback_forum_screen.dart';
 import 'package:nudge/services/auth_service.dart';
 import 'package:nudge/services/message_service.dart';
@@ -1310,99 +1311,101 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildFeedbackForumSection(ThemeProvider themeProvider) {
-    // final theme = Theme.of(context);
-    
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 30),
-        Text(
-          'FEATURE REQUESTS',
-          style: TextStyle(
-            fontSize: 16,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 15),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: themeProvider.isDarkMode ? Colors.blue.shade900.withOpacity(0.3) : Colors.blue.shade50,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: themeProvider.isDarkMode ? Colors.blue.shade800 : Colors.blue.shade100,
+  // Single-row settings tile (white card, icon + label + chevron) matching
+  // the mockup's "Submit Feedback / View Feedback Forum / Log Out" pattern.
+  Widget _buildSettingsRow({
+    required ThemeProvider themeProvider,
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    Color? iconBg,
+    Color? iconFg,
+    required VoidCallback onTap,
+  }) {
+    final isDark = themeProvider.isDarkMode;
+    final cardBg = isDark ? AppColors.darkSurfaceContainerHigh : Colors.white;
+    final textP = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
+    final textS = isDark ? AppColors.darkOnSurfaceVariant : AppColors.lightOnSurfaceVariant;
+    const brandPurple = Color(0xFF751FE7);
+    return GestureDetector(
+      onTap: () {
+        _dismissKeyboard();
+        onTap();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          color: cardBg,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.15 : 0.05),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
             ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: iconBg ?? brandPurple.withOpacity(0.10),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, size: 18, color: iconFg ?? brandPurple),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.auto_awesome_outlined,
-                    color: themeProvider.isDarkMode ? Colors.blue.shade300 : Theme.of(context).colorScheme.secondary,
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    'Feature Requests Forum',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
+                  Text(title,
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: textP)),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(subtitle,
+                        style: TextStyle(fontSize: 12, color: textS)),
+                  ],
                 ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Browse, upvote, and track feature requests from other users. See what\'s being planned and vote for your favorite ideas!',
-                style: TextStyle(
-                  color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.outline,
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: () {
-                    _dismissKeyboard();
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const FeedbackForumScreen(),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.secondary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.forum_outlined, color: !themeProvider.isDarkMode ? Colors.white:Color(0xff555555),),
-                      const SizedBox(width: 8),
-                      Text(
-                        'VIEW FEATURE REQUESTS',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: !themeProvider.isDarkMode ? Colors.white:Color(0xff555555),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+            Icon(Icons.chevron_right_rounded, color: textS, size: 20),
+          ],
         ),
-      ],
+      ),
+    );
+  }
+
+  Widget _buildFeedbackForumSection(ThemeProvider themeProvider) {
+    return _buildSettingsRow(
+      themeProvider: themeProvider,
+      icon: Icons.forum_outlined,
+      title: 'View Feedback Forum',
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const FeedbackForumScreen()),
+      ),
+    );
+  }
+
+  Widget _buildSubmitFeedbackRow(ThemeProvider themeProvider) {
+    return _buildSettingsRow(
+      themeProvider: themeProvider,
+      icon: Icons.send_rounded,
+      title: 'Submit Feedback',
+      onTap: () {
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (_) => const FeedbackBottomSheet(currentSection: 'settings'),
+        );
+      },
     );
   }
 
@@ -1467,9 +1470,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildSubscriptionCard(),
-                            const SizedBox(height: 30),
-                            
+                            // Subscription card dropped — no billing backend
+                            // wired up yet. Re-add when subscription logic
+                            // exists (see _buildSubscriptionCard above).
+
                             Text(
                               'GENERAL',
                               style: TextStyle(
@@ -1673,23 +1677,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                      // Log Out + Danger Zone (separated per new design)
+                      // Mockup row order: Submit Feedback / View Forum /
+                      // Log Out / Danger Zone. Privacy Policy stays just
+                      // above as a related external-link row.
                       const SizedBox(height: 30),
                       _buildPrivacyPolicyCard(themeProvider),
+                      const SizedBox(height: 12),
+                      _buildSubmitFeedbackRow(themeProvider),
+                      const SizedBox(height: 12),
+                      _buildFeedbackForumSection(themeProvider),
                       const SizedBox(height: 12),
                       _buildLogOutCard(authService, themeProvider),
                       const SizedBox(height: 16),
                       _buildDangerZoneCard(authService, themeProvider),
 
-                      const SizedBox(height: 30),
-
-                      // Feedback Forum Section
-                      _buildFeedbackForumSection(themeProvider),
-
-                      const SizedBox(height: 30),
-
-                      _buildFeedbackForm(themeProvider),
-                      
                       const SizedBox(height: 30),
                       
                       // Feedback Management Section (for admins)
