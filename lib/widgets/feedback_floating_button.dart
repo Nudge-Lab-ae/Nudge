@@ -56,6 +56,10 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
 
   late AnimationController _heartbeatController;
   late Animation<double> _heartbeatAnimation;
+  // Heartbeat plays a fixed number of cycles on first render, then stays
+  // still — perpetual pulse was distracting on every screen.
+  static const int _heartbeatMaxCycles = 2;
+  int _heartbeatCycles = 0;
 
   @override
   void initState() {
@@ -91,9 +95,18 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
     ]).animate(
         CurvedAnimation(parent: _heartbeatController, curve: Curves.easeInOut));
 
-    _heartbeatController.repeat();
+    _heartbeatController.addStatusListener(_onHeartbeatStatus);
+    _heartbeatController.forward();
 
     widget.controller?.registerCloseCallback(closeMenuExternally);
+  }
+
+  void _onHeartbeatStatus(AnimationStatus status) {
+    if (status != AnimationStatus.completed) return;
+    _heartbeatCycles++;
+    if (_heartbeatCycles < _heartbeatMaxCycles) {
+      _heartbeatController.forward(from: 0.0);
+    }
   }
 
   // ── Menu state ────────────────────────────────────────────────────────────
@@ -103,10 +116,8 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
       _isExpanded = !_isExpanded;
       if (_isExpanded) {
         _menuController.forward();
-        _heartbeatController.stop();
       } else {
         _menuController.reverse();
-        _heartbeatController.repeat();
       }
       context.read<FeedbackProvider>().setFabMenuState(_isExpanded);
       widget.onMenuStateChanged?.call();
@@ -118,7 +129,6 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
       setState(() {
         _isExpanded = false;
         _menuController.reverse();
-        _heartbeatController.repeat();
       });
       context.read<FeedbackProvider>().setFabMenuState(false);
       widget.onMenuStateChanged?.call();
