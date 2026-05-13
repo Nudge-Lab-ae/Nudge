@@ -16,6 +16,7 @@ import 'package:nudge/screens/feedback/feedback_forum_screen.dart';
 import 'package:nudge/services/auth_service.dart';
 import 'package:nudge/services/message_service.dart';
 import 'package:nudge/widgets/screen_tracker.dart';
+import 'package:nudge/widgets/stitch_top_bar.dart';
 import 'package:provider/provider.dart';
 import '../../services/api_service.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -1423,37 +1424,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
       onTap: _dismissKeyboard,
       behavior: HitTestBehavior.translucent,
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            'Adjust Settings',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-          centerTitle: true,
-          iconTheme: IconThemeData(color: theme.colorScheme.primary),
-          backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
-          surfaceTintColor: Colors.transparent,
-        ),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: Stack(
           children: [
-            _isCropping 
+            _isCropping
               ? _buildProfilePictureSection()
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
+              : SafeArea(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.only(bottom: 40),
                   keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildProfilePictureSection(),
-                      
-                      // Theme Toggle Section
-                      _buildThemeToggleSection(),
-                      const SizedBox(height: 30),
-                      
-                      Form(
+                      StitchTopBar(
+                        showBack: true,
+                        avatarUrl: authService.currentUser?.photoURL,
+                      ),
+                      const StitchScreenTitle(
+                        title: 'Settings',
+                        subtitle: 'Manage your account and app preferences.',
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: _buildProfilePictureSection(),
+                      ),
+
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildThemeToggleSection(),
+                            const SizedBox(height: 30),
+                          ],
+                        ),
+                      ),
+
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Form(
                         key: _formKey,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1657,7 +1666,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ],
                         ),
                       ),
-                      
+                      ),
+
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                       // Log Out + Danger Zone (separated per new design)
                       const SizedBox(height: 30),
                       _buildPrivacyPolicyCard(themeProvider),
@@ -1665,12 +1680,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       _buildLogOutCard(authService, themeProvider),
                       const SizedBox(height: 16),
                       _buildDangerZoneCard(authService, themeProvider),
-                      
+
                       const SizedBox(height: 30),
-                      
+
                       // Feedback Forum Section
                       _buildFeedbackForumSection(themeProvider),
-                      
+
                       const SizedBox(height: 30),
 
                       _buildFeedbackForm(themeProvider),
@@ -1816,8 +1831,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ],
 
                       const SizedBox(height: 20),
+                        ],
+                        ),
+                      ),
                     ],
                   ),
+                ),
                 ),
             _buildDeletionOverlay(),
           ],

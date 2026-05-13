@@ -10,6 +10,7 @@ import 'package:nudge/services/message_service.dart';
 import 'package:provider/provider.dart';
 import 'package:nudge/providers/theme_provider.dart';
 import 'package:nudge/theme/app_theme.dart';
+import 'package:nudge/widgets/stitch_top_bar.dart';
 import 'contact_detail_screen.dart';
 import 'add_contact_screen.dart';
 import '../../models/contact.dart';
@@ -283,30 +284,44 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                     CustomScrollView(
                       physics: const BouncingScrollPhysics(),
                       slivers: [
-                        // AppBar
+                        // Stitch top bar (NUDGE wordmark + avatar)
                         SliverAppBar(
-                          title: isAddToGroupMode
-                              ? Text('Add to $groupName',
-                                  style: GoogleFonts.plusJakartaSans(
-                                      color: theme.colorScheme.onSurface,
-                                      fontWeight: FontWeight.w700))
-                              : Text('Contacts',
-                                  style: GoogleFonts.plusJakartaSans(
-                                      color: theme.colorScheme.onSurface,
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 22)),
                           backgroundColor: theme.scaffoldBackgroundColor,
-                          leading: const SizedBox.shrink(),
-                          centerTitle: isAddToGroupMode,
                           surfaceTintColor: Colors.transparent,
+                          elevation: 0,
+                          automaticallyImplyLeading: false,
+                          titleSpacing: 0,
+                          title: isAddToGroupMode
+                              ? Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                                  child: Text('Add to $groupName',
+                                      style: GoogleFonts.plusJakartaSans(
+                                          color: theme.colorScheme.onSurface,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 18)),
+                                )
+                              : StitchTopBar(
+                                  avatarUrl: user.photoURL,
+                                  onTrailingTap: () =>
+                                      Navigator.pushNamed(context, '/settings'),
+                                ),
                           floating: true,
                           snap: true,
                           pinned: false,
+                          centerTitle: false,
                           actions: [
                             if (!isAddToGroupMode)
                               _buildPopupMenu(context, themeProvider),
                           ],
                         ),
+                        if (!isAddToGroupMode && !_isSelecting)
+                          const SliverToBoxAdapter(
+                            child: StitchScreenTitle(
+                              title: 'Contacts',
+                              subtitle:
+                                  'Search and reach out to the people in your universe.',
+                            ),
+                          ),
 
                         // Selection controls
                         if (_isSelecting)
