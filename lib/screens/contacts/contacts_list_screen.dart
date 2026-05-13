@@ -314,14 +314,9 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                               _buildPopupMenu(context, themeProvider),
                           ],
                         ),
-                        if (!isAddToGroupMode && !_isSelecting)
-                          const SliverToBoxAdapter(
-                            child: StitchScreenTitle(
-                              title: 'Contacts',
-                              subtitle:
-                                  'Search and reach out to the people in your universe.',
-                            ),
-                          ),
+                        // Mockup contacts_final_alignment goes straight from
+                        // top bar → search → frequently contacted; no
+                        // separate page title or subtitle.
 
                         // Selection controls
                         if (_isSelecting)
@@ -836,13 +831,13 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         decoration: BoxDecoration(
-          color: isDark ? scheme.surfaceContainerLow : scheme.surfaceContainerLowest,
+          color: isDark ? scheme.surfaceContainerLow : Colors.white,
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.14 : 0.055),
-              blurRadius: 12,
-              offset: const Offset(0, 2),
+              color: Colors.black.withOpacity(isDark ? 0.14 : 0.05),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -1051,17 +1046,15 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
         children: [
           Expanded(
             child: Container(
-              height: 50,
+              height: 56,
               decoration: BoxDecoration(
-                color: isDark
-                    ? scheme.surfaceContainerLow
-                    : scheme.surfaceContainerLowest,
+                color: isDark ? scheme.surfaceContainerLow : Colors.white,
                 borderRadius: BorderRadius.circular(9999),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(isDark ? 0.12 : 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
+                    blurRadius: 20,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
@@ -1079,7 +1072,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 15),
+                      horizontal: 16, vertical: 18),
                   filled: false,
                 ),
                 onChanged: (v) => setState(() => _searchQuery = v),
@@ -1088,18 +1081,16 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
           ),
           const SizedBox(width: 10),
           Container(
-            width: 50,
-            height: 50,
+            width: 56,
+            height: 56,
             decoration: BoxDecoration(
-              color: isDark
-                  ? scheme.surfaceContainerLow
-                  : scheme.surfaceContainerLowest,
+              color: isDark ? scheme.surfaceContainerLow : Colors.white,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(isDark ? 0.12 : 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
+                  blurRadius: 20,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
