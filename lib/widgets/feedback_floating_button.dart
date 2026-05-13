@@ -284,8 +284,16 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
   }
 
   // ── Collapsed FAB (Nudge logo with heartbeat) ──────────────────────────
+  // Two variants per Stitch v4:
+  //   light → dashboard_consistent_titles: 56px white circle, subtle shadow,
+  //           32px Nudge logo foreground.
+  //   dark  → social_universe_brighter_glow_2: 56px dark glass circle, 2px
+  //           primary/40 ring, primary glow shadow, 40px logo.
+  // Variant is selected by widget.onDarkBackground.
 
   Widget _buildMainButton() {
+    final isDarkVariant = widget.onDarkBackground;
+    final logoSize = isDarkVariant ? 40.0 : 32.0;
     return AnimatedBuilder(
       animation: _heartbeatAnimation,
       builder: (context, _) => Transform.scale(
@@ -293,21 +301,35 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
         child: GestureDetector(
           onTap: _toggleExpanded,
           child: Container(
-            width: 60,
-            height: 60,
+            width: 56,
+            height: 56,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              image: const DecorationImage(
-                image: AssetImage('assets/Nudge-logo.png'),
-                fit: BoxFit.cover,
+              shape: BoxShape.circle,
+              color: isDarkVariant
+                  ? const Color(0xCC2D2926)
+                  : Colors.white,
+              border: Border.all(
+                color: isDarkVariant
+                    ? AppColors.lightPrimary.withOpacity(0.40)
+                    : Colors.black.withOpacity(0.05),
+                width: isDarkVariant ? 2 : 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.lightPrimary.withOpacity(0.25),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
+                  color: isDarkVariant
+                      ? AppColors.lightPrimary.withOpacity(0.30)
+                      : Colors.black.withOpacity(0.18),
+                  blurRadius: isDarkVariant ? 20 : 24,
+                  offset: const Offset(0, 8),
                 ),
               ],
+            ),
+            alignment: Alignment.center,
+            child: Image.asset(
+              'assets/Nudge-logo.png',
+              width: logoSize,
+              height: logoSize,
+              fit: BoxFit.contain,
             ),
           ),
         ),
