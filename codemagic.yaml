@@ -1,0 +1,90 @@
+# Codemagic build config for Nudge.
+# Replaces the previous UI-only workflow because Codemagic kept reverting
+# the Workflow-Editor toggle back to YAML mode and the build hung on
+# "Fetching configuration file".
+#
+# IMPORTANT — before first build:
+#   1. Rename `firebase_credentials` below to match the name of your
+#      Codemagic env-var group that holds FIREBASE_OPTIONS_DART and
+#      GOOGLE_SERVICE_INFO_PLIST. Find it in Codemagic → App settings →
+#      Environment variables (or Teams → Global variables and secrets).
+#   2. The "Inject Firebase credentials" script handles both plain-text
+#      and base64-encoded values automatically — no change needed.
+
+workflows:
+  testflight-ios:
+    name: TestFlight iOS
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+
+    environment:
+      flutter: 3.41.9
+      xcode: latest
+      cocoapods: default
+      groups:
+        - firebase_credentials   # ⚠ rename to YOUR group name
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.nudge--shay
+
+    integrations:
+      app_store_connect: Nudge AppStoreConnect
+
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: feat/stitch-design-parity
+          include: true
+          source: true
+
+    scripts:
+      - name: Inject Firebase credentials from env vars
+        script: |
+          set -e
+          # Decodes a Codemagic env var to a file. Tries base64 first
+          # (Codemagic's standard pattern for storing files in env vars);
+          # falls back to plain text if the value is not base64-encoded.
+          decode_or_copy() {
+            local var_value="$1"
+            local target="$2"
+            mkdir -p "$(dirname "$target")"
+            if printf '%s' "$var_value" | base64 --decode > "$target" 2>/dev/null && [ -s "$target" ]; then
+              echo "✓ wrote $target (base64-decoded)"
+            else
+              printf '%s' "$var_value" > "$target"
+              echo "✓ wrote $target (plain text)"
+            fi
+          }
+          decode_or_copy "$FIREBASE_OPTIONS_DART" lib/firebase_options.dart
+          decode_or_copy "$GOOGLE_SERVICE_INFO_PLIST" ios/Runner/GoogleService-Info.plist
+          # Some build paths look for the plist directly under ios/ too.
+          cp ios/Runner/GoogleService-Info.plist ios/GoogleService-Info.plist
+
+      - name: Fetch provisioning profiles via App Store Connect
+        script: xcode-project use-profiles
+
+      - name: Flutter pub get
+        script: flutter pub get
+
+      - name: CocoaPods install
+        script: |
+          cd ios
+          pod install --repo-update
+
+      - name: Flutter build ipa (release)
+        script: |
+          flutter build ipa --release \
+            --export-options-plist=/Users/builder/export_options.plist
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - flutter_drive.log
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        beta_groups:
+          - Nudge Testers
