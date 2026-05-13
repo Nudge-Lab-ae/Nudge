@@ -215,12 +215,11 @@ class _SocialUniverseImmersiveScreenState
                   ),
                 ),
 
-                // FAB bottom-right, lifted to sit above the nav band.
-                Positioned(
-                  right: 16,
-                  bottom: 96,
-                  child: _UniverseFab(onTap: () => Navigator.pop(context)),
-                ),
+                // Note: the floating action button is provided by the
+                // dashboard wrapper (FeedbackFloatingButton). Universe no
+                // longer renders its own FAB — it created a duplicate "n"
+                // button under the main Nudge button and clicked to a
+                // dead black-screen Navigator.pop.
               ],
             );
           },
@@ -890,39 +889,5 @@ class _NavItem extends StatelessWidget {
   }
 }
 
-class _UniverseFab extends StatelessWidget {
-  final VoidCallback onTap;
-  const _UniverseFab({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    // White circular pill with a solid purple N, matching the
-    // dashboard_consistent_titles pill button reference. No gradient
-    // on the N (logo-gradient rule), and no dark glass-card halo.
-    return Material(
-      color: Colors.white,
-      shape: const CircleBorder(),
-      elevation: 6,
-      shadowColor: const Color(0x55751FE7),
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const CircleBorder(),
-        child: SizedBox(
-          width: 48,
-          height: 48,
-          child: Center(
-            child: Text(
-              'N',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-                color: const Color(0xFF751FE7),
-                letterSpacing: -1.2,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
+// _UniverseFab removed — dashboard's FeedbackFloatingButton is the sole
+// action button on every tab.
