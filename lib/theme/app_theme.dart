@@ -105,6 +105,20 @@ class AppColors {
   static const Color success = Color(0xFF2E7D32);
   static const Color warning = Color(0xFFE65100);
   static const Color vipGold = Color(0xFFFFB300);
+
+  // Shared "solid purple" token — the canonical brand purple used by the
+  // Manage Plan / Subscription card on Settings, nudge cards, the bottom-nav
+  // accent in dark mode, and any link/accent text that should read as purple.
+  // Equal to lightPrimary; intentionally identical in light and dark mode.
+  static const Color brandPurple = Color(0xFF751FE7);
+
+  // Nav-bar dark-variant tokens (extracted from the Social Universe screen's
+  // bottom nav). Used whenever the app should render the dark nav variant —
+  // i.e. dark theme globally, or the Universe tab in light theme.
+  static const Color navDarkBackground = Color(0xE61A1816);
+  static const Color navDarkShadow = Color(0x10751FE7);
+  static const Color navDarkActiveBgTint = Color(0x33751FE7);
+  static const Color navDarkInactiveFg = Color(0xFF6E6A66);
 }
 
 class AppTheme {

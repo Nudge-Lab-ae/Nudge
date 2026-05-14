@@ -347,7 +347,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: FeedbackFloatingButton(
                   currentSection: getCurrentSection(),
                   fromDashboard: true,
-                  onDarkBackground: _currentIndex == 1, // Social Universe tab
+                  // Dark FAB styling when on Universe tab OR whenever the app
+                  // is in dark mode (Section 2).
+                  onDarkBackground:
+                      _currentIndex == 1 || themeProvider.isDarkMode,
                   controller: _fabController,
                   extraActions: [
                     FeedbackAction(
@@ -741,28 +744,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
       [List<Nudge>? nudgeOverride]) {
     final overdueNudges = _getOverdueNudges(nudgeOverride ?? allNudges);
     final hasOverdue = overdueNudges.isNotEmpty;
-    // Dark variant only on Universe tab (per social_universe_brighter_glow_2);
-    // every other tab gets the light variant per contacts_final_alignment.
-    final isUniverse = _currentIndex == 1;
+    // Dark nav variant whenever the app is in dark mode, OR whenever the
+    // Universe tab is showing (its background is dark even in light theme).
+    // This keeps every screen's nav bar matching the Social Universe nav in
+    // dark mode (Section 1) without changing the Universe-tab behavior in
+    // light mode.
+    final isDark = themeProvider.isDarkMode;
+    final useDarkNav = isDark || _currentIndex == 1;
     final bottomInset = MediaQuery.of(context).padding.bottom;
 
     return Container(
       decoration: BoxDecoration(
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-        color: isUniverse
-            ? const Color(0xE61A1816)
+        color: useDarkNav
+            ? AppColors.navDarkBackground
             : Colors.white.withOpacity(0.92),
         boxShadow: [
           BoxShadow(
-            color: isUniverse
-                ? const Color(0x10751FE7)
+            color: useDarkNav
+                ? AppColors.navDarkShadow
                 : Colors.black.withOpacity(0.08),
             blurRadius: 40,
             offset: const Offset(0, -10),
           ),
         ],
       ),
-      padding: EdgeInsets.fromLTRB(16, 12, 16, 12 + bottomInset),
+      // Section 4: tighter nav bar — icons sit closer to the bottom of the
+      // screen while still clearing the home-indicator safe-area inset.
+      padding: EdgeInsets.fromLTRB(16, 6, 16, 4 + bottomInset),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
@@ -770,14 +779,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
             index: 1,
             label: 'UNIVERSE',
             iconAsset: 'assets/navbar-icons/nav_universe.svg',
-            isUniverse: isUniverse,
+            useDarkNav: useDarkNav,
             themeProvider: themeProvider,
           ),
           _buildNavItem(
             index: 2,
             label: 'NUDGES',
             iconAsset: 'assets/navbar-icons/nav_nudges.svg',
-            isUniverse: isUniverse,
+            useDarkNav: useDarkNav,
             themeProvider: themeProvider,
             badge: hasOverdue,
           ),
@@ -785,14 +794,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
             index: 3,
             label: 'GROUPS',
             iconAsset: 'assets/navbar-icons/nav_groups.svg',
-            isUniverse: isUniverse,
+            useDarkNav: useDarkNav,
             themeProvider: themeProvider,
           ),
           _buildNavItem(
             index: 4,
             label: 'CONTACTS',
             iconAsset: 'assets/navbar-icons/nav_contacts.svg',
-            isUniverse: isUniverse,
+            useDarkNav: useDarkNav,
             themeProvider: themeProvider,
           ),
         ],
@@ -805,20 +814,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required String iconAsset,
     required String label,
     required ThemeProvider themeProvider,
-    required bool isUniverse,
+    required bool useDarkNav,
     bool badge = false,
   }) {
     final isSelected = _currentIndex == index;
     final isDark = themeProvider.isDarkMode;
     final scheme = Theme.of(context).colorScheme;
-    // Active/inactive colors per Stitch v4 — light variant uses brand primary,
-    // dark variant uses the muted-purple/stone-500 palette from
-    // social_universe_brighter_glow_2.
-    final activeFg = isUniverse ? const Color(0xFFD1B3FF) : scheme.primary;
-    final inactiveFg = isUniverse ? const Color(0xFF6E6A66) : scheme.outline;
+    // Active/inactive colors per Stitch v4. The dark nav variant now uses the
+    // SHARED solid brand purple for active foreground (Section 6) instead of
+    // the old lavender (0xFFD1B3FF). Light variant uses the same brand purple
+    // via colorScheme.primary.
+    final activeFg = useDarkNav ? AppColors.brandPurple : scheme.primary;
+    final inactiveFg = useDarkNav ? AppColors.navDarkInactiveFg : scheme.outline;
     final fg = isSelected ? activeFg : inactiveFg;
-    final activeBg = isUniverse
-        ? const Color(0x33751FE7)
+    final activeBg = useDarkNav
+        ? AppColors.navDarkActiveBgTint
         : scheme.primary.withOpacity(isDark ? 0.18 : 0.10);
 
     return GestureDetector(
@@ -862,9 +872,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: isUniverse
+                            color: useDarkNav
                                 ? const Color(0xFF1A1816)
-                                : (isDark ? Colors.black : Colors.white),
+                                : Colors.white,
                             blurRadius: 1,
                             spreadRadius: 1,
                           ),

@@ -292,7 +292,11 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
   // Variant is selected by widget.onDarkBackground.
 
   Widget _buildMainButton() {
-    final isDarkVariant = widget.onDarkBackground;
+    // Section 2: any screen in dark mode gets the dark FAB variant — not just
+    // explicit `onDarkBackground` callers (Universe tab). This keeps the FAB
+    // styling consistent across every screen when the app is in dark mode.
+    final isDarkVariant = widget.onDarkBackground ||
+        Theme.of(context).brightness == Brightness.dark;
     final logoSize = isDarkVariant ? 40.0 : 32.0;
     return AnimatedBuilder(
       animation: _heartbeatAnimation,
@@ -373,9 +377,13 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
     required VoidCallback onTap,
     bool useWhiteLabel = false,
   }) {
+    // Use dark item styling whenever the expanded menu is over a dark surface
+    // (Universe tab) OR the app is in dark mode — Section 2.
+    final isDarkSurface = widget.onDarkBackground ||
+        Theme.of(context).brightness == Brightness.dark;
     final isHighlighted = _isPrimaryAction(text);
     final iconColor =
-        isHighlighted ? Colors.white : AppColors.lightPrimary;
+        isHighlighted ? Colors.white : AppColors.brandPurple;
     final btnDecoration = isHighlighted
         ? const BoxDecoration(
             gradient: LinearGradient(
@@ -393,11 +401,19 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
             ],
           )
         : BoxDecoration(
-            color: Colors.white,
+            color: isDarkSurface ? const Color(0xCC2D2926) : Colors.white,
             shape: BoxShape.circle,
+            border: isDarkSurface
+                ? Border.all(
+                    color: AppColors.brandPurple.withOpacity(0.40),
+                    width: 1.5,
+                  )
+                : null,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.10),
+                color: isDarkSurface
+                    ? AppColors.brandPurple.withOpacity(0.25)
+                    : Colors.black.withOpacity(0.10),
                 blurRadius: 10,
                 offset: const Offset(0, 3),
               ),
