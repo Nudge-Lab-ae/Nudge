@@ -374,8 +374,14 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
     bool useWhiteLabel = false,
   }) {
     final isHighlighted = _isPrimaryAction(text);
-    final iconColor =
-        isHighlighted ? Colors.white : AppColors.lightPrimary;
+    // Dark-mode action menu uses the dark FAB surface so the circles
+    // match the floating button and don't punch white holes into a dark
+    // backdrop. Highlighted (primary action) circle keeps the purple
+    // gradient regardless of theme.
+    final useDarkCircle = useWhiteLabel; // useWhiteLabel == dark backdrop
+    final iconColor = isHighlighted
+        ? Colors.white
+        : (useDarkCircle ? const Color(0xFFD4BBFF) : AppColors.brandPurple);
     final btnDecoration = isHighlighted
         ? const BoxDecoration(
             gradient: LinearGradient(
@@ -393,11 +399,21 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
             ],
           )
         : BoxDecoration(
-            color: Colors.white,
+            color: useDarkCircle
+                ? const Color(0xCC2D2926)
+                : Colors.white,
             shape: BoxShape.circle,
+            border: useDarkCircle
+                ? Border.all(
+                    color: AppColors.brandPurple.withOpacity(0.40),
+                    width: 1.5,
+                  )
+                : null,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.10),
+                color: useDarkCircle
+                    ? AppColors.brandPurple.withOpacity(0.30)
+                    : Colors.black.withOpacity(0.10),
                 blurRadius: 10,
                 offset: const Offset(0, 3),
               ),

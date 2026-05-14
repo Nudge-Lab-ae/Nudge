@@ -102,6 +102,17 @@ class AppColors {
   static const List<Color> primaryGradientLight = [Color(0xFF751FE7), Color(0xFF006288)];
   static const List<Color> primaryGradientDark  = [Color(0xFFD4BBFF), Color(0xFF89CFFA)];
 
+  // Shared solid brand purple — matches the Manage Plan / Subscription
+  // card. Single source of truth across iOS + Android; do not introduce a
+  // dark-mode variant.
+  static const Color brandPurple = Color(0xFF751FE7);
+  static const Color brandPurpleDeep = Color(0xFF4A0FAA);
+
+  // Shared dark-mode bottom navigation bar surface — pulled from the
+  // Social Universe screen (the canonical correct nav). Used app-wide
+  // for the bottom nav background in dark mode so every screen matches.
+  static const Color darkNavSurface = Color(0xE61A1816);
+
   static const Color success = Color(0xFF2E7D32);
   static const Color warning = Color(0xFFE65100);
   static const Color vipGold = Color(0xFFFFB300);
