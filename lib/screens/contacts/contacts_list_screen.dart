@@ -139,10 +139,17 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     Contact contact, {
     required bool isDark,
     required ColorScheme scheme,
-    double size = 54,
+    double size = 50,
   }) {
     final initials = _getContactInitials(contact.name);
-    final assetPath = 'assets/contact-icons/${getRandomIndex(contact.id)}.png';
+    // Unified avatar style — when there's no profile photo we use the
+    // same deterministic pastel circle + initials treatment as the
+    // Frequently Contacted row, instead of the green-gradient asset.
+    // _getAvatarColors hashes the contact.id so the same person keeps
+    // the same colour every render (and the same on iOS + Android).
+    final (bgColor, textColor) = isDark
+        ? _getAvatarColorsDark(contact.id)
+        : _getAvatarColors(contact.id);
 
     return Stack(
       clipBehavior: Clip.none,
@@ -150,42 +157,35 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
         Container(
           width: size,
           height: size,
-          decoration: const BoxDecoration(shape: BoxShape.circle),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: bgColor,
+          ),
           child: ClipOval(
             child: contact.imageUrl.isNotEmpty
                 ? Image.network(
                     contact.imageUrl,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Image.asset(
-                      assetPath,
-                      fit: BoxFit.cover,
-                    ),
-                  )
-                : Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Image.asset(assetPath, fit: BoxFit.cover),
-                      // Semi-transparent overlay so initials always readable
-                      Container(
-                        color: Colors.black.withOpacity(isDark ? 0.35 : 0.18),
-                      ),
-                      Center(
-                        child: Text(
-                          initials,
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: size * 0.30,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black.withOpacity(0.4),
-                                blurRadius: 4,
-                              ),
-                            ],
-                          ),
+                    errorBuilder: (_, __, ___) => Center(
+                      child: Text(
+                        initials,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: size * 0.34,
+                          fontWeight: FontWeight.w700,
+                          color: textColor,
                         ),
                       ),
-                    ],
+                    ),
+                  )
+                : Center(
+                    child: Text(
+                      initials,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: size * 0.34,
+                        fontWeight: FontWeight.w700,
+                        color: textColor,
+                      ),
+                    ),
                   ),
           ),
         ),
@@ -829,7 +829,9 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
         widget.hideButton();
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        // Tighter vertical padding so rows feel modern-dense, not
+        // elderly-large-print. Was 13 → 10.
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: isDark ? scheme.surfaceContainerLow : Colors.white,
           borderRadius: BorderRadius.circular(18),
@@ -852,27 +854,29 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Name
+                  // Name — reduced 16→15, height tightened.
                   Text(
                     contact.name,
                     style: GoogleFonts.plusJakartaSans(
-                      fontSize: 16,
+                      fontSize: 15,
                       fontWeight: FontWeight.w700,
                       color: scheme.onSurface,
+                      height: 1.15,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 5),
-                  // Connection type · Ring label · dot
+                  const SizedBox(height: 3),
+                  // Connection type · Ring label · dot — reduced 13→11.
                   Row(
                     children: [
                       if (contact.connectionType.isNotEmpty) ...[
                         Text(
                           contact.connectionType,
                           style: GoogleFonts.beVietnamPro(
-                            fontSize: 13,
+                            fontSize: 11,
                             color: scheme.onSurfaceVariant,
+                            height: 1.2,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -882,7 +886,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                           child: Text(
                             '·',
                             style: GoogleFonts.beVietnamPro(
-                              fontSize: 13,
+                              fontSize: 11,
                               color: scheme.onSurfaceVariant,
                             ),
                           ),
@@ -891,8 +895,9 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                       Text(
                         ringLabel,
                         style: GoogleFonts.beVietnamPro(
-                          fontSize: 13,
+                          fontSize: 11,
                           color: scheme.onSurfaceVariant,
+                          height: 1.2,
                         ),
                       ),
                       const SizedBox(width: 6),

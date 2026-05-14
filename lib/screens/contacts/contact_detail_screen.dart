@@ -596,7 +596,14 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                             s.contains(WidgetState.selected)
                                 ? AppColors.lightPrimary
                                 : scheme.surfaceContainerHigh),
-                        trackOutlineColor: WidgetStateProperty.all(themeProvider.isDarkMode?Colors.white:Colors.black),
+                        // Faint medium-grey outline instead of strong
+                        // black per Section 9 feedback — matches the
+                        // platform-native toggle feel on both iOS and
+                        // Android.
+                        trackOutlineColor: WidgetStateProperty.all(
+                            themeProvider.isDarkMode
+                                ? const Color(0xFF4B4455)
+                                : const Color(0xFFD0CCC7)),
                       ),
               ]),
             ),
@@ -740,7 +747,14 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                             s.contains(WidgetState.selected)
                                 ? AppColors.lightPrimary
                                 : scheme.surfaceContainerHigh),
-                        trackOutlineColor: WidgetStateProperty.all(themeProvider.isDarkMode?Colors.white:Colors.black),
+                        // Faint medium-grey outline instead of strong
+                        // black per Section 9 feedback — matches the
+                        // platform-native toggle feel on both iOS and
+                        // Android.
+                        trackOutlineColor: WidgetStateProperty.all(
+                            themeProvider.isDarkMode
+                                ? const Color(0xFF4B4455)
+                                : const Color(0xFFD0CCC7)),
                       ),
               ]),
             ),
