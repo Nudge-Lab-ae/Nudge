@@ -904,31 +904,59 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                                         ),
                                       ),
                                       const SizedBox(width: 12),
-                                      ElevatedButton.icon(
-                                        onPressed: () => _showCreateGroupDialog(
+                                      // Same styling as the Expand
+                                      // Calendar button on Nudges page —
+                                      // pill, white (or dark surface)
+                                      // bg, faint outline-variant border,
+                                      // soft shadow, +icon then label.
+                                      GestureDetector(
+                                        onTap: () => _showCreateGroupDialog(
                                             context, apiService,
                                             themeProvider: themeProvider),
-                                        icon: const Icon(Icons.add, size: 16),
-                                        label: Text('Add Group',
-                                            style: GoogleFonts.beVietnamPro(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w600)),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Theme.of(context)
-                                              .colorScheme
-                                              .surfaceContainerLow,
-                                          foregroundColor: theme.colorScheme.primary,
-                                          side: BorderSide(
-                                              color: themeProvider.isDarkMode
-                                                  ? AppColors.darkSurfaceContainerHighest
-                                                  : Theme.of(context).colorScheme.onSurface,
-                                              width: 1),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(20),
-                                          ),
+                                        child: Container(
                                           padding: const EdgeInsets.symmetric(
-                                              horizontal: 14, vertical: 8),
-                                          elevation: 0,
+                                              horizontal: 16, vertical: 10),
+                                          decoration: BoxDecoration(
+                                            color: themeProvider.isDarkMode
+                                                ? theme.colorScheme
+                                                    .surfaceContainerHighest
+                                                : Colors.white,
+                                            borderRadius:
+                                                BorderRadius.circular(9999),
+                                            border: Border.all(
+                                              color: theme
+                                                  .colorScheme.outlineVariant
+                                                  .withOpacity(0.4),
+                                            ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black
+                                                    .withOpacity(0.04),
+                                                blurRadius: 8,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ],
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(Icons.add_rounded,
+                                                  size: 16,
+                                                  color: theme
+                                                      .colorScheme.onSurface),
+                                              const SizedBox(width: 6),
+                                              Text(
+                                                'Add Group',
+                                                style: GoogleFonts
+                                                    .plusJakartaSans(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: theme
+                                                      .colorScheme.onSurface,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     ],
