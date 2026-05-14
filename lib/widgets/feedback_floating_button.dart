@@ -292,7 +292,12 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
   // Variant is selected by widget.onDarkBackground.
 
   Widget _buildMainButton() {
-    final isDarkVariant = widget.onDarkBackground;
+    // Dark variant fires either when the screen explicitly has a dark
+    // background (e.g. Social Universe in light mode) OR whenever the
+    // whole app is in dark mode. This keeps the FAB legible against the
+    // dark scaffold on every tab when the user has dark mode enabled.
+    final isDarkVariant = widget.onDarkBackground ||
+        Theme.of(context).brightness == Brightness.dark;
     final logoSize = isDarkVariant ? 40.0 : 32.0;
     return AnimatedBuilder(
       animation: _heartbeatAnimation,
@@ -374,8 +379,10 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
     bool useWhiteLabel = false,
   }) {
     final isHighlighted = _isPrimaryAction(text);
-    final iconColor =
-        isHighlighted ? Colors.white : AppColors.lightPrimary;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final iconColor = isHighlighted
+        ? Colors.white
+        : (isDark ? const Color(0xFFD1B3FF) : AppColors.lightPrimary);
     final btnDecoration = isHighlighted
         ? const BoxDecoration(
             gradient: LinearGradient(
@@ -393,11 +400,17 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
             ],
           )
         : BoxDecoration(
-            color: Colors.white,
+            color: isDark ? const Color(0xFF2D2926) : Colors.white,
             shape: BoxShape.circle,
+            border: isDark
+                ? Border.all(
+                    color: AppColors.lightPrimary.withOpacity(0.30),
+                    width: 1.5,
+                  )
+                : null,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.10),
+                color: Colors.black.withOpacity(isDark ? 0.30 : 0.10),
                 blurRadius: 10,
                 offset: const Offset(0, 3),
               ),
