@@ -51,24 +51,30 @@ class _SocialUniverseImmersiveScreenState
   static const Color _secondaryFixedDim = Color(0xFF78CDFF);
   static const Color _onPrimary = Color(0xFFF9EFFF);
 
-  // Orbit diameters in logical pixels — mockup uses 280/480/680.
+  // Three functional orbit rings (mockup uses 280/480/680) where contacts
+  // get plotted, plus two decorative outer rings that the user can reveal
+  // by zooming out. The decorative rings give the universe a sense of
+  // 'there's more out here' instead of cutting to dead black space at
+  // the edge of the screen.
   static const double _innerRingDiameter = 280;
   static const double _middleRingDiameter = 480;
   static const double _outerRingDiameter = 680;
-  // Universe canvas is a fixed square just bigger than the outer ring
-  // so the star labels (~56px on each side) never get clipped.
-  static const double _universeCanvasSize = _outerRingDiameter + 160;
+  static const double _decorativeRing1Diameter = 920;
+  static const double _decorativeRing2Diameter = 1180;
+  // Canvas is a square big enough to contain the outermost decorative
+  // ring + room for the star labels (~80px on each side). No clipping.
+  static const double _universeCanvasSize = _decorativeRing2Diameter + 220;
 
   // Pulse glow on stars + slow orbital rotation are driven by separate
   // controllers so their cadence is independent.
   late final AnimationController _pulseController;
   late final AnimationController _orbitController;
 
-  // InteractiveViewer scale/pan state — lets the user pinch to inspect
-  // the universe. Initial scale is set in didChangeDependencies so the
-  // outer ring fits the viewport at first paint regardless of device.
+  // InteractiveViewer scale/pan state. Default = identity (1.0): the
+  // universe fills the viewport and the outer ring spills past the
+  // edges, dropping the user inside the experience. Pinching out
+  // shrinks the canvas to reveal the decorative rings beyond.
   final TransformationController _viewport = TransformationController();
-  bool _initialScaleApplied = false;
 
   @override
   void initState() {
@@ -81,19 +87,6 @@ class _SocialUniverseImmersiveScreenState
       vsync: this,
       duration: const Duration(seconds: 90), // one full revolution / 1.5 min
     )..repeat();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_initialScaleApplied) return;
-    final size = MediaQuery.of(context).size;
-    // Pad for the top app bar (≈90) + bottom nav (≈110) so the universe
-    // sits in the visible area, then fit the canvas square inside it.
-    final usable = math.min(size.width, size.height - 200);
-    final scale = (usable / _universeCanvasSize).clamp(0.4, 1.0);
-    _viewport.value = Matrix4.identity()..scale(scale);
-    _initialScaleApplied = true;
   }
 
   @override
@@ -133,9 +126,14 @@ class _SocialUniverseImmersiveScreenState
                 Positioned.fill(
                   child: InteractiveViewer(
                     transformationController: _viewport,
-                    minScale: 0.4,
+                    // 0.3 lets the user zoom WAY out and see the full
+                    // canvas — both decorative outer rings included.
+                    // Default 1.0 is immersive: outer ring spills past
+                    // the screen edges so the user feels inside the
+                    // universe, not staring at a tiny island in a void.
+                    minScale: 0.3,
                     maxScale: 3.0,
-                    boundaryMargin: const EdgeInsets.all(400),
+                    boundaryMargin: const EdgeInsets.all(600),
                     child: Center(
                       child: SizedBox(
                         width: _universeCanvasSize,
@@ -179,6 +177,10 @@ class _SocialUniverseImmersiveScreenState
                                 innerDiameter: _innerRingDiameter,
                                 middleDiameter: _middleRingDiameter,
                                 outerDiameter: _outerRingDiameter,
+                                decorativeRing1Diameter:
+                                    _decorativeRing1Diameter,
+                                decorativeRing2Diameter:
+                                    _decorativeRing2Diameter,
                                 ringColor: _ringColor,
                                 primary: _primary,
                                 primaryContainer: _primaryContainer,
@@ -191,12 +193,20 @@ class _SocialUniverseImmersiveScreenState
                               ),
                             ),
 
-                            // Static YOU avatar — sits at canvas centre,
-                            // doesn't rotate.
-                            _CentralYou(
-                              primary: _primary,
-                              primaryContainer: _primaryContainer,
-                              spaceBackground: _spaceBackground,
+                            // Tappable YOU avatar — opens settings so the
+                            // user can change their profile photo via the
+                            // existing profile-picture flow there. We don't
+                            // build a new uploader; we route to the one
+                            // that's already wired.
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () => Navigator.pushNamed(
+                                  context, '/settings'),
+                              child: _CentralYou(
+                                primary: _primary,
+                                primaryContainer: _primaryContainer,
+                                spaceBackground: _spaceBackground,
+                              ),
                             ),
                           ],
                         ),
@@ -296,6 +306,10 @@ class _UniverseCanvas extends StatelessWidget {
   final double innerDiameter;
   final double middleDiameter;
   final double outerDiameter;
+  // Decorative outer rings (no contacts plotted) — give the universe a
+  // 'there's more out here' feel when the user zooms out.
+  final double decorativeRing1Diameter;
+  final double decorativeRing2Diameter;
   final Color ringColor;
   final Color primary;
   final Color primaryContainer;
@@ -312,6 +326,8 @@ class _UniverseCanvas extends StatelessWidget {
     required this.innerDiameter,
     required this.middleDiameter,
     required this.outerDiameter,
+    required this.decorativeRing1Diameter,
+    required this.decorativeRing2Diameter,
     required this.ringColor,
     required this.primary,
     required this.primaryContainer,
@@ -342,8 +358,13 @@ class _UniverseCanvas extends StatelessWidget {
 
         return Stack(
           fit: StackFit.expand,
+          clipBehavior: Clip.none,
           children: [
-            // Orbit rings (outer, middle, inner).
+            // Decorative outer rings — drawn fainter, no contacts. Reveal
+            // when the user zooms out (minScale 0.3).
+            _ring(cx, cy, decorativeRing2Diameter, opacity: 0.55),
+            _ring(cx, cy, decorativeRing1Diameter, opacity: 0.75),
+            // Functional orbit rings (outer, middle, inner).
             _ring(cx, cy, outerDiameter),
             _ring(cx, cy, middleDiameter),
             _ring(cx, cy, innerDiameter),
@@ -383,7 +404,11 @@ class _UniverseCanvas extends StatelessWidget {
     );
   }
 
-  Widget _ring(double cx, double cy, double diameter) {
+  // opacity is a *multiplier* on the existing ringColor alpha, so the
+  // default (1.0) preserves the canonical translucent ring color and
+  // values <1.0 fade the decorative outer rings further.
+  Widget _ring(double cx, double cy, double diameter, {double opacity = 1.0}) {
+    final fadedAlpha = (ringColor.alpha * opacity).round().clamp(0, 255);
     return Positioned(
       left: cx - diameter / 2,
       top: cy - diameter / 2,
@@ -393,7 +418,10 @@ class _UniverseCanvas extends StatelessWidget {
           height: diameter,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: ringColor, width: 1),
+            border: Border.all(
+              color: ringColor.withAlpha(fadedAlpha),
+              width: 1,
+            ),
           ),
         ),
       ),
