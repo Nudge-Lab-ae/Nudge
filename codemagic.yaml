@@ -17,7 +17,7 @@ workflows:
           cat > "$CM_BUILD_DIR/android/key.properties" << EOF
           storePassword=$nudgepass
           keyPassword=$nudgepass
-          keyAlias=$nudge
+          keyAlias=nudge
           storeFile=$CM_BUILD_DIR/key/nudge-key.keystore
           EOF
       - name: Install Flutter dependencies
