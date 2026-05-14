@@ -54,16 +54,21 @@ workflows:
       - name: Bump build number from App Store Connect
         script: |
           set -e
-          # Ask App Store Connect for the highest build number it has
-          # ever seen for this app (TestFlight or App Store, whichever
-          # is higher). +1 becomes the next build. This kills the
-          # "duplicate cfBundleVersion" 409 once and for all — pubspec
-          # build number stops mattering.
-          LATEST_TF=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APP_ID" 2>/dev/null || echo "0")
-          LATEST_AS=$(app-store-connect get-latest-app-store-build-number "$APP_STORE_APP_ID" 2>/dev/null || echo "0")
-          LATEST=$([ "$LATEST_TF" -gt "$LATEST_AS" ] && echo "$LATEST_TF" || echo "$LATEST_AS")
+          # Codemagic's current CLI command is `get-latest-build-number`
+          # (no testflight/app-store split). Previous yaml used the wrong
+          # subcommand names, fell through 2>/dev/null silently, BUILD_NUMBER
+          # never got set, and the pubspec build number was used instead —
+          # producing duplicate-cfBundleVersion 409s.
+          # NOTE: do NOT swallow stderr. We want any failure to abort the
+          # build with a visible error rather than silently fall through.
+          echo "Querying latest build for APP_STORE_APP_ID=$APP_STORE_APP_ID"
+          LATEST=$(app-store-connect get-latest-build-number "$APP_STORE_APP_ID")
+          if ! [[ "$LATEST" =~ ^[0-9]+$ ]]; then
+            echo "ERROR: get-latest-build-number returned non-numeric: '$LATEST'"
+            exit 1
+          fi
           NEXT=$((LATEST + 1))
-          echo "Latest build in App Store Connect: $LATEST → using $NEXT"
+          echo "Latest build on App Store Connect: $LATEST → next: $NEXT"
           echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
       - name: Flutter build ipa
         script: |
