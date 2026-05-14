@@ -867,64 +867,68 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                         child: Scaffold(
                           body: CustomScrollView(
                             slivers: [
-                              // Stitch top bar (NUDGE wordmark + avatar)
-                              SliverAppBar(
-                                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                                surfaceTintColor: Colors.transparent,
-                                elevation: 0,
-                                automaticallyImplyLeading: false,
-                                titleSpacing: 0,
-                                title: StitchTopBar(
-                                  avatarUrl: user.photoURL,
-                                  onTrailingTap: () =>
-                                      Navigator.pushNamed(context, '/settings'),
+                              // NUDGE wordmark + avatar — placed in a
+                              // SliverToBoxAdapter (not SliverAppBar) so it
+                              // scrolls away with the rest of the page
+                              // content per the design feedback.
+                              SliverToBoxAdapter(
+                                child: SafeArea(
+                                  bottom: false,
+                                  child: StitchTopBar(
+                                    avatarUrl: user.photoURL,
+                                    onTrailingTap: () =>
+                                        Navigator.pushNamed(context, '/settings'),
+                                  ),
                                 ),
-                                floating: true,
-                                snap: true,
-                                pinned: false,
-                                centerTitle: false,
                               ),
                               SliverToBoxAdapter(
                                 child: Padding(
                                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                  // Title + Add Group on the same row,
+                                  // mirroring the Calendar/View Calendar
+                                  // pattern on Nudges. Subtitle removed
+                                  // per design feedback.
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.center,
                                     children: [
-                                      const StitchScreenTitle(
-                                        title: 'Your Universe',
-                                        subtitle:
-                                            'Stay connected with the people who matter most. Your social ecosystem at a glance.',
-                                        padding: EdgeInsets.zero,
-                                      ),
-                                      const SizedBox(height: 16),
-                                      Align(
-                                        alignment: Alignment.centerRight,
-                                        child: ElevatedButton.icon(
-                                          onPressed: () => _showCreateGroupDialog(
-                                              context, apiService,
-                                              themeProvider: themeProvider),
-                                          icon: const Icon(Icons.add, size: 16),
-                                          label: Text('Add Group',
-                                              style: GoogleFonts.beVietnamPro(
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.w600)),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Theme.of(context)
-                                                .colorScheme
-                                                .surfaceContainerLow,
-                                            foregroundColor: theme.colorScheme.primary,
-                                            side: BorderSide(
-                                                color: themeProvider.isDarkMode
-                                                    ? AppColors.darkSurfaceContainerHighest
-                                                    : Theme.of(context).colorScheme.onSurface,
-                                                width: 1),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(20),
-                                            ),
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 14, vertical: 8),
-                                            elevation: 0,
+                                      Expanded(
+                                        child: Text(
+                                          'Your Universe',
+                                          style: GoogleFonts.plusJakartaSans(
+                                            fontSize: 30,
+                                            fontWeight: FontWeight.w800,
+                                            color: theme.colorScheme.onSurface,
+                                            letterSpacing: -0.8,
+                                            height: 1.1,
                                           ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      ElevatedButton.icon(
+                                        onPressed: () => _showCreateGroupDialog(
+                                            context, apiService,
+                                            themeProvider: themeProvider),
+                                        icon: const Icon(Icons.add, size: 16),
+                                        label: Text('Add Group',
+                                            style: GoogleFonts.beVietnamPro(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600)),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Theme.of(context)
+                                              .colorScheme
+                                              .surfaceContainerLow,
+                                          foregroundColor: theme.colorScheme.primary,
+                                          side: BorderSide(
+                                              color: themeProvider.isDarkMode
+                                                  ? AppColors.darkSurfaceContainerHighest
+                                                  : Theme.of(context).colorScheme.onSurface,
+                                              width: 1),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(20),
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 14, vertical: 8),
+                                          elevation: 0,
                                         ),
                                       ),
                                     ],
@@ -932,61 +936,80 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                                 ),
                               ),
 
-                              // Groups List - Using ReorderableListView directly in SliverList
-                              SliverFillRemaining(
-                                hasScrollBody: true,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: _isReordering 
-                                      ? const Center(child: CircularProgressIndicator())
-                                      : ReorderableListView.builder(
-                                          itemCount: filteredGroups.length,
-                                          itemBuilder: (context, index) {
-                                            final group = filteredGroups[index];
-                                            final groupMembers = contacts.where((contact) => 
-                                              contact.connectionType == group.name || contact.connectionType == group.id
-                                            ).toList();
-                                            
-                                            final progress = _calculateGroupProgress(groupMembers, nudges);
-                                            
-                                            return Container(
-                                              key: Key(group.id),
-                                              margin: const EdgeInsets.only(bottom: 12),
-                                              child: _buildGroupCard(
-                                                context, 
-                                                group, 
-                                                groupMembers, 
-                                                progress, 
-                                                apiService, 
-                                                themeProvider: themeProvider
-                                              ),
-                                            );
-                                          },
-                                          onReorder: (oldIndex, newIndex) {
-                                            _reorderGroups(oldIndex, newIndex, filteredGroups, apiService);
-                                          },
-                                          proxyDecorator: (child, index, animation) {
-                                            return AnimatedBuilder(
-                                              animation: animation,
-                                              builder: (context, child) {
-                                                final elevation = CurvedAnimation(
-                                                  parent: animation,
-                                                  curve: Curves.easeInOut,
-                                                ).value * 8;
-                                                
-                                                return Material(
-                                                  elevation: elevation,
-                                                  color: Colors.transparent,
-                                                  shadowColor: AppColors.lightPrimary.withOpacity(0.3),
-                                                  child: child,
-                                                );
-                                              },
-                                              child: child,
-                                            );
-                                          },
+                              // Groups list as a SliverList (NOT
+                              // SliverFillRemaining + ReorderableListView)
+                              // so it scrolls within the same outer
+                              // CustomScrollView — meaning the title
+                              // and Add Group button scroll out of view
+                              // with the rest of the page content per
+                              // the design feedback. SliverReorderableList
+                              // preserves the drag-to-reorder behavior.
+                              if (_isReordering)
+                                const SliverToBoxAdapter(
+                                  child: Center(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(40),
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  ),
+                                )
+                              else
+                                SliverPadding(
+                                  padding:
+                                      const EdgeInsets.symmetric(horizontal: 16),
+                                  sliver: SliverReorderableList(
+                                    itemCount: filteredGroups.length,
+                                    itemBuilder: (context, index) {
+                                      final group = filteredGroups[index];
+                                      final groupMembers = contacts
+                                          .where((contact) =>
+                                              contact.connectionType ==
+                                                  group.name ||
+                                              contact.connectionType == group.id)
+                                          .toList();
+                                      final progress = _calculateGroupProgress(
+                                          groupMembers, nudges);
+                                      return Container(
+                                        key: Key(group.id),
+                                        margin:
+                                            const EdgeInsets.only(bottom: 12),
+                                        child: _buildGroupCard(
+                                          context,
+                                          group,
+                                          groupMembers,
+                                          progress,
+                                          apiService,
+                                          themeProvider: themeProvider,
                                         ),
+                                      );
+                                    },
+                                    onReorder: (oldIndex, newIndex) {
+                                      _reorderGroups(oldIndex, newIndex,
+                                          filteredGroups, apiService);
+                                    },
+                                    proxyDecorator:
+                                        (child, index, animation) {
+                                      return AnimatedBuilder(
+                                        animation: animation,
+                                        builder: (context, child) {
+                                          final elevation = CurvedAnimation(
+                                                parent: animation,
+                                                curve: Curves.easeInOut,
+                                              ).value *
+                                              8;
+                                          return Material(
+                                            elevation: elevation,
+                                            color: Colors.transparent,
+                                            shadowColor: AppColors.lightPrimary
+                                                .withOpacity(0.3),
+                                            child: child,
+                                          );
+                                        },
+                                        child: child,
+                                      );
+                                    },
+                                  ),
                                 ),
-                              ),
                               // Bottom padding for FAB
                               const SliverToBoxAdapter(
                                 child: SizedBox(height: 80),
@@ -1157,13 +1180,18 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        // White card to match the contact list cards on the Contacts
+        // page (per Section 8 feedback). Dark mode uses the same dark
+        // surface as Contacts cards.
+        color: themeProvider.isDarkMode
+            ? Theme.of(context).colorScheme.surfaceContainerHigh
+            : Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(themeProvider.isDarkMode ? 0.3 : 0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(themeProvider.isDarkMode ? 0.30 : 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
