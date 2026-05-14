@@ -55,6 +55,9 @@ class _SocialUniverseImmersiveScreenState
   static const double _innerRingDiameter = 280;
   static const double _middleRingDiameter = 480;
   static const double _outerRingDiameter = 680;
+  // Universe canvas is a fixed square just bigger than the outer ring
+  // so the star labels (~56px on each side) never get clipped.
+  static const double _universeCanvasSize = _outerRingDiameter + 160;
 
   // Pulse glow on stars + slow orbital rotation are driven by separate
   // controllers so their cadence is independent.
@@ -62,8 +65,10 @@ class _SocialUniverseImmersiveScreenState
   late final AnimationController _orbitController;
 
   // InteractiveViewer scale/pan state — lets the user pinch to inspect
-  // the outer ring which extends beyond a typical phone viewport.
+  // the universe. Initial scale is set in didChangeDependencies so the
+  // outer ring fits the viewport at first paint regardless of device.
   final TransformationController _viewport = TransformationController();
+  bool _initialScaleApplied = false;
 
   @override
   void initState() {
@@ -76,6 +81,19 @@ class _SocialUniverseImmersiveScreenState
       vsync: this,
       duration: const Duration(seconds: 90), // one full revolution / 1.5 min
     )..repeat();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_initialScaleApplied) return;
+    final size = MediaQuery.of(context).size;
+    // Pad for the top app bar (≈90) + bottom nav (≈110) so the universe
+    // sits in the visible area, then fit the canvas square inside it.
+    final usable = math.min(size.width, size.height - 200);
+    final scale = (usable / _universeCanvasSize).clamp(0.4, 1.0);
+    _viewport.value = Matrix4.identity()..scale(scale);
+    _initialScaleApplied = true;
   }
 
   @override
@@ -105,82 +123,84 @@ class _SocialUniverseImmersiveScreenState
             return Stack(
               fit: StackFit.expand,
               children: [
-                // Starfield background painted on a single CustomPaint.
-                const Positioned.fill(
-                  child: CustomPaint(painter: _StarfieldPainter()),
-                ),
-
-                // Soft radial purple glow layered on top of the field.
-                const Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: RadialGradient(
-                        radius: 0.7,
-                        colors: [
-                          Color(0x14751FE7), // 8% primary
-                          Color(0x00751FE7),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-
-                // Pinch-zoomable universe layer.
-                // - Rings + stars rotate slowly via _orbitController so the
-                //   universe feels alive.
-                // - YOU avatar lives outside the rotating layer so the
-                //   photo doesn't spin in place.
-                // - InteractiveViewer with generous boundaryMargin lets the
-                //   user pinch in/out and pan to inspect the outer 680px
-                //   ring even on small viewports.
+                // Pinch-zoomable universe — starfield, soft glow, rings,
+                // stars, and YOU avatar are ALL inside the InteractiveViewer
+                // so they scale together. The canvas is a fixed square
+                // bigger than the outer ring so every ring renders as a
+                // complete closed circle at every zoom level. Initial
+                // transform (didChangeDependencies) fits the canvas to
+                // the viewport so the outer ring is visible on first paint.
                 Positioned.fill(
                   child: InteractiveViewer(
                     transformationController: _viewport,
-                    minScale: 0.5,
+                    minScale: 0.4,
                     maxScale: 3.0,
                     boundaryMargin: const EdgeInsets.all(400),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        AnimatedBuilder(
-                          animation: _orbitController,
-                          builder: (context, child) {
-                            final angle =
-                                _orbitController.value * 2 * math.pi;
-                            return Transform.rotate(
-                              angle: angle,
-                              child: child,
-                            );
-                          },
-                          child: _UniverseCanvas(
-                            contacts: placedContacts,
-                            pulseController: _pulseController,
-                            orbitController: _orbitController,
-                            innerDiameter: _innerRingDiameter,
-                            middleDiameter: _middleRingDiameter,
-                            outerDiameter: _outerRingDiameter,
-                            ringColor: _ringColor,
-                            primary: _primary,
-                            primaryContainer: _primaryContainer,
-                            secondary: _secondary,
-                            tertiary: _tertiary,
-                            secondaryFixedDim: _secondaryFixedDim,
-                            onPrimary: _onPrimary,
-                            onStarTap: (contact, ring) => _openContact(
-                                context, apiService, contact, ring),
-                          ),
-                        ),
+                    child: Center(
+                      child: SizedBox(
+                        width: _universeCanvasSize,
+                        height: _universeCanvasSize,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            // Starfield — sized to the canvas so it scales
+                            // with everything else during pinch-zoom.
+                            const Positioned.fill(
+                              child: CustomPaint(painter: _StarfieldPainter()),
+                            ),
+                            // Soft radial purple glow over the starfield.
+                            const Positioned.fill(
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  gradient: RadialGradient(
+                                    radius: 0.7,
+                                    colors: [
+                                      Color(0x14751FE7), // 8% primary
+                                      Color(0x00751FE7),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            AnimatedBuilder(
+                              animation: _orbitController,
+                              builder: (context, child) {
+                                final angle =
+                                    _orbitController.value * 2 * math.pi;
+                                return Transform.rotate(
+                                  angle: angle,
+                                  child: child,
+                                );
+                              },
+                              child: _UniverseCanvas(
+                                contacts: placedContacts,
+                                pulseController: _pulseController,
+                                orbitController: _orbitController,
+                                innerDiameter: _innerRingDiameter,
+                                middleDiameter: _middleRingDiameter,
+                                outerDiameter: _outerRingDiameter,
+                                ringColor: _ringColor,
+                                primary: _primary,
+                                primaryContainer: _primaryContainer,
+                                secondary: _secondary,
+                                tertiary: _tertiary,
+                                secondaryFixedDim: _secondaryFixedDim,
+                                onPrimary: _onPrimary,
+                                onStarTap: (contact, ring) => _openContact(
+                                    context, apiService, contact, ring),
+                              ),
+                            ),
 
-                        // Static YOU avatar — counter-rotated so it stays
-                        // upright while the rings rotate around it.
-                        Center(
-                          child: _CentralYou(
-                            primary: _primary,
-                            primaryContainer: _primaryContainer,
-                            spaceBackground: _spaceBackground,
-                          ),
+                            // Static YOU avatar — sits at canvas centre,
+                            // doesn't rotate.
+                            _CentralYou(
+                              primary: _primary,
+                              primaryContainer: _primaryContainer,
+                              spaceBackground: _spaceBackground,
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
