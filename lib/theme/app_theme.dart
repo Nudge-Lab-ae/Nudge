@@ -32,6 +32,17 @@ class AppColors {
   static const Color lightPrimaryFixed = Color(0xFFB58BFF);
   static const Color lightPrimaryFixedDim = Color(0xFFA978FF);
 
+  // ── Shared "Solid Purple" tokens ─────────────────────────────────────────
+  // The exact gradient used by the Manage Plan / Subscription card on the
+  // Settings page. This is the canonical "solid purple" referenced
+  // throughout the design system — use these tokens whenever a component
+  // calls for the brand purple in BOTH light and dark mode (no separate
+  // "dark-mode purple" variant). #751FE7 is the same as lightPrimary; the
+  // dark stop and the deeper text fallback live here for consistency.
+  static const Color solidPurple = Color(0xFF751FE7);
+  static const Color solidPurpleDark = Color(0xFF4A0FAA);
+  static const Color solidPurpleSoft = Color(0xFF9C4DFF); // hover/active
+
   static const Color lightSecondary = Color(0xFF006288);
   static const Color lightOnSecondary = Color(0xFFE8F4FF);
   static const Color lightSecondaryContainer = Color(0xFF9ED9FF);

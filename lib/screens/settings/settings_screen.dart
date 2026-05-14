@@ -676,21 +676,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  // ── Subscription card (purple gradient) ─────────────────────────────────
-  Widget _buildSubscriptionCard() {
-    // final isDark = Provider.of<ThemeProvider>(context, listen: false).isDarkMode;
+  // Opens the platform's native subscription management page. iOS uses the
+  // documented `itms-apps://...` deep-link to App Store subscriptions;
+  // Android uses the Play Store equivalent. Falls back to a snackbar if
+  // neither URL is launchable.
+  Future<void> _openManageSubscription() async {
+    _dismissKeyboard();
+    final iosUri =
+        Uri.parse('itms-apps://apps.apple.com/account/subscriptions');
+    final androidUri = Uri.parse(
+        'https://play.google.com/store/account/subscriptions?package=com.nudge_lab');
+    final uri = Platform.isIOS ? iosUri : androidUri;
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Open your device store and search for Nudge to manage your subscription.'),
+          duration: Duration(seconds: 4),
+        ),
+      );
+    }
+  }
 
+  // ── Subscription card (purple gradient) ─────────────────────────────────
+  // Uses the canonical AppColors.solidPurple → AppColors.solidPurpleDark
+  // gradient that anchors every other "solid purple" component.
+  Widget _buildSubscriptionCard() {
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF751FE7), Color(0xFF4A0FAA)],
+          colors: [AppColors.solidPurple, AppColors.solidPurpleDark],
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF751FE7).withOpacity(0.35),
+            color: AppColors.solidPurple.withOpacity(0.35),
             blurRadius: 20,
             offset: const Offset(0, 6),
           ),
@@ -748,13 +772,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Manage Plan button
+            // Manage Plan button — opens the platform's native
+            // subscription management page (App Store on iOS, Play Store
+            // on Android). Both platforms expose a deep-link URL the OS
+            // resolves to the in-app subscriptions screen.
             SizedBox(
               width: double.infinity, height: 46,
               child: ElevatedButton(
-                onPressed: () {
-                  // Subscription management navigation can go here
-                },
+                onPressed: _openManageSubscription,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: const Color(0xFF751FE7),
@@ -1470,9 +1495,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Subscription card dropped — no billing backend
-                            // wired up yet. Re-add when subscription logic
-                            // exists (see _buildSubscriptionCard above).
+                            // Manage Plan / Subscription card — uses the
+                            // canonical AppColors.solidPurple gradient that
+                            // anchors the rest of the design system's
+                            // purple-accent components.
+                            _buildSubscriptionCard(),
+                            const SizedBox(height: 30),
 
                             Text(
                               'GENERAL',
