@@ -37,6 +37,18 @@ subprojects {
                 buildToolsVersion "35.0.0"
           }
       }
+      // Fix for old packages missing namespace (required by AGP 8+)
+      if (project.plugins.hasPlugin("com.android.library") && !project.android.namespace) {
+          def manifestFile = project.file("src/main/AndroidManifest.xml")
+          if (manifestFile.exists()) {
+              def packageName = new groovy.xml.XmlSlurper()
+                  .parse(manifestFile)
+                  .@package?.toString()
+              if (packageName) {
+                  project.android.namespace = packageName
+              }
+          }
+      }
     }
 }
 subprojects {
