@@ -139,17 +139,14 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     Contact contact, {
     required bool isDark,
     required ColorScheme scheme,
-    double size = 50,
+    double size = 54,
   }) {
     final initials = _getContactInitials(contact.name);
-    // Unified avatar style — when there's no profile photo we use the
-    // same deterministic pastel circle + initials treatment as the
-    // Frequently Contacted row, instead of the green-gradient asset.
-    // _getAvatarColors hashes the contact.id so the same person keeps
-    // the same colour every render (and the same on iOS + Android).
-    final (bgColor, textColor) = isDark
-        ? _getAvatarColorsDark(contact.id)
-        : _getAvatarColors(contact.id);
+    // Restored bold/colorful default avatar (assets/contact-icons/N.png +
+    // dark scrim + bold white initials) per Section 3 feedback. NO theme
+    // filtering — the same scrim opacity is used in light AND dark mode
+    // so the avatar reads identically in either theme.
+    final assetPath = 'assets/contact-icons/${getRandomIndex(contact.id)}.png';
 
     return Stack(
       clipBehavior: Clip.none,
@@ -157,35 +154,42 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
         Container(
           width: size,
           height: size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: bgColor,
-          ),
+          decoration: const BoxDecoration(shape: BoxShape.circle),
           child: ClipOval(
             child: contact.imageUrl.isNotEmpty
                 ? Image.network(
                     contact.imageUrl,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Center(
-                      child: Text(
-                        initials,
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: size * 0.34,
-                          fontWeight: FontWeight.w700,
-                          color: textColor,
-                        ),
-                      ),
+                    errorBuilder: (_, __, ___) => Image.asset(
+                      assetPath,
+                      fit: BoxFit.cover,
                     ),
                   )
-                : Center(
-                    child: Text(
-                      initials,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: size * 0.34,
-                        fontWeight: FontWeight.w700,
-                        color: textColor,
+                : Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Image.asset(assetPath, fit: BoxFit.cover),
+                      // Single flat scrim so initials always read.
+                      // Identical opacity in light + dark modes (no
+                      // theme filtering — Section 3 explicit ask).
+                      Container(color: Colors.black.withOpacity(0.25)),
+                      Center(
+                        child: Text(
+                          initials,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: size * 0.30,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black.withOpacity(0.4),
+                                blurRadius: 4,
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
           ),
         ),
