@@ -32,9 +32,6 @@ class ClaudeService {
           .collection('config')
           .doc('claude')
           .get();
-      print('got the key'); 
-      print(uid);
-      if (doc.exists) print(doc.data()?['apiKey'] as String);
       if (doc.exists) return doc.data()?['apiKey'] as String?;
       return null;
     } catch (e) {
