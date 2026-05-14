@@ -15,9 +15,9 @@ workflows:
       - name: Set up Android key.properties
         script: |
           cat > "$CM_BUILD_DIR/android/key.properties" << EOF
-          storePassword=$CM_KEYSTORE_PASSWORD
-          keyPassword=$CM_KEY_PASSWORD
-          keyAlias=$CM_KEY_ALIAS
+          storePassword=$nudgepass
+          keyPassword=$nudgepass
+          keyAlias=$nudge
           storeFile=$CM_BUILD_DIR/key/nudge-key.keystore
           EOF
       - name: Install Flutter dependencies
