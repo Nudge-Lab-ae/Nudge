@@ -11,6 +11,8 @@ workflows:
       cocoapods: default
       groups:
         - firebase_credentials
+      vars:
+        APP_STORE_APP_ID: "6753679854"
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.nudge--shay
@@ -49,9 +51,24 @@ workflows:
         script: |
           cd ios
           pod install --repo-update
+      - name: Bump build number from App Store Connect
+        script: |
+          set -e
+          # Ask App Store Connect for the highest build number it has
+          # ever seen for this app (TestFlight or App Store, whichever
+          # is higher). +1 becomes the next build. This kills the
+          # "duplicate cfBundleVersion" 409 once and for all — pubspec
+          # build number stops mattering.
+          LATEST_TF=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APP_ID" 2>/dev/null || echo "0")
+          LATEST_AS=$(app-store-connect get-latest-app-store-build-number "$APP_STORE_APP_ID" 2>/dev/null || echo "0")
+          LATEST=$([ "$LATEST_TF" -gt "$LATEST_AS" ] && echo "$LATEST_TF" || echo "$LATEST_AS")
+          NEXT=$((LATEST + 1))
+          echo "Latest build in App Store Connect: $LATEST → using $NEXT"
+          echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
       - name: Flutter build ipa
         script: |
           flutter build ipa --release \
+            --build-number="$BUILD_NUMBER" \
             --export-options-plist=/Users/builder/export_options.plist
     artifacts:
       - build/ios/ipa/*.ipa
