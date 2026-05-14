@@ -338,11 +338,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           
           Consumer<FeedbackProvider>(
             builder: (context, feedbackProvider, child) {
-              // Lifted to clear the new full-width nav bar (Section 4).
-              // Mockup uses bottom-32 (128px); 116 gives a tighter sit
-              // against the nav with safe-area inset accounted for.
+              // Lifted to clear the new full-width nav bar. With the
+              // nav height reduced (Section 4) the FAB drops from 116
+              // to 100 so it sits tighter against the nav while still
+              // clearing the iOS home indicator + Android gesture nav.
               return Positioned(
-                bottom: 116,
+                bottom: 100,
                 right: 20,
                 child: FeedbackFloatingButton(
                   currentSection: getCurrentSection(),
@@ -763,7 +764,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
-      padding: EdgeInsets.fromLTRB(16, 12, 16, 12 + bottomInset),
+      // Tighter padding so the icons sit closer to the bottom edge.
+      // Top padding 8 (was 12), bottom 4 + safe-area inset (was 12 +).
+      // The safe-area inset still respects iOS home indicator and Android
+      // gesture-handle space, so icons never overlap them.
+      padding: EdgeInsets.fromLTRB(16, 8, 16, 4 + bottomInset),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
@@ -834,7 +839,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
         decoration: BoxDecoration(
           color: isSelected ? activeBg : Colors.transparent,
           borderRadius: BorderRadius.circular(9999),
