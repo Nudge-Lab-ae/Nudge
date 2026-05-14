@@ -29,6 +29,7 @@ import 'package:nudge/widgets/feedback_floating_button.dart';
 import 'package:nudge/widgets/interactive_donut_chart.dart';
 // import 'package:nudge/widgets/gradient_text.dart';
 import 'package:nudge/widgets/screen_tracker.dart';
+import 'package:nudge/widgets/stitch_top_bar.dart';
 // import 'package:nudge/widgets/simple_contact_panel.dart';
 import 'package:nudge/widgets/social_universe.dart';
 import 'package:percent_indicator/percent_indicator.dart';
@@ -686,56 +687,48 @@ class _DashboardScreenState extends State<DashboardScreen> {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
+      backgroundColor: themeProvider.isDarkMode
+          ? Theme.of(context).colorScheme.surfaceContainerHigh
+          : Colors.white,
       builder: (context) {
         return SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  'ADD CONTACTS',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontSize: 18,
-                    fontFamily: GoogleFonts.beVietnamPro().fontFamily,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+              const StitchModalHeader(
+                title: 'Add Contacts',
+                subtitle: 'Build out your universe.',
               ),
-              ListTile(
-                leading: Icon(Icons.person_add, color: Theme.of(context).colorScheme.primary),
-                title: Text('ADD CONTACT MANUALLY', style: TextStyle(fontWeight: FontWeight.w700, fontFamily: GoogleFonts.beVietnamPro().fontFamily, color: Theme.of(context).colorScheme.onSurface)),
-                subtitle: Text('Create a new contact from scratch', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily,)),
+              const SizedBox(height: 8),
+              StitchModalListTile(
+                icon: Icons.person_add_alt_1_rounded,
+                title: 'Add Contact Manually',
+                subtitle: 'Create a new contact from scratch',
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.pushNamed(context, '/add_contact');
                 },
               ),
-              ListTile(
-                leading: Icon(Icons.import_contacts, color: Theme.of(context).colorScheme.primary),
-                title: Text('IMPORT CONTACTS', style: TextStyle(fontWeight: FontWeight.w700, fontFamily: GoogleFonts.beVietnamPro().fontFamily, color: Theme.of(context).colorScheme.onSurface)),
-                subtitle: Text('Import from your device contacts', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily,)),
-                onTap: () async{
+              StitchModalListTile(
+                icon: Icons.import_contacts_rounded,
+                title: 'Import Contacts',
+                subtitle: 'Import from your device contacts',
+                onTap: () async {
                   Navigator.pop(context);
-                  // Navigator.pushNamed(context, '/import_contacts');
                   final result = await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => ImportContactsScreen(
                         isOnboarding: false,
-                        // No preSelectedGroup means it's from FAB
-                        ),
                       ),
-                    );
-
+                    ),
+                  );
                   _handleImportResult(result);
                 },
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
             ],
           ),
         );

@@ -164,6 +164,129 @@ class StitchScreenTitle extends StatelessWidget {
   }
 }
 
+/// Canonical typography for any modal / bottom sheet header. Pairs with
+/// [StitchModalListTile] for action rows so every popup in the app shares
+/// the same visual rhythm.
+class StitchModalHeader extends StatelessWidget {
+  final String title;
+  final String? subtitle;
+  final EdgeInsets padding;
+
+  const StitchModalHeader({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.padding = const EdgeInsets.fromLTRB(20, 16, 20, 8),
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: padding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Soft drag-handle the user expects on iOS bottom sheets.
+          Center(
+            child: Container(
+              width: 36,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: scheme.outlineVariant.withOpacity(0.6),
+                borderRadius: BorderRadius.circular(9999),
+              ),
+            ),
+          ),
+          Text(
+            title,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: scheme.onSurface,
+              letterSpacing: -0.4,
+              height: 1.15,
+            ),
+          ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              subtitle!,
+              style: GoogleFonts.beVietnamPro(
+                fontSize: 13,
+                color: scheme.onSurfaceVariant,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Action row used inside Stitch modal sheets — pairs with [StitchModalHeader].
+class StitchModalListTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final VoidCallback onTap;
+
+  const StitchModalListTile({
+    super.key,
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return ListTile(
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: scheme.primary.withOpacity(0.10),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(icon, color: scheme.primary, size: 20),
+      ),
+      title: Text(
+        title,
+        style: GoogleFonts.plusJakartaSans(
+          fontSize: 16,
+          fontWeight: FontWeight.w700,
+          color: scheme.onSurface,
+        ),
+      ),
+      subtitle: subtitle == null
+          ? null
+          : Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                subtitle!,
+                style: GoogleFonts.beVietnamPro(
+                  fontSize: 13,
+                  color: scheme.onSurfaceVariant,
+                  height: 1.35,
+                ),
+              ),
+            ),
+      trailing: Icon(
+        Icons.chevron_right_rounded,
+        color: scheme.onSurfaceVariant,
+        size: 20,
+      ),
+    );
+  }
+}
+
 /// Cream/dark surface card with the canonical 32px corner radius and the
 /// soft drop shadow used across Stitch v4 mockups.
 class StitchCard extends StatelessWidget {
