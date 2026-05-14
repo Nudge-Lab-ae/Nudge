@@ -741,9 +741,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       [List<Nudge>? nudgeOverride]) {
     final overdueNudges = _getOverdueNudges(nudgeOverride ?? allNudges);
     final hasOverdue = overdueNudges.isNotEmpty;
-    // Dark variant only on Universe tab (per social_universe_brighter_glow_2);
-    // every other tab gets the light variant per contacts_final_alignment.
-    final isUniverse = _currentIndex == 1;
+    // Use the Social-Universe dark nav variant whenever the app is in dark
+    // mode, regardless of tab — Section 1. The Universe tab is always dark so
+    // it also forces the dark variant in light mode.
+    final isUniverse = _currentIndex == 1 || themeProvider.isDarkMode;
     final bottomInset = MediaQuery.of(context).padding.bottom;
 
     return Container(
