@@ -219,7 +219,12 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
 
     // ── Expanded: full-screen overlay + vertical menu ─────────────────────
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final useWhiteLabels = isDark || widget.onDarkBackground;
+    // Label color follows the SCRIM (which now has tint), not the
+    // underlying screen. Light scrim → dark text; dark scrim → light text.
+    // Previously useWhiteLabels also flipped on widget.onDarkBackground
+    // (Universe), but the new tinted scrim makes that unnecessary —
+    // and would have left white labels on a white scrim in light mode.
+    final useWhiteLabels = isDark;
 
     return SizedBox(
       width: size.width,
@@ -227,13 +232,22 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // ── Backdrop blur (no tint — pure blur only) ───────────────────
+          // ── Backdrop blur + tinted scrim ──────────────────────────────
+          // Pure-blur previously left the popup readable only when the
+          // background happened to be neutral. Over the purple Daily
+          // Momentum card the menu labels were unreadable. Adding a
+          // semi-opaque scrim lifts contrast against any underlying
+          // surface while keeping the frosted-glass feel.
           Positioned.fill(
             child: GestureDetector(
               onTap: _closeMenu,
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 6.0, sigmaY: 6.0),
-                child: Container(color: Colors.transparent),
+                filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
+                child: Container(
+                  color: isDark
+                      ? Colors.black.withOpacity(0.55)
+                      : Colors.white.withOpacity(0.65),
+                ),
               ),
             ),
           ),
