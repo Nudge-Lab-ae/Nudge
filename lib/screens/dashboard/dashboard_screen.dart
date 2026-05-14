@@ -70,6 +70,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedPieSegmentIndex = -1;
   String? _explodedCategory;
 
+  // Which nudge section (if any) is currently expanded inline. Only one of
+  // 'pending' / 'upcoming' can be open at a time; tapping the active one
+  // collapses it again and brings the sibling cards back.
+  String? _expandedNudgeSection;
+
   final ConfettiController _confettiController = ConfettiController(
     duration: const Duration(seconds: 3)
   );
@@ -280,17 +285,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   
                   // Return different screens based on current index
                   switch (_currentIndex) {
-                    // case 0:
-                    //   return _buildDashboardWithSliver(themeProvider, contacts, groups, apiService);
-                    case 1: // Social Universe is now at index 1
+                    case 1: // Social Universe
                       return const SocialUniverseImmersiveScreen();
-                    case 2: // Notifications moved to index 4
-                      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-                      final pendingNudgeId = args?['pendingNudgeId'];
-                      return  NotificationsScreen(showAppBar: false, pendingNudgeId: pendingNudgeId);
-                      case 3: // Groups moved to index 3
+                    case 2: // Nudges tab now renders the today-agenda
+                            // dashboard (the previously-hidden screen)
+                            // instead of the legacy NotificationsScreen.
+                            // The old screen is kept in source — still
+                            // accessible via deep link / pending-nudge
+                            // route — but no longer the bottom-nav
+                            // destination.
+                      return _buildDashboardWithSliver(
+                          themeProvider, contacts, groups, apiService);
+                      case 3: // Groups
                       return const GroupsListScreen(showAppBar: false);
-                    case 4: // Contacts moved to index 2
+                    case 4: // Contacts
                       return ContactsListScreen(
                         showAppBar: false,
                         filter: vipFilter ? 'vip' : attentionFilter ? 'needs_attention' : '',
@@ -1730,15 +1738,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 140),
                 sliver: SliverList(
-                  delegate: SliverChildListDelegate([
-                    _buildUpcomingNudgesCard(nudges, themeProvider),
-                    const SizedBox(height: 20),
-                    _buildTodaysNudgesCard(nudges, contacts, themeProvider),
-                    const SizedBox(height: 20),
-                    _buildDailyMomentumCard(nudges),
-                    const SizedBox(height: 20),
-                    _buildGrowUniverseCard(themeProvider),
-                  ]),
+                  delegate: SliverChildListDelegate(
+                    _buildDashboardCards(nudges, contacts, themeProvider),
+                  ),
                 ),
               ),
             ],
@@ -1746,6 +1748,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
         },
       ),
     );
+  }
+
+  // Returns the dashboard's vertical card stack, gated by expansion state.
+  // When a section is expanded, sibling cards are hidden so the user has the
+  // full screen to scroll the expanded list. AnimatedSwitcher wraps the
+  // result so add/remove transitions cross-fade smoothly.
+  List<Widget> _buildDashboardCards(
+      List<Nudge> nudges, List<Contact> contacts, ThemeProvider themeProvider) {
+    final expanded = _expandedNudgeSection;
+    if (expanded == 'pending') {
+      return [_buildTodaysNudgesCard(nudges, contacts, themeProvider)];
+    }
+    if (expanded == 'upcoming') {
+      return [_buildUpcomingNudgesCard(nudges, themeProvider)];
+    }
+    return [
+      _buildUpcomingNudgesCard(nudges, themeProvider),
+      const SizedBox(height: 20),
+      _buildTodaysNudgesCard(nudges, contacts, themeProvider),
+      const SizedBox(height: 20),
+      _buildDailyMomentumCard(nudges),
+      const SizedBox(height: 20),
+      _buildGrowUniverseCard(themeProvider),
+    ];
+  }
+
+  void _toggleExpandedSection(String section) {
+    setState(() {
+      _expandedNudgeSection =
+          _expandedNudgeSection == section ? null : section;
+    });
   }
 
   Widget _buildStitchTopBar(String? photoUrl, ThemeProvider themeProvider) {
@@ -1811,25 +1844,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final weekStart = today.subtract(Duration(days: today.weekday - 1));
     final week = List.generate(7, (i) => weekStart.add(Duration(days: i)));
     const dayLabels = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+    final isExpanded = _expandedNudgeSection == 'upcoming';
+    // Build the full upcoming-nudge list (future, not completed). Shown
+    // when the section is expanded inline.
+    final upcoming = nudges.where((n) {
+      if (n.isCompleted) return false;
+      return n.scheduledTime.isAfter(today);
+    }).toList()
+      ..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+    final upcomingFull = upcoming.toList();
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark
-            ? theme.colorScheme.surfaceContainerHigh
-            : Colors.white,
-        borderRadius: BorderRadius.circular(Radii.lg),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.30 : 0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOut,
+      alignment: Alignment.topCenter,
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark
+              ? theme.colorScheme.surfaceContainerHigh
+              : Colors.white,
+          borderRadius: BorderRadius.circular(Radii.lg),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.30 : 0.05),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
             decoration: BoxDecoration(
@@ -1847,13 +1893,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
           const SizedBox(height: 14),
-          Text(
-            'Upcoming Nudges',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: theme.colorScheme.onSurface,
-              letterSpacing: -0.4,
+          // Tappable title row — toggles the inline expanded list of all
+          // upcoming nudges.
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => _toggleExpandedSection('upcoming'),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Upcoming Nudges',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: theme.colorScheme.onSurface,
+                      letterSpacing: -0.4,
+                    ),
+                  ),
+                ),
+                AnimatedRotation(
+                  duration: const Duration(milliseconds: 180),
+                  turns: isExpanded ? 0.5 : 0,
+                  child: Icon(
+                    Icons.expand_more_rounded,
+                    color: theme.colorScheme.onSurfaceVariant,
+                    size: 24,
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 6),
@@ -1921,7 +1988,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
           ),
+          if (isExpanded) ...[
+            const SizedBox(height: 20),
+            const Divider(height: 1),
+            const SizedBox(height: 16),
+            if (upcomingFull.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  'No upcoming nudges scheduled.',
+                  style: GoogleFonts.beVietnamPro(
+                    fontSize: 14,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              )
+            else
+              ...upcomingFull.map((nudge) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child:
+                        _buildTodayNudgeRow(nudge, const [], themeProvider),
+                  )),
+          ],
         ],
+      ),
       ),
     );
   }
@@ -2021,83 +2111,122 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return n.scheduledTime.isBefore(tomorrow);
     }).toList()
       ..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
-    final visible = pendingToday.take(3).toList();
+    final isExpanded = _expandedNudgeSection == 'pending';
+    final visible =
+        isExpanded ? pendingToday : pendingToday.take(3).toList();
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark
-            ? theme.colorScheme.surfaceContainerHigh
-            : Colors.white,
-        borderRadius: BorderRadius.circular(Radii.lg),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.30 : 0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Today's Nudges",
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: theme.colorScheme.onSurface,
-                  letterSpacing: -0.3,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? theme.colorScheme.surfaceContainerHighest
-                      : Colors.white,
-                  borderRadius: BorderRadius.circular(9999),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
-                      blurRadius: 6,
-                      offset: const Offset(0, 1),
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOut,
+      alignment: Alignment.topCenter,
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark
+              ? theme.colorScheme.surfaceContainerHigh
+              : Colors.white,
+          borderRadius: BorderRadius.circular(Radii.lg),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.30 : 0.05),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Tappable header — toggles inline expand/collapse for the
+            // Pending Nudges section.
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => _toggleExpandedSection('pending'),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        'Pending Nudges',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: theme.colorScheme.onSurface,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      AnimatedRotation(
+                        duration: const Duration(milliseconds: 180),
+                        turns: isExpanded ? 0.5 : 0,
+                        child: Icon(
+                          Icons.expand_more_rounded,
+                          color: theme.colorScheme.onSurfaceVariant,
+                          size: 22,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? theme.colorScheme.surfaceContainerHighest
+                          : Colors.white,
+                      borderRadius: BorderRadius.circular(9999),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 6,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                    child: Text(
+                      '${pendingToday.length} Pending',
+                      style: GoogleFonts.beVietnamPro(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.solidPurple,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+            if (visible.isEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 22),
+                alignment: Alignment.center,
                 child: Text(
-                  '${pendingToday.length} Pending',
+                  "You're all caught up for today.",
+                  style: GoogleFonts.beVietnamPro(
+                    fontSize: 14,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              )
+            else
+              ...visible.map((nudge) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _buildTodayNudgeRow(nudge, contacts, themeProvider),
+                  )),
+            if (!isExpanded && pendingToday.length > 3)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  'Tap to see ${pendingToday.length - 3} more',
                   style: GoogleFonts.beVietnamPro(
                     fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: theme.colorScheme.primary,
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          if (visible.isEmpty)
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 22),
-              alignment: Alignment.center,
-              child: Text(
-                "You're all caught up for today.",
-                style: GoogleFonts.beVietnamPro(
-                  fontSize: 14,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            )
-          else
-            ...visible.map((nudge) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: _buildTodayNudgeRow(nudge, contacts, themeProvider),
-                )),
-        ],
+          ],
+        ),
       ),
     );
   }
