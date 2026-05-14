@@ -75,6 +75,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // collapses it again and brings the sibling cards back.
   String? _expandedNudgeSection;
 
+  // Tracks whether the Upcoming Nudges card's calendar is in week-strip
+  // mode (false, default) or full-month grid mode (true).
+  bool _calendarExpanded = false;
+
   final ConfettiController _confettiController = ConfettiController(
     duration: const Duration(seconds: 3)
   );
@@ -1923,36 +1927,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            'Stay on track with your scheduled reconnections this week.',
-            style: GoogleFonts.beVietnamPro(
-              fontSize: 14,
-              color: theme.colorScheme.onSurfaceVariant,
-              height: 1.45,
+          // Subtitle dropped per Section 5 — heading alone is enough.
+          const SizedBox(height: 16),
+          // Week strip when collapsed; full-month grid when Expand
+          // Calendar is on. The same per-day cell builder is reused.
+          if (_calendarExpanded)
+            _buildMonthGrid(today, nudges, themeProvider)
+          else
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                for (int i = 0; i < 7; i++)
+                  _buildWeekDayCell(
+                    label: dayLabels[i],
+                    date: week[i],
+                    isToday: week[i] == today,
+                    nudgeCount: nudges.where((n) {
+                      final s = n.scheduledTime;
+                      return DateTime(s.year, s.month, s.day) == week[i] &&
+                          !n.isCompleted;
+                    }).length,
+                    themeProvider: themeProvider,
+                  ),
+              ],
             ),
-          ),
-          const SizedBox(height: 22),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              for (int i = 0; i < 7; i++)
-                _buildWeekDayCell(
-                  label: dayLabels[i],
-                  date: week[i],
-                  isToday: week[i] == today,
-                  nudgeCount: nudges.where((n) {
-                    final s = n.scheduledTime;
-                    return DateTime(s.year, s.month, s.day) == week[i] &&
-                        !n.isCompleted;
-                  }).length,
-                  themeProvider: themeProvider,
-                ),
-            ],
-          ),
           const SizedBox(height: 20),
           GestureDetector(
-            onTap: () => setState(() => _currentIndex = 2),
+            onTap: () => setState(() {
+              _calendarExpanded = !_calendarExpanded;
+            }),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 11),
               decoration: BoxDecoration(
@@ -1974,7 +1977,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'Expand Calendar',
+                    _calendarExpanded ? 'Collapse Calendar' : 'Expand Calendar',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
@@ -1982,8 +1985,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Icon(Icons.calendar_month_rounded,
-                      size: 16, color: theme.colorScheme.onSurface),
+                  Icon(
+                    _calendarExpanded
+                        ? Icons.calendar_view_week_rounded
+                        : Icons.calendar_month_rounded,
+                    size: 16,
+                    color: theme.colorScheme.onSurface,
+                  ),
                 ],
               ),
             ),
@@ -2022,23 +2030,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required bool isToday,
     required int nudgeCount,
     required ThemeProvider themeProvider,
+    bool hideLabel = false,
   }) {
     final theme = Theme.of(context);
     final isDark = themeProvider.isDarkMode;
     return Column(
       children: [
-        Text(
-          label,
-          style: GoogleFonts.beVietnamPro(
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            color: isToday
-                ? theme.colorScheme.primary
-                : theme.colorScheme.outline,
-            letterSpacing: 0.4,
+        if (!hideLabel) ...[
+          Text(
+            label,
+            style: GoogleFonts.beVietnamPro(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: isToday
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.outline,
+              letterSpacing: 0.4,
+            ),
           ),
-        ),
-        const SizedBox(height: 6),
+          const SizedBox(height: 6),
+        ],
         Container(
           width: 38,
           height: 56,
@@ -2059,45 +2070,151 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ]
                 : null,
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+          // Stack so the date number sits at a fixed vertical offset
+          // regardless of whether the cell has a nudge dot underneath.
+          // Previously the dot pushed the centred number upward, leaving
+          // dot-bearing dates visually higher than dot-less neighbours.
+          child: Stack(
             children: [
-              Text(
-                '${date.day}',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: isToday
-                      ? Colors.white
-                      : theme.colorScheme.onSurface,
+              Positioned(
+                top: 18,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Text(
+                    '${date.day}',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: isToday
+                          ? Colors.white
+                          : theme.colorScheme.onSurface,
+                    ),
+                  ),
                 ),
               ),
-              if (nudgeCount > 0) ...[
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: List.generate(
-                    nudgeCount.clamp(1, 3),
-                    (i) => Container(
-                      margin: EdgeInsets.only(left: i == 0 ? 0 : 2),
-                      width: 4,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: isToday
-                            ? Colors.white
-                            : theme.colorScheme.primary,
-                        shape: BoxShape.circle,
+              if (nudgeCount > 0)
+                Positioned(
+                  bottom: 8,
+                  left: 0,
+                  right: 0,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: List.generate(
+                      nudgeCount.clamp(1, 3),
+                      (i) => Container(
+                        margin: EdgeInsets.only(left: i == 0 ? 0 : 2),
+                        width: 4,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: isToday
+                              ? Colors.white
+                              : theme.colorScheme.primary,
+                          shape: BoxShape.circle,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ],
             ],
           ),
         ),
       ],
     );
   }
+
+  // Full-month grid revealed when the user taps Expand Calendar. Same
+  // per-day cell renderer as the week strip so visual rhythm is
+  // consistent across both modes.
+  Widget _buildMonthGrid(
+      DateTime today, List<Nudge> nudges, ThemeProvider themeProvider) {
+    final theme = Theme.of(context);
+    final firstOfMonth = DateTime(today.year, today.month, 1);
+    final daysInMonth =
+        DateTime(today.year, today.month + 1, 0).day;
+    // 1 = Mon ... 7 = Sun. Subtract 1 so the column index is 0-based.
+    final leadingBlanks = firstOfMonth.weekday - 1;
+    final totalCells = leadingBlanks + daysInMonth;
+    final rows = (totalCells / 7).ceil();
+    final monthLabel =
+        '${_monthName(today.month)} ${today.year}';
+    const dayLabels = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 2, bottom: 12),
+          child: Text(
+            monthLabel,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: dayLabels
+              .map((l) => Text(
+                    l,
+                    style: GoogleFonts.beVietnamPro(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      color: theme.colorScheme.outline,
+                      letterSpacing: 0.4,
+                    ),
+                  ))
+              .toList(),
+        ),
+        const SizedBox(height: 8),
+        for (int row = 0; row < rows; row++) ...[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: List.generate(7, (col) {
+              final cellIndex = row * 7 + col;
+              final dayNum = cellIndex - leadingBlanks + 1;
+              if (dayNum < 1 || dayNum > daysInMonth) {
+                return const SizedBox(width: 38, height: 56);
+              }
+              final cellDate =
+                  DateTime(today.year, today.month, dayNum);
+              return _buildWeekDayCell(
+                label: '',
+                date: cellDate,
+                isToday: cellDate == today,
+                nudgeCount: nudges.where((n) {
+                  final s = n.scheduledTime;
+                  return DateTime(s.year, s.month, s.day) == cellDate &&
+                      !n.isCompleted;
+                }).length,
+                themeProvider: themeProvider,
+                hideLabel: true,
+              );
+            }),
+          ),
+          if (row < rows - 1) const SizedBox(height: 8),
+        ],
+      ],
+    );
+  }
+
+  String _monthName(int m) => const [
+        '',
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December',
+      ][m];
 
   Widget _buildTodaysNudgesCard(
       List<Nudge> nudges, List<Contact> contacts, ThemeProvider themeProvider) {
@@ -2387,14 +2504,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               const Icon(Icons.local_fire_department_rounded,
                   size: 30, color: Colors.white),
-              Text(
-                'DAILY MOMENTUM',
-                style: GoogleFonts.beVietnamPro(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white.withOpacity(0.85),
-                  letterSpacing: 1.6,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    'DAILY MOMENTUM',
+                    style: GoogleFonts.beVietnamPro(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white.withOpacity(0.85),
+                      letterSpacing: 1.6,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  // Streak logic isn't shipped yet — surface the
+                  // placeholder status explicitly so users don't think
+                  // the 0-day reading is a bug.
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.18),
+                      borderRadius: BorderRadius.circular(9999),
+                    ),
+                    child: Text(
+                      'COMING SOON',
+                      style: GoogleFonts.beVietnamPro(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
