@@ -1,1 +1,40 @@
-
+workflows:
+  android-workflow:
+    name: Android Workflow
+    max_build_duration: 60
+    environment:
+      flutter: 3.27.4
+      vars:
+        PACKAGE_NAME: "com.nudge_lab"
+    scripts:
+      - name: Set up Firebase config files
+        script: |
+          echo "$FIREBASE_OPTIONS_DART" | base64 -d > "$CM_BUILD_DIR/lib/firebase_options.dart"
+          echo "$GOOGLE_SERVICES_JSON" | base64 -d > "$CM_BUILD_DIR/android/app/google-services.json"
+          echo "$GOOGLE_SERVICE_INFO_PLIST" | base64 -d > "$CM_BUILD_DIR/ios/Runner/GoogleService-Info.plist"
+      - name: Set up Android key.properties
+        script: |
+          cat > "$CM_BUILD_DIR/android/key.properties" << EOF
+          storePassword=$CM_KEYSTORE_PASSWORD
+          keyPassword=$CM_KEY_PASSWORD
+          keyAlias=$CM_KEY_ALIAS
+          storeFile=$CM_BUILD_DIR/key/nudge-key.keystore
+          EOF
+      - name: Install Flutter dependencies
+        script: flutter pub get
+      - name: Build Android release AAB
+        script: |
+          flutter build appbundle \
+            --release \
+            -t lib/main.dart
+    artifacts:
+      - build/**/outputs/**/*.aab
+      - build/**/outputs/**/*.apk
+      - build/**/outputs/**/mapping.txt
+    publishing:
+      email:
+        recipients:
+          - shay.nudge@gmail.com
+        notify:
+          success: true
+          failure: false
