@@ -81,8 +81,14 @@ class AppColors {
   static const Color darkOutline = Color(0xFF968DA1);
   static const Color darkOutlineVariant = Color(0xFF4B4455);
 
-  static const Color darkPrimary = Color(0xFFD4BBFF);
-  static const Color darkOnPrimary = Color(0xFF41008B);
+  // Dark-mode primary mirrors the canonical solid purple in light mode —
+  // no separate "soft / light purple" dark-mode variant. Material 3
+  // normally lifts the primary toward white in dark mode for contrast,
+  // but per Stitch v4 spec the brand purple stays the same brand purple
+  // in both themes. Contrast against dark surfaces is still AA at #751FE7.
+  // Previous value: Color(0xFFD4BBFF).
+  static const Color darkPrimary = solidPurple;
+  static const Color darkOnPrimary = Color(0xFFFFFFFF);
   static const Color darkPrimaryContainer = Color(0xFF751FE7);
   static const Color darkOnPrimaryContainer = Color(0xFFDFCBFF);
   static const Color darkPrimaryFixed = Color(0xFFEBDCFF);

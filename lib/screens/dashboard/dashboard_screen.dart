@@ -817,15 +817,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final isSelected = _currentIndex == index;
     final isDark = themeProvider.isDarkMode;
     final scheme = Theme.of(context).colorScheme;
-    // Active/inactive colors per Stitch v4 — light variant uses brand primary,
-    // dark variant uses the muted-purple/stone-500 palette from
-    // social_universe_brighter_glow_2.
-    final activeFg = useDarkBar ? const Color(0xFFD1B3FF) : scheme.primary;
+    // Active uses the canonical AppColors.solidPurple in BOTH light and
+    // dark mode (no separate dark-mode purple variant). Inactive on the
+    // dark variant uses the stone-500 muted tone from
+    // social_universe_brighter_glow_2 so contrast against the dark
+    // surface stays readable.
+    final activeFg = AppColors.solidPurple;
     final inactiveFg = useDarkBar ? const Color(0xFF6E6A66) : scheme.outline;
     final fg = isSelected ? activeFg : inactiveFg;
-    final activeBg = useDarkBar
-        ? const Color(0x33751FE7)
-        : scheme.primary.withOpacity(isDark ? 0.18 : 0.10);
+    final activeBg = AppColors.solidPurple.withOpacity(useDarkBar ? 0.20 : 0.10);
 
     return GestureDetector(
       onTap: () {

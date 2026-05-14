@@ -380,9 +380,11 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
   }) {
     final isHighlighted = _isPrimaryAction(text);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final iconColor = isHighlighted
-        ? Colors.white
-        : (isDark ? const Color(0xFFD1B3FF) : AppColors.lightPrimary);
+    // Same canonical solid purple in light and dark mode (no separate
+    // dark-mode tint). The dark surface fill behind the icon provides
+    // the contrast.
+    final iconColor =
+        isHighlighted ? Colors.white : AppColors.solidPurple;
     final btnDecoration = isHighlighted
         ? const BoxDecoration(
             gradient: LinearGradient(
