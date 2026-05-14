@@ -298,7 +298,11 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
     // dark scaffold on every tab when the user has dark mode enabled.
     final isDarkVariant = widget.onDarkBackground ||
         Theme.of(context).brightness == Brightness.dark;
-    final logoSize = isDarkVariant ? 40.0 : 32.0;
+    // Logo size is the same on every screen (Universe was 40, others 32 —
+    // the user wants the bigger Universe size everywhere). Only the LOGO
+    // size changes; the 56px circle, the bg/border/shadow per variant,
+    // and the position are all unchanged.
+    const logoSize = 40.0;
     return AnimatedBuilder(
       animation: _heartbeatAnimation,
       builder: (context, _) => Transform.scale(
