@@ -19,6 +19,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:nudge/providers/theme_provider.dart';
 import 'package:nudge/theme/app_theme.dart';
 import 'package:nudge/widgets/log_interaction_modal.dart';
+import 'package:nudge/widgets/stitch_top_bar.dart';
 import 'package:shimmer/shimmer.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -377,65 +378,75 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     physics: const BouncingScrollPhysics(),
                     cacheExtent: 500,
                     slivers: [
-                      // Sliver App Bar with Calendar Toggle
+                      // Stitch top bar (NUDGE wordmark + avatar)
                       SliverAppBar(
-                        title: Padding(
-                          padding: const EdgeInsets.only(left: 10),
-                          child: Text(
-                            'Nudges',
-                            style: GoogleFonts.plusJakartaSans(
-                                      color: theme.colorScheme.onSurface,
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 22)
-                          ),
-                        ),
-                        centerTitle: false,
-                        leading: const Center(),
                         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                        surfaceTintColor: Colors.transparent,
+                        elevation: 0,
+                        automaticallyImplyLeading: false,
+                        titleSpacing: 0,
+                        title: StitchTopBar(
+                          avatarUrl: user.photoURL,
+                          onTrailingTap: () =>
+                              Navigator.pushNamed(context, '/settings'),
+                        ),
                         floating: true,
                         snap: true,
                         pinned: false,
-                        surfaceTintColor: Colors.transparent,
-                        actions: [
-                          Padding(
-                            padding: const EdgeInsets.only(right: 16.0),
-                            child: ElevatedButton(
-                              onPressed: () {
-                                setState(() {
-                                  _showCalendar = !_showCalendar;
-                                });
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
-                                foregroundColor: theme.colorScheme.primary,
-                                side: BorderSide.none,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
+                        centerTitle: false,
+                      ),
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Expanded(
+                                child: StitchScreenTitle(
+                                  title: 'Nudges',
+                                  subtitle:
+                                      'Today\'s reminders and the week ahead.',
+                                  padding: EdgeInsets.zero,
                                 ),
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                elevation: 0,
                               ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    _showCalendar ? Icons.list : Icons.calendar_today,
-                                    size: 16,
+                              const SizedBox(width: 12),
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  setState(() {
+                                    _showCalendar = !_showCalendar;
+                                  });
+                                },
+                                icon: Icon(
+                                  _showCalendar
+                                      ? Icons.list_rounded
+                                      : Icons.calendar_today_rounded,
+                                  size: 16,
+                                ),
+                                label: Text(
+                                  _showCalendar ? 'List' : 'Calendar',
+                                  style: GoogleFonts.beVietnamPro(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
                                   ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    _showCalendar ? 'List View' : 'Calendar View',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      fontFamily: GoogleFonts.beVietnamPro().fontFamily
-                                    ),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Theme.of(context)
+                                      .colorScheme
+                                      .surfaceContainerLow,
+                                  foregroundColor: theme.colorScheme.primary,
+                                  side: BorderSide.none,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(9999),
                                   ),
-                                ],
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 14, vertical: 10),
+                                  elevation: 0,
+                                ),
                               ),
-                            ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                       
                       if (_isSelecting && !_showCalendar)

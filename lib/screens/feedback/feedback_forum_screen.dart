@@ -6,6 +6,7 @@ import 'package:nudge/services/api_service.dart';
 import 'package:provider/provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../widgets/scrollable_roadmap.dart';
+import '../../widgets/stitch_top_bar.dart';
 
 class FeedbackForumScreen extends StatefulWidget {
   const FeedbackForumScreen({super.key});
@@ -161,26 +162,14 @@ class _FeedbackForumScreenState extends State<FeedbackForumScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
 
-            // ── Fixed header: back button + hero + subtitle + tabs ────
+            // ── Fixed header: stitch top bar + hero + subtitle + tabs ────
+            const StitchTopBar(showBack: true, trailingIcon: Icons.person_outline_rounded),
+            const SizedBox(height: 8),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Back button row
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      Icon(Icons.arrow_back_ios_new_rounded,
-                          color: textP, size: 18),
-                      const SizedBox(width: 6),
-                      Text('Back',
-                        style: GoogleFonts.beVietnamPro(
-                          fontSize: 14, fontWeight: FontWeight.w600,
-                          color: textS)),
-                    ]),
-                  ),
-                  const SizedBox(height: 14),
 
                   // Hero title
                   /* if (isDark) ...[

@@ -232,12 +232,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     color: theme.colorScheme.onSurface,
                     fontWeight: FontWeight.w800,
                     fontSize: 25),
+            // Near-black gradient per Stitch mockups; inverted in dark mode
+            // for legibility. Replaces the previous purple/blue gradient.
             gradient: LinearGradient(
               colors: themeProvider.isDarkMode
-                  ? AppColors.primaryGradientDark   // lavender → light-blue
-                  : AppColors.primaryGradientLight, // purple → teal
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
+                  ? const [Color(0xFFE7E1DE), Color(0xFF968DA1)]
+                  : const [Color(0xFF1A1A1A), Color(0xFF666666)],
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
             ),
           ),
           centerTitle: true,

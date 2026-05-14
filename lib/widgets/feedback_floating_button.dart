@@ -56,6 +56,10 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
 
   late AnimationController _heartbeatController;
   late Animation<double> _heartbeatAnimation;
+  // Heartbeat plays a fixed number of cycles on first render, then stays
+  // still — perpetual pulse was distracting on every screen.
+  static const int _heartbeatMaxCycles = 2;
+  int _heartbeatCycles = 0;
 
   @override
   void initState() {
@@ -91,9 +95,18 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
     ]).animate(
         CurvedAnimation(parent: _heartbeatController, curve: Curves.easeInOut));
 
-    _heartbeatController.repeat();
+    _heartbeatController.addStatusListener(_onHeartbeatStatus);
+    _heartbeatController.forward();
 
     widget.controller?.registerCloseCallback(closeMenuExternally);
+  }
+
+  void _onHeartbeatStatus(AnimationStatus status) {
+    if (status != AnimationStatus.completed) return;
+    _heartbeatCycles++;
+    if (_heartbeatCycles < _heartbeatMaxCycles) {
+      _heartbeatController.forward(from: 0.0);
+    }
   }
 
   // ── Menu state ────────────────────────────────────────────────────────────
@@ -103,10 +116,8 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
       _isExpanded = !_isExpanded;
       if (_isExpanded) {
         _menuController.forward();
-        _heartbeatController.stop();
       } else {
         _menuController.reverse();
-        _heartbeatController.repeat();
       }
       context.read<FeedbackProvider>().setFabMenuState(_isExpanded);
       widget.onMenuStateChanged?.call();
@@ -118,7 +129,6 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
       setState(() {
         _isExpanded = false;
         _menuController.reverse();
-        _heartbeatController.repeat();
       });
       context.read<FeedbackProvider>().setFabMenuState(false);
       widget.onMenuStateChanged?.call();
@@ -274,8 +284,16 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
   }
 
   // ── Collapsed FAB (Nudge logo with heartbeat) ──────────────────────────
+  // Two variants per Stitch v4:
+  //   light → dashboard_consistent_titles: 56px white circle, subtle shadow,
+  //           32px Nudge logo foreground.
+  //   dark  → social_universe_brighter_glow_2: 56px dark glass circle, 2px
+  //           primary/40 ring, primary glow shadow, 40px logo.
+  // Variant is selected by widget.onDarkBackground.
 
   Widget _buildMainButton() {
+    final isDarkVariant = widget.onDarkBackground;
+    final logoSize = isDarkVariant ? 40.0 : 32.0;
     return AnimatedBuilder(
       animation: _heartbeatAnimation,
       builder: (context, _) => Transform.scale(
@@ -283,21 +301,35 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
         child: GestureDetector(
           onTap: _toggleExpanded,
           child: Container(
-            width: 60,
-            height: 60,
+            width: 56,
+            height: 56,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              image: const DecorationImage(
-                image: AssetImage('assets/Nudge-logo.png'),
-                fit: BoxFit.cover,
+              shape: BoxShape.circle,
+              color: isDarkVariant
+                  ? const Color(0xCC2D2926)
+                  : Colors.white,
+              border: Border.all(
+                color: isDarkVariant
+                    ? AppColors.lightPrimary.withOpacity(0.40)
+                    : Colors.black.withOpacity(0.05),
+                width: isDarkVariant ? 2 : 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.lightPrimary.withOpacity(0.25),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
+                  color: isDarkVariant
+                      ? AppColors.lightPrimary.withOpacity(0.30)
+                      : Colors.black.withOpacity(0.18),
+                  blurRadius: isDarkVariant ? 20 : 24,
+                  offset: const Offset(0, 8),
                 ),
               ],
+            ),
+            alignment: Alignment.center,
+            child: Image.asset(
+              'assets/Nudge-logo.png',
+              width: logoSize,
+              height: logoSize,
+              fit: BoxFit.contain,
             ),
           ),
         ),

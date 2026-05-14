@@ -13,6 +13,7 @@ import 'package:confetti/confetti.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:nudge/providers/theme_provider.dart';
 import 'package:nudge/theme/app_theme.dart';
+import 'package:nudge/widgets/stitch_top_bar.dart';
 import '../../services/auth_service.dart';
 import '../../models/social_group.dart';
 import '../../models/contact.dart';
@@ -866,62 +867,71 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
                         child: Scaffold(
                           body: CustomScrollView(
                             slivers: [
-                              // Sliver App Bar with disappearing effect
+                              // Stitch top bar (NUDGE wordmark + avatar)
                               SliverAppBar(
-                                title: Text(
-                                  'Social Groups',
-                                  style: GoogleFonts.plusJakartaSans(
-                                      color: theme.colorScheme.onSurface,
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 22)
-                                ),
                                 backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                                leading: Center(),
-                                centerTitle: false,
                                 surfaceTintColor: Colors.transparent,
+                                elevation: 0,
+                                automaticallyImplyLeading: false,
+                                titleSpacing: 0,
+                                title: StitchTopBar(
+                                  avatarUrl: user.photoURL,
+                                  onTrailingTap: () =>
+                                      Navigator.pushNamed(context, '/settings'),
+                                ),
                                 floating: true,
-                                actions: [
-                                  Padding(
-                                    padding: const EdgeInsets.only(right: 16.0),
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        _showCreateGroupDialog(context, apiService, themeProvider: themeProvider);
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
-                                        foregroundColor: theme.colorScheme.primary,
-                                        side: BorderSide(color: themeProvider.isDarkMode ? AppColors.darkSurfaceContainerHighest : Theme.of(context).colorScheme.onSurface, width: 1),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(20),
-                                        ),
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                        elevation: 0,
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            Icons.add,
-                                            size: 16,
-                                          ),
-                                          const SizedBox(width: 6),
-                                          Text(
-                                            'Add Group',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
-                                              fontFamily: GoogleFonts.beVietnamPro().fontFamily
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
                                 snap: true,
                                 pinned: false,
+                                centerTitle: false,
                               ),
-                              
+                              SliverToBoxAdapter(
+                                child: Padding(
+                                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const StitchScreenTitle(
+                                        title: 'Your Universe',
+                                        subtitle:
+                                            'Stay connected with the people who matter most. Your social ecosystem at a glance.',
+                                        padding: EdgeInsets.zero,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Align(
+                                        alignment: Alignment.centerRight,
+                                        child: ElevatedButton.icon(
+                                          onPressed: () => _showCreateGroupDialog(
+                                              context, apiService,
+                                              themeProvider: themeProvider),
+                                          icon: const Icon(Icons.add, size: 16),
+                                          label: Text('Add Group',
+                                              style: GoogleFonts.beVietnamPro(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w600)),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Theme.of(context)
+                                                .colorScheme
+                                                .surfaceContainerLow,
+                                            foregroundColor: theme.colorScheme.primary,
+                                            side: BorderSide(
+                                                color: themeProvider.isDarkMode
+                                                    ? AppColors.darkSurfaceContainerHighest
+                                                    : Theme.of(context).colorScheme.onSurface,
+                                                width: 1),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(20),
+                                            ),
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 14, vertical: 8),
+                                            elevation: 0,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
                               // Groups List - Using ReorderableListView directly in SliverList
                               SliverFillRemaining(
                                 hasScrollBody: true,
