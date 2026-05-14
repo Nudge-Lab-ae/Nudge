@@ -741,20 +741,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
       [List<Nudge>? nudgeOverride]) {
     final overdueNudges = _getOverdueNudges(nudgeOverride ?? allNudges);
     final hasOverdue = overdueNudges.isNotEmpty;
-    // Dark variant only on Universe tab (per social_universe_brighter_glow_2);
-    // every other tab gets the light variant per contacts_final_alignment.
-    final isUniverse = _currentIndex == 1;
+    // Dark variant whenever the app is in dark mode OR the user is on the
+    // Universe tab (which has a permanent dark starfield background even
+    // in light mode). Matches social_universe_brighter_glow_2.
+    final useDarkBar = themeProvider.isDarkMode || _currentIndex == 1;
     final bottomInset = MediaQuery.of(context).padding.bottom;
 
     return Container(
       decoration: BoxDecoration(
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-        color: isUniverse
+        color: useDarkBar
             ? const Color(0xE61A1816)
             : Colors.white.withOpacity(0.92),
         boxShadow: [
           BoxShadow(
-            color: isUniverse
+            color: useDarkBar
                 ? const Color(0x10751FE7)
                 : Colors.black.withOpacity(0.08),
             blurRadius: 40,
@@ -770,14 +771,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
             index: 1,
             label: 'UNIVERSE',
             iconAsset: 'assets/navbar-icons/nav_universe.svg',
-            isUniverse: isUniverse,
+            useDarkBar: useDarkBar,
             themeProvider: themeProvider,
           ),
           _buildNavItem(
             index: 2,
             label: 'NUDGES',
             iconAsset: 'assets/navbar-icons/nav_nudges.svg',
-            isUniverse: isUniverse,
+            useDarkBar: useDarkBar,
             themeProvider: themeProvider,
             badge: hasOverdue,
           ),
@@ -785,14 +786,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
             index: 3,
             label: 'GROUPS',
             iconAsset: 'assets/navbar-icons/nav_groups.svg',
-            isUniverse: isUniverse,
+            useDarkBar: useDarkBar,
             themeProvider: themeProvider,
           ),
           _buildNavItem(
             index: 4,
             label: 'CONTACTS',
             iconAsset: 'assets/navbar-icons/nav_contacts.svg',
-            isUniverse: isUniverse,
+            useDarkBar: useDarkBar,
             themeProvider: themeProvider,
           ),
         ],
@@ -805,7 +806,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required String iconAsset,
     required String label,
     required ThemeProvider themeProvider,
-    required bool isUniverse,
+    required bool useDarkBar,
     bool badge = false,
   }) {
     final isSelected = _currentIndex == index;
@@ -814,10 +815,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // Active/inactive colors per Stitch v4 — light variant uses brand primary,
     // dark variant uses the muted-purple/stone-500 palette from
     // social_universe_brighter_glow_2.
-    final activeFg = isUniverse ? const Color(0xFFD1B3FF) : scheme.primary;
-    final inactiveFg = isUniverse ? const Color(0xFF6E6A66) : scheme.outline;
+    final activeFg = useDarkBar ? const Color(0xFFD1B3FF) : scheme.primary;
+    final inactiveFg = useDarkBar ? const Color(0xFF6E6A66) : scheme.outline;
     final fg = isSelected ? activeFg : inactiveFg;
-    final activeBg = isUniverse
+    final activeBg = useDarkBar
         ? const Color(0x33751FE7)
         : scheme.primary.withOpacity(isDark ? 0.18 : 0.10);
 
@@ -862,7 +863,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: isUniverse
+                            color: useDarkBar
                                 ? const Color(0xFF1A1816)
                                 : (isDark ? Colors.black : Colors.white),
                             blurRadius: 1,
