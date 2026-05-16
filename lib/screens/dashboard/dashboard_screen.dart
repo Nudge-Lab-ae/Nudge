@@ -309,7 +309,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         child: GroupsListScreen(showAppBar: false),
                       );
                     case 4: // Contacts
+                      return ContactsListScreen(
                         filter: vipFilter ? 'vip' : attentionFilter ? 'needs_attention' : '',
+                        showAppBar: false,
                         hideButton: hideButton,
                       );
                     default:

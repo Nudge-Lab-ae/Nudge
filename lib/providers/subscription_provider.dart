@@ -30,6 +30,9 @@ class SubscriptionProvider extends ChangeNotifier {
   bool get isPro => _subscription.tier == SubscriptionTier.pro;
   bool get isPaid => !isFree;
   bool get isTrial => _subscription.isTrial;
+  bool get isActive =>
+      _subscription.status == SubscriptionStatus.active ||
+      _subscription.status == SubscriptionStatus.trial;
 
   bool canAddContact(int currentCount) =>
       currentCount < _subscription.currentLimits.maxContacts;
