@@ -2130,21 +2130,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   bottom: 8,
                   left: 0,
                   right: 0,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: List.generate(
-                      nudgeCount.clamp(1, 3),
-                      (i) => Container(
-                        margin: EdgeInsets.only(left: i == 0 ? 0 : 2),
-                        width: 4,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: isToday
-                              ? Colors.white
-                              : theme.colorScheme.primary,
-                          shape: BoxShape.circle,
-                        ),
+                  child: Center(
+                    child: Container(
+                      width: 5,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: isToday
+                            ? Colors.white
+                            : theme.colorScheme.primary,
+                        shape: BoxShape.circle,
                       ),
                     ),
                   ),
