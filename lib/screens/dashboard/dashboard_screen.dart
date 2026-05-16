@@ -1766,13 +1766,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return [_buildUpcomingNudgesCard(nudges, themeProvider)];
     }
     return [
+      _buildAIAssistantCard(themeProvider),
+      const SizedBox(height: 20),
       _buildUpcomingNudgesCard(nudges, themeProvider),
       const SizedBox(height: 20),
       _buildTodaysNudgesCard(nudges, contacts, themeProvider),
       const SizedBox(height: 20),
       _buildDailyMomentumCard(nudges),
-      const SizedBox(height: 20),
-      _buildAIAssistantCard(themeProvider),
       const SizedBox(height: 20),
       _buildGrowUniverseCard(themeProvider),
     ];
@@ -1810,30 +1810,62 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
           ),
-          GestureDetector(
-            onTap: () => Navigator.pushNamed(context, '/settings'),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: AppColors.lightPrimary.withOpacity(0.15),
-                  width: 2,
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () => Navigator.pushNamed(context, '/ai'),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  margin: const EdgeInsets.only(right: 10),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF751FE7), Color(0xFF4A0FAA)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF751FE7).withOpacity(0.35),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.auto_awesome_rounded,
+                    size: 18,
+                    color: Colors.white,
+                  ),
                 ),
-                image: photoUrl != null && photoUrl.isNotEmpty
-                    ? DecorationImage(image: NetworkImage(photoUrl), fit: BoxFit.cover)
-                    : null,
-                color: photoUrl == null || photoUrl.isEmpty
-                    ? Theme.of(context).colorScheme.surfaceContainerHighest
-                    : null,
               ),
-              child: photoUrl == null || photoUrl.isEmpty
-                  ? Icon(Icons.person,
-                      size: 20,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant)
-                  : null,
-            ),
+              GestureDetector(
+                onTap: () => Navigator.pushNamed(context, '/settings'),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppColors.lightPrimary.withOpacity(0.15),
+                      width: 2,
+                    ),
+                    image: photoUrl != null && photoUrl.isNotEmpty
+                        ? DecorationImage(image: NetworkImage(photoUrl), fit: BoxFit.cover)
+                        : null,
+                    color: photoUrl == null || photoUrl.isEmpty
+                        ? Theme.of(context).colorScheme.surfaceContainerHighest
+                        : null,
+                  ),
+                  child: photoUrl == null || photoUrl.isEmpty
+                      ? Icon(Icons.person,
+                          size: 20,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant)
+                      : null,
+                ),
+              ),
+            ],
           ),
         ],
       ),
