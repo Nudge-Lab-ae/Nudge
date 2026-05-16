@@ -1770,6 +1770,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       const SizedBox(height: 20),
       _buildDailyMomentumCard(nudges),
       const SizedBox(height: 20),
+      _buildAIAssistantCard(themeProvider),
+      const SizedBox(height: 20),
       _buildGrowUniverseCard(themeProvider),
     ];
   }
@@ -2592,6 +2594,116 @@ class _DashboardScreenState extends State<DashboardScreen> {
       cursor = cursor.subtract(const Duration(days: 1));
     }
     return count;
+  }
+
+  Widget _buildAIAssistantCard(ThemeProvider themeProvider) {
+    final theme = Theme.of(context);
+    final isDark = themeProvider.isDarkMode;
+    return GestureDetector(
+      onTap: () => Navigator.pushNamed(context, '/ai'),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isDark
+                ? [
+                    const Color(0xFF751FE7).withOpacity(0.18),
+                    const Color(0xFF4A0FAA).withOpacity(0.12),
+                  ]
+                : [
+                    const Color(0xFF751FE7).withOpacity(0.07),
+                    const Color(0xFF4A0FAA).withOpacity(0.04),
+                  ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(Radii.lg),
+          border: Border.all(
+            color: const Color(0xFF751FE7).withOpacity(0.25),
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF751FE7), Color(0xFF4A0FAA)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF751FE7).withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.auto_awesome_rounded,
+                size: 26,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        'AI Assistant',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF751FE7),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          'AI',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Chat, get insights & relationship guidance.',
+                    style: GoogleFonts.beVietnamPro(
+                      fontSize: 13,
+                      color: theme.colorScheme.onSurfaceVariant,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: const Color(0xFF751FE7).withOpacity(0.5),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildGrowUniverseCard(ThemeProvider themeProvider) {

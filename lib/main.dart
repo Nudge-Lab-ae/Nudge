@@ -44,6 +44,7 @@ import 'screens/contacts/import_contacts_screen.dart';
 import 'screens/notifications/notifications_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'screens/groups/groups_list_screen.dart';
+import 'screens/ai/nudge_ai_screen.dart';
 import 'services/auth_service.dart';
 
 // Create a GlobalKey for navigator to handle notifications when app is in background
@@ -725,6 +726,7 @@ class NudgeApp extends StatelessWidget {
                 '/notifications': (context) => const NotificationsScreen(showAppBar: true),
                 '/settings': (context) => const SettingsScreen(),
                 '/paywall': (context) => const PaywallScreen(),
+                '/ai': (context) => const NudgeAIScreen(),
                 '/groups': (context) => const GroupsListScreen(showAppBar: true,),
                 '/edit_contact': (context) {
                   final contactId = ModalRoute.of(context)!.settings.arguments as String;

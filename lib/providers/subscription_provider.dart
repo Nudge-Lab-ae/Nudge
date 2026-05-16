@@ -42,6 +42,10 @@ class SubscriptionProvider extends ChangeNotifier {
   bool get hasUnlimitedGroups =>
       _subscription.currentLimits.hasUnlimitedGroups;
 
+  /// -1 means unlimited
+  int get dailyAILimit => isFree ? 5 : -1;
+  bool get hasAIInsights => !isFree;
+
   /// Call once after the user is authenticated.
   Future<void> init(String userEmail) async {
     await _loadFromCache();

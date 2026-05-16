@@ -24,6 +24,7 @@ enum SubscriptionFeature {
   calendarView,
   groups,
   advancedAnalytics,
+  aiInsights,
 }
 
 class SubscriptionGate extends StatelessWidget {
@@ -61,6 +62,8 @@ class SubscriptionGate extends StatelessWidget {
         return sub.hasGroups;
       case SubscriptionFeature.advancedAnalytics:
         return sub.hasAdvancedAnalytics;
+      case SubscriptionFeature.aiInsights:
+        return sub.hasAIInsights;
     }
   }
 
@@ -206,6 +209,8 @@ class _LockedFeatureScreen extends StatelessWidget {
         return 'Groups Management';
       case SubscriptionFeature.advancedAnalytics:
         return 'Advanced Analytics';
+      case SubscriptionFeature.aiInsights:
+        return 'AI Insights';
     }
   }
 }
