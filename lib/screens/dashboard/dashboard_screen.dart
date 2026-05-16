@@ -82,6 +82,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // mode (false, default) or full-month grid mode (true).
   bool _calendarExpanded = false;
 
+  // The day currently selected in the calendar — defaults to today.
+  late DateTime _selectedCalendarDate;
+
   final ConfettiController _confettiController = ConfettiController(
     duration: const Duration(seconds: 3)
   );
@@ -95,6 +98,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
+    final now = DateTime.now();
+    _selectedCalendarDate = DateTime(now.year, now.month, now.day);
     _subscribeToNudges();
     _checkDeletionRetry();
     _currentIndex = widget.initialTab;
@@ -1974,16 +1979,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     label: dayLabels[i],
                     date: week[i],
                     isToday: week[i] == today,
+                    isSelected: week[i] == _selectedCalendarDate,
                     nudgeCount: nudges.where((n) {
                       final s = n.scheduledTime;
                       return DateTime(s.year, s.month, s.day) == week[i] &&
                           !n.isCompleted;
                     }).length,
                     themeProvider: themeProvider,
+                    onTap: () => setState(() => _selectedCalendarDate = week[i]),
                   ),
               ],
             ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
+          _buildSelectedDayNudges(nudges, themeProvider),
+          const SizedBox(height: 16),
           GestureDetector(
             onTap: () => setState(() {
               _calendarExpanded = !_calendarExpanded;
@@ -2063,10 +2072,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required int nudgeCount,
     required ThemeProvider themeProvider,
     bool hideLabel = false,
+    bool isSelected = false,
+    VoidCallback? onTap,
   }) {
     final theme = Theme.of(context);
     final isDark = themeProvider.isDarkMode;
-    return Column(
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
       children: [
         if (!hideLabel) ...[
           Text(
@@ -2076,7 +2089,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               fontWeight: FontWeight.w700,
               color: isToday
                   ? theme.colorScheme.primary
-                  : theme.colorScheme.outline,
+                  : isSelected
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.outline,
               letterSpacing: 0.4,
             ),
           ),
@@ -2092,6 +2107,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ? theme.colorScheme.surfaceContainerHighest
                     : const Color(0xFFF4EFE9)),
             borderRadius: BorderRadius.circular(14),
+            border: isSelected && !isToday
+                ? Border.all(
+                    color: theme.colorScheme.primary,
+                    width: 2,
+                  )
+                : null,
             boxShadow: isToday
                 ? [
                     BoxShadow(
@@ -2146,6 +2167,102 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ],
           ),
         ),
+      ],
+      ),
+    );
+  }
+
+  Widget _buildSelectedDayNudges(
+      List<Nudge> nudges, ThemeProvider themeProvider) {
+    final theme = Theme.of(context);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final sel = _selectedCalendarDate;
+    final isToday = sel == today;
+    final isFuture = sel.isAfter(today);
+
+    final dayNudges = nudges.where((n) {
+      if (n.isCompleted) return false;
+      final s = n.scheduledTime;
+      return DateTime(s.year, s.month, s.day) == sel;
+    }).toList()
+      ..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+
+    String heading;
+    if (isToday) {
+      heading = 'Today';
+    } else if (sel == today.add(const Duration(days: 1))) {
+      heading = 'Tomorrow';
+    } else if (isFuture) {
+      final months = [
+        '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      ];
+      heading = '${months[sel.month]} ${sel.day}';
+    } else {
+      final months = [
+        '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      ];
+      heading = '${months[sel.month]} ${sel.day}';
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Divider(height: 1, thickness: 0.5),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Text(
+              heading,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            if (dayNudges.isNotEmpty) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${dayNudges.length}',
+                  style: GoogleFonts.beVietnamPro(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: 10),
+        if (dayNudges.isEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Text(
+              isFuture
+                  ? 'No nudges planned for this day.'
+                  : isToday
+                      ? 'No nudges scheduled today.'
+                      : 'No nudges on this day.',
+              style: GoogleFonts.beVietnamPro(
+                fontSize: 13,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          )
+        else
+          ...dayNudges.map((nudge) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _buildTodayNudgeRow(nudge, const [], themeProvider),
+              )),
       ],
     );
   }
@@ -2210,6 +2327,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 label: '',
                 date: cellDate,
                 isToday: cellDate == today,
+                isSelected: cellDate == _selectedCalendarDate,
                 nudgeCount: nudges.where((n) {
                   final s = n.scheduledTime;
                   return DateTime(s.year, s.month, s.day) == cellDate &&
@@ -2217,6 +2335,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 }).length,
                 themeProvider: themeProvider,
                 hideLabel: true,
+                onTap: () => setState(() => _selectedCalendarDate = cellDate),
               );
             }),
           ),
