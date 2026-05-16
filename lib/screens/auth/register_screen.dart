@@ -520,7 +520,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     profileCompleted: false,
                                     weeklyDigestEnabled: false,
                                   ));
-                                  
+
+                                  // Send welcome email via Cloud Function (non-blocking)
+                                  apiService.sendWelcomeEmail(user.email!, '');
+
                                   // Navigate to complete profile screen
                                   Navigator.pushReplacement(
                                     context,

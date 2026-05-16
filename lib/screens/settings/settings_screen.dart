@@ -9,11 +9,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:nudge/helpers/deletion_retry_helper.dart';
 import 'package:nudge/providers/admin_provider.dart';
+import 'package:nudge/providers/subscription_provider.dart';
 import 'package:nudge/providers/theme_provider.dart';
 import 'package:nudge/screens/admin/feedback_management_screen.dart';
 import 'package:nudge/screens/admin/ai_testing_screen.dart';
 import 'package:nudge/screens/feedback/feedback_bottom_sheet.dart';
 import 'package:nudge/screens/feedback/feedback_forum_screen.dart';
+import 'package:nudge/screens/subscription/paywall_screen.dart';
 import 'package:nudge/services/auth_service.dart';
 import 'package:nudge/services/message_service.dart';
 import 'package:nudge/widgets/screen_tracker.dart';
@@ -21,7 +23,7 @@ import 'package:nudge/widgets/stitch_top_bar.dart';
 import 'package:provider/provider.dart';
 import '../../services/api_service.dart';
 import 'package:url_launcher/url_launcher.dart';
-// import 'package:nudge/models/user.dart' as user; 
+// import 'package:nudge/models/user.dart' as user;
 
 
 class SettingsScreen extends StatefulWidget {
@@ -678,7 +680,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // ── Subscription card (purple gradient) ─────────────────────────────────
   Widget _buildSubscriptionCard() {
-    // final isDark = Provider.of<ThemeProvider>(context, listen: false).isDarkMode;
+    final sub = context.watch<SubscriptionProvider>();
+    final planLabel = sub.isTrial
+        ? 'PRO TRIAL'
+        : '${sub.subscription.tierName.toUpperCase()} PLAN';
+    final description = sub.isTrial
+        ? 'Your free 14-day Pro trial is active.'
+        : sub.isFree
+            ? 'Upgrade to unlock more contacts & features.'
+            : 'You\'re on the ${sub.subscription.tierName} plan — ${sub.subscription.tierTagline}.';
+    final buttonLabel = sub.isFree || sub.isTrial ? 'Upgrade Plan' : 'Manage Plan';
 
     return Container(
       decoration: BoxDecoration(
@@ -698,7 +709,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       padding: const EdgeInsets.all(20),
       child: Stack(children: [
-        // Decorative star shapes
         Positioned(
           top: -12, right: 20,
           child: Transform.rotate(
@@ -715,46 +725,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 size: 44, color: Colors.white.withOpacity(0.07)),
           ),
         ),
-
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // PRO PLAN pill
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.18),
                 borderRadius: BorderRadius.circular(9999),
               ),
-              child: const Text(
-                'PRO PLAN',
-                style: TextStyle(
-                  fontSize: 10, fontWeight: FontWeight.w700,
-                  color: Colors.white, letterSpacing: 0.8),
+              child: Text(
+                planLabel,
+                style: const TextStyle(
+                    fontSize: 10, fontWeight: FontWeight.w700,
+                    color: Colors.white, letterSpacing: 0.8),
               ),
             ),
             const SizedBox(height: 12),
-
             const Text(
               'Subscription',
               style: TextStyle(
-                fontSize: 24, fontWeight: FontWeight.w800, color: Colors.white),
+                  fontSize: 24, fontWeight: FontWeight.w800, color: Colors.white),
             ),
             const SizedBox(height: 4),
             Text(
-              'You are on an exclusive access subscription.',
+              description,
               style: TextStyle(
-                fontSize: 13, color: Colors.white.withOpacity(0.8), height: 1.4),
+                  fontSize: 13, color: Colors.white.withOpacity(0.8), height: 1.4),
             ),
+            if (sub.isTrial && sub.subscription.periodEnd != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                '${sub.subscription.periodEnd!.difference(DateTime.now()).inDays} days remaining',
+                style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white.withOpacity(0.65),
+                    fontWeight: FontWeight.w500),
+              ),
+            ],
             const SizedBox(height: 20),
-
-            // Manage Plan button
             SizedBox(
               width: double.infinity, height: 46,
               child: ElevatedButton(
-                onPressed: () {
-                  // Subscription management navigation can go here
-                },
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const PaywallScreen()),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: const Color(0xFF751FE7),
@@ -762,11 +777,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(9999)),
                 ),
-                child: const Text(
-                  'Manage Plan',
-                  style: TextStyle(
-                    fontSize: 15, fontWeight: FontWeight.w700,
-                    color: Color(0xFF751FE7)),
+                child: Text(
+                  buttonLabel,
+                  style: const TextStyle(
+                      fontSize: 15, fontWeight: FontWeight.w700,
+                      color: Color(0xFF751FE7)),
                 ),
               ),
             ),
@@ -1167,10 +1182,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
+              // Clear cached subscription on sign-out
+              if (context.mounted) {
+                await Provider.of<SubscriptionProvider>(context, listen: false)
+                    .clearSubscription();
+              }
               await authService.signOut();
               Navigator.pushNamedAndRemoveUntil(
-                context, 
-                '/welcome', 
+                context,
+                '/welcome',
                 (route) => false
               );
             },
@@ -1470,9 +1490,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Subscription card dropped — no billing backend
-                            // wired up yet. Re-add when subscription logic
-                            // exists (see _buildSubscriptionCard above).
+                            _buildSubscriptionCard(),
+                            const SizedBox(height: 24),
 
                             Text(
                               'GENERAL',

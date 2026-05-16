@@ -15,6 +15,10 @@ class User {
   final List<Map<String, dynamic>> nudges;
   final bool profileCompleted;
   final bool weeklyDigestEnabled;
+  final int? trialStartedAt;
+  final String? subscriptionTier;
+  final String? subscriptionStatus;
+  final int? subscriptionExpiresAt;
 
   User({
     required this.id,
@@ -32,6 +36,10 @@ class User {
     required this.admin,
     required this.immersionLevel,
     required this.weeklyDigestEnabled,
+    this.trialStartedAt,
+    this.subscriptionTier,
+    this.subscriptionStatus,
+    this.subscriptionExpiresAt,
   });
 
   // Method to get default values for all fields
@@ -58,6 +66,10 @@ class User {
       'profileCompleted': false,
       'admin': false,
       'weeklyDigestEnabled': true,
+      'trialStartedAt': null,
+      'subscriptionTier': 'free',
+      'subscriptionStatus': 'inactive',
+      'subscriptionExpiresAt': null,
     };
   }
 
@@ -87,6 +99,10 @@ class User {
       'profileCompleted': profileCompleted,
       'admin': admin,
       'weeklyDigestEnabled': weeklyDigestEnabled,
+      if (trialStartedAt != null) 'trialStartedAt': trialStartedAt,
+      if (subscriptionTier != null) 'subscriptionTier': subscriptionTier,
+      if (subscriptionStatus != null) 'subscriptionStatus': subscriptionStatus,
+      if (subscriptionExpiresAt != null) 'subscriptionExpiresAt': subscriptionExpiresAt,
     };
   }
 
@@ -112,6 +128,10 @@ class User {
       profileCompleted: map['profileCompleted'] ?? defaultValues['profileCompleted']!,
       admin: map['admin'] ?? defaultValues['admin']!,
       weeklyDigestEnabled: map['weeklyDigestEnabled'] ?? defaultValues['weeklyDigestEnabled']!,
+      trialStartedAt: map['trialStartedAt'] as int?,
+      subscriptionTier: map['subscriptionTier'] as String?,
+      subscriptionStatus: map['subscriptionStatus'] as String?,
+      subscriptionExpiresAt: map['subscriptionExpiresAt'] as int?,
     );
   }
 }

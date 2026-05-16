@@ -1211,6 +1211,16 @@ Future<Map<String, dynamic>> register(String email, String password) async {
     }
   }
 
+  Future<void> sendWelcomeEmail(String email, String username) async {
+    try {
+      final HttpsCallable callable =
+          FirebaseFunctions.instance.httpsCallable('sendWelcomeEmail');
+      await callable.call({'email': email, 'username': username});
+    } catch (_) {
+      // Non-critical — don't block registration if this fails
+    }
+  }
+
 
   Future<void> submitFeedback({
     String? title,

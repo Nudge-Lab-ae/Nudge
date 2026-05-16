@@ -10,7 +10,9 @@ import 'package:nudge/models/analytics.dart';
 import 'package:nudge/models/nudge.dart';
 import 'package:nudge/models/social_group.dart';
 import 'package:nudge/providers/feedback_provider.dart';
+import 'package:nudge/providers/subscription_provider.dart';
 import 'package:nudge/providers/theme_provider.dart';
+import 'package:nudge/screens/subscription/subscription_gate.dart';
 import 'package:nudge/screens/contacts/contact_detail_screen.dart';
 import 'package:nudge/screens/contacts/contacts_list_screen.dart';
 import 'package:nudge/screens/contacts/import_contacts_screen.dart';
@@ -289,7 +291,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       final pendingNudgeId = args?['pendingNudgeId'];
                       return  NotificationsScreen(showAppBar: false, pendingNudgeId: pendingNudgeId);
                       case 3: // Groups moved to index 3
-                      return const GroupsListScreen(showAppBar: false);
+                      return const SubscriptionGate(
+                        feature: SubscriptionFeature.groups,
+                        child: GroupsListScreen(showAppBar: false),
+                      );
                     case 4: // Contacts moved to index 2
                       return ContactsListScreen(
                         showAppBar: false,
