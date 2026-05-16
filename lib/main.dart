@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 // import 'package:another_flushbar/flushbar.dart';
@@ -12,7 +13,11 @@ import 'package:nudge/helpers/auth_refresh_helper.dart';
 import 'package:nudge/helpers/deletion_retry_helper.dart';
 import 'package:nudge/providers/admin_provider.dart';
 import 'package:nudge/providers/feedback_provider.dart';
+import 'package:nudge/providers/subscription_provider.dart';
 import 'package:nudge/providers/theme_provider.dart';
+import 'package:app_links/app_links.dart';
+import 'package:nudge/screens/subscription/subscription_gate.dart';
+import 'package:nudge/screens/subscription/paywall_screen.dart';
 import 'package:nudge/screens/analytics/analytics_screen.dart';
 import 'package:nudge/screens/auth/complete_profile_screen.dart';
 import 'package:nudge/screens/contacts/edit_contact_screen.dart';
@@ -679,6 +684,7 @@ class NudgeApp extends StatelessWidget {
               ),
               ChangeNotifierProvider(create: (_) => FeedbackProvider()),
               ChangeNotifierProvider(create: (_) => AdminProvider()),
+              ChangeNotifierProvider(create: (_) => SubscriptionProvider()),
             ],
             child: MaterialApp(
               title: 'NUDGE',
@@ -704,7 +710,10 @@ class NudgeApp extends StatelessWidget {
                   final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
                   return ContactsListScreen(filter: args?['filter'], mode: args?['action'], showAppBar: true, hideButton: (){},);
                 },
-                '/analytics': (context) => const AnalyticsScreen(),
+                '/analytics': (context) => const SubscriptionGate(
+                  feature: SubscriptionFeature.dashboard,
+                  child: AnalyticsScreen(),
+                ),
                 '/add_contact': (context) => AddContactScreen(),
                 '/import_contacts': (context) {
                   final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
@@ -715,6 +724,7 @@ class NudgeApp extends StatelessWidget {
                 },
                 '/notifications': (context) => const NotificationsScreen(showAppBar: true),
                 '/settings': (context) => const SettingsScreen(),
+                '/paywall': (context) => const PaywallScreen(),
                 '/groups': (context) => const GroupsListScreen(showAppBar: true,),
                 '/edit_contact': (context) {
                   final contactId = ModalRoute.of(context)!.settings.arguments as String;
@@ -767,11 +777,44 @@ class AuthWrapper extends StatefulWidget {
 class _AuthWrapperState extends State<AuthWrapper> {
   String _checkingStatus = '';
   bool _initialized = false;
+  StreamSubscription<Uri>? _deepLinkSub;
 
   @override
   void initState() {
     super.initState();
     _initialize();
+    _initDeepLinks();
+  }
+
+  @override
+  void dispose() {
+    _deepLinkSub?.cancel();
+    super.dispose();
+  }
+
+  void _initDeepLinks() {
+    final appLinks = AppLinks();
+    _deepLinkSub = appLinks.uriLinkStream.listen((uri) {
+      _handleDeepLink(uri);
+    });
+    // Handle the link that launched the app cold
+    appLinks.getInitialLink().then((uri) {
+      if (uri != null) _handleDeepLink(uri);
+    });
+  }
+
+  void _handleDeepLink(Uri uri) {
+    if (uri.scheme != 'nudge') return;
+    if (uri.host == 'subscription' && uri.pathSegments.contains('success')) {
+      final plan = uri.queryParameters['plan'];
+      final email = uri.queryParameters['email'] ??
+          FirebaseAuth.instance.currentUser?.email ?? '';
+      if (plan != null && mounted) {
+        final subProvider =
+            Provider.of<SubscriptionProvider>(context, listen: false);
+        subProvider.handleDeepLink(plan, email);
+      }
+    }
   }
 
   Future<void> _initialize() async {
@@ -783,6 +826,13 @@ class _AuthWrapperState extends State<AuthWrapper> {
       final adminProvider = Provider.of<AdminProvider>(context, listen: false);
       await adminProvider.checkAndCacheAdminStatus();
 
+      // Init subscription for authenticated users
+      final firebaseUser = FirebaseAuth.instance.currentUser;
+      if (firebaseUser?.email != null && mounted) {
+        final subProvider =
+            Provider.of<SubscriptionProvider>(context, listen: false);
+        await subProvider.init(firebaseUser!.email!);
+      }
     } catch (e) {
       //print('Error initializing AuthWrapper: $e');
     } finally {
