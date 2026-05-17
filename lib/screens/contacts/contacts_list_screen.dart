@@ -10,6 +10,7 @@ import 'package:nudge/services/message_service.dart';
 import 'package:provider/provider.dart';
 import 'package:nudge/providers/theme_provider.dart';
 import 'package:nudge/theme/app_theme.dart';
+import 'package:nudge/widgets/stitch_top_bar.dart';
 import 'contact_detail_screen.dart';
 import 'add_contact_screen.dart';
 import '../../models/contact.dart';
@@ -141,6 +142,10 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
     double size = 54,
   }) {
     final initials = _getContactInitials(contact.name);
+    // Restored bold/colorful default avatar (assets/contact-icons/N.png +
+    // dark scrim + bold white initials) per Section 3 feedback. NO theme
+    // filtering — the same scrim opacity is used in light AND dark mode
+    // so the avatar reads identically in either theme.
     final assetPath = 'assets/contact-icons/${getRandomIndex(contact.id)}.png';
 
     return Stack(
@@ -164,10 +169,10 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                     fit: StackFit.expand,
                     children: [
                       Image.asset(assetPath, fit: BoxFit.cover),
-                      // Semi-transparent overlay so initials always readable
-                      Container(
-                        color: Colors.black.withOpacity(isDark ? 0.35 : 0.18),
-                      ),
+                      // Single flat scrim so initials always read.
+                      // Identical opacity in light + dark modes (no
+                      // theme filtering — Section 3 explicit ask).
+                      Container(color: Colors.black.withOpacity(0.25)),
                       Center(
                         child: Text(
                           initials,
@@ -283,30 +288,39 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                     CustomScrollView(
                       physics: const BouncingScrollPhysics(),
                       slivers: [
-                        // AppBar
+                        // Stitch top bar (NUDGE wordmark + avatar)
                         SliverAppBar(
-                          title: isAddToGroupMode
-                              ? Text('Add to $groupName',
-                                  style: GoogleFonts.plusJakartaSans(
-                                      color: theme.colorScheme.onSurface,
-                                      fontWeight: FontWeight.w700))
-                              : Text('Contacts',
-                                  style: GoogleFonts.plusJakartaSans(
-                                      color: theme.colorScheme.onSurface,
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 22)),
                           backgroundColor: theme.scaffoldBackgroundColor,
-                          leading: const SizedBox.shrink(),
-                          centerTitle: isAddToGroupMode,
                           surfaceTintColor: Colors.transparent,
+                          elevation: 0,
+                          automaticallyImplyLeading: false,
+                          titleSpacing: 0,
+                          title: isAddToGroupMode
+                              ? Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                                  child: Text('Add to $groupName',
+                                      style: GoogleFonts.plusJakartaSans(
+                                          color: theme.colorScheme.onSurface,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 18)),
+                                )
+                              : StitchTopBar(
+                                  avatarUrl: user.photoURL,
+                                  onTrailingTap: () =>
+                                      Navigator.pushNamed(context, '/settings'),
+                                ),
                           floating: true,
                           snap: true,
                           pinned: false,
+                          centerTitle: false,
                           actions: [
                             if (!isAddToGroupMode)
                               _buildPopupMenu(context, themeProvider),
                           ],
                         ),
+                        // Mockup contacts_final_alignment goes straight from
+                        // top bar → search → frequently contacted; no
+                        // separate page title or subtitle.
 
                         // Selection controls
                         if (_isSelecting)
@@ -819,15 +833,17 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
         widget.hideButton();
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        // Tighter vertical padding so rows feel modern-dense, not
+        // elderly-large-print. Was 13 → 10.
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: isDark ? scheme.surfaceContainerLow : scheme.surfaceContainerLowest,
+          color: isDark ? scheme.surfaceContainerLow : Colors.white,
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.14 : 0.055),
-              blurRadius: 12,
-              offset: const Offset(0, 2),
+              color: Colors.black.withOpacity(isDark ? 0.14 : 0.05),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -842,27 +858,29 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Name
+                  // Name — reduced 16→15, height tightened.
                   Text(
                     contact.name,
                     style: GoogleFonts.plusJakartaSans(
-                      fontSize: 16,
+                      fontSize: 15,
                       fontWeight: FontWeight.w700,
                       color: scheme.onSurface,
+                      height: 1.15,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 5),
-                  // Connection type · Ring label · dot
+                  const SizedBox(height: 3),
+                  // Connection type · Ring label · dot — reduced 13→11.
                   Row(
                     children: [
                       if (contact.connectionType.isNotEmpty) ...[
                         Text(
                           contact.connectionType,
                           style: GoogleFonts.beVietnamPro(
-                            fontSize: 13,
+                            fontSize: 11,
                             color: scheme.onSurfaceVariant,
+                            height: 1.2,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -872,7 +890,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                           child: Text(
                             '·',
                             style: GoogleFonts.beVietnamPro(
-                              fontSize: 13,
+                              fontSize: 11,
                               color: scheme.onSurfaceVariant,
                             ),
                           ),
@@ -881,8 +899,9 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                       Text(
                         ringLabel,
                         style: GoogleFonts.beVietnamPro(
-                          fontSize: 13,
+                          fontSize: 11,
                           color: scheme.onSurfaceVariant,
+                          height: 1.2,
                         ),
                       ),
                       const SizedBox(width: 6),
@@ -1036,17 +1055,15 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
         children: [
           Expanded(
             child: Container(
-              height: 50,
+              height: 56,
               decoration: BoxDecoration(
-                color: isDark
-                    ? scheme.surfaceContainerLow
-                    : scheme.surfaceContainerLowest,
+                color: isDark ? scheme.surfaceContainerLow : Colors.white,
                 borderRadius: BorderRadius.circular(9999),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(isDark ? 0.12 : 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
+                    blurRadius: 20,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
@@ -1064,7 +1081,7 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 15),
+                      horizontal: 16, vertical: 18),
                   filled: false,
                 ),
                 onChanged: (v) => setState(() => _searchQuery = v),
@@ -1073,18 +1090,16 @@ class _ContactsListScreenState extends State<ContactsListScreen> {
           ),
           const SizedBox(width: 10),
           Container(
-            width: 50,
-            height: 50,
+            width: 56,
+            height: 56,
             decoration: BoxDecoration(
-              color: isDark
-                  ? scheme.surfaceContainerLow
-                  : scheme.surfaceContainerLowest,
+              color: isDark ? scheme.surfaceContainerLow : Colors.white,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(isDark ? 0.12 : 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
+                  blurRadius: 20,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),

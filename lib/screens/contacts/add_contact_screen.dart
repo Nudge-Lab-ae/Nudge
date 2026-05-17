@@ -13,6 +13,9 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:nudge/main.dart';
 import 'package:nudge/providers/feedback_provider.dart';
+import 'package:nudge/models/subscription.dart';
+import 'package:nudge/providers/subscription_provider.dart';
+import 'package:nudge/screens/subscription/paywall_screen.dart';
 import 'package:nudge/screens/contacts/contact_detail_screen.dart';
 // import 'package:nudge/screens/dashboard/dashboard_screen.dart';
 import 'package:nudge/services/api_service.dart';
@@ -1258,7 +1261,17 @@ class _AddContactScreenState extends State<AddContactScreen> {
                               //print('stage0');
                               // First, dismiss keyboard
                               _dismissKeyboard();
-                              
+
+                              // Check subscription contact limit before saving
+                              final subProvider = Provider.of<SubscriptionProvider>(context, listen: false);
+                              final contacts = await apiService.getAllContacts();
+                              if (!subProvider.canAddContact(contacts.length)) {
+                                Navigator.of(context).push(MaterialPageRoute(
+                                  builder: (_) => PaywallScreen(highlightTier: subProvider.tier == SubscriptionTier.free ? SubscriptionTier.plus : SubscriptionTier.pro),
+                                ));
+                                return;
+                              }
+
                               // Check if form is valid
                               if (!_formKey.currentState!.validate()) {
                                 _showValidationAlert(themeProvider);

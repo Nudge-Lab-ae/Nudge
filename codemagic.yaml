@@ -1,0 +1,154 @@
+workflows:
+
+  # ── iOS → TestFlight ──────────────────────────────────────────────
+  testflight-ios:
+    name: TestFlight iOS
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      flutter: 3.41.9
+      xcode: latest
+      cocoapods: default
+      groups:
+        - firebase_credentials
+      vars:
+        APP_STORE_APP_ID: "6753679854"
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.nudge--shay
+    integrations:
+      app_store_connect: Nudge AppStoreConnect
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: release/combined
+          include: true
+          source: true
+    scripts:
+      - name: Inject Firebase credentials
+        script: |
+          set -e
+          decode_or_copy() {
+            local var_value="$1"
+            local target="$2"
+            mkdir -p "$(dirname "$target")"
+            if printf '%s' "$var_value" | base64 --decode > "$target" 2>/dev/null && [ -s "$target" ]; then
+              echo "✓ wrote $target (base64-decoded)"
+            else
+              printf '%s' "$var_value" > "$target"
+              echo "✓ wrote $target (plain text)"
+            fi
+          }
+          decode_or_copy "$FIREBASE_OPTIONS_DART" lib/firebase_options.dart
+          decode_or_copy "$GOOGLE_SERVICE_INFO_PLIST" ios/Runner/GoogleService-Info.plist
+          cp ios/Runner/GoogleService-Info.plist ios/GoogleService-Info.plist
+      - name: Fetch provisioning profiles
+        script: xcode-project use-profiles
+      - name: Flutter pub get
+        script: flutter pub get
+      - name: CocoaPods install
+        script: |
+          cd ios
+          pod install --repo-update
+      - name: Bump build number from App Store Connect
+        script: |
+          set -e
+          # Codemagic's current CLI command is `get-latest-build-number`
+          # (no testflight/app-store split). Previous yaml used the wrong
+          # subcommand names, fell through 2>/dev/null silently, BUILD_NUMBER
+          # never got set, and the pubspec build number was used instead —
+          # producing duplicate-cfBundleVersion 409s.
+          # NOTE: do NOT swallow stderr. We want any failure to abort the
+          # build with a visible error rather than silently fall through.
+          echo "Querying latest build for APP_STORE_APP_ID=$APP_STORE_APP_ID"
+          LATEST=$(app-store-connect get-latest-build-number "$APP_STORE_APP_ID")
+          if ! [[ "$LATEST" =~ ^[0-9]+$ ]]; then
+            echo "ERROR: get-latest-build-number returned non-numeric: '$LATEST'"
+            exit 1
+          fi
+          NEXT=$((LATEST + 1))
+          echo "Latest build on App Store Connect: $LATEST → next: $NEXT"
+          echo "BUILD_NUMBER=$NEXT" >> $CM_ENV
+      - name: Flutter build ipa
+        script: |
+          flutter build ipa --release \
+            --build-number="$BUILD_NUMBER" \
+            --export-options-plist=/Users/builder/export_options.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        beta_groups:
+          - Nudge Testers
+
+  # ── Android → Google Play (AAB) ───────────────────────────────────
+  android-workflow:
+    name: Android Workflow
+    max_build_duration: 60
+    environment:
+      flutter: 3.27.4
+      vars:
+        PACKAGE_NAME: "com.nudge_lab"
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: release/combined
+          include: true
+          source: true
+    scripts:
+      - name: Set up Firebase config files
+        script: |
+          python3 - << 'PYEOF'
+          import base64, os, sys
+          build_dir = os.environ['CM_BUILD_DIR']
+          files = {
+              'FIREBASE_OPTIONS_DART':     build_dir + '/lib/firebase_options.dart',
+              'GOOGLE_SERVICES_JSON':      build_dir + '/android/app/google-services.json',
+              'GOOGLE_SERVICE_INFO_PLIST': build_dir + '/ios/Runner/GoogleService-Info.plist',
+          }
+          for var, path in files.items():
+              val = os.environ.get(var, '').strip()
+              print(f'{var}: {len(val)} chars')
+              if not val:
+                  print(f'ERROR: {var} is empty!', file=sys.stderr)
+                  sys.exit(1)
+              with open(path, 'wb') as f:
+                  f.write(base64.b64decode(val + '=='))
+              print(f'OK -> {path}')
+          PYEOF
+      - name: Set up Android key.properties
+        script: |
+          echo "storePassword=$nudgepass" > "$CM_BUILD_DIR/android/key.properties"
+          echo "keyPassword=$nudgepass" >> "$CM_BUILD_DIR/android/key.properties"
+          echo "keyAlias=nudge" >> "$CM_BUILD_DIR/android/key.properties"
+          echo "storeFile=$CM_BUILD_DIR/key/nudge-key.keystore" >> "$CM_BUILD_DIR/android/key.properties"
+      - name: Install Flutter dependencies
+        script: flutter pub get
+      - name: Patch flutter_local_notifications for SDK 35
+        script: |
+          PLUGIN_FILE="$HOME/.pub-cache/hosted/pub.dev/flutter_local_notifications-16.3.3/android/src/main/java/com/dexterous/flutterlocalnotifications/FlutterLocalNotificationsPlugin.java"
+          if [ -f "$PLUGIN_FILE" ]; then
+            sed -i 's/bigLargeIcon(null)/bigLargeIcon((android.graphics.Bitmap) null)/g' "$PLUGIN_FILE"
+            echo "Patched bigLargeIcon ambiguity"
+          fi
+      - name: Build Android release AAB
+        script: |
+          flutter build appbundle \
+            --release \
+            -t lib/main.dart
+    artifacts:
+      - build/**/outputs/**/*.aab
+      - build/**/outputs/**/*.apk
+      - build/**/outputs/**/mapping.txt
+    publishing:
+      email:
+        recipients:
+          - shay.nudge@gmail.com
+        notify:
+          success: true
+          failure: false

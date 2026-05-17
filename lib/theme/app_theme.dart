@@ -32,6 +32,17 @@ class AppColors {
   static const Color lightPrimaryFixed = Color(0xFFB58BFF);
   static const Color lightPrimaryFixedDim = Color(0xFFA978FF);
 
+  // ── Shared "Solid Purple" tokens ─────────────────────────────────────────
+  // The exact gradient used by the Manage Plan / Subscription card on the
+  // Settings page. This is the canonical "solid purple" referenced
+  // throughout the design system — use these tokens whenever a component
+  // calls for the brand purple in BOTH light and dark mode (no separate
+  // "dark-mode purple" variant). #751FE7 is the same as lightPrimary; the
+  // dark stop and the deeper text fallback live here for consistency.
+  static const Color solidPurple = Color(0xFF751FE7);
+  static const Color solidPurpleDark = Color(0xFF4A0FAA);
+  static const Color solidPurpleSoft = Color(0xFF9C4DFF); // hover/active
+
   static const Color lightSecondary = Color(0xFF006288);
   static const Color lightOnSecondary = Color(0xFFE8F4FF);
   static const Color lightSecondaryContainer = Color(0xFF9ED9FF);
@@ -45,13 +56,20 @@ class AppColors {
   static const Color lightError = Color(0xFFB41340);
   static const Color lightOnError = Color(0xFFFFEFEF);
   static const Color lightErrorContainer = Color(0xFFF74B6D);
+  static const Color lightOnErrorContainer = Color(0xFF510017);
+
+  // Material 3 inverse / tint tokens (canonical mockup parity)
+  static const Color lightSurfaceTint = Color(0xFF751FE7);
+  static const Color lightInversePrimary = Color(0xFFA775FF);
+  static const Color lightInverseSurface = Color(0xFF0F0E0C);
+  static const Color lightOnInverseSurface = Color(0xFFA09C98);
 
   // ─── Dark Mode ─────────────────────────────────────────────
   static const Color darkBackground = Color(0xFF151311);
   static const Color darkSurface = Color(0xFF151311);
   static const Color darkSurfaceBright = Color(0xFF3B3936);
   static const Color darkSurfaceContainerLowest = Color(0xFF100E0C);
-  static const Color darkSurfaceContainerLow = Color.fromARGB(255, 59, 56, 52);
+  static const Color darkSurfaceContainerLow = Color(0xFF1D1B19);
   static const Color darkSurfaceContainer = Color(0xFF211F1D);
   static const Color darkSurfaceContainerHigh = Color(0xFF2C2927);
   static const Color darkSurfaceContainerHighest = Color(0xFF373432);
@@ -63,8 +81,14 @@ class AppColors {
   static const Color darkOutline = Color(0xFF968DA1);
   static const Color darkOutlineVariant = Color(0xFF4B4455);
 
-  static const Color darkPrimary = Color(0xFFD4BBFF);
-  static const Color darkOnPrimary = Color(0xFF41008B);
+  // Dark-mode primary mirrors the canonical solid purple in light mode —
+  // no separate "soft / light purple" dark-mode variant. Material 3
+  // normally lifts the primary toward white in dark mode for contrast,
+  // but per Stitch v4 spec the brand purple stays the same brand purple
+  // in both themes. Contrast against dark surfaces is still AA at #751FE7.
+  // Previous value: Color(0xFFD4BBFF).
+  static const Color darkPrimary = solidPurple;
+  static const Color darkOnPrimary = Color(0xFFFFFFFF);
   static const Color darkPrimaryContainer = Color(0xFF751FE7);
   static const Color darkOnPrimaryContainer = Color(0xFFDFCBFF);
   static const Color darkPrimaryFixed = Color(0xFFEBDCFF);
@@ -83,6 +107,13 @@ class AppColors {
   static const Color darkError = Color(0xFFFFB4AB);
   static const Color darkOnError = Color(0xFF690005);
   static const Color darkErrorContainer = Color(0xFF93000A);
+  static const Color darkOnErrorContainer = Color(0xFFFFDAD6);
+
+  // Material 3 inverse / tint tokens (canonical mockup parity)
+  static const Color darkSurfaceTint = Color(0xFFD4BBFF);
+  static const Color darkInversePrimary = Color(0xFF7825EA);
+  static const Color darkInverseSurface = Color(0xFFE7E1DE);
+  static const Color darkOnInverseSurface = Color(0xFF32302E);
 
   // ─── Shared ───────────────────────────────────────────────
   static const List<Color> primaryGradientLight = [Color(0xFF751FE7), Color(0xFF006288)];
@@ -121,17 +152,17 @@ class AppTheme {
   static Color darkIconColor          = AppColors.darkPrimary;
 
   // ── Universe colours (kept for social_universe.dart) ─────
-  static Color lightUniverseBackground = AppTheme.lightUniverseBackground;
-  static Color lightUniverseSurface    = AppColors.lightSurfaceContainerLowest;
+  static Color lightUniverseBackground       = AppColors.lightSurfaceContainerLowest;
+  static Color lightUniverseSurface          = AppColors.lightSurfaceContainerLowest;
   static const Color lightUniversePrimary    = Color(0xFF751FE7);
   static const Color lightUniverseSecondary  = Color(0xFF006288);
   static const Color lightUniverseAccent     = Color(0xFF30006A);
 
-  static Color darkUniverseBackground  = AppTheme.darkUniverseBackground;
-  static Color darkUniverseSurface     = AppTheme.darkUniverseSurface;
-  static Color darkUniversePrimary     = AppColors.darkPrimary;
-  static Color darkUniverseSecondary   = AppColors.darkSecondary;
-  static Color darkUniverseAccent      = AppColors.lightPrimary;
+  static Color darkUniverseBackground        = AppColors.darkBackground;
+  static Color darkUniverseSurface           = AppColors.darkSurfaceContainerLowest;
+  static Color darkUniversePrimary           = AppColors.darkPrimary;
+  static Color darkUniverseSecondary         = AppColors.darkSecondary;
+  static Color darkUniverseAccent            = AppColors.lightPrimary;
 
   // ─── Internal helpers ────────────────────────────────────
   static TextTheme _buildTextTheme(Color onSurface, Color onSurfaceVariant) {
@@ -179,6 +210,8 @@ class AppTheme {
         onTertiaryContainer: AppColors.lightOnTertiaryContainer,
         error: AppColors.lightError,
         onError: AppColors.lightOnError,
+        errorContainer: AppColors.lightErrorContainer,
+        onErrorContainer: AppColors.lightOnErrorContainer,
         surface: AppColors.lightSurface,
         onSurface: AppColors.lightOnSurface,
         onSurfaceVariant: AppColors.lightOnSurfaceVariant,
@@ -189,6 +222,10 @@ class AppTheme {
         surfaceContainer: AppColors.lightSurfaceContainer,
         surfaceContainerHigh: AppColors.lightSurfaceContainerHigh,
         surfaceContainerHighest: AppColors.lightSurfaceContainerHighest,
+        surfaceTint: AppColors.lightSurfaceTint,
+        inversePrimary: AppColors.lightInversePrimary,
+        inverseSurface: AppColors.lightInverseSurface,
+        onInverseSurface: AppColors.lightOnInverseSurface,
       ),
       scaffoldBackgroundColor: AppColors.lightBackground,
       textTheme: tt,
@@ -325,6 +362,8 @@ class AppTheme {
         onTertiaryContainer: AppColors.darkOnTertiaryContainer,
         error: AppColors.darkError,
         onError: AppColors.darkOnError,
+        errorContainer: AppColors.darkErrorContainer,
+        onErrorContainer: AppColors.darkOnErrorContainer,
         surface: AppColors.darkSurface,
         onSurface: AppColors.darkOnSurface,
         onSurfaceVariant: AppColors.darkOnSurfaceVariant,
@@ -335,6 +374,10 @@ class AppTheme {
         surfaceContainer: AppColors.darkSurfaceContainer,
         surfaceContainerHigh: AppColors.darkSurfaceContainerHigh,
         surfaceContainerHighest: AppColors.darkSurfaceContainerHighest,
+        surfaceTint: AppColors.darkSurfaceTint,
+        inversePrimary: AppColors.darkInversePrimary,
+        inverseSurface: AppColors.darkInverseSurface,
+        onInverseSurface: AppColors.darkOnInverseSurface,
       ),
       scaffoldBackgroundColor: AppColors.darkBackground,
       textTheme: tt,
@@ -448,6 +491,17 @@ class AppTheme {
       ),
     );
   }
+}
+
+/// Canonical radius scale (matches Stitch mockup Tailwind config:
+/// DEFAULT 1rem, lg 2rem, xl 3rem, full 9999px).
+class Radii {
+  static const double xs = 8;
+  static const double sm = 12;
+  static const double md = 16;   // 1rem — DEFAULT
+  static const double lg = 32;   // 2rem
+  static const double xl = 48;   // 3rem
+  static const double pill = 9999;
 }
 
 // ─── Reusable decoration helpers ────────────────────────────────

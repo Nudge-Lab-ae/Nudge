@@ -9,7 +9,10 @@ import 'package:flutter/material.dart';
 import 'package:nudge/theme/app_theme.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:nudge/models/subscription.dart';
 import 'package:nudge/providers/feedback_provider.dart';
+import 'package:nudge/providers/subscription_provider.dart';
+import 'package:nudge/screens/subscription/paywall_screen.dart';
 // import 'package:nudge/screens/dashboard/dashboard_screen.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/services/message_service.dart';
@@ -1310,7 +1313,23 @@ class _EditContactScreenState extends State<EditContactScreen> {
         if (widget.isImported) {
           // Convert imported contact to regular contact
           final apiService = ApiService();
-          
+
+          // Enforce contact limit before conversion
+          final sub = Provider.of<SubscriptionProvider>(context, listen: false);
+          final existing = await apiService.getAllContacts();
+          if (!sub.canAddContact(existing.length)) {
+            setState(() => saving = false);
+            if (!mounted) return;
+            Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => PaywallScreen(
+                highlightTier: sub.tier == SubscriptionTier.free
+                    ? SubscriptionTier.plus
+                    : SubscriptionTier.pro,
+              ),
+            ));
+            return;
+          }
+
           // Create contact data from form
           final contactData = {
             'name': _nameController.text,

@@ -1211,6 +1211,31 @@ Future<Map<String, dynamic>> register(String email, String password) async {
     }
   }
 
+  Future<void> sendWelcomeEmail(String email, String username) async {
+    try {
+      final HttpsCallable callable =
+          FirebaseFunctions.instance.httpsCallable('sendWelcomeEmail');
+      await callable.call({'email': email, 'username': username});
+    } catch (_) {
+      // Non-critical — don't block registration if this fails
+    }
+  }
+
+  Future<Map<String, dynamic>> chatWithAI({
+    required String message,
+    List<Map<String, dynamic>> history = const [],
+    Map<String, dynamic>? contactContext,
+  }) async {
+    final HttpsCallable callable =
+        FirebaseFunctions.instance.httpsCallable('relationshipAssistantChat');
+    final result = await callable.call({
+      'message': message,
+      'history': history,
+      if (contactContext != null) 'contactContext': contactContext,
+    });
+    return Map<String, dynamic>.from(result.data as Map);
+  }
+
 
   Future<void> submitFeedback({
     String? title,

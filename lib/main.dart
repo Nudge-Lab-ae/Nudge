@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 // import 'package:another_flushbar/flushbar.dart';
@@ -12,12 +13,19 @@ import 'package:nudge/helpers/auth_refresh_helper.dart';
 import 'package:nudge/helpers/deletion_retry_helper.dart';
 import 'package:nudge/providers/admin_provider.dart';
 import 'package:nudge/providers/feedback_provider.dart';
+import 'package:nudge/providers/subscription_provider.dart';
 import 'package:nudge/providers/theme_provider.dart';
+import 'package:app_links/app_links.dart';
+import 'package:nudge/screens/subscription/subscription_gate.dart';
+import 'package:nudge/screens/subscription/paywall_screen.dart';
 import 'package:nudge/screens/analytics/analytics_screen.dart';
 import 'package:nudge/screens/auth/complete_profile_screen.dart';
 import 'package:nudge/screens/contacts/edit_contact_screen.dart';
 import 'package:nudge/screens/feedback/feedback_forum_screen.dart';
 import 'package:nudge/screens/splash_screen.dart';
+import 'package:nudge/screens/walkthrough/walkthrough_screen.dart';
+import 'package:nudge/screens/onboarding/onboarding_goals_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:nudge/services/api_service.dart';
 import 'package:nudge/services/message_service.dart';
 import 'package:nudge/services/notification_service.dart';
@@ -36,8 +44,8 @@ import 'screens/contacts/import_contacts_screen.dart';
 import 'screens/notifications/notifications_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'screens/groups/groups_list_screen.dart';
+import 'screens/ai/nudge_ai_screen.dart';
 import 'services/auth_service.dart';
-import 'models/user.dart' as user;
 
 // Create a GlobalKey for navigator to handle notifications when app is in background
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -677,6 +685,7 @@ class NudgeApp extends StatelessWidget {
               ),
               ChangeNotifierProvider(create: (_) => FeedbackProvider()),
               ChangeNotifierProvider(create: (_) => AdminProvider()),
+              ChangeNotifierProvider(create: (_) => SubscriptionProvider()),
             ],
             child: MaterialApp(
               title: 'NUDGE',
@@ -689,6 +698,8 @@ class NudgeApp extends StatelessWidget {
                 '/splash': (context) => const SplashScreen(),
                 '/': (context) => const AuthWrapper(),
                 '/welcome': (context) => const WelcomeScreen(),
+                '/onboarding/goals': (context) => const OnboardingGoalsScreen(),
+                '/walkthrough': (context) => const WalkthroughScreen(),
                 '/login': (context) => const LoginScreen(),
                 '/register': (context) => const RegisterScreen(),
                 '/complete_profile': (context) => const CompleteProfileScreen(),
@@ -700,7 +711,10 @@ class NudgeApp extends StatelessWidget {
                   final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
                   return ContactsListScreen(filter: args?['filter'], mode: args?['action'], showAppBar: true, hideButton: (){},);
                 },
-                '/analytics': (context) => const AnalyticsScreen(),
+                '/analytics': (context) => const SubscriptionGate(
+                  feature: SubscriptionFeature.dashboard,
+                  child: AnalyticsScreen(),
+                ),
                 '/add_contact': (context) => AddContactScreen(),
                 '/import_contacts': (context) {
                   final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
@@ -711,6 +725,8 @@ class NudgeApp extends StatelessWidget {
                 },
                 '/notifications': (context) => const NotificationsScreen(showAppBar: true),
                 '/settings': (context) => const SettingsScreen(),
+                '/paywall': (context) => const PaywallScreen(),
+                '/ai': (context) => const NudgeAIScreen(),
                 '/groups': (context) => const GroupsListScreen(showAppBar: true,),
                 '/edit_contact': (context) {
                   final contactId = ModalRoute.of(context)!.settings.arguments as String;
@@ -763,11 +779,44 @@ class AuthWrapper extends StatefulWidget {
 class _AuthWrapperState extends State<AuthWrapper> {
   String _checkingStatus = '';
   bool _initialized = false;
+  StreamSubscription<Uri>? _deepLinkSub;
 
   @override
   void initState() {
     super.initState();
     _initialize();
+    _initDeepLinks();
+  }
+
+  @override
+  void dispose() {
+    _deepLinkSub?.cancel();
+    super.dispose();
+  }
+
+  void _initDeepLinks() {
+    final appLinks = AppLinks();
+    _deepLinkSub = appLinks.uriLinkStream.listen((uri) {
+      _handleDeepLink(uri);
+    });
+    // Handle the link that launched the app cold
+    appLinks.getInitialLink().then((uri) {
+      if (uri != null) _handleDeepLink(uri);
+    });
+  }
+
+  void _handleDeepLink(Uri uri) {
+    if (uri.scheme != 'nudge') return;
+    if (uri.host == 'subscription' && uri.pathSegments.contains('success')) {
+      final plan = uri.queryParameters['plan'];
+      final email = uri.queryParameters['email'] ??
+          FirebaseAuth.instance.currentUser?.email ?? '';
+      if (plan != null && mounted) {
+        final subProvider =
+            Provider.of<SubscriptionProvider>(context, listen: false);
+        subProvider.handleDeepLink(plan, email);
+      }
+    }
   }
 
   Future<void> _initialize() async {
@@ -779,6 +828,13 @@ class _AuthWrapperState extends State<AuthWrapper> {
       final adminProvider = Provider.of<AdminProvider>(context, listen: false);
       await adminProvider.checkAndCacheAdminStatus();
 
+      // Init subscription for authenticated users
+      final firebaseUser = FirebaseAuth.instance.currentUser;
+      if (firebaseUser?.email != null && mounted) {
+        final subProvider =
+            Provider.of<SubscriptionProvider>(context, listen: false);
+        await subProvider.init(firebaseUser!.email!);
+      }
     } catch (e) {
       //print('Error initializing AuthWrapper: $e');
     } finally {
@@ -864,13 +920,13 @@ class _AuthWrapperState extends State<AuthWrapper> {
       }
     });
     
-    return FutureBuilder<user.User>(
-      future: _getUserProfile(firebaseUser.uid),
+    return FutureBuilder<_AuthRouteDecision>(
+      future: _resolveAuthRoute(firebaseUser.uid),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return _buildLoadingScreen();
         }
-        
+
         if (snapshot.hasError) {
           return Scaffold(
             body: Center(
@@ -891,16 +947,27 @@ class _AuthWrapperState extends State<AuthWrapper> {
             ),
           );
         }
-        
-        final userData = snapshot.data;
-        
-        // Check if profile is completed
-        if (userData == null || !userData.profileCompleted) {
+
+        final decision = snapshot.data;
+        if (decision == null || !decision.profileCompleted) {
           return const CompleteProfileScreen();
-        } else {
-          return const DashboardScreen();
         }
+        if (!decision.goalsCompleted) {
+          return const OnboardingGoalsScreen();
+        }
+        return const DashboardScreen();
       },
+    );
+  }
+
+  Future<_AuthRouteDecision> _resolveAuthRoute(String userId) async {
+    final apiService = ApiService();
+    final userData = await apiService.getUser();
+    final prefs = await SharedPreferences.getInstance();
+    final goalsDone = prefs.getBool(onboardingGoalsCompletedKey) ?? false;
+    return _AuthRouteDecision(
+      profileCompleted: userData.profileCompleted,
+      goalsCompleted: goalsDone,
     );
   }
 
@@ -928,8 +995,13 @@ class _AuthWrapperState extends State<AuthWrapper> {
     );
   }
 
-  Future<user.User> _getUserProfile(String userId) async {
-    final apiService = ApiService();
-    return await apiService.getUser();
-  }
+}
+
+class _AuthRouteDecision {
+  final bool profileCompleted;
+  final bool goalsCompleted;
+  const _AuthRouteDecision({
+    required this.profileCompleted,
+    required this.goalsCompleted,
+  });
 }

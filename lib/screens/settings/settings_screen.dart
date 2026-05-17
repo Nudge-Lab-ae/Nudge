@@ -9,17 +9,21 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:nudge/helpers/deletion_retry_helper.dart';
 import 'package:nudge/providers/admin_provider.dart';
+import 'package:nudge/providers/subscription_provider.dart';
 import 'package:nudge/providers/theme_provider.dart';
 import 'package:nudge/screens/admin/feedback_management_screen.dart';
 import 'package:nudge/screens/admin/ai_testing_screen.dart';
+import 'package:nudge/screens/feedback/feedback_bottom_sheet.dart';
 import 'package:nudge/screens/feedback/feedback_forum_screen.dart';
+import 'package:nudge/screens/subscription/paywall_screen.dart';
 import 'package:nudge/services/auth_service.dart';
 import 'package:nudge/services/message_service.dart';
 import 'package:nudge/widgets/screen_tracker.dart';
+import 'package:nudge/widgets/stitch_top_bar.dart';
 import 'package:provider/provider.dart';
 import '../../services/api_service.dart';
 import 'package:url_launcher/url_launcher.dart';
-// import 'package:nudge/models/user.dart' as user; 
+// import 'package:nudge/models/user.dart' as user;
 
 
 class SettingsScreen extends StatefulWidget {
@@ -674,9 +678,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  // Opens the platform's native subscription management page. iOS uses the
+  // documented `itms-apps://...` deep-link to App Store subscriptions;
+  // Android uses the Play Store equivalent. Falls back to a snackbar if
+  // neither URL is launchable.
+  Future<void> _openManageSubscription() async {
+    _dismissKeyboard();
+    final iosUri =
+        Uri.parse('itms-apps://apps.apple.com/account/subscriptions');
+    final androidUri = Uri.parse(
+        'https://play.google.com/store/account/subscriptions?package=com.nudge_lab');
+    final uri = Platform.isIOS ? iosUri : androidUri;
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Open your device store and search for Nudge to manage your subscription.'),
+          duration: Duration(seconds: 4),
+        ),
+      );
+    }
+  }
+
   // ── Subscription card (purple gradient) ─────────────────────────────────
   Widget _buildSubscriptionCard() {
-    // final isDark = Provider.of<ThemeProvider>(context, listen: false).isDarkMode;
+    final sub = context.watch<SubscriptionProvider>();
+    final planLabel = sub.isTrial
+        ? 'PRO TRIAL'
+        : '${sub.subscription.tierName.toUpperCase()} PLAN';
+    final description = sub.isTrial
+        ? 'Your free 14-day Pro trial is active.'
+        : sub.isFree
+            ? 'Upgrade to unlock more contacts & features.'
+            : 'You\'re on the ${sub.subscription.tierName} plan — ${sub.subscription.tierTagline}.';
+    final buttonLabel = sub.isFree || sub.isTrial ? 'Upgrade Plan' : 'Manage Plan';
 
     return Container(
       decoration: BoxDecoration(
@@ -688,7 +725,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF751FE7).withOpacity(0.35),
+            color: AppColors.solidPurple.withOpacity(0.35),
             blurRadius: 20,
             offset: const Offset(0, 6),
           ),
@@ -696,7 +733,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       padding: const EdgeInsets.all(20),
       child: Stack(children: [
-        // Decorative star shapes
         Positioned(
           top: -12, right: 20,
           child: Transform.rotate(
@@ -713,46 +749,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 size: 44, color: Colors.white.withOpacity(0.07)),
           ),
         ),
-
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // PRO PLAN pill
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.18),
                 borderRadius: BorderRadius.circular(9999),
               ),
-              child: const Text(
-                'PRO PLAN',
-                style: TextStyle(
-                  fontSize: 10, fontWeight: FontWeight.w700,
-                  color: Colors.white, letterSpacing: 0.8),
+              child: Text(
+                planLabel,
+                style: const TextStyle(
+                    fontSize: 10, fontWeight: FontWeight.w700,
+                    color: Colors.white, letterSpacing: 0.8),
               ),
             ),
             const SizedBox(height: 12),
-
             const Text(
               'Subscription',
               style: TextStyle(
-                fontSize: 24, fontWeight: FontWeight.w800, color: Colors.white),
+                  fontSize: 24, fontWeight: FontWeight.w800, color: Colors.white),
             ),
             const SizedBox(height: 4),
             Text(
-              'You are on an exclusive access subscription.',
+              description,
               style: TextStyle(
-                fontSize: 13, color: Colors.white.withOpacity(0.8), height: 1.4),
+                  fontSize: 13, color: Colors.white.withOpacity(0.8), height: 1.4),
             ),
+            if (sub.isTrial && sub.subscription.periodEnd != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                '${sub.subscription.periodEnd!.difference(DateTime.now()).inDays} days remaining',
+                style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white.withOpacity(0.65),
+                    fontWeight: FontWeight.w500),
+              ),
+            ],
             const SizedBox(height: 20),
-
-            // Manage Plan button
             SizedBox(
               width: double.infinity, height: 46,
               child: ElevatedButton(
-                onPressed: () {
-                  // Subscription management navigation can go here
-                },
+                // Free/trial → open PaywallScreen to upgrade
+                // Paid → open App Store / Play Store to manage
+                onPressed: (sub.isFree || sub.isTrial)
+                    ? () => Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const PaywallScreen()),
+                        )
+                    : _openManageSubscription,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: const Color(0xFF751FE7),
@@ -760,11 +805,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(9999)),
                 ),
-                child: const Text(
-                  'Manage Plan',
-                  style: TextStyle(
-                    fontSize: 15, fontWeight: FontWeight.w700,
-                    color: Color(0xFF751FE7)),
+                child: Text(
+                  buttonLabel,
+                  style: const TextStyle(
+                      fontSize: 15, fontWeight: FontWeight.w700,
+                      color: Color(0xFF751FE7)),
                 ),
               ),
             ),
@@ -1165,10 +1210,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
+              // Clear cached subscription on sign-out
+              if (context.mounted) {
+                await Provider.of<SubscriptionProvider>(context, listen: false)
+                    .clearSubscription();
+              }
               await authService.signOut();
               Navigator.pushNamedAndRemoveUntil(
-                context, 
-                '/welcome', 
+                context,
+                '/welcome',
                 (route) => false
               );
             },
@@ -1309,99 +1359,101 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildFeedbackForumSection(ThemeProvider themeProvider) {
-    // final theme = Theme.of(context);
-    
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 30),
-        Text(
-          'FEATURE REQUESTS',
-          style: TextStyle(
-            fontSize: 16,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 15),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: themeProvider.isDarkMode ? Colors.blue.shade900.withOpacity(0.3) : Colors.blue.shade50,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: themeProvider.isDarkMode ? Colors.blue.shade800 : Colors.blue.shade100,
+  // Single-row settings tile (white card, icon + label + chevron) matching
+  // the mockup's "Submit Feedback / View Feedback Forum / Log Out" pattern.
+  Widget _buildSettingsRow({
+    required ThemeProvider themeProvider,
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    Color? iconBg,
+    Color? iconFg,
+    required VoidCallback onTap,
+  }) {
+    final isDark = themeProvider.isDarkMode;
+    final cardBg = isDark ? AppColors.darkSurfaceContainerHigh : Colors.white;
+    final textP = isDark ? AppColors.darkOnSurface : AppColors.lightOnSurface;
+    final textS = isDark ? AppColors.darkOnSurfaceVariant : AppColors.lightOnSurfaceVariant;
+    const brandPurple = Color(0xFF751FE7);
+    return GestureDetector(
+      onTap: () {
+        _dismissKeyboard();
+        onTap();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          color: cardBg,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.15 : 0.05),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
             ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: iconBg ?? brandPurple.withOpacity(0.10),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, size: 18, color: iconFg ?? brandPurple),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.auto_awesome_outlined,
-                    color: themeProvider.isDarkMode ? Colors.blue.shade300 : Theme.of(context).colorScheme.secondary,
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    'Feature Requests Forum',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
+                  Text(title,
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: textP)),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(subtitle,
+                        style: TextStyle(fontSize: 12, color: textS)),
+                  ],
                 ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Browse, upvote, and track feature requests from other users. See what\'s being planned and vote for your favorite ideas!',
-                style: TextStyle(
-                  color: themeProvider.isDarkMode ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.outline,
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: () {
-                    _dismissKeyboard();
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const FeedbackForumScreen(),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.secondary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.forum_outlined, color: !themeProvider.isDarkMode ? Colors.white:Color(0xff555555),),
-                      const SizedBox(width: 8),
-                      Text(
-                        'VIEW FEATURE REQUESTS',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: !themeProvider.isDarkMode ? Colors.white:Color(0xff555555),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+            Icon(Icons.chevron_right_rounded, color: textS, size: 20),
+          ],
         ),
-      ],
+      ),
+    );
+  }
+
+  Widget _buildFeedbackForumSection(ThemeProvider themeProvider) {
+    return _buildSettingsRow(
+      themeProvider: themeProvider,
+      icon: Icons.forum_outlined,
+      title: 'View Feedback Forum',
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const FeedbackForumScreen()),
+      ),
+    );
+  }
+
+  Widget _buildSubmitFeedbackRow(ThemeProvider themeProvider) {
+    return _buildSettingsRow(
+      themeProvider: themeProvider,
+      icon: Icons.send_rounded,
+      title: 'Submit Feedback',
+      onTap: () {
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (_) => const FeedbackBottomSheet(currentSection: 'settings'),
+        );
+      },
     );
   }
 
@@ -1423,44 +1475,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
       onTap: _dismissKeyboard,
       behavior: HitTestBehavior.translucent,
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            'Adjust Settings',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-          centerTitle: true,
-          iconTheme: IconThemeData(color: theme.colorScheme.primary),
-          backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
-          surfaceTintColor: Colors.transparent,
-        ),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: Stack(
           children: [
-            _isCropping 
+            _isCropping
               ? _buildProfilePictureSection()
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
+              : SafeArea(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.only(bottom: 40),
                   keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildProfilePictureSection(),
-                      
-                      // Theme Toggle Section
-                      _buildThemeToggleSection(),
-                      const SizedBox(height: 30),
-                      
-                      Form(
+                      StitchTopBar(
+                        showBack: true,
+                        avatarUrl: authService.currentUser?.photoURL,
+                      ),
+                      const StitchScreenTitle(
+                        title: 'Settings',
+                        subtitle: 'Manage your account and app preferences.',
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: _buildProfilePictureSection(),
+                      ),
+
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildThemeToggleSection(),
+                            const SizedBox(height: 30),
+                          ],
+                        ),
+                      ),
+
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Form(
                         key: _formKey,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _buildSubscriptionCard(),
-                            const SizedBox(height: 30),
-                            
+                            const SizedBox(height: 24),
+
                             Text(
                               'GENERAL',
                               style: TextStyle(
@@ -1657,24 +1717,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ],
                         ),
                       ),
-                      
-                      // Log Out + Danger Zone (separated per new design)
+                      ),
+
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                      // Mockup row order: Submit Feedback / View Forum /
+                      // Log Out / Danger Zone. Privacy Policy stays just
+                      // above as a related external-link row.
                       const SizedBox(height: 30),
                       _buildPrivacyPolicyCard(themeProvider),
+                      const SizedBox(height: 12),
+                      _buildSubmitFeedbackRow(themeProvider),
+                      const SizedBox(height: 12),
+                      _buildFeedbackForumSection(themeProvider),
                       const SizedBox(height: 12),
                       _buildLogOutCard(authService, themeProvider),
                       const SizedBox(height: 16),
                       _buildDangerZoneCard(authService, themeProvider),
-                      
-                      const SizedBox(height: 30),
-                      
-                      // Feedback Forum Section
-                      _buildFeedbackForumSection(themeProvider),
-                      
-                      const SizedBox(height: 30),
 
-                      _buildFeedbackForm(themeProvider),
-                      
                       const SizedBox(height: 30),
                       
                       // Feedback Management Section (for admins)
@@ -1816,8 +1879,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ],
 
                       const SizedBox(height: 20),
+                        ],
+                        ),
+                      ),
                     ],
                   ),
+                ),
                 ),
             _buildDeletionOverlay(),
           ],

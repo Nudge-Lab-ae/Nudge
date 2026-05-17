@@ -56,6 +56,10 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
 
   late AnimationController _heartbeatController;
   late Animation<double> _heartbeatAnimation;
+  // Heartbeat plays a fixed number of cycles on first render, then stays
+  // still — perpetual pulse was distracting on every screen.
+  static const int _heartbeatMaxCycles = 2;
+  int _heartbeatCycles = 0;
 
   @override
   void initState() {
@@ -91,9 +95,18 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
     ]).animate(
         CurvedAnimation(parent: _heartbeatController, curve: Curves.easeInOut));
 
-    _heartbeatController.repeat();
+    _heartbeatController.addStatusListener(_onHeartbeatStatus);
+    _heartbeatController.forward();
 
     widget.controller?.registerCloseCallback(closeMenuExternally);
+  }
+
+  void _onHeartbeatStatus(AnimationStatus status) {
+    if (status != AnimationStatus.completed) return;
+    _heartbeatCycles++;
+    if (_heartbeatCycles < _heartbeatMaxCycles) {
+      _heartbeatController.forward(from: 0.0);
+    }
   }
 
   // ── Menu state ────────────────────────────────────────────────────────────
@@ -103,10 +116,8 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
       _isExpanded = !_isExpanded;
       if (_isExpanded) {
         _menuController.forward();
-        _heartbeatController.stop();
       } else {
         _menuController.reverse();
-        _heartbeatController.repeat();
       }
       context.read<FeedbackProvider>().setFabMenuState(_isExpanded);
       widget.onMenuStateChanged?.call();
@@ -118,7 +129,6 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
       setState(() {
         _isExpanded = false;
         _menuController.reverse();
-        _heartbeatController.repeat();
       });
       context.read<FeedbackProvider>().setFabMenuState(false);
       widget.onMenuStateChanged?.call();
@@ -209,7 +219,12 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
 
     // ── Expanded: full-screen overlay + vertical menu ─────────────────────
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final useWhiteLabels = isDark || widget.onDarkBackground;
+    // Label color follows the SCRIM (which now has tint), not the
+    // underlying screen. Light scrim → dark text; dark scrim → light text.
+    // Previously useWhiteLabels also flipped on widget.onDarkBackground
+    // (Universe), but the new tinted scrim makes that unnecessary —
+    // and would have left white labels on a white scrim in light mode.
+    final useWhiteLabels = isDark;
 
     return SizedBox(
       width: size.width,
@@ -217,13 +232,22 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // ── Backdrop blur (no tint — pure blur only) ───────────────────
+          // ── Backdrop blur + tinted scrim ──────────────────────────────
+          // Pure-blur previously left the popup readable only when the
+          // background happened to be neutral. Over the purple Daily
+          // Momentum card the menu labels were unreadable. Adding a
+          // semi-opaque scrim lifts contrast against any underlying
+          // surface while keeping the frosted-glass feel.
           Positioned.fill(
             child: GestureDetector(
               onTap: _closeMenu,
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 6.0, sigmaY: 6.0),
-                child: Container(color: Colors.transparent),
+                filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
+                child: Container(
+                  color: isDark
+                      ? Colors.black.withOpacity(0.55)
+                      : Colors.white.withOpacity(0.65),
+                ),
               ),
             ),
           ),
@@ -274,8 +298,25 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
   }
 
   // ── Collapsed FAB (Nudge logo with heartbeat) ──────────────────────────
+  // Two variants per Stitch v4:
+  //   light → dashboard_consistent_titles: 56px white circle, subtle shadow,
+  //           32px Nudge logo foreground.
+  //   dark  → social_universe_brighter_glow_2: 56px dark glass circle, 2px
+  //           primary/40 ring, primary glow shadow, 40px logo.
+  // Variant is selected by widget.onDarkBackground.
 
   Widget _buildMainButton() {
+    // Dark variant fires either when the screen explicitly has a dark
+    // background (e.g. Social Universe in light mode) OR whenever the
+    // whole app is in dark mode. This keeps the FAB legible against the
+    // dark scaffold on every tab when the user has dark mode enabled.
+    final isDarkVariant = widget.onDarkBackground ||
+        Theme.of(context).brightness == Brightness.dark;
+    // Logo size is the same on every screen (Universe was 40, others 32 —
+    // the user wants the bigger Universe size everywhere). Only the LOGO
+    // size changes; the 56px circle, the bg/border/shadow per variant,
+    // and the position are all unchanged.
+    const logoSize = 40.0;
     return AnimatedBuilder(
       animation: _heartbeatAnimation,
       builder: (context, _) => Transform.scale(
@@ -283,21 +324,35 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
         child: GestureDetector(
           onTap: _toggleExpanded,
           child: Container(
-            width: 60,
-            height: 60,
+            width: 56,
+            height: 56,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              image: const DecorationImage(
-                image: AssetImage('assets/Nudge-logo.png'),
-                fit: BoxFit.cover,
+              shape: BoxShape.circle,
+              color: isDarkVariant
+                  ? const Color(0xCC2D2926)
+                  : Colors.white,
+              border: Border.all(
+                color: isDarkVariant
+                    ? AppColors.lightPrimary.withOpacity(0.40)
+                    : Colors.black.withOpacity(0.05),
+                width: isDarkVariant ? 2 : 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.lightPrimary.withOpacity(0.25),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
+                  color: isDarkVariant
+                      ? AppColors.lightPrimary.withOpacity(0.30)
+                      : Colors.black.withOpacity(0.18),
+                  blurRadius: isDarkVariant ? 20 : 24,
+                  offset: const Offset(0, 8),
                 ),
               ],
+            ),
+            alignment: Alignment.center,
+            child: Image.asset(
+              'assets/Nudge-logo.png',
+              width: logoSize,
+              height: logoSize,
+              fit: BoxFit.contain,
             ),
           ),
         ),
@@ -342,8 +397,12 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
     bool useWhiteLabel = false,
   }) {
     final isHighlighted = _isPrimaryAction(text);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // Same canonical solid purple in light and dark mode (no separate
+    // dark-mode tint). The dark surface fill behind the icon provides
+    // the contrast.
     final iconColor =
-        isHighlighted ? Colors.white : AppColors.lightPrimary;
+        isHighlighted ? Colors.white : AppColors.solidPurple;
     final btnDecoration = isHighlighted
         ? const BoxDecoration(
             gradient: LinearGradient(
@@ -361,11 +420,17 @@ class _FeedbackFloatingButtonState extends State<FeedbackFloatingButton>
             ],
           )
         : BoxDecoration(
-            color: Colors.white,
+            color: isDark ? const Color(0xFF2D2926) : Colors.white,
             shape: BoxShape.circle,
+            border: isDark
+                ? Border.all(
+                    color: AppColors.lightPrimary.withOpacity(0.30),
+                    width: 1.5,
+                  )
+                : null,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.10),
+                color: Colors.black.withOpacity(isDark ? 0.30 : 0.10),
                 blurRadius: 10,
                 offset: const Offset(0, 3),
               ),

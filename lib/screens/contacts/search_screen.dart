@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:nudge/theme/app_theme.dart';
 import 'package:nudge/screens/contacts/contacts_list_screen.dart';
+import 'package:nudge/widgets/gradient_text.dart';
 // import 'add_contact_screen.dart';
 // import '../notifications/notifications_screen.dart';
 
@@ -9,10 +11,25 @@ class SearchScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('NUDGE'),
-        backgroundColor: AppColors.lightPrimary,
+        title: GradientText(
+          text: 'NUDGE',
+          style: GoogleFonts.plusJakartaSans(
+              fontSize: 25, fontWeight: FontWeight.w800),
+          // Near-black wordmark per Stitch mockups.
+          gradient: LinearGradient(
+            colors: isDark
+                ? const [Color(0xFFE7E1DE), Color(0xFF968DA1)]
+                : const [Color(0xFF1A1A1A), Color(0xFF666666)],
+            begin: Alignment.bottomCenter,
+            end: Alignment.topCenter,
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
+        surfaceTintColor: Colors.transparent,
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications),

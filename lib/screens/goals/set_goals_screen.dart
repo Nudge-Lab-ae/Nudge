@@ -1,7 +1,9 @@
 // lib/screens/set_goals_screen.dart
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:nudge/theme/app_theme.dart';
 import 'package:nudge/screens/dashboard/dashboard_screen.dart';
+import 'package:nudge/widgets/gradient_text.dart';
 import 'package:provider/provider.dart';
 import '../../services/api_service.dart';
 import '../../models/social_group.dart';
@@ -400,10 +402,25 @@ class _SetGoalsScreenState extends State<SetGoalsScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
       return Scaffold(
         appBar: AppBar(
-          title: const Text('NUDGE'),
-          backgroundColor: AppColors.lightPrimary,
+          title: GradientText(
+            text: 'NUDGE',
+            style: GoogleFonts.plusJakartaSans(
+                fontSize: 25, fontWeight: FontWeight.w800),
+            // Near-black wordmark per Stitch mockups.
+            gradient: LinearGradient(
+              colors: isDark
+                  ? const [Color(0xFFE7E1DE), Color(0xFF968DA1)]
+                  : const [Color(0xFF1A1A1A), Color(0xFF666666)],
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
+            ),
+          ),
+          centerTitle: true,
+          backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
+          surfaceTintColor: Colors.transparent,
         ),
         body: const Center(child: CircularProgressIndicator()),
       );

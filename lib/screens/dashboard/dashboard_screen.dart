@@ -10,7 +10,9 @@ import 'package:nudge/models/analytics.dart';
 import 'package:nudge/models/nudge.dart';
 import 'package:nudge/models/social_group.dart';
 import 'package:nudge/providers/feedback_provider.dart';
+import 'package:nudge/providers/subscription_provider.dart';
 import 'package:nudge/providers/theme_provider.dart';
+import 'package:nudge/screens/subscription/subscription_gate.dart';
 import 'package:nudge/screens/contacts/contact_detail_screen.dart';
 import 'package:nudge/screens/contacts/contacts_list_screen.dart';
 import 'package:nudge/screens/contacts/import_contacts_screen.dart';
@@ -29,6 +31,7 @@ import 'package:nudge/widgets/feedback_floating_button.dart';
 import 'package:nudge/widgets/interactive_donut_chart.dart';
 // import 'package:nudge/widgets/gradient_text.dart';
 import 'package:nudge/widgets/screen_tracker.dart';
+import 'package:nudge/widgets/stitch_top_bar.dart';
 // import 'package:nudge/widgets/simple_contact_panel.dart';
 import 'package:nudge/widgets/social_universe.dart';
 import 'package:percent_indicator/percent_indicator.dart';
@@ -70,6 +73,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedPieSegmentIndex = -1;
   String? _explodedCategory;
 
+  // Which nudge section (if any) is currently expanded inline. Only one of
+  // 'pending' / 'upcoming' can be open at a time; tapping the active one
+  // collapses it again and brings the sibling cards back.
+  String? _expandedNudgeSection;
+
+  // Tracks whether the Upcoming Nudges card's calendar is in week-strip
+  // mode (false, default) or full-month grid mode (true).
+  bool _calendarExpanded = false;
+
+  // The day currently selected in the calendar — defaults to today.
+  late DateTime _selectedCalendarDate;
+
   final ConfettiController _confettiController = ConfettiController(
     duration: const Duration(seconds: 3)
   );
@@ -83,6 +98,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
+    final now = DateTime.now();
+    _selectedCalendarDate = DateTime(now.year, now.month, now.day);
     _subscribeToNudges();
     _checkDeletionRetry();
     _currentIndex = widget.initialTab;
@@ -280,20 +297,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   
                   // Return different screens based on current index
                   switch (_currentIndex) {
-                    // case 0:
-                    //   return _buildDashboardWithSliver(themeProvider, contacts, groups, apiService);
-                    case 1: // Social Universe is now at index 1
+                    case 1: // Social Universe
                       return const SocialUniverseImmersiveScreen();
-                    case 2: // Notifications moved to index 4
-                      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-                      final pendingNudgeId = args?['pendingNudgeId'];
-                      return  NotificationsScreen(showAppBar: false, pendingNudgeId: pendingNudgeId);
-                      case 3: // Groups moved to index 3
-                      return const GroupsListScreen(showAppBar: false);
-                    case 4: // Contacts moved to index 2
+                    case 2: // Nudges tab now renders the today-agenda
+                            // dashboard (the previously-hidden screen)
+                            // instead of the legacy NotificationsScreen.
+                            // The old screen is kept in source — still
+                            // accessible via deep link / pending-nudge
+                            // route — but no longer the bottom-nav
+                            // destination.
+                      return _buildDashboardWithSliver(
+                          themeProvider, contacts, groups, apiService);
+                      case 3: // Groups
+                      return const SubscriptionGate(
+                        feature: SubscriptionFeature.groups,
+                        child: GroupsListScreen(showAppBar: false),
+                      );
+                    case 4: // Contacts
                       return ContactsListScreen(
-                        showAppBar: false,
                         filter: vipFilter ? 'vip' : attentionFilter ? 'needs_attention' : '',
+                        showAppBar: false,
                         hideButton: hideButton,
                       );
                     default:
@@ -303,11 +326,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
           ),
-          // Floating Navigation Bar
-         Positioned(
-            bottom: 20,
-            left: 16,
-            right: 16,
+          // Bottom Navigation Bar (full-width, anchored to bottom; dark
+          // variant on Universe per social_universe_brighter_glow_2).
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
             child: StreamBuilder<List<Nudge>>(
               stream: NudgeService().getNudgesStream(user.uid),
               builder: (context, snap) {
@@ -337,8 +361,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           
           Consumer<FeedbackProvider>(
             builder: (context, feedbackProvider, child) {
+              // Lifted to clear the new full-width nav bar. With the
+              // nav height reduced (Section 4) the FAB drops from 116
+              // to 100 so it sits tighter against the nav while still
+              // clearing the iOS home indicator + Android gesture nav.
               return Positioned(
-                bottom: 70,
+                bottom: 100,
                 right: 20,
                 child: FeedbackFloatingButton(
                   currentSection: getCurrentSection(),
@@ -407,7 +435,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildDashboardWithSliver(ThemeProvider themeProvider, List<Contact> contacts, List<SocialGroup> groups, ApiService apiService) {
-    // final themeProvider = Provider.of<ThemeProvider>(context);
+    return _buildStitchDashboard(themeProvider, contacts, apiService);
+  }
+
+  Widget _legacyDashboardWithSliver(ThemeProvider themeProvider, List<Contact> contacts, List<SocialGroup> groups, ApiService apiService) {
     final theme = Theme.of(context);
     
     return Scaffold(
@@ -666,56 +697,48 @@ class _DashboardScreenState extends State<DashboardScreen> {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
+      backgroundColor: themeProvider.isDarkMode
+          ? Theme.of(context).colorScheme.surfaceContainerHigh
+          : Colors.white,
       builder: (context) {
         return SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  'ADD CONTACTS',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontSize: 18,
-                    fontFamily: GoogleFonts.beVietnamPro().fontFamily,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+              const StitchModalHeader(
+                title: 'Add Contacts',
+                subtitle: 'Build out your universe.',
               ),
-              ListTile(
-                leading: Icon(Icons.person_add, color: Theme.of(context).colorScheme.primary),
-                title: Text('ADD CONTACT MANUALLY', style: TextStyle(fontWeight: FontWeight.w700, fontFamily: GoogleFonts.beVietnamPro().fontFamily, color: Theme.of(context).colorScheme.onSurface)),
-                subtitle: Text('Create a new contact from scratch', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily,)),
+              const SizedBox(height: 8),
+              StitchModalListTile(
+                icon: Icons.person_add_alt_1_rounded,
+                title: 'Add Contact Manually',
+                subtitle: 'Create a new contact from scratch',
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.pushNamed(context, '/add_contact');
                 },
               ),
-              ListTile(
-                leading: Icon(Icons.import_contacts, color: Theme.of(context).colorScheme.primary),
-                title: Text('IMPORT CONTACTS', style: TextStyle(fontWeight: FontWeight.w700, fontFamily: GoogleFonts.beVietnamPro().fontFamily, color: Theme.of(context).colorScheme.onSurface)),
-                subtitle: Text('Import from your device contacts', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontFamily: GoogleFonts.beVietnamPro().fontFamily,)),
-                onTap: () async{
+              StitchModalListTile(
+                icon: Icons.import_contacts_rounded,
+                title: 'Import Contacts',
+                subtitle: 'Import from your device contacts',
+                onTap: () async {
                   Navigator.pop(context);
-                  // Navigator.pushNamed(context, '/import_contacts');
                   final result = await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => ImportContactsScreen(
                         isOnboarding: false,
-                        // No preSelectedGroup means it's from FAB
-                        ),
                       ),
-                    );
-
+                    ),
+                  );
                   _handleImportResult(result);
                 },
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
             ],
           ),
         );
@@ -734,142 +757,90 @@ class _DashboardScreenState extends State<DashboardScreen> {
       [List<Nudge>? nudgeOverride]) {
     final overdueNudges = _getOverdueNudges(nudgeOverride ?? allNudges);
     final hasOverdue = overdueNudges.isNotEmpty;
-    final isDark = themeProvider.isDarkMode;
+    // Dark variant whenever the app is in dark mode OR the user is on the
+    // Universe tab (which has a permanent dark starfield background even
+    // in light mode). Matches social_universe_brighter_glow_2.
+    final useDarkBar = themeProvider.isDarkMode || _currentIndex == 1;
+    final bottomInset = MediaQuery.of(context).padding.bottom;
 
     return Container(
-      height: 72,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(36),
-        color: isDark
-            ? AppColors.darkSurfaceContainerLow.withOpacity(0.92)
-            : Colors.white.withOpacity(0.96),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        color: useDarkBar
+            ? const Color(0xE61A1816)
+            : Colors.white.withOpacity(0.92),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.35 : 0.12),
-            blurRadius: 24,
-            spreadRadius: 0,
-            offset: const Offset(0, 4),
+            color: useDarkBar
+                ? const Color(0x10751FE7)
+                : Colors.black.withOpacity(0.08),
+            blurRadius: 40,
+            offset: const Offset(0, -10),
           ),
         ],
       ),
+      // Tighter padding so the icons sit closer to the bottom edge.
+      // Top padding 8 (was 12), bottom 4 + safe-area inset (was 12 +).
+      // The safe-area inset still respects iOS home indicator and Android
+      // gesture-handle space, so icons never overlap them.
+      padding: EdgeInsets.fromLTRB(16, 8, 16, 4 + bottomInset),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          // Social Universe
           _buildNavItem(
             index: 1,
             label: 'UNIVERSE',
-            icon: SvgPicture.asset(
-              'assets/navbar-icons/nav_universe.svg',
-              width: 24,
-              height: 24,
-              colorFilter: ColorFilter.mode(
-                _currentIndex == 1
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.outline,
-                BlendMode.srcIn,
-              ),
-            ),
+            iconAsset: 'assets/navbar-icons/nav_universe.svg',
+            useDarkBar: useDarkBar,
             themeProvider: themeProvider,
           ),
-
-          // Nudges
           _buildNavItem(
             index: 2,
             label: 'NUDGES',
-            icon: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                SvgPicture.asset(
-                  'assets/navbar-icons/nav_nudges.svg',
-                  width: 24,
-                  height: 24,
-                  colorFilter: ColorFilter.mode(
-                    _currentIndex == 2
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.outline,
-                    BlendMode.srcIn,
-                  ),
-                ),
-                if (hasOverdue)
-                  Positioned(
-                    right: -2,
-                    top: -2,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.error,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: isDark ? Colors.black : Colors.white,
-                            blurRadius: 1,
-                            spreadRadius: 1,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+            iconAsset: 'assets/navbar-icons/nav_nudges.svg',
+            useDarkBar: useDarkBar,
             themeProvider: themeProvider,
+            badge: hasOverdue,
           ),
-
-          // Groups
           _buildNavItem(
             index: 3,
             label: 'GROUPS',
-            icon: SvgPicture.asset(
-              'assets/navbar-icons/nav_groups.svg',
-              width: 24,
-              height: 24,
-              colorFilter: ColorFilter.mode(
-                _currentIndex == 3
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.outline,
-                BlendMode.srcIn,
-              ),
-            ),
+            iconAsset: 'assets/navbar-icons/nav_groups.svg',
+            useDarkBar: useDarkBar,
             themeProvider: themeProvider,
           ),
-
-          // Contacts
           _buildNavItem(
             index: 4,
             label: 'CONTACTS',
-            icon: SvgPicture.asset(
-              'assets/navbar-icons/nav_contacts.svg',
-              width: 24,
-              height: 24,
-              colorFilter: ColorFilter.mode(
-                _currentIndex == 4
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.outline,
-                BlendMode.srcIn,
-              ),
-            ),
+            iconAsset: 'assets/navbar-icons/nav_contacts.svg',
+            useDarkBar: useDarkBar,
             themeProvider: themeProvider,
           ),
         ],
       ),
     );
   }
-  
+
   Widget _buildNavItem({
     required int index,
-    required Widget icon,
+    required String iconAsset,
     required String label,
     required ThemeProvider themeProvider,
+    required bool useDarkBar,
+    bool badge = false,
   }) {
     final isSelected = _currentIndex == index;
     final isDark = themeProvider.isDarkMode;
-    final primary = Theme.of(context).colorScheme.primary;
-    final labelColor = isSelected
-        ? primary
-        : isDark
-            ? AppColors.darkOnSurfaceVariant
-            : AppColors.lightOnSurfaceVariant;
+    final scheme = Theme.of(context).colorScheme;
+    // Active uses the canonical AppColors.solidPurple in BOTH light and
+    // dark mode (no separate dark-mode purple variant). Inactive on the
+    // dark variant uses the stone-500 muted tone from
+    // social_universe_brighter_glow_2 so contrast against the dark
+    // surface stays readable.
+    final activeFg = AppColors.solidPurple;
+    final inactiveFg = useDarkBar ? const Color(0xFF6E6A66) : scheme.outline;
+    final fg = isSelected ? activeFg : inactiveFg;
+    final activeBg = AppColors.solidPurple.withOpacity(useDarkBar ? 0.20 : 0.10);
 
     return GestureDetector(
       onTap: () {
@@ -883,25 +854,55 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
         decoration: BoxDecoration(
-          color: isSelected
-              ? primary.withOpacity(isDark ? 0.18 : 0.10)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(40),
+          color: isSelected ? activeBg : Colors.transparent,
+          borderRadius: BorderRadius.circular(9999),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            icon,
-            const SizedBox(height: 3),
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                SvgPicture.asset(
+                  iconAsset,
+                  width: 22,
+                  height: 22,
+                  colorFilter: ColorFilter.mode(fg, BlendMode.srcIn),
+                ),
+                if (badge)
+                  Positioned(
+                    right: -2,
+                    top: -2,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.error,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: useDarkBar
+                                ? const Color(0xFF1A1816)
+                                : (isDark ? Colors.black : Colors.white),
+                            blurRadius: 1,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 4),
             Text(
               label,
-              style: GoogleFonts.beVietnamPro(
-                fontSize: 9,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: labelColor,
-                letterSpacing: 0.4,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 10,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                color: fg,
+                letterSpacing: 1.2,
               ),
             ),
           ],
@@ -1706,6 +1707,1223 @@ class _DashboardScreenState extends State<DashboardScreen> {
       vipInteractions: 0,
       newConnections: 0,
       lastUpdated: DateTime.now(),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Stitch v4 dashboard ("today agenda" layout) — replaces the legacy
+  // analytics-style dashboard. Mockup refs:
+  //   light: stitch_nudge_mock_up_v4/dashboard_consistent_titles
+  //   dark:  stitch_nudge_mock_up_v4/dashboard_dark_mode_3
+  // ─────────────────────────────────────────────────────────────────────────
+
+  Widget _buildStitchDashboard(
+      ThemeProvider themeProvider, List<Contact> contacts, ApiService apiService) {
+    final user = Provider.of<AuthService>(context).currentUser;
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: StreamBuilder<List<Nudge>>(
+        stream: NudgeService().getNudgesStream(user!.uid),
+        builder: (context, nudgeSnapshot) {
+          final nudges = nudgeSnapshot.data ?? [];
+          return CustomScrollView(
+            controller: _scrollController,
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              SliverAppBar(
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                surfaceTintColor: Colors.transparent,
+                elevation: 0,
+                automaticallyImplyLeading: false,
+                titleSpacing: 0,
+                title: _buildStitchTopBar(user.photoURL, themeProvider),
+                floating: true,
+                snap: true,
+                pinned: false,
+                centerTitle: false,
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 140),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate(
+                    _buildDashboardCards(nudges, contacts, themeProvider),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  // Returns the dashboard's vertical card stack, gated by expansion state.
+  // When a section is expanded, sibling cards are hidden so the user has the
+  // full screen to scroll the expanded list. AnimatedSwitcher wraps the
+  // result so add/remove transitions cross-fade smoothly.
+  List<Widget> _buildDashboardCards(
+      List<Nudge> nudges, List<Contact> contacts, ThemeProvider themeProvider) {
+    final expanded = _expandedNudgeSection;
+    if (expanded == 'pending') {
+      return [_buildTodaysNudgesCard(nudges, contacts, themeProvider)];
+    }
+    if (expanded == 'upcoming') {
+      return [_buildUpcomingNudgesCard(nudges, themeProvider)];
+    }
+    return [
+      _buildAIAssistantCard(themeProvider),
+      const SizedBox(height: 20),
+      _buildUpcomingNudgesCard(nudges, themeProvider),
+      const SizedBox(height: 20),
+      _buildTodaysNudgesCard(nudges, contacts, themeProvider),
+      const SizedBox(height: 20),
+      _buildDailyMomentumCard(nudges),
+      const SizedBox(height: 20),
+      _buildGrowUniverseCard(themeProvider),
+    ];
+  }
+
+  void _toggleExpandedSection(String section) {
+    setState(() {
+      _expandedNudgeSection =
+          _expandedNudgeSection == section ? null : section;
+    });
+  }
+
+  Widget _buildStitchTopBar(String? photoUrl, ThemeProvider themeProvider) {
+    final isDark = themeProvider.isDarkMode;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          ShaderMask(
+            shaderCallback: (bounds) => LinearGradient(
+              colors: isDark
+                  ? const [Color(0xFFE7E1DE), Color(0xFF968DA1)]
+                  : const [Color(0xFF1A1A1A), Color(0xFF666666)],
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
+            ).createShader(bounds),
+            child: Text(
+              'NUDGE',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: -0.5,
+              ),
+            ),
+          ),
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () => Navigator.pushNamed(context, '/ai'),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  margin: const EdgeInsets.only(right: 10),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF751FE7), Color(0xFF4A0FAA)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF751FE7).withOpacity(0.35),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.auto_awesome_rounded,
+                    size: 18,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              GestureDetector(
+                onTap: () => Navigator.pushNamed(context, '/settings'),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppColors.lightPrimary.withOpacity(0.15),
+                      width: 2,
+                    ),
+                    image: photoUrl != null && photoUrl.isNotEmpty
+                        ? DecorationImage(image: NetworkImage(photoUrl), fit: BoxFit.cover)
+                        : null,
+                    color: photoUrl == null || photoUrl.isEmpty
+                        ? Theme.of(context).colorScheme.surfaceContainerHighest
+                        : null,
+                  ),
+                  child: photoUrl == null || photoUrl.isEmpty
+                      ? Icon(Icons.person,
+                          size: 20,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant)
+                      : null,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUpcomingNudgesCard(List<Nudge> nudges, ThemeProvider themeProvider) {
+    final theme = Theme.of(context);
+    final isDark = themeProvider.isDarkMode;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final weekStart = today.subtract(Duration(days: today.weekday - 1));
+    final week = List.generate(7, (i) => weekStart.add(Duration(days: i)));
+    const dayLabels = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+    final isExpanded = _expandedNudgeSection == 'upcoming';
+    // Build the full upcoming-nudge list (future, not completed). Shown
+    // when the section is expanded inline.
+    final upcoming = nudges.where((n) {
+      if (n.isCompleted) return false;
+      return n.scheduledTime.isAfter(today);
+    }).toList()
+      ..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+    final upcomingFull = upcoming.toList();
+
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOut,
+      alignment: Alignment.topCenter,
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark
+              ? theme.colorScheme.surfaceContainerHigh
+              : Colors.white,
+          borderRadius: BorderRadius.circular(Radii.lg),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.30 : 0.05),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.secondary.withOpacity(0.10),
+              borderRadius: BorderRadius.circular(9999),
+            ),
+            child: Text(
+              'PLAN AHEAD',
+              style: GoogleFonts.beVietnamPro(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: theme.colorScheme.secondary,
+                letterSpacing: 1.6,
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          // Tappable title row — toggles the inline expanded list of all
+          // upcoming nudges.
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => _toggleExpandedSection('upcoming'),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Upcoming Nudges',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: theme.colorScheme.onSurface,
+                      letterSpacing: -0.4,
+                    ),
+                  ),
+                ),
+                AnimatedRotation(
+                  duration: const Duration(milliseconds: 180),
+                  turns: isExpanded ? 0.5 : 0,
+                  child: Icon(
+                    Icons.expand_more_rounded,
+                    color: theme.colorScheme.onSurfaceVariant,
+                    size: 24,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Subtitle dropped per Section 5 — heading alone is enough.
+          const SizedBox(height: 16),
+          // Week strip when collapsed; full-month grid when Expand
+          // Calendar is on. The same per-day cell builder is reused.
+          if (_calendarExpanded)
+            _buildMonthGrid(today, nudges, themeProvider)
+          else
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                for (int i = 0; i < 7; i++)
+                  _buildWeekDayCell(
+                    label: dayLabels[i],
+                    date: week[i],
+                    isToday: week[i] == today,
+                    isSelected: week[i] == _selectedCalendarDate,
+                    nudgeCount: nudges.where((n) {
+                      final s = n.scheduledTime;
+                      return DateTime(s.year, s.month, s.day) == week[i] &&
+                          !n.isCompleted;
+                    }).length,
+                    themeProvider: themeProvider,
+                    onTap: () => setState(() => _selectedCalendarDate = week[i]),
+                  ),
+              ],
+            ),
+          const SizedBox(height: 16),
+          _buildSelectedDayNudges(nudges, themeProvider),
+          const SizedBox(height: 16),
+          GestureDetector(
+            onTap: () => setState(() {
+              _calendarExpanded = !_calendarExpanded;
+            }),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 11),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? theme.colorScheme.surfaceContainerHighest
+                    : Colors.white,
+                borderRadius: BorderRadius.circular(9999),
+                border: Border.all(
+                    color: theme.colorScheme.outlineVariant.withOpacity(0.4)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _calendarExpanded ? 'Collapse Calendar' : 'Expand Calendar',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    _calendarExpanded
+                        ? Icons.calendar_view_week_rounded
+                        : Icons.calendar_month_rounded,
+                    size: 16,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (isExpanded) ...[
+            const SizedBox(height: 20),
+            const Divider(height: 1),
+            const SizedBox(height: 16),
+            if (upcomingFull.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  'No upcoming nudges scheduled.',
+                  style: GoogleFonts.beVietnamPro(
+                    fontSize: 14,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              )
+            else
+              ...upcomingFull.map((nudge) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child:
+                        _buildTodayNudgeRow(nudge, const [], themeProvider),
+                  )),
+          ],
+        ],
+      ),
+      ),
+    );
+  }
+
+  Widget _buildWeekDayCell({
+    required String label,
+    required DateTime date,
+    required bool isToday,
+    required int nudgeCount,
+    required ThemeProvider themeProvider,
+    bool hideLabel = false,
+    bool isSelected = false,
+    VoidCallback? onTap,
+  }) {
+    final theme = Theme.of(context);
+    final isDark = themeProvider.isDarkMode;
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+      children: [
+        if (!hideLabel) ...[
+          Text(
+            label,
+            style: GoogleFonts.beVietnamPro(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: isToday
+                  ? theme.colorScheme.primary
+                  : isSelected
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.outline,
+              letterSpacing: 0.4,
+            ),
+          ),
+          const SizedBox(height: 6),
+        ],
+        Container(
+          width: 38,
+          height: 56,
+          decoration: BoxDecoration(
+            color: isToday
+                ? theme.colorScheme.primary
+                : (isDark
+                    ? theme.colorScheme.surfaceContainerHighest
+                    : const Color(0xFFF4EFE9)),
+            borderRadius: BorderRadius.circular(14),
+            border: isSelected && !isToday
+                ? Border.all(
+                    color: theme.colorScheme.primary,
+                    width: 2,
+                  )
+                : null,
+            boxShadow: isToday
+                ? [
+                    BoxShadow(
+                      color: theme.colorScheme.primary.withOpacity(0.25),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
+          ),
+          // Stack so the date number sits at a fixed vertical offset
+          // regardless of whether the cell has a nudge dot underneath.
+          // Previously the dot pushed the centred number upward, leaving
+          // dot-bearing dates visually higher than dot-less neighbours.
+          child: Stack(
+            children: [
+              Positioned(
+                top: 18,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Text(
+                    '${date.day}',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: isToday
+                          ? Colors.white
+                          : theme.colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              ),
+              if (nudgeCount > 0)
+                Positioned(
+                  bottom: 8,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Container(
+                      width: 5,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: isToday
+                            ? Colors.white
+                            : theme.colorScheme.primary,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+      ),
+    );
+  }
+
+  Widget _buildSelectedDayNudges(
+      List<Nudge> nudges, ThemeProvider themeProvider) {
+    final theme = Theme.of(context);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final sel = _selectedCalendarDate;
+    final isToday = sel == today;
+    final isFuture = sel.isAfter(today);
+
+    final dayNudges = nudges.where((n) {
+      if (n.isCompleted) return false;
+      final s = n.scheduledTime;
+      return DateTime(s.year, s.month, s.day) == sel;
+    }).toList()
+      ..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+
+    String heading;
+    if (isToday) {
+      heading = 'Today';
+    } else if (sel == today.add(const Duration(days: 1))) {
+      heading = 'Tomorrow';
+    } else if (isFuture) {
+      final months = [
+        '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      ];
+      heading = '${months[sel.month]} ${sel.day}';
+    } else {
+      final months = [
+        '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      ];
+      heading = '${months[sel.month]} ${sel.day}';
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Divider(height: 1, thickness: 0.5),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Text(
+              heading,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            if (dayNudges.isNotEmpty) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${dayNudges.length}',
+                  style: GoogleFonts.beVietnamPro(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: 10),
+        if (dayNudges.isEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Text(
+              isFuture
+                  ? 'No nudges planned for this day.'
+                  : isToday
+                      ? 'No nudges scheduled today.'
+                      : 'No nudges on this day.',
+              style: GoogleFonts.beVietnamPro(
+                fontSize: 13,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          )
+        else
+          ...dayNudges.map((nudge) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _buildTodayNudgeRow(nudge, const [], themeProvider),
+              )),
+      ],
+    );
+  }
+
+  // Full-month grid revealed when the user taps Expand Calendar. Same
+  // per-day cell renderer as the week strip so visual rhythm is
+  // consistent across both modes.
+  Widget _buildMonthGrid(
+      DateTime today, List<Nudge> nudges, ThemeProvider themeProvider) {
+    final theme = Theme.of(context);
+    final firstOfMonth = DateTime(today.year, today.month, 1);
+    final daysInMonth =
+        DateTime(today.year, today.month + 1, 0).day;
+    // 1 = Mon ... 7 = Sun. Subtract 1 so the column index is 0-based.
+    final leadingBlanks = firstOfMonth.weekday - 1;
+    final totalCells = leadingBlanks + daysInMonth;
+    final rows = (totalCells / 7).ceil();
+    final monthLabel =
+        '${_monthName(today.month)} ${today.year}';
+    const dayLabels = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 2, bottom: 12),
+          child: Text(
+            monthLabel,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: dayLabels
+              .map((l) => Text(
+                    l,
+                    style: GoogleFonts.beVietnamPro(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      color: theme.colorScheme.outline,
+                      letterSpacing: 0.4,
+                    ),
+                  ))
+              .toList(),
+        ),
+        const SizedBox(height: 8),
+        for (int row = 0; row < rows; row++) ...[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: List.generate(7, (col) {
+              final cellIndex = row * 7 + col;
+              final dayNum = cellIndex - leadingBlanks + 1;
+              if (dayNum < 1 || dayNum > daysInMonth) {
+                return const SizedBox(width: 38, height: 56);
+              }
+              final cellDate =
+                  DateTime(today.year, today.month, dayNum);
+              return _buildWeekDayCell(
+                label: '',
+                date: cellDate,
+                isToday: cellDate == today,
+                isSelected: cellDate == _selectedCalendarDate,
+                nudgeCount: nudges.where((n) {
+                  final s = n.scheduledTime;
+                  return DateTime(s.year, s.month, s.day) == cellDate &&
+                      !n.isCompleted;
+                }).length,
+                themeProvider: themeProvider,
+                hideLabel: true,
+                onTap: () => setState(() => _selectedCalendarDate = cellDate),
+              );
+            }),
+          ),
+          if (row < rows - 1) const SizedBox(height: 8),
+        ],
+      ],
+    );
+  }
+
+  String _monthName(int m) => const [
+        '',
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December',
+      ][m];
+
+  Widget _buildTodaysNudgesCard(
+      List<Nudge> nudges, List<Contact> contacts, ThemeProvider themeProvider) {
+    final theme = Theme.of(context);
+    final isDark = themeProvider.isDarkMode;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final tomorrow = today.add(const Duration(days: 1));
+    final pendingToday = nudges.where((n) {
+      if (n.isCompleted) return false;
+      return n.scheduledTime.isBefore(tomorrow);
+    }).toList()
+      ..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+    final isExpanded = _expandedNudgeSection == 'pending';
+    final visible =
+        isExpanded ? pendingToday : pendingToday.take(3).toList();
+
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOut,
+      alignment: Alignment.topCenter,
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark
+              ? theme.colorScheme.surfaceContainerHigh
+              : Colors.white,
+          borderRadius: BorderRadius.circular(Radii.lg),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.30 : 0.05),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Tappable header — toggles inline expand/collapse for the
+            // Pending Nudges section.
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => _toggleExpandedSection('pending'),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        'Pending Nudges',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: theme.colorScheme.onSurface,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      AnimatedRotation(
+                        duration: const Duration(milliseconds: 180),
+                        turns: isExpanded ? 0.5 : 0,
+                        child: Icon(
+                          Icons.expand_more_rounded,
+                          color: theme.colorScheme.onSurfaceVariant,
+                          size: 22,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? theme.colorScheme.surfaceContainerHighest
+                          : Colors.white,
+                      borderRadius: BorderRadius.circular(9999),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 6,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      '${pendingToday.length} Pending',
+                      style: GoogleFonts.beVietnamPro(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.solidPurple,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+            if (visible.isEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 22),
+                alignment: Alignment.center,
+                child: Text(
+                  "You're all caught up for today.",
+                  style: GoogleFonts.beVietnamPro(
+                    fontSize: 14,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              )
+            else
+              ...visible.map((nudge) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _buildTodayNudgeRow(nudge, contacts, themeProvider),
+                  )),
+            if (!isExpanded && pendingToday.length > 3)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  'Tap to see ${pendingToday.length - 3} more',
+                  style: GoogleFonts.beVietnamPro(
+                    fontSize: 12,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTodayNudgeRow(
+      Nudge nudge, List<Contact> contacts, ThemeProvider themeProvider) {
+    final theme = Theme.of(context);
+    final isDark = themeProvider.isDarkMode;
+    final contact = contacts.cast<Contact?>().firstWhere(
+          (c) => c?.id == nudge.contactId,
+          orElse: () => null,
+        );
+    final imageUrl = contact?.imageUrl.isNotEmpty == true
+        ? contact!.imageUrl
+        : nudge.contactImageUrl;
+    final hasImage = imageUrl.isNotEmpty;
+    final initials = _getNudgeContactInitials(nudge.contactName);
+    final isBirthday = nudge.nudgeType.toLowerCase().contains('birthday');
+    final actionIcon = isBirthday ? Icons.cake_rounded : Icons.send_rounded;
+    final daysSince = contact != null
+        ? DateTime.now().difference(contact.lastContacted).inDays
+        : null;
+    final subtitle = nudge.message.isNotEmpty
+        ? nudge.message
+        : daysSince != null
+            ? 'Time to reconnect • $daysSince days since last talk'
+            : 'Scheduled for today';
+
+    return GestureDetector(
+      onTap: () {
+        if (contact != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (_) => ContactDetailScreen(contact: contact)),
+          );
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isDark
+              ? theme.colorScheme.surfaceContainerHighest
+              : Colors.white,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: theme.colorScheme.surfaceContainerHigh,
+                image: hasImage
+                    ? DecorationImage(
+                        image: NetworkImage(imageUrl), fit: BoxFit.cover)
+                    : null,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              alignment: Alignment.center,
+              child: hasImage
+                  ? null
+                  : Text(
+                      initials,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    nudge.contactName.isNotEmpty
+                        ? nudge.contactName.split(' ').first
+                        : 'Friend',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.beVietnamPro(
+                      fontSize: 12,
+                      color: theme.colorScheme.onSurfaceVariant,
+                      height: 1.35,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: theme.colorScheme.primary.withOpacity(0.10),
+              ),
+              child:
+                  Icon(actionIcon, size: 18, color: theme.colorScheme.primary),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _getNudgeContactInitials(String name) {
+    if (name.trim().isEmpty) return '?';
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.length == 1) return parts[0][0].toUpperCase();
+    return (parts[0][0] + parts.last[0]).toUpperCase();
+  }
+
+  Widget _buildDailyMomentumCard(List<Nudge> nudges) {
+    final streak = _computeStreakDays(nudges);
+    final progress = (streak.clamp(0, 7) / 7.0).toDouble();
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF751FE7), Color(0xFF6800D8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(Radii.lg),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF751FE7).withOpacity(0.30),
+            blurRadius: 28,
+            offset: const Offset(0, 14),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.local_fire_department_rounded,
+                  size: 30, color: Colors.white),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    'DAILY MOMENTUM',
+                    style: GoogleFonts.beVietnamPro(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white.withOpacity(0.85),
+                      letterSpacing: 1.6,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  // Streak logic isn't shipped yet — surface the
+                  // placeholder status explicitly so users don't think
+                  // the 0-day reading is a bug.
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.18),
+                      borderRadius: BorderRadius.circular(9999),
+                    ),
+                    child: Text(
+                      'COMING SOON',
+                      style: GoogleFonts.beVietnamPro(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Text(
+            '$streak',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 44,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+              letterSpacing: -1.5,
+              height: 1.0,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            streak == 1 ? 'Day Streak' : 'Days Streak',
+            style: GoogleFonts.beVietnamPro(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: Colors.white.withOpacity(0.92),
+            ),
+          ),
+          const SizedBox(height: 16),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(9999),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 4,
+              backgroundColor: Colors.white.withOpacity(0.20),
+              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  int _computeStreakDays(List<Nudge> nudges) {
+    final completedDates = <DateTime>{};
+    for (final n in nudges) {
+      final t = n.completedAt;
+      if (t == null) continue;
+      completedDates.add(DateTime(t.year, t.month, t.day));
+    }
+    if (completedDates.isEmpty) return 0;
+    final now = DateTime.now();
+    var cursor = DateTime(now.year, now.month, now.day);
+    if (!completedDates.contains(cursor)) {
+      cursor = cursor.subtract(const Duration(days: 1));
+      if (!completedDates.contains(cursor)) return 0;
+    }
+    var count = 0;
+    while (completedDates.contains(cursor)) {
+      count++;
+      cursor = cursor.subtract(const Duration(days: 1));
+    }
+    return count;
+  }
+
+  Widget _buildAIAssistantCard(ThemeProvider themeProvider) {
+    final theme = Theme.of(context);
+    final isDark = themeProvider.isDarkMode;
+    return GestureDetector(
+      onTap: () => Navigator.pushNamed(context, '/ai'),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isDark
+                ? [
+                    const Color(0xFF751FE7).withOpacity(0.18),
+                    const Color(0xFF4A0FAA).withOpacity(0.12),
+                  ]
+                : [
+                    const Color(0xFF751FE7).withOpacity(0.07),
+                    const Color(0xFF4A0FAA).withOpacity(0.04),
+                  ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(Radii.lg),
+          border: Border.all(
+            color: const Color(0xFF751FE7).withOpacity(0.25),
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF751FE7), Color(0xFF4A0FAA)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF751FE7).withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.auto_awesome_rounded,
+                size: 26,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        'AI Assistant',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF751FE7),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          'AI',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Chat, get insights & relationship guidance.',
+                    style: GoogleFonts.beVietnamPro(
+                      fontSize: 13,
+                      color: theme.colorScheme.onSurfaceVariant,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: const Color(0xFF751FE7).withOpacity(0.5),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGrowUniverseCard(ThemeProvider themeProvider) {
+    final theme = Theme.of(context);
+    final isDark = themeProvider.isDarkMode;
+    return GestureDetector(
+      onTap: () => _showAddContactOptions(context, themeProvider),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.tertiary.withOpacity(isDark ? 0.10 : 0.06),
+          borderRadius: BorderRadius.circular(Radii.lg),
+          border: Border.all(
+            color: theme.colorScheme.tertiary.withOpacity(0.30),
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: isDark
+                    ? theme.colorScheme.surfaceContainerHighest
+                    : Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.person_add_alt_1_rounded,
+                size: 28,
+                color: theme.colorScheme.tertiary,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Grow your Universe',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Add a new meaningful contact to your orbit.',
+                    style: GoogleFonts.beVietnamPro(
+                      fontSize: 13,
+                      color: theme.colorScheme.onSurfaceVariant,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: theme.colorScheme.tertiary.withOpacity(0.5),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

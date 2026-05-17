@@ -981,12 +981,13 @@ class _ImportContactsScreenState extends State<ImportContactsScreen> {
             style: GoogleFonts.plusJakartaSans(
                     fontWeight: FontWeight.w800,
                     fontSize: 25),
+            // Near-black wordmark per Stitch mockups (no purple/blue gradient).
             gradient: LinearGradient(
               colors: themeProvider.isDarkMode
-                  ? AppColors.primaryGradientDark
-                  : AppColors.primaryGradientLight,
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
+                  ? const [Color(0xFFE7E1DE), Color(0xFF968DA1)]
+                  : const [Color(0xFF1A1A1A), Color(0xFF666666)],
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
             ),
           ),
           if (_preSelectedGroup != null)
