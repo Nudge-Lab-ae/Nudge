@@ -51,3 +51,8 @@ ios/Runner/GoogleService-Info.plist
 ios/GoogleService-Info.plist
 *.p12
 *.p8
+
+# Android signing credentials (CRITICAL - DO NOT COMMIT)
+android/key.properties
+*.keystore
+*.jks
