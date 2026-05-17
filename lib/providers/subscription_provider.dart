@@ -45,9 +45,9 @@ class SubscriptionProvider extends ChangeNotifier {
   bool get hasUnlimitedGroups =>
       _subscription.currentLimits.hasUnlimitedGroups;
 
-  /// -1 means unlimited
-  int get dailyAILimit => isFree ? 5 : -1;
-  bool get hasAIInsights => !isFree;
+  /// -1 means unlimited. Trial users get full AI access.
+  int get dailyAILimit => (isFree && !isTrial) ? 5 : -1;
+  bool get hasAIInsights => !isFree || isTrial;
 
   /// Call once after the user is authenticated.
   Future<void> init(String userEmail) async {
@@ -122,11 +122,32 @@ class SubscriptionProvider extends ChangeNotifier {
     if (_subscription.tier != SubscriptionTier.free) return;
 
     final prefs = await SharedPreferences.getInstance();
-    final trialStartMs = prefs.getInt(_trialKey);
+    int? trialStartMs = prefs.getInt(_trialKey);
 
     if (trialStartMs == null) {
-      // First launch for this user — start the trial and persist it.
-      // Also try to sync with Firestore.
+      // No local record — check Firestore in case user re-installed or
+      // switched devices. The trial start date is the source of truth there.
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        try {
+          final doc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(uid)
+              .get();
+          final firestoreMs = doc.data()?['trialStartedAt'] as int?;
+          if (firestoreMs != null) {
+            // Restore from Firestore — don't grant a fresh 14-day window
+            trialStartMs = firestoreMs;
+            await prefs.setInt(_trialKey, firestoreMs);
+          }
+        } catch (_) {
+          // Firestore unreachable — will retry next init
+        }
+      }
+    }
+
+    if (trialStartMs == null) {
+      // Genuinely first launch — start the trial now
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid != null) {
         final now = DateTime.now().millisecondsSinceEpoch;
@@ -152,7 +173,7 @@ class SubscriptionProvider extends ChangeNotifier {
       );
       notifyListeners();
     }
-    // else: trial expired, stays on free
+    // else: trial expired — stays on free
   }
 
   Future<void> _persistTrialToFirestore(String uid, int trialStartMs) async {
@@ -251,7 +272,9 @@ class SubscriptionProvider extends ChangeNotifier {
     _subscription = NudgeSubscription.free;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_cacheKey);
-    await prefs.remove(_trialKey);
+    // Do NOT remove _trialKey here — the trial is account-level and should
+    // survive sign-out/sign-in on the same device. Firestore is the source
+    // of truth; SharedPreferences is just a fast local cache.
     _firestoreListener?.cancel();
     notifyListeners();
   }

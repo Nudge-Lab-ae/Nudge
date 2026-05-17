@@ -70,8 +70,22 @@ class NudgeSubscription {
     ),
   };
 
-  SubscriptionLimits get currentLimits =>
-      limits[tier] ?? limits[SubscriptionTier.free]!;
+  // Trial gives all Pro features but keeps the free contact cap (15).
+  // Users can explore every feature without needing to add more contacts.
+  static const SubscriptionLimits trialLimits = SubscriptionLimits(
+    maxContacts: 15,
+    hasDashboard: true,
+    hasCalendarView: true,
+    hasGroups: true,
+    hasAdvancedAnalytics: true,
+    hasUnlimitedGroups: true,
+    hasSocialUniverse: true,
+  );
+
+  SubscriptionLimits get currentLimits {
+    if (isTrial) return trialLimits;
+    return limits[tier] ?? limits[SubscriptionTier.free]!;
+  }
 
   bool get isActive =>
       status == SubscriptionStatus.active ||
