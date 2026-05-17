@@ -1,7 +1,10 @@
 // lib/screens/contacts/imported_contacts_screen.dart
 import 'package:flutter/material.dart';
+import 'package:nudge/models/subscription.dart';
+import 'package:nudge/providers/subscription_provider.dart';
+import 'package:nudge/screens/subscription/paywall_screen.dart';
 import 'package:nudge/theme/app_theme.dart';
-// import 'package:provider/provider.dart';
+import 'package:provider/provider.dart';
 import '../../services/api_service.dart';
 // import '../../services/auth_service.dart';
 // import '../../models/contact.dart';
@@ -39,12 +42,24 @@ class _ImportedContactsScreenState extends State<ImportedContactsScreen> {
   }
 
   Future<void> _convertToRegularContact(Map<String, dynamic> contact) async {
+    final sub = Provider.of<SubscriptionProvider>(context, listen: false);
+    final existing = await _apiService.getAllContacts();
+    if (!sub.canAddContact(existing.length)) {
+      Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => PaywallScreen(
+          highlightTier: sub.tier == SubscriptionTier.free
+              ? SubscriptionTier.plus
+              : SubscriptionTier.pro,
+        ),
+      ));
+      return;
+    }
     try {
       await _apiService.convertImportedToRegularContact(contact);
-      await _loadImportedContacts(); // Reload the list
-      
+      await _loadImportedContacts();
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Contact converted successfully')),
+        const SnackBar(content: Text('Contact added to your universe')),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
