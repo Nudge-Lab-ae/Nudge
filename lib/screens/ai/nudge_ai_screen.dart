@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:nudge/models/contact.dart';
 import 'package:nudge/models/subscription.dart';
+import 'package:nudge/models/user.dart' as app_user;
 import 'package:nudge/providers/subscription_provider.dart';
 import 'package:nudge/screens/subscription/paywall_screen.dart';
 import 'package:nudge/services/api_service.dart';
+import 'package:nudge/services/claude_service.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
@@ -118,11 +120,33 @@ class _ChatTabState extends State<_ChatTab> {
   bool _isSending = false;
   int _todayCount = 0;
 
+  // Context loaded once so Claude has full relationship data
+  app_user.User? _currentUser;
+  List<Contact> _contacts = [];
+
   @override
   void initState() {
     super.initState();
     _loadDailyCount();
     _addWelcomeMessage();
+    _loadContext();
+  }
+
+  Future<void> _loadContext() async {
+    try {
+      final results = await Future.wait([
+        widget.apiService.getUser(),
+        widget.apiService.getAllContacts(),
+      ]);
+      if (mounted) {
+        setState(() {
+          _currentUser = results[0] as app_user.User;
+          _contacts = results[1] as List<Contact>;
+        });
+      }
+    } catch (_) {
+      // Non-critical — chat still works without full context
+    }
   }
 
   @override
@@ -187,33 +211,50 @@ class _ChatTabState extends State<_ChatTab> {
     await _incrementDailyCount();
 
     try {
+      // Build conversation history from displayed messages (exclude welcome msg)
       final history = _messages
-          .where((m) => !m.isTypingIndicator)
-          .map((m) => {'role': m.isUser ? 'user' : 'assistant', 'content': m.text})
+          .skip(1) // skip the welcome message
+          .where((m) => !m.isTypingIndicator && !m.isError)
+          .map((m) => <String, dynamic>{
+                'role': m.isUser ? 'user' : 'assistant',
+                'content': m.text,
+              })
           .toList();
 
-      // Remove last user message from history (it's the current message)
-      final contextHistory = history.length > 1
+      // Remove the last user message — it's being sent as the current message
+      final contextHistory = history.isNotEmpty
           ? history.sublist(0, history.length - 1)
           : <Map<String, dynamic>>[];
 
-      final response = await widget.apiService.chatWithAI(
-        message: text,
-        history: contextHistory,
+      // Use ClaudeService.chat() directly — full contact + user context,
+      // no Cloud Function dependency, resolves API key from Firestore.
+      final reply = await ClaudeService.chat(
+        userMessage: text,
+        user: _currentUser ??
+            app_user.User(
+              id: '',
+              username: 'User',
+              email: '',
+              photoUrl: '',
+              role: 'user',
+              createdAt: DateTime.now(),
+            ),
+        contacts: _contacts,
+        conversationHistory: contextHistory,
       );
-
-      final reply = response['reply'] as String? ??
-          response['message'] as String? ??
-          'I couldn\'t process that. Please try again.';
 
       setState(() {
         _messages.add(_ChatMessage(text: reply, isUser: false));
         _isSending = false;
       });
     } catch (e) {
+      final isKeyError = e.toString().contains('key not configured') ||
+          e.toString().contains('API key');
       setState(() {
         _messages.add(_ChatMessage(
-          text: 'Something went wrong. Please try again.',
+          text: isKeyError
+              ? 'AI is not configured yet. The app admin needs to set the Anthropic API key in the Firebase console (settings/ai → anthropicApiKey).'
+              : 'Something went wrong. Please try again.',
           isUser: false,
           isError: true,
         ));

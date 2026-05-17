@@ -20,19 +20,38 @@ class ClaudeService {
   static const int _maxTokens = 1024;
 
   // ── Key resolution ─────────────────────────────────────────────────────────
-  // Reads from Firestore admins/{uid}/config rather than hardcoding.
-  // You set this once via the admin panel or Firebase console.
+  // Priority order:
+  //   1. admins/{uid}/config/claude  — admin's own key (existing behaviour)
+  //   2. settings/ai                 — global key set once by admin, readable
+  //                                    by all authenticated users
+  // This lets regular users access the AI chat without needing their own key.
   static Future<String?> _resolveApiKey() async {
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) return null;
-      final doc = await FirebaseFirestore.instance
+
+      // 1. Check admin-specific key first
+      final adminDoc = await FirebaseFirestore.instance
           .collection('admins')
           .doc(uid)
           .collection('config')
           .doc('claude')
           .get();
-      if (doc.exists) return doc.data()?['apiKey'] as String?;
+      if (adminDoc.exists) {
+        final key = adminDoc.data()?['apiKey'] as String?;
+        if (key != null && key.isNotEmpty) return key;
+      }
+
+      // 2. Fall back to global key (set once by admin, readable by all users)
+      final globalDoc = await FirebaseFirestore.instance
+          .collection('settings')
+          .doc('ai')
+          .get();
+      if (globalDoc.exists) {
+        final key = globalDoc.data()?['anthropicApiKey'] as String?;
+        if (key != null && key.isNotEmpty) return key;
+      }
+
       return null;
     } catch (e) {
       debugPrint('[ClaudeService] Key resolution failed: $e');
